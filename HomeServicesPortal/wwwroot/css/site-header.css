@@ -1,0 +1,203 @@
+:root {
+    --hs-navy: #003366;
+    --hs-navy-dark: #002244;
+    --hs-maroon: #8B1A1A;
+    --hs-tab-text: #1a3a5c;
+    --topbar-primary-height: 68px;
+    --topbar-secondary-height: 38px;
+}
+
+.hs-topbar-primary {
+    background: var(--hs-navy);
+    color: #fff;
+    min-height: var(--topbar-primary-height);
+    border-bottom: 2px solid var(--hs-navy-dark);
+    position: sticky;
+    top: 0;
+    z-index: 1030;
+}
+
+.hs-brand {
+    display: flex;
+    align-items: baseline;
+    gap: 0.35rem;
+    text-decoration: none;
+    color: #fff;
+    line-height: 1;
+    padding: 0.5rem 0;
+}
+
+.hs-brand:hover {
+    color: #fff;
+    text-decoration: none;
+}
+
+.hs-brand-main {
+    font-family: "Libre Baskerville", Georgia, "Times New Roman", serif;
+    font-size: 2rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.hs-brand-sub {
+    font-family: "Libre Baskerville", Georgia, "Times New Roman", serif;
+    font-size: 1.15rem;
+    font-weight: 400;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    opacity: 0.95;
+}
+
+.hs-utility-nav {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.hs-utility-nav > li {
+    display: flex;
+    align-items: center;
+}
+
+.hs-utility-nav > li + li::before {
+    content: "";
+    width: 1px;
+    height: 14px;
+    background: rgba(255, 255, 255, 0.25);
+    margin: 0 0.15rem;
+}
+
+.hs-utility-link {
+    color: #fff;
+    text-decoration: none;
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 0.35rem 0.65rem;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+}
+
+.hs-utility-link:hover {
+    color: #fff;
+    text-decoration: underline;
+}
+
+.hs-utility-link .fa-chevron-right {
+    font-size: 0.55rem;
+    opacity: 0.85;
+}
+
+.hs-utility-link--logout:hover {
+    color: #ffb4b4;
+}
+
+.hs-topbar-secondary {
+    background: linear-gradient(180deg, #ececec 0%, #d4d4d4 100%);
+    min-height: var(--topbar-secondary-height);
+    border-bottom: 1px solid #a8a8a8;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+    position: sticky;
+    top: var(--topbar-primary-height);
+    z-index: 1020;
+}
+
+.hs-tab-nav {
+    display: flex;
+    align-items: stretch;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    flex-wrap: wrap;
+}
+
+.hs-tab-nav > li {
+    display: flex;
+    align-items: stretch;
+    border-right: 1px solid #b5b5b5;
+}
+
+.hs-tab-nav > li:first-child {
+    border-left: 1px solid #b5b5b5;
+}
+
+.hs-tab-link {
+    display: inline-flex;
+    align-items: center;
+    padding: 0 1.1rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--hs-tab-text);
+    text-decoration: none;
+    background: linear-gradient(180deg, #f0f0f0 0%, #dcdcdc 100%);
+    border: none;
+    white-space: nowrap;
+    transition: color 0.12s ease, background 0.12s ease;
+    height: var(--topbar-secondary-height);
+}
+
+.hs-tab-link:hover,
+.hs-tab-link:focus {
+    color: var(--hs-maroon);
+    background: linear-gradient(180deg, #f8f8f8 0%, #e6e6e6 100%);
+}
+
+.hs-tab-link.active {
+    color: var(--hs-maroon);
+    background: linear-gradient(180deg, #fff 0%, #ededed 100%);
+    box-shadow: inset 0 2px 0 var(--hs-maroon);
+}
+
+.hs-mobile-toggle {
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    background: transparent;
+    padding: 0.35rem 0.6rem;
+    border-radius: 4px;
+}
+
+@media (max-width: 991.98px) {
+    .hs-brand-main {
+        font-size: 1.45rem;
+    }
+
+    .hs-brand-sub {
+        font-size: 0.9rem;
+    }
+
+    .hs-topbar-secondary .container-fluid {
+        padding: 0;
+    }
+
+    .hs-tab-nav {
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .hs-tab-nav > li {
+        border-right: none;
+        border-bottom: 1px solid #b5b5b5;
+    }
+
+    .hs-tab-nav > li:first-child {
+        border-left: none;
+    }
+
+    .hs-tab-link {
+        width: 100%;
+        height: auto;
+        padding: 0.65rem 1rem;
+    }
+}

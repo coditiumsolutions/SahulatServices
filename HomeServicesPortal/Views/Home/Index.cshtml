@@ -1,8 +1,166 @@
 ﻿@{
-    ViewData["Title"] = "Home Page";
+    Layout = "_PublicLayout";
+    ViewData["Title"] = "Home";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
-</div>
+<section class="public-hero">
+    <div class="container public-hero-content">
+        <div class="row align-items-center g-4">
+            <div class="col-lg-7">
+                <p class="text-uppercase fw-semibold mb-2 opacity-75" style="letter-spacing: 0.12em; font-size: 0.8rem;">
+                    Pakistan's trusted home services platform
+                </p>
+                <h1>Quality Home Services, Delivered to Your Doorstep</h1>
+                <p class="lead mb-0">
+                    Sahulat Ghar Tak connects households with verified electricians, plumbers, cleaners,
+                    technicians, and more — book reliable professionals in minutes.
+                </p>
+                <div class="public-hero-actions">
+                    <a href="#services" class="public-btn-light">Explore Services</a>
+                    <a href="#how-it-works" class="public-btn-outline">How It Works</a>
+                </div>
+                <div class="public-stats">
+                    <div class="public-stat-card">
+                        <strong>500+</strong>
+                        <span>Verified Providers</span>
+                    </div>
+                    <div class="public-stat-card">
+                        <strong>18+</strong>
+                        <span>Service Categories</span>
+                    </div>
+                    <div class="public-stat-card">
+                        <strong>24/7</strong>
+                        <span>Booking Support</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-5 d-none d-lg-block text-center">
+                <i class="fa-solid fa-house-chimney-user" style="font-size: 9rem; opacity: 0.25;"></i>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="services" class="public-section">
+    <div class="container">
+        <h2 class="public-section-title">Our Services</h2>
+        <p class="public-section-subtitle">
+            From everyday repairs to specialist jobs — find skilled professionals for every corner of your home.
+        </p>
+        <div class="public-service-grid">
+            <article class="public-service-card">
+                <div class="public-service-icon"><i class="fa-solid fa-bolt"></i></div>
+                <h3 class="h5">Electrician</h3>
+                <p class="text-muted mb-0">Wiring, fixtures, power issues, and safety inspections.</p>
+            </article>
+            <article class="public-service-card">
+                <div class="public-service-icon"><i class="fa-solid fa-faucet-drip"></i></div>
+                <h3 class="h5">Plumbing</h3>
+                <p class="text-muted mb-0">Leaks, pipe fitting, bathroom & kitchen plumbing.</p>
+            </article>
+            <article class="public-service-card">
+                <div class="public-service-icon"><i class="fa-solid fa-broom"></i></div>
+                <h3 class="h5">Cleaning</h3>
+                <p class="text-muted mb-0">Deep cleaning, carpet care, and regular housekeeping.</p>
+            </article>
+            <article class="public-service-card">
+                <div class="public-service-icon"><i class="fa-solid fa-fan"></i></div>
+                <h3 class="h5">AC Technician</h3>
+                <p class="text-muted mb-0">Installation, gas refill, servicing, and repairs.</p>
+            </article>
+            <article class="public-service-card">
+                <div class="public-service-icon"><i class="fa-solid fa-hammer"></i></div>
+                <h3 class="h5">Carpenter</h3>
+                <p class="text-muted mb-0">Furniture, doors, cabinets, and woodwork fixes.</p>
+            </article>
+            <article class="public-service-card">
+                <div class="public-service-icon"><i class="fa-solid fa-paint-roller"></i></div>
+                <h3 class="h5">Painting</h3>
+                <p class="text-muted mb-0">Interior & exterior painting with quality finishes.</p>
+            </article>
+        </div>
+    </div>
+</section>
+
+<section id="providers" class="public-section public-bg-soft">
+    <div class="container">
+        <div class="row align-items-center g-4">
+            <div class="col-lg-6">
+                <h2 class="public-section-title">Verified Service Providers</h2>
+                <p class="public-section-subtitle mb-3">
+                    Every provider on Sahulat Ghar Tak is profiled, documented, and rated by real customers.
+                    We help you choose with confidence — see availability, location, and reviews before you book.
+                </p>
+                <ul class="list-unstyled mb-0">
+                    <li class="mb-2"><i class="fa-solid fa-circle-check text-success me-2"></i>Background-checked professionals</li>
+                    <li class="mb-2"><i class="fa-solid fa-circle-check text-success me-2"></i>Transparent pricing & quotes</li>
+                    <li class="mb-2"><i class="fa-solid fa-circle-check text-success me-2"></i>Live booking & tracking</li>
+                    <li><i class="fa-solid fa-circle-check text-success me-2"></i>Customer support when you need it</li>
+                </ul>
+            </div>
+            <div class="col-lg-6">
+                <div class="public-service-card">
+                    <h3 class="h5 mb-3">Are you a service provider?</h3>
+                    <p class="text-muted">
+                        Join our network and grow your business. Manage bookings, availability, and customer
+                        relationships through our provider platform.
+                    </p>
+                    <a href="/adminportal" class="btn btn-outline-primary">Partner With Us</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="how-it-works" class="public-section">
+    <div class="container">
+        <h2 class="public-section-title">How It Works</h2>
+        <p class="public-section-subtitle">Getting help at home is simple — three easy steps.</p>
+        <div class="public-steps">
+            <div class="public-step">
+                <div class="public-step-num">1</div>
+                <h3 class="h5">Choose a Service</h3>
+                <p class="text-muted mb-0">Browse categories and tell us what you need — plumbing, electrical, cleaning, and more.</p>
+            </div>
+            <div class="public-step">
+                <div class="public-step-num">2</div>
+                <h3 class="h5">Get Matched</h3>
+                <p class="text-muted mb-0">We connect you with available, verified providers near your location.</p>
+            </div>
+            <div class="public-step">
+                <div class="public-step-num">3</div>
+                <h3 class="h5">Book & Relax</h3>
+                <p class="text-muted mb-0">Confirm your booking, track progress, pay securely, and rate your experience.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="contact" class="public-section public-bg-soft">
+    <div class="container">
+        <div class="public-cta">
+            <h2>Ready to get started?</h2>
+            <p class="mb-4 opacity-75">Book trusted home services today or reach out to our team for assistance.</p>
+            <div class="d-flex flex-wrap justify-content-center gap-2">
+                <a href="tel:+923001234567" class="public-btn-light">Call +92 300 1234567</a>
+                <a href="mailto:info@sahulatghartak.com" class="public-btn-outline">Email Us</a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<footer class="public-footer">
+    <div class="container">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+            <div>
+                <strong>Sahulat Ghar Tak</strong>
+                <span class="mx-2 opacity-50">|</span>
+                <span>&copy; @DateTime.Now.Year All rights reserved.</span>
+            </div>
+            <div class="d-flex gap-3">
+                <a href="/">Home</a>
+                <a href="/adminportal">Admin Portal</a>
+            </div>
+        </div>
+    </div>
+</footer>

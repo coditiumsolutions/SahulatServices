@@ -25,9 +25,10 @@ public class AccountController : Controller
     }
 
     /// <summary>
-    /// Displays the login page. Redirects authenticated users to the dashboard.
+    /// Displays the login page. Redirects authenticated users to the admin portal.
     /// </summary>
-    [HttpGet]
+    [HttpGet("/adminportal")]
+    [HttpGet("/Account/Login")]
     [AllowAnonymous]
     public IActionResult Login(string? returnUrl = null)
     {
@@ -42,8 +43,8 @@ public class AccountController : Controller
     /// <summary>
     /// Processes login credentials and signs the user in via ASP.NET Identity.
     /// </summary>
-    [HttpPost]
-    [AllowAnonymous]
+    [HttpPost("/adminportal")]
+    [HttpPost("/Account/Login")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Login(LoginViewModel model, CancellationToken cancellationToken)
     {
@@ -95,7 +96,7 @@ public class AccountController : Controller
     {
         await _signInManager.SignOutAsync();
         _logger.LogInformation("User logged out.");
-        return RedirectToAction(nameof(Login));
+        return Redirect("/adminportal");
     }
 
     private IActionResult RedirectToLocal(string? returnUrl)
@@ -105,6 +106,6 @@ public class AccountController : Controller
             return Redirect(returnUrl);
         }
 
-        return RedirectToAction("Dashboard", "Admin");
+        return Redirect("/ServiceCategories");
     }
 }

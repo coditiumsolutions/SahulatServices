@@ -1,0 +1,84 @@
+@{
+    var path = (Context.Request.Path.Value ?? "/").ToLowerInvariant();
+    string TabActive(string segment) =>
+        segment == "home" && (path == "/" || path == "/home" || path == "/home/index")
+            ? "active"
+            : path.Contains(segment, StringComparison.OrdinalIgnoreCase) ? "active" : "";
+}
+
+<header class="hs-topbar-primary">
+    <div class="container-fluid px-3 px-lg-4">
+        <div class="d-flex align-items-center justify-content-between py-2 gap-2">
+            <a class="hs-brand" href="/">
+                <span class="hs-brand-main">Sahulat</span>
+                <span class="hs-brand-sub">Ghar Tak</span>
+            </a>
+
+            <button class="hs-mobile-toggle d-lg-none" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#hsPublicUtilityNav" aria-controls="hsPublicUtilityNav" aria-expanded="false"
+                    aria-label="Toggle utility menu">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+
+            <div class="collapse d-lg-flex" id="hsPublicUtilityNav">
+                <ul class="hs-utility-nav ms-lg-auto">
+                    <li>
+                        <span class="hs-utility-link d-none d-xl-inline-flex">
+                            <i class="fa-regular fa-calendar"></i>
+                            @DateTime.Now.ToString("dddd, dd MMM yyyy")
+                        </span>
+                    </li>
+                    <li>
+                        <a class="hs-utility-link" href="tel:+923001234567">
+                            Call Us<i class="fa-solid fa-chevron-right"></i>
+                        </a>
+                    </li>
+                    <li>
+                        <a class="hs-utility-link" href="/#contact">
+                            Contact<i class="fa-solid fa-chevron-right"></i>
+                        </a>
+                    </li>
+                    <li>
+                        <a class="hs-utility-link" href="/adminportal">
+                            Admin Portal<i class="fa-solid fa-chevron-right"></i>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</header>
+
+<nav class="hs-topbar-secondary">
+    <div class="container-fluid px-0 px-lg-3">
+        <button class="hs-mobile-toggle d-lg-none w-100 text-start px-3 py-2 border-0"
+                type="button" data-bs-toggle="collapse" data-bs-target="#hsPublicTabNav"
+                aria-controls="hsPublicTabNav" aria-expanded="false" aria-label="Toggle navigation"
+                style="background: linear-gradient(180deg, #f0f0f0 0%, #dcdcdc 100%); color: var(--hs-tab-text); font-size: 0.75rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;">
+            <i class="fa-solid fa-bars me-2"></i>Menu
+        </button>
+
+        <div class="collapse d-lg-block" id="hsPublicTabNav">
+            <ul class="hs-tab-nav">
+                <li>
+                    <a class="hs-tab-link @TabActive("home")" href="/">Home</a>
+                </li>
+                <li>
+                    <a class="hs-tab-link @TabActive("services")" href="/#services">Services</a>
+                </li>
+                <li>
+                    <a class="hs-tab-link @TabActive("providers")" href="/#providers">Providers</a>
+                </li>
+                <li>
+                    <a class="hs-tab-link @TabActive("how-it-works")" href="/#how-it-works">How It Works</a>
+                </li>
+                <li>
+                    <a class="hs-tab-link @TabActive("contact")" href="/#contact">Contact</a>
+                </li>
+                <li>
+                    <a class="hs-tab-link @(path.StartsWith("/adminportal") ? "active" : "")" href="/adminportal">Admin Portal</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>

@@ -17,10 +17,10 @@ public class HomeController : Controller
     {
         if (User?.Identity?.IsAuthenticated == true)
         {
-            return RedirectToAction("Dashboard", "Admin");
+            return Redirect("/ServiceCategories");
         }
 
-        return RedirectToAction("Login", "Account");
+        return View();
     }
 
     public IActionResult Privacy()

@@ -1,0 +1,204 @@
+.public-home {
+    font-family: "Open Sans", system-ui, sans-serif;
+    color: #1a2b42;
+}
+
+.public-hero {
+    background: linear-gradient(135deg, #003366 0%, #00509e 55%, #0077c8 100%);
+    color: #fff;
+    padding: 4rem 0 5rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.public-hero::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.12), transparent 45%);
+    pointer-events: none;
+}
+
+.public-hero-content {
+    position: relative;
+    z-index: 1;
+}
+
+.public-hero h1 {
+    font-family: "Libre Baskerville", Georgia, serif;
+    font-size: clamp(2rem, 4vw, 3.2rem);
+    font-weight: 700;
+    line-height: 1.15;
+    margin-bottom: 1rem;
+}
+
+.public-hero .lead {
+    font-size: 1.1rem;
+    max-width: 640px;
+    opacity: 0.95;
+}
+
+.public-hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 1.75rem;
+}
+
+.public-btn-light {
+    background: #fff;
+    color: var(--hs-navy);
+    font-weight: 700;
+    border: none;
+    padding: 0.7rem 1.4rem;
+    border-radius: 8px;
+    text-decoration: none;
+}
+
+.public-btn-light:hover {
+    background: #f0f4f8;
+    color: var(--hs-navy);
+}
+
+.public-btn-outline {
+    border: 2px solid rgba(255, 255, 255, 0.85);
+    color: #fff;
+    font-weight: 700;
+    padding: 0.65rem 1.35rem;
+    border-radius: 8px;
+    text-decoration: none;
+}
+
+.public-btn-outline:hover {
+    background: rgba(255, 255, 255, 0.12);
+    color: #fff;
+}
+
+.public-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 1rem;
+    margin-top: 2.5rem;
+}
+
+.public-stat-card {
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    padding: 1rem 1.1rem;
+}
+
+.public-stat-card strong {
+    display: block;
+    font-size: 1.5rem;
+    line-height: 1.2;
+}
+
+.public-section {
+    padding: 4rem 0;
+}
+
+.public-section-title {
+    font-family: "Libre Baskerville", Georgia, serif;
+    font-size: 2rem;
+    color: var(--hs-navy);
+    margin-bottom: 0.5rem;
+}
+
+.public-section-subtitle {
+    color: #5c6b7f;
+    max-width: 680px;
+    margin-bottom: 2rem;
+}
+
+.public-service-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 1.25rem;
+}
+
+.public-service-card {
+    background: #fff;
+    border-radius: 14px;
+    padding: 1.5rem 1.25rem;
+    box-shadow: 0 8px 24px rgba(18, 38, 63, 0.08);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    height: 100%;
+}
+
+.public-service-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 14px 32px rgba(18, 38, 63, 0.12);
+}
+
+.public-service-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: rgba(0, 51, 102, 0.08);
+    color: var(--hs-navy);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    margin-bottom: 1rem;
+}
+
+.public-steps {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1.5rem;
+}
+
+.public-step {
+    background: #fff;
+    border-radius: 14px;
+    padding: 1.5rem;
+    border: 1px solid #e4eaf2;
+}
+
+.public-step-num {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--hs-maroon);
+    color: #fff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    margin-bottom: 0.75rem;
+}
+
+.public-cta {
+    background: var(--hs-navy);
+    color: #fff;
+    border-radius: 16px;
+    padding: 2.5rem 2rem;
+    text-align: center;
+}
+
+.public-cta h2 {
+    font-family: "Libre Baskerville", Georgia, serif;
+    margin-bottom: 0.75rem;
+}
+
+.public-footer {
+    background: #0b1f33;
+    color: rgba(255, 255, 255, 0.8);
+    padding: 2rem 0;
+    font-size: 0.9rem;
+}
+
+.public-footer a {
+    color: #fff;
+    text-decoration: none;
+}
+
+.public-footer a:hover {
+    text-decoration: underline;
+}
+
+.public-bg-soft {
+    background: #f5f7fb;
+}
