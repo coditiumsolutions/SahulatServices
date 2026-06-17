@@ -1,0 +1,44 @@
+@model HomeServicesPortal.Models.ViewModels.ProviderAvailabilityDetailsVm
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "P-Availability Details";
+}
+
+<div class="mb-4">
+    <a asp-action="Index" class="text-decoration-none text-muted"><i class="fa-solid fa-arrow-left me-1"></i>Back to P-Availability</a>
+    <h2 class="mt-2 mb-0"><i class="fa-solid fa-eye me-2 text-primary"></i>P-Availability Details</h2>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-7">
+        <div class="card hs-card">
+            <div class="card-body p-4">
+                <dl class="row mb-0">
+                    <dt class="col-sm-4 text-muted">Provider</dt>
+                    <dd class="col-sm-8 fw-semibold">@Model.ProviderName</dd>
+                    <dt class="col-sm-4 text-muted">Status</dt>
+                    <dd class="col-sm-8">
+                        @if (Model.IsOnline == true)
+                        {
+                            <span class="badge bg-success">Online</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-secondary">Offline</span>
+                        }
+                    </dd>
+                    <dt class="col-sm-4 text-muted">Available From</dt>
+                    <dd class="col-sm-8">@(Model.AvailableFrom?.ToString("HH:mm") ?? "—")</dd>
+                    <dt class="col-sm-4 text-muted">Available To</dt>
+                    <dd class="col-sm-8">@(Model.AvailableTo?.ToString("HH:mm") ?? "—")</dd>
+                </dl>
+
+                <hr />
+                <div class="d-flex gap-2">
+                    <a asp-action="Edit" asp-route-id="@Model.Uid" class="btn btn-primary"><i class="fa-solid fa-pen me-1"></i>Edit</a>
+                    <a asp-action="Delete" asp-route-id="@Model.Uid" class="btn btn-outline-danger"><i class="fa-solid fa-trash me-1"></i>Delete</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

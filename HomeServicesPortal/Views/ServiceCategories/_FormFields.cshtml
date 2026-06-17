@@ -1,0 +1,18 @@
+@model HomeServicesPortal.Models.ViewModels.ServiceCategoryFormVm
+
+<div class="mb-3">
+    <label asp-for="CategoryName" class="form-label"></label>
+    <input asp-for="CategoryName" class="form-control" placeholder="Enter category name" />
+    <span asp-validation-for="CategoryName" class="text-danger small"></span>
+</div>
+
+<div class="mb-3">
+    <label asp-for="Description" class="form-label"></label>
+    <textarea asp-for="Description" class="form-control" rows="3" placeholder="Optional description"></textarea>
+    <span asp-validation-for="Description" class="text-danger small"></span>
+</div>
+
+<div class="form-check mb-2">
+    <input asp-for="IsActive" class="form-check-input" />
+    <label asp-for="IsActive" class="form-check-label"></label>
+</div>

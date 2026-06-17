@@ -1,0 +1,549 @@
+@using Microsoft.AspNetCore.Identity
+@inject SignInManager<IdentityUser> SignInManager
+@inject UserManager<IdentityUser> UserManager
+
+@{
+    var userName = User.Identity?.Name ?? "User";
+    var pageTitle = ViewData["Title"]?.ToString() ?? "Dashboard";
+    var path = (Context.Request.Path.Value ?? "/").ToLowerInvariant();
+
+    string TabClass(params string[] prefixes) =>
+        prefixes.Any(p => path.StartsWith(p, StringComparison.OrdinalIgnoreCase)) ? "active" : "";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@pageTitle - HomeServicesPortal</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&family=Open+Sans:wght@400;600;700&display=swap" />
+
+    <style>
+        :root {
+            --primary: #0D6EFD;
+            --success: #198754;
+            --danger: #DC3545;
+            --warning: #FFC107;
+            --hs-dark: #0b1220;
+            --hs-dark-hover: #14213D;
+            --hs-navy: #003366;
+            --hs-navy-dark: #002244;
+            --hs-maroon: #8B1A1A;
+            --hs-tab-text: #1a3a5c;
+            --topbar-primary-height: 68px;
+            --topbar-secondary-height: 38px;
+        }
+
+        body {
+            background: #f5f7fb;
+            margin: 0;
+            font-family: "Open Sans", system-ui, sans-serif;
+        }
+
+        /* ---- Tier 1: navy utility bar ---- */
+        .hs-topbar-primary {
+            background: var(--hs-navy);
+            color: #fff;
+            min-height: var(--topbar-primary-height);
+            border-bottom: 2px solid var(--hs-navy-dark);
+            position: sticky;
+            top: 0;
+            z-index: 1030;
+        }
+
+        .hs-brand {
+            display: flex;
+            align-items: baseline;
+            gap: 0.35rem;
+            text-decoration: none;
+            color: #fff;
+            line-height: 1;
+            padding: 0.5rem 0;
+        }
+
+        .hs-brand:hover {
+            color: #fff;
+            text-decoration: none;
+        }
+
+        .hs-brand-main {
+            font-family: "Libre Baskerville", Georgia, "Times New Roman", serif;
+            font-size: 2rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        .hs-brand-sub {
+            font-family: "Libre Baskerville", Georgia, "Times New Roman", serif;
+            font-size: 1.15rem;
+            font-weight: 400;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            opacity: 0.95;
+        }
+
+        .hs-utility-nav {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0;
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        .hs-utility-nav > li {
+            display: flex;
+            align-items: center;
+        }
+
+        .hs-utility-nav > li + li::before {
+            content: "";
+            width: 1px;
+            height: 14px;
+            background: rgba(255, 255, 255, 0.25);
+            margin: 0 0.15rem;
+        }
+
+        .hs-utility-link {
+            color: #fff;
+            text-decoration: none;
+            font-size: 0.8rem;
+            font-weight: 600;
+            padding: 0.35rem 0.65rem;
+            white-space: nowrap;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+        }
+
+        .hs-utility-link:hover {
+            color: #fff;
+            text-decoration: underline;
+        }
+
+        .hs-utility-link .fa-chevron-right {
+            font-size: 0.55rem;
+            opacity: 0.85;
+        }
+
+        .hs-utility-link--logout:hover {
+            color: #ffb4b4;
+        }
+
+        /* ---- Tier 2: gray tab bar ---- */
+        .hs-topbar-secondary {
+            background: linear-gradient(180deg, #ececec 0%, #d4d4d4 100%);
+            min-height: var(--topbar-secondary-height);
+            border-bottom: 1px solid #a8a8a8;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+            position: sticky;
+            top: var(--topbar-primary-height);
+            z-index: 1020;
+        }
+
+        .hs-tab-nav {
+            display: flex;
+            align-items: stretch;
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            flex-wrap: wrap;
+        }
+
+        .hs-tab-nav > li {
+            display: flex;
+            align-items: stretch;
+            border-right: 1px solid #b5b5b5;
+        }
+
+        .hs-tab-nav > li:first-child {
+            border-left: 1px solid #b5b5b5;
+        }
+
+        .hs-tab-link {
+            display: inline-flex;
+            align-items: center;
+            padding: 0 1.1rem;
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: var(--hs-tab-text);
+            text-decoration: none;
+            background: linear-gradient(180deg, #f0f0f0 0%, #dcdcdc 100%);
+            border: none;
+            white-space: nowrap;
+            transition: color 0.12s ease, background 0.12s ease;
+            height: var(--topbar-secondary-height);
+        }
+
+        .hs-tab-link:hover,
+        .hs-tab-link:focus {
+            color: var(--hs-maroon);
+            background: linear-gradient(180deg, #f8f8f8 0%, #e6e6e6 100%);
+        }
+
+        .hs-tab-link.active {
+            color: var(--hs-maroon);
+            background: linear-gradient(180deg, #fff 0%, #ededed 100%);
+            box-shadow: inset 0 2px 0 var(--hs-maroon);
+        }
+
+        .hs-tab-dropdown .dropdown-menu {
+            border: 1px solid #b5b5b5;
+            border-radius: 0 0 4px 4px;
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+            font-size: 0.82rem;
+            margin-top: 0;
+            padding: 0.25rem 0;
+        }
+
+        .hs-tab-dropdown .dropdown-item {
+            padding: 0.45rem 1rem;
+            font-weight: 600;
+            color: var(--hs-tab-text);
+        }
+
+        .hs-tab-dropdown .dropdown-item:hover {
+            background: #f0f4f8;
+            color: var(--hs-maroon);
+        }
+
+        .hs-tab-dropdown .dropdown-item.active {
+            background: rgba(139, 26, 26, 0.08);
+            color: var(--hs-maroon);
+        }
+
+        .hs-mobile-toggle {
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.35);
+            background: transparent;
+            padding: 0.35rem 0.6rem;
+            border-radius: 4px;
+        }
+
+        /* ---- Sidebar ---- */
+        .hs-sidebar {
+            background: var(--hs-dark);
+            min-height: calc(100vh - var(--topbar-primary-height) - var(--topbar-secondary-height));
+            position: sticky;
+            top: calc(var(--topbar-primary-height) + var(--topbar-secondary-height));
+            align-self: flex-start;
+        }
+
+        .hs-sidebar .hs-nav-link {
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            padding: 0.6rem 0.9rem;
+            display: flex;
+            gap: 0.6rem;
+            align-items: center;
+            border-radius: 10px;
+            transition: background-color 0.15s ease;
+        }
+
+        .hs-sidebar .hs-nav-link:hover {
+            background: rgba(13, 110, 253, 0.15);
+            color: #fff;
+        }
+
+        .hs-sidebar .hs-nav-section-title {
+            color: rgba(255, 255, 255, 0.55);
+            font-size: 0.85rem;
+            margin: 1.1rem 0 0.4rem;
+            padding: 0 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .hs-card {
+            border: 0;
+            border-radius: 14px;
+            box-shadow: 0 10px 22px rgba(18, 38, 63, 0.08);
+            transition: transform .15s ease, box-shadow .15s ease;
+        }
+
+        .hs-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 14px 28px rgba(18, 38, 63, 0.13);
+        }
+
+        .hs-tab-dropdown .dropdown-toggle::after {
+            display: none;
+        }
+
+        .hs-tab-dropdown:hover > .dropdown-menu {
+            display: block;
+        }
+
+        @@media (max-width: 991.98px) {
+            .hs-brand-main {
+                font-size: 1.45rem;
+            }
+
+            .hs-brand-sub {
+                font-size: 0.9rem;
+            }
+
+            .hs-topbar-secondary .container-fluid {
+                padding: 0;
+            }
+
+            .hs-tab-nav {
+                flex-direction: column;
+                width: 100%;
+            }
+
+            .hs-tab-nav > li {
+                border-right: none;
+                border-bottom: 1px solid #b5b5b5;
+            }
+
+            .hs-tab-nav > li:first-child {
+                border-left: none;
+            }
+
+            .hs-tab-link {
+                width: 100%;
+                height: auto;
+                padding: 0.65rem 1rem;
+            }
+
+            .hs-sidebar {
+                min-height: auto;
+                position: relative;
+                top: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Tier 1: Navy utility bar (brand + quick links) -->
+    <header class="hs-topbar-primary">
+        <div class="container-fluid px-3 px-lg-4">
+            <div class="d-flex align-items-center justify-content-between py-2 gap-2">
+                <a class="hs-brand" href="/Admin/Dashboard">
+                    <span class="hs-brand-main">Sahulat</span>
+                    <span class="hs-brand-sub">Ghar Tak</span>
+                </a>
+
+                <button class="hs-mobile-toggle d-lg-none" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#hsUtilityNav" aria-controls="hsUtilityNav" aria-expanded="false"
+                        aria-label="Toggle utility menu">
+                    <i class="fa-solid fa-bars"></i>
+                </button>
+
+                <div class="collapse d-lg-flex" id="hsUtilityNav">
+                    <ul class="hs-utility-nav ms-lg-auto">
+                        <li>
+                            <span class="hs-utility-link d-none d-xl-inline-flex">
+                                <i class="fa-regular fa-calendar"></i>
+                                @DateTime.Now.ToString("dddd, dd MMM yyyy")
+                            </span>
+                        </li>
+                        <li>
+                            <span class="hs-utility-link">
+                                <i class="fa-regular fa-user"></i>@userName
+                                <i class="fa-solid fa-chevron-right"></i>
+                            </span>
+                        </li>
+                        <li>
+                            <a class="hs-utility-link" asp-area="Identity" asp-page="/Account/Manage/Index">
+                                Profile<i class="fa-solid fa-chevron-right"></i>
+                            </a>
+                        </li>
+                        <li>
+                            <a class="hs-utility-link" href="/Administration/Users">
+                                Users<i class="fa-solid fa-chevron-right"></i>
+                            </a>
+                        </li>
+                        <li>
+                            <form class="m-0" asp-controller="Account" asp-action="Logout" method="post">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="hs-utility-link hs-utility-link--logout">
+                                    Logout<i class="fa-solid fa-chevron-right"></i>
+                                </button>
+                            </form>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Tier 2: Gray tab navigation -->
+    <nav class="hs-topbar-secondary">
+        <div class="container-fluid px-0 px-lg-3">
+            <button class="hs-mobile-toggle d-lg-none w-100 text-start px-3 py-2 border-0"
+                    type="button" data-bs-toggle="collapse" data-bs-target="#hsTabNav"
+                    aria-controls="hsTabNav" aria-expanded="false" aria-label="Toggle navigation"
+                    style="background: linear-gradient(180deg, #f0f0f0 0%, #dcdcdc 100%); color: var(--hs-tab-text); font-size: 0.75rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;">
+                <i class="fa-solid fa-bars me-2"></i>Menu
+            </button>
+
+            <div class="collapse d-lg-block" id="hsTabNav">
+                <ul class="hs-tab-nav">
+                    <li>
+                        <a class="hs-tab-link @TabClass("/admin/dashboard")" href="/Admin/Dashboard">Dashboard</a>
+                    </li>
+                    <li class="dropdown hs-tab-dropdown">
+                        <a class="hs-tab-link dropdown-toggle @TabClass("/servicecategories", "/serviceproviders", "/providerlocations", "/provideravailability", "/providerdocuments", "/customers")"
+                           href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Masters</a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item @(path.StartsWith("/servicecategories") ? "active" : "")" href="/ServiceCategories">S-Categories</a></li>
+                            <li><a class="dropdown-item @(path.StartsWith("/serviceproviders") ? "active" : "")" href="/ServiceProviders">S-Provider</a></li>
+                            <li><a class="dropdown-item @(path.StartsWith("/providerlocations") ? "active" : "")" href="/ProviderLocations">P-Locations</a></li>
+                            <li><a class="dropdown-item @(path.StartsWith("/provideravailability") ? "active" : "")" href="/ProviderAvailability">P-Availability</a></li>
+                            <li><a class="dropdown-item @(path.StartsWith("/providerdocuments") ? "active" : "")" href="/ProviderDocuments">Provider Documents</a></li>
+                            <li><a class="dropdown-item @(path.StartsWith("/customers") ? "active" : "")" href="/Customers">Customers</a></li>
+                        </ul>
+                    </li>
+                    <li class="dropdown hs-tab-dropdown">
+                        <a class="hs-tab-link dropdown-toggle @TabClass("/servicerequests", "/providerquotes", "/bookings")"
+                           href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Operations</a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item @(path.StartsWith("/servicerequests") ? "active" : "")" href="/ServiceRequests">Service Requests</a></li>
+                            <li><a class="dropdown-item @(path.StartsWith("/providerquotes") ? "active" : "")" href="/ProviderQuotes">Provider Quotes</a></li>
+                            <li><a class="dropdown-item @(path.StartsWith("/bookings") && !path.StartsWith("/bookingtracking") ? "active" : "")" href="/Bookings">Bookings</a></li>
+                        </ul>
+                    </li>
+                    <li class="dropdown hs-tab-dropdown">
+                        <a class="hs-tab-link dropdown-toggle @TabClass("/bookingtracking")"
+                           href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Tracking</a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item @(path.StartsWith("/bookingtracking") ? "active" : "")" href="/BookingTracking">Booking Tracking</a></li>
+                        </ul>
+                    </li>
+                    <li>
+                        <a class="hs-tab-link @TabClass("/payments")" href="/Payments">Finance</a>
+                    </li>
+                    <li class="dropdown hs-tab-dropdown">
+                        <a class="hs-tab-link dropdown-toggle @TabClass("/reports")"
+                           href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Reports</a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="/Reports/Provider">Provider Report</a></li>
+                            <li><a class="dropdown-item" href="/Reports/Customer">Customer Report</a></li>
+                            <li><a class="dropdown-item" href="/Reports/Bookings">Booking Report</a></li>
+                            <li><a class="dropdown-item" href="/Reports/Payments">Payment Report</a></li>
+                            <li><a class="dropdown-item" href="/Reports/ServiceRequests">Service Request Report</a></li>
+                        </ul>
+                    </li>
+                    <li class="dropdown hs-tab-dropdown">
+                        <a class="hs-tab-link dropdown-toggle @TabClass("/administration")"
+                           href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Administration</a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item @(path.StartsWith("/administration/users") ? "active" : "")" href="/Administration/Users">Users</a></li>
+                            <li><a class="dropdown-item @(path.StartsWith("/administration/roles") ? "active" : "")" href="/Administration/Roles">Roles</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main layout: sidebar + content -->
+    <div class="container-fluid">
+        <div class="row">
+            <aside class="col-12 col-lg-2 hs-sidebar d-none d-lg-block">
+                <div class="px-2 pb-4 pt-3">
+                    <a class="hs-nav-link" href="/Admin/Dashboard">
+                        <i class="fa-solid fa-gauge"></i> Dashboard
+                    </a>
+
+                    <a class="hs-nav-link" href="/ServiceCategories">
+                        <i class="fa-solid fa-layer-group"></i> S-Categories
+                    </a>
+                    <a class="hs-nav-link" href="/ServiceProviders">
+                        <i class="fa-solid fa-user-tie"></i> S-Provider
+                    </a>
+                    <a class="hs-nav-link" href="/ProviderLocations">
+                        <i class="fa-solid fa-location-dot"></i> P-Locations
+                    </a>
+                    <a class="hs-nav-link" href="/ProviderAvailability">
+                        <i class="fa-solid fa-clock"></i> P-Availability
+                    </a>
+                    <a class="hs-nav-link" href="/ProviderDocuments">
+                        <i class="fa-solid fa-file-signature"></i> Provider Documents
+                    </a>
+                    <a class="hs-nav-link" href="/Customers">
+                        <i class="fa-solid fa-users"></i> Customers
+                    </a>
+
+                    <div class="hs-nav-section-title">Operations</div>
+                    <a class="hs-nav-link" href="/ServiceRequests">
+                        <i class="fa-solid fa-list-check"></i> Service Requests
+                    </a>
+                    <a class="hs-nav-link" href="/ProviderQuotes">
+                        <i class="fa-solid fa-tags"></i> Provider Quotes
+                    </a>
+                    <a class="hs-nav-link" href="/Bookings">
+                        <i class="fa-solid fa-clipboard-list"></i> Bookings
+                    </a>
+
+                    <div class="hs-nav-section-title">Tracking</div>
+                    <a class="hs-nav-link" href="/BookingTracking">
+                        <i class="fa-solid fa-diagram-project"></i> Booking Tracking
+                    </a>
+
+                    <div class="hs-nav-section-title">Finance</div>
+                    <a class="hs-nav-link" href="/Payments">
+                        <i class="fa-solid fa-money-bill-wave"></i> Payments
+                    </a>
+
+                    <div class="hs-nav-section-title">Feedback</div>
+                    <a class="hs-nav-link" href="/Reviews">
+                        <i class="fa-solid fa-star"></i> Reviews
+                    </a>
+
+                    <div class="hs-nav-section-title">Reports</div>
+                    <a class="hs-nav-link" href="/Reports/Provider">
+                        <i class="fa-solid fa-chart-column"></i> Provider Report
+                    </a>
+                    <a class="hs-nav-link" href="/Reports/Customer">
+                        <i class="fa-solid fa-chart-pie"></i> Customer Report
+                    </a>
+                    <a class="hs-nav-link" href="/Reports/Bookings">
+                        <i class="fa-solid fa-chart-line"></i> Booking Report
+                    </a>
+                    <a class="hs-nav-link" href="/Reports/Payments">
+                        <i class="fa-solid fa-chart-bar"></i> Payment Report
+                    </a>
+                    <a class="hs-nav-link" href="/Reports/ServiceRequests">
+                        <i class="fa-solid fa-chart-area"></i> Service Request Report
+                    </a>
+
+                    <div class="hs-nav-section-title">Administration</div>
+                    <a class="hs-nav-link" href="/Administration/Users">
+                        <i class="fa-solid fa-user-shield"></i> Users
+                    </a>
+                    <a class="hs-nav-link" href="/Administration/Roles">
+                        <i class="fa-solid fa-key"></i> Roles
+                    </a>
+                </div>
+            </aside>
+
+            <main class="col-12 col-lg-10">
+                <div class="p-3">
+                    @RenderBody()
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

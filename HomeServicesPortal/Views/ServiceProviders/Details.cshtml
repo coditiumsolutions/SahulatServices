@@ -1,0 +1,69 @@
+@model HomeServicesPortal.Models.ViewModels.ServiceProviderDetailsVm
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "S-Provider Details";
+}
+
+<div class="mb-4">
+    <a asp-action="Index" class="text-decoration-none text-muted"><i class="fa-solid fa-arrow-left me-1"></i>Back to S-Providers</a>
+    <h2 class="mt-2 mb-0"><i class="fa-solid fa-eye me-2 text-primary"></i>S-Provider Details</h2>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card hs-card">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-start gap-3 mb-4">
+                    @if (!string.IsNullOrWhiteSpace(Model.ProfilePicturePath))
+                    {
+                        <img src="@Model.ProfilePicturePath" alt="@Model.FullName" class="rounded-circle" width="80" height="80" style="object-fit:cover" />
+                    }
+                    else
+                    {
+                        <div class="rounded-circle bg-light d-flex align-items-center justify-content-center" style="width:80px;height:80px">
+                            <i class="fa-solid fa-user fa-2x text-muted"></i>
+                        </div>
+                    }
+                    <div>
+                        <h4 class="mb-1">@Model.FullName</h4>
+                        <span class="badge bg-primary">@Model.CategoryName</span>
+                    </div>
+                </div>
+
+                <dl class="row mb-0">
+                    <dt class="col-sm-4 text-muted">Mobile No</dt>
+                    <dd class="col-sm-8">@(Model.MobileNo ?? "—")</dd>
+                    <dt class="col-sm-4 text-muted">CNIC</dt>
+                    <dd class="col-sm-8">@(Model.Cnic ?? "—")</dd>
+                    <dt class="col-sm-4 text-muted">Experience Years</dt>
+                    <dd class="col-sm-8">@(Model.ExperienceYears?.ToString() ?? "0")</dd>
+                    <dt class="col-sm-4 text-muted">Rating</dt>
+                    <dd class="col-sm-8">
+                        @if (Model.Rating.HasValue)
+                        {
+                            <span class="text-warning"><i class="fa-solid fa-star"></i></span>
+                            @Model.Rating.Value.ToString("0.0")
+                        }
+                        else { <span>—</span> }
+                    </dd>
+                    <dt class="col-sm-4 text-muted">Verified</dt>
+                    <dd class="col-sm-8">
+                        <span class="badge bg-@(Model.IsVerified ? "success" : "secondary")">@(Model.IsVerified ? "Yes" : "No")</span>
+                    </dd>
+                    <dt class="col-sm-4 text-muted">Status</dt>
+                    <dd class="col-sm-8">
+                        <span class="badge bg-@(Model.IsActive ? "success" : "secondary")">@(Model.IsActive ? "Active" : "Inactive")</span>
+                    </dd>
+                    <dt class="col-sm-4 text-muted">Created On</dt>
+                    <dd class="col-sm-8">@(Model.CreatedOn?.ToString("dd MMM yyyy HH:mm") ?? "—")</dd>
+                </dl>
+
+                <hr />
+                <div class="d-flex gap-2">
+                    <a asp-action="Edit" asp-route-id="@Model.Uid" class="btn btn-primary"><i class="fa-solid fa-pen me-1"></i>Edit</a>
+                    <a asp-action="Delete" asp-route-id="@Model.Uid" class="btn btn-outline-danger"><i class="fa-solid fa-trash me-1"></i>Delete</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

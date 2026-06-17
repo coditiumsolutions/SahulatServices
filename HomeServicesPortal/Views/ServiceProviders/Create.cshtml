@@ -1,0 +1,32 @@
+@model HomeServicesPortal.Models.ViewModels.ServiceProviderFormVm
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Add S-Provider";
+}
+
+<div class="mb-4">
+    <a asp-action="Index" class="text-decoration-none text-muted"><i class="fa-solid fa-arrow-left me-1"></i>Back to S-Providers</a>
+    <h2 class="mt-2 mb-0"><i class="fa-solid fa-user-plus me-2 text-primary"></i>Add S-Provider</h2>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-9">
+        <div class="card hs-card">
+            <div class="card-body p-4">
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+                <form asp-action="Create" method="post" enctype="multipart/form-data">
+                    @Html.AntiForgeryToken()
+                    <partial name="_FormFields" model="Model" />
+                    <div class="d-flex gap-2 mt-4">
+                        <button type="submit" class="btn btn-primary"><i class="fa-solid fa-check me-1"></i>Save</button>
+                        <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

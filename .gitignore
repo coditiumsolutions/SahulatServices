@@ -1,0 +1,22 @@
+# Secrets and local config
+.env
+.env.*
+!.env.example
+**/appsettings.json
+!**/appsettings.example.json
+*.local.json
+**/secrets.json
+**/credentials.json
+
+# .NET
+bin/
+obj/
+*.user
+*.suo
+.vs/
+*.db
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp

@@ -1,0 +1,69 @@
+@model HomeServicesPortal.Models.ViewModels.ServiceProviderFormVm
+
+<div class="row">
+    <div class="col-md-8 mb-3">
+        <label asp-for="FullName" class="form-label"></label>
+        <input asp-for="FullName" class="form-control" placeholder="Provider full name" />
+        <span asp-validation-for="FullName" class="text-danger small"></span>
+    </div>
+    <div class="col-md-4 mb-3">
+        <label asp-for="CategoryUid" class="form-label"></label>
+        <select asp-for="CategoryUid" class="form-select" asp-items="Model.Categories">
+            <option value="">-- Select S-Category --</option>
+        </select>
+        <span asp-validation-for="CategoryUid" class="text-danger small"></span>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6 mb-3">
+        <label asp-for="MobileNo" class="form-label"></label>
+        <input asp-for="MobileNo" class="form-control" placeholder="03xx-xxxxxxx" />
+        <span asp-validation-for="MobileNo" class="text-danger small"></span>
+    </div>
+    <div class="col-md-6 mb-3">
+        <label asp-for="Cnic" class="form-label"></label>
+        <input asp-for="Cnic" class="form-control" placeholder="xxxxx-xxxxxxx-x" />
+        <span asp-validation-for="Cnic" class="text-danger small"></span>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-4 mb-3">
+        <label asp-for="ExperienceYears" class="form-label"></label>
+        <input asp-for="ExperienceYears" class="form-control" type="number" min="0" max="60" />
+        <span asp-validation-for="ExperienceYears" class="text-danger small"></span>
+    </div>
+    <div class="col-md-4 mb-3">
+        <label asp-for="Rating" class="form-label"></label>
+        <input asp-for="Rating" class="form-control" type="number" min="0" max="5" step="0.1" />
+        <span asp-validation-for="Rating" class="text-danger small"></span>
+    </div>
+    <div class="col-md-4 mb-3">
+        <label asp-for="ProfilePicture" class="form-label"></label>
+        <input asp-for="ProfilePicture" class="form-control" type="file" accept=".jpg,.jpeg,.png,.webp" />
+        @if (!string.IsNullOrWhiteSpace(Model.ExistingProfilePicturePath))
+        {
+            <div class="mt-2">
+                <img src="@Model.ExistingProfilePicturePath" alt="Current profile" class="rounded" width="80" height="80" style="object-fit:cover" />
+                <div class="form-text">Current profile picture</div>
+            </div>
+        }
+        <span asp-validation-for="ProfilePicture" class="text-danger small"></span>
+    </div>
+</div>
+
+<div class="row mb-2">
+    <div class="col-md-6">
+        <div class="form-check">
+            <input asp-for="IsVerified" class="form-check-input" />
+            <label asp-for="IsVerified" class="form-check-label"></label>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="form-check">
+            <input asp-for="IsActive" class="form-check-input" />
+            <label asp-for="IsActive" class="form-check-label"></label>
+        </div>
+    </div>
+</div>

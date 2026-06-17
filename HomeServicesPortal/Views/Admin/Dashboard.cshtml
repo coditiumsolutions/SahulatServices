@@ -1,0 +1,333 @@
+@model HomeServicesPortal.Models.ViewModels.DashboardVm
+
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Dashboard";
+}
+
+<div class="d-flex align-items-center justify-content-between mb-3">
+    <h2 class="mb-0">
+        <i class="fa-solid fa-gauge me-2" style="color: #0D6EFD"></i>Dashboard Overview
+    </h2>
+    <div class="text-muted">
+        <i class="fa-regular fa-calendar me-1"></i>@DateTime.Now.ToString("dd MMM yyyy")
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-12 col-md-6 col-xl-3">
+        <div class="card hs-card h-100">
+            <div class="card-body">
+                <div class="text-muted small">Total Categories</div>
+                <div class="fs-3 fw-bold">@Model.TotalCategories</div>
+                <div class="text-muted small"><i class="fa-solid fa-layer-group text-primary me-2"></i>Service Categories</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-md-6 col-xl-3">
+        <div class="card hs-card h-100">
+            <div class="card-body">
+                <div class="text-muted small">Total Providers</div>
+                <div class="fs-3 fw-bold">@Model.TotalProviders</div>
+                <div class="text-muted small"><i class="fa-solid fa-user-tie text-primary me-2"></i>Registered Providers</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-md-6 col-xl-3">
+        <div class="card hs-card h-100">
+            <div class="card-body">
+                <div class="text-muted small">Online Providers</div>
+                <div class="fs-3 fw-bold">@Model.OnlineProviders</div>
+                <div class="text-muted small"><i class="fa-solid fa-signal text-success me-2"></i>Available Now</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-md-6 col-xl-3">
+        <div class="card hs-card h-100">
+            <div class="card-body">
+                <div class="text-muted small">Total Customers</div>
+                <div class="fs-3 fw-bold">@Model.TotalCustomers</div>
+                <div class="text-muted small"><i class="fa-solid fa-users text-primary me-2"></i>Active Customers</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mt-1">
+    <div class="col-12 col-md-6 col-xl-3">
+        <div class="card hs-card h-100">
+            <div class="card-body">
+                <div class="text-muted small">Today's Requests</div>
+                <div class="fs-3 fw-bold">@Model.TodaysRequests</div>
+                <div class="text-muted small"><i class="fa-solid fa-list-check text-warning me-2"></i>Service Requests</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-md-6 col-xl-3">
+        <div class="card hs-card h-100">
+            <div class="card-body">
+                <div class="text-muted small">Today's Bookings</div>
+                <div class="fs-3 fw-bold">@Model.TodaysBookings</div>
+                <div class="text-muted small"><i class="fa-solid fa-clipboard-list text-primary me-2"></i>Bookings</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-md-6 col-xl-3">
+        <div class="card hs-card h-100">
+            <div class="card-body">
+                <div class="text-muted small">Pending Bookings</div>
+                <div class="fs-3 fw-bold">@Model.PendingBookings</div>
+                <div class="text-muted small"><i class="fa-solid fa-hourglass-half text-warning me-2"></i>In Progress</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-md-6 col-xl-3">
+        <div class="card hs-card h-100">
+            <div class="card-body">
+                <div class="text-muted small">Completed Bookings</div>
+                <div class="fs-3 fw-bold">@Model.CompletedBookings</div>
+                <div class="text-muted small"><i class="fa-solid fa-circle-check text-success me-2"></i>Done Jobs</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mt-1">
+    <div class="col-12 col-md-6 col-xl-4">
+        <div class="card hs-card h-100">
+            <div class="card-body">
+                <div class="text-muted small">Total Revenue</div>
+                <div class="fs-3 fw-bold">@Model.TotalRevenue.ToString("0.00")</div>
+                <div class="text-muted small"><i class="fa-solid fa-money-bill-wave text-success me-2"></i>Completed Earnings</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-md-6 col-xl-4">
+        <div class="card hs-card h-100">
+            <div class="card-body">
+                <div class="text-muted small">Average Rating</div>
+                <div class="fs-3 fw-bold">@Model.AverageRating.ToString("0.00")</div>
+                <div class="text-muted small"><i class="fa-solid fa-star text-warning me-2"></i>From Reviews</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mt-2">
+    <div class="col-12 col-lg-6">
+        <div class="card hs-card">
+            <div class="card-body">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <h5 class="mb-0">Booking Status</h5>
+                    <span class="text-muted small">Distribution</span>
+                </div>
+                <canvas id="bookingStatusChart" height="120"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-lg-6">
+        <div class="card hs-card">
+            <div class="card-body">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <h5 class="mb-0">Monthly Revenue</h5>
+                    <span class="text-muted small">Last 6 months</span>
+                </div>
+                <canvas id="monthlyRevenueChart" height="120"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mt-2">
+    <div class="col-12 col-lg-6">
+        <div class="card hs-card">
+            <div class="card-body">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <h5 class="mb-0">Service Category Wise Requests</h5>
+                    <span class="text-muted small">Top categories</span>
+                </div>
+                <canvas id="categoryWiseRequestsChart" height="120"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-lg-6">
+        <div class="card hs-card">
+            <div class="card-body">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <h5 class="mb-0">Provider Performance</h5>
+                    <span class="text-muted small">Completed bookings</span>
+                </div>
+                <canvas id="providerPerformanceChart" height="120"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mt-2">
+    <div class="col-12 col-lg-4">
+        <div class="card hs-card">
+            <div class="card-body">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <h5 class="mb-0">Latest Requests</h5>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Customer</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var r in Model.LatestRequests)
+                            {
+                                <tr>
+                                    <td>@r.CustomerName</td>
+                                    <td>
+                                        <span class="badge bg-secondary">@r.Status</span>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-lg-4">
+        <div class="card hs-card">
+            <div class="card-body">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <h5 class="mb-0">Latest Bookings</h5>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Provider</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var b in Model.LatestBookings)
+                            {
+                                <tr>
+                                    <td>@b.ProviderName</td>
+                                    <td>
+                                        <span class="badge bg-info text-dark">@b.Status</span>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-lg-4">
+        <div class="card hs-card">
+            <div class="card-body">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <h5 class="mb-0">Latest Payments</h5>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Method</th>
+                                <th>Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var p in Model.LatestPayments)
+                            {
+                                <tr>
+                                    <td>@p.PaymentMethod</td>
+                                    <td>@(p.Amount?.ToString("0.00"))</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+
+    <script>
+        const bookingStatusLabels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.BookingStatusChart.Select(x => x.Label)));
+        const bookingStatusValues = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.BookingStatusChart.Select(x => x.Value)));
+
+        new Chart(document.getElementById('bookingStatusChart'), {
+            type: 'doughnut',
+            data: {
+                labels: bookingStatusLabels,
+                datasets: [{
+                    data: bookingStatusValues,
+                    backgroundColor: ['#0D6EFD', '#198754', '#DC3545', '#FFC107', '#6C757D']
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { position: 'bottom' }
+                }
+            }
+        });
+
+        const monthlyRevenueLabels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.MonthlyRevenueChart.Select(x => x.MonthLabel)));
+        const monthlyRevenueValues = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.MonthlyRevenueChart.Select(x => x.Value)));
+
+        new Chart(document.getElementById('monthlyRevenueChart'), {
+            type: 'bar',
+            data: {
+                labels: monthlyRevenueLabels,
+                datasets: [{
+                    label: 'Revenue',
+                    data: monthlyRevenueValues,
+                    backgroundColor: '#198754'
+                }]
+            },
+            options: { responsive: true }
+        });
+
+        const categoryWiseLabels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ServiceCategoryWiseRequestsChart.Select(x => x.CategoryName)));
+        const categoryWiseValues = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ServiceCategoryWiseRequestsChart.Select(x => x.Value)));
+
+        new Chart(document.getElementById('categoryWiseRequestsChart'), {
+            type: 'line',
+            data: {
+                labels: categoryWiseLabels,
+                datasets: [{
+                    label: 'Requests',
+                    data: categoryWiseValues,
+                    borderColor: '#0D6EFD',
+                    backgroundColor: 'rgba(13,110,253,0.15)'
+                }]
+            },
+            options: { responsive: true }
+        });
+
+        const providerPerfLabels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ProviderPerformanceChart.Select(x => x.ProviderName)));
+        const providerPerfValues = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ProviderPerformanceChart.Select(x => x.CompletedBookings)));
+
+        new Chart(document.getElementById('providerPerformanceChart'), {
+            type: 'bar',
+            data: {
+                labels: providerPerfLabels,
+                datasets: [{
+                    label: 'Completed Jobs',
+                    data: providerPerfValues,
+                    backgroundColor: '#0D6EFD'
+                }]
+            },
+            options: { responsive: true, plugins: { legend: { display: false } } }
+        });
+    </script>
+}
+

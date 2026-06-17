@@ -1,0 +1,83 @@
+@model HomeServicesPortal.Models.ViewModels.UserEditVm
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Edit User";
+}
+
+<div class="mb-4">
+    <a asp-action="Users" class="text-decoration-none text-muted">
+        <i class="fa-solid fa-arrow-left me-1"></i>Back to Users
+    </a>
+    <h2 class="mt-2 mb-1"><i class="fa-solid fa-pen me-2 text-primary"></i>Edit User</h2>
+    <p class="text-muted mb-0">Update account details or reset password</p>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-7">
+        <div class="card hs-card">
+            <div class="card-body p-4">
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+                <form asp-action="EditUser" asp-route-id="@Model.Id" method="post" novalidate>
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" asp-for="Id" />
+
+                    <div class="mb-3">
+                        <label asp-for="UserName" class="form-label"></label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fa-solid fa-user"></i></span>
+                            <input asp-for="UserName" class="form-control" />
+                        </div>
+                        <span asp-validation-for="UserName" class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Email" class="form-label"></label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fa-solid fa-envelope"></i></span>
+                            <input asp-for="Email" class="form-control" />
+                        </div>
+                        <span asp-validation-for="Email" class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Role" class="form-label"></label>
+                        <select asp-for="Role" class="form-select" asp-items="@(new SelectList(Model.AvailableRoles))"></select>
+                        <span asp-validation-for="Role" class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-3 form-check">
+                        <input asp-for="EmailConfirmed" class="form-check-input" />
+                        <label asp-for="EmailConfirmed" class="form-check-label"></label>
+                    </div>
+
+                    <hr class="my-4" />
+                    <p class="text-muted small mb-3">Leave password fields blank to keep the current password.</p>
+
+                    <div class="mb-3">
+                        <label asp-for="NewPassword" class="form-label"></label>
+                        <input asp-for="NewPassword" class="form-control" />
+                        <span asp-validation-for="NewPassword" class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-4">
+                        <label asp-for="ConfirmNewPassword" class="form-label"></label>
+                        <input asp-for="ConfirmNewPassword" class="form-control" />
+                        <span asp-validation-for="ConfirmNewPassword" class="text-danger small"></span>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg flex-grow-1">
+                            <i class="fa-solid fa-save me-1"></i>Save Changes
+                        </button>
+                        <a asp-action="Users" class="btn btn-outline-secondary btn-lg">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

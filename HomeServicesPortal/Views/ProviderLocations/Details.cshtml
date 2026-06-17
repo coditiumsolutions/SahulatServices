@@ -1,0 +1,47 @@
+@model HomeServicesPortal.Models.ViewModels.ProviderLocationDetailsVm
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Provider Location Details";
+    var mapsUrl = Model.Latitude.HasValue && Model.Longitude.HasValue
+        ? $"https://www.google.com/maps?q={Model.Latitude},{Model.Longitude}"
+        : null;
+}
+
+<div class="mb-4">
+    <a asp-action="Index" class="text-decoration-none text-muted"><i class="fa-solid fa-arrow-left me-1"></i>Back to P-Locations</a>
+    <h2 class="mt-2 mb-0"><i class="fa-solid fa-eye me-2 text-primary"></i>Provider Location Details</h2>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-7">
+        <div class="card hs-card">
+            <div class="card-body p-4">
+                <dl class="row mb-0">
+                    <dt class="col-sm-4 text-muted">Provider</dt>
+                    <dd class="col-sm-8 fw-semibold">@Model.ProviderName</dd>
+                    <dt class="col-sm-4 text-muted">Latitude</dt>
+                    <dd class="col-sm-8">@(Model.Latitude?.ToString("0.0000000") ?? "—")</dd>
+                    <dt class="col-sm-4 text-muted">Longitude</dt>
+                    <dd class="col-sm-8">@(Model.Longitude?.ToString("0.0000000") ?? "—")</dd>
+                    <dt class="col-sm-4 text-muted">Last Updated</dt>
+                    <dd class="col-sm-8">@(Model.LastUpdated?.ToString("dd MMM yyyy HH:mm") ?? "—")</dd>
+                </dl>
+
+                @if (mapsUrl != null)
+                {
+                    <div class="mt-3">
+                        <a href="@mapsUrl" target="_blank" rel="noopener" class="btn btn-outline-primary btn-sm">
+                            <i class="fa-solid fa-map-location-dot me-1"></i>View on Google Maps
+                        </a>
+                    </div>
+                }
+
+                <hr />
+                <div class="d-flex gap-2">
+                    <a asp-action="Edit" asp-route-id="@Model.Uid" class="btn btn-primary"><i class="fa-solid fa-pen me-1"></i>Edit</a>
+                    <a asp-action="Delete" asp-route-id="@Model.Uid" class="btn btn-outline-danger"><i class="fa-solid fa-trash me-1"></i>Delete</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

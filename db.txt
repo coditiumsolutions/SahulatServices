@@ -1,0 +1,230 @@
+# Version: 1.0 | UpdatedAt: 17/06/2026
+# Database: SahulatAppDB
+# Server: 93.127.199.220,1433
+
+================================================================================
+BUSINESS TABLES (Home Services Portal)
+================================================================================
+
+--------------------------------------------------------------------------------
+Table: ServiceCategories
+--------------------------------------------------------------------------------
+  UID              int              NOT NULL  PK
+  CategoryName     varchar(100)     NOT NULL
+  Description      varchar(500)     NULL
+  IsActive         bit              NULL      DEFAULT (1)
+  CreatedOn        datetime         NULL      DEFAULT (getdate())
+
+--------------------------------------------------------------------------------
+Table: ServiceProviders
+--------------------------------------------------------------------------------
+  UID              int              NOT NULL  PK
+  FullName         varchar(150)     NOT NULL
+  MobileNo         varchar(20)      NULL
+  CNIC             varchar(20)      NULL
+  CategoryUID      int              NOT NULL  FK -> ServiceCategories.UID
+  ExperienceYears  int              NULL      DEFAULT (0)
+  Rating           decimal(3,2)     NULL      DEFAULT (0)
+  IsVerified       bit              NULL      DEFAULT (0)
+  IsActive         bit              NULL      DEFAULT (1)
+  CreatedOn        datetime         NULL      DEFAULT (getdate())
+
+--------------------------------------------------------------------------------
+Table: ProviderLocations
+--------------------------------------------------------------------------------
+  UID              int              NOT NULL  PK
+  ProviderUID      int              NOT NULL  FK -> ServiceProviders.UID
+  Latitude         decimal(10,7)    NULL
+  Longitude        decimal(10,7)    NULL
+  LastUpdated      datetime         NULL      DEFAULT (getdate())
+
+--------------------------------------------------------------------------------
+Table: ProviderAvailability
+--------------------------------------------------------------------------------
+  UID              int              NOT NULL  PK
+  ProviderUID      int              NOT NULL  FK -> ServiceProviders.UID
+  IsOnline         bit              NULL      DEFAULT (0)
+  AvailableFrom    time             NULL
+  AvailableTo      time             NULL
+
+--------------------------------------------------------------------------------
+Table: ProviderDocuments
+--------------------------------------------------------------------------------
+  UID              int              NOT NULL  PK
+  ProviderUID      int              NOT NULL  FK -> ServiceProviders.UID
+  DocumentType     varchar(100)     NULL
+  DocumentNo       varchar(100)     NULL
+  FilePath         varchar(500)     NULL
+  ExpiryDate       date             NULL
+
+--------------------------------------------------------------------------------
+Table: Customers
+--------------------------------------------------------------------------------
+  UID              int              NOT NULL  PK
+  FullName         varchar(150)     NOT NULL
+  MobileNo         varchar(20)      NULL
+  Email            varchar(150)     NULL
+  Address          varchar(500)     NULL
+  CreatedOn        datetime         NULL      DEFAULT (getdate())
+
+--------------------------------------------------------------------------------
+Table: ServiceRequests
+--------------------------------------------------------------------------------
+  UID                  int              NOT NULL  PK
+  CustomerUID          int              NOT NULL  FK -> Customers.UID
+  CategoryUID          int              NOT NULL  FK -> ServiceCategories.UID
+  ServiceAddress       varchar(500)     NULL
+  Latitude             decimal(10,7)    NULL
+  Longitude            decimal(10,7)    NULL
+  ProblemDescription   varchar(MAX)     NULL
+  RequestDate          datetime         NULL      DEFAULT (getdate())
+  Status               varchar(50)      NULL      DEFAULT ('Pending')
+
+--------------------------------------------------------------------------------
+Table: ProviderQuotes
+--------------------------------------------------------------------------------
+  UID                      int              NOT NULL  PK
+  RequestUID               int              NOT NULL  FK -> ServiceRequests.UID
+  ProviderUID              int              NOT NULL  FK -> ServiceProviders.UID
+  QuoteAmount              decimal(18,2)    NULL
+  EstimatedArrivalMinutes  int              NULL
+  DistanceKM               decimal(10,2)    NULL
+  Remarks                  varchar(500)     NULL
+  QuoteDate                datetime         NULL      DEFAULT (getdate())
+
+--------------------------------------------------------------------------------
+Table: Bookings
+--------------------------------------------------------------------------------
+  UID              int              NOT NULL  PK
+  RequestUID       int              NOT NULL  FK -> ServiceRequests.UID
+  ProviderUID      int              NOT NULL  FK -> ServiceProviders.UID
+  BookingDate      datetime         NULL      DEFAULT (getdate())
+  FinalAmount      decimal(18,2)    NULL
+  Status           varchar(50)      NULL      DEFAULT ('Accepted')
+
+--------------------------------------------------------------------------------
+Table: BookingTracking
+--------------------------------------------------------------------------------
+  UID              int              NOT NULL  PK
+  BookingUID       int              NOT NULL  FK -> Bookings.UID
+  Status           varchar(50)      NULL
+  Remarks          varchar(500)     NULL
+  StatusDate       datetime         NULL      DEFAULT (getdate())
+
+--------------------------------------------------------------------------------
+Table: Payments
+--------------------------------------------------------------------------------
+  UID              int              NOT NULL  PK
+  BookingUID       int              NOT NULL  FK -> Bookings.UID
+  Amount           decimal(18,2)    NULL
+  PaymentMethod    varchar(50)      NULL
+  TransactionNo    varchar(100)     NULL
+  PaymentDate      datetime         NULL      DEFAULT (getdate())
+
+--------------------------------------------------------------------------------
+Table: Reviews
+--------------------------------------------------------------------------------
+  UID              int              NOT NULL  PK
+  BookingUID       int              NOT NULL  FK -> Bookings.UID
+  CustomerUID      int              NOT NULL  FK -> Customers.UID
+  ProviderUID      int              NOT NULL  FK -> ServiceProviders.UID
+  Rating           int              NULL
+  ReviewText       varchar(1000)    NULL
+  ReviewDate       datetime         NULL      DEFAULT (getdate())
+
+
+================================================================================
+IDENTITY TABLES (ASP.NET Core Authentication)
+================================================================================
+
+--------------------------------------------------------------------------------
+Table: AspNetUsers
+--------------------------------------------------------------------------------
+  Id                   nvarchar(450)    NOT NULL  PK
+  UserName             nvarchar(256)    NULL
+  NormalizedUserName   nvarchar(256)    NULL
+  Email                nvarchar(256)    NULL
+  NormalizedEmail      nvarchar(256)    NULL
+  EmailConfirmed       bit              NOT NULL
+  PasswordHash         nvarchar(MAX)    NULL
+  SecurityStamp        nvarchar(MAX)    NULL
+  ConcurrencyStamp     nvarchar(MAX)    NULL
+  PhoneNumber          nvarchar(MAX)    NULL
+  PhoneNumberConfirmed bit              NOT NULL
+  TwoFactorEnabled     bit              NOT NULL
+  LockoutEnd           datetimeoffset   NULL
+  LockoutEnabled       bit              NOT NULL
+  AccessFailedCount    int              NOT NULL
+
+--------------------------------------------------------------------------------
+Table: AspNetRoles
+--------------------------------------------------------------------------------
+  Id               nvarchar(450)    NOT NULL  PK
+  Name             nvarchar(256)    NULL
+  NormalizedName   nvarchar(256)    NULL
+  ConcurrencyStamp nvarchar(MAX)    NULL
+
+--------------------------------------------------------------------------------
+Table: AspNetUserRoles
+--------------------------------------------------------------------------------
+  UserId           nvarchar(450)    NOT NULL  PK, FK -> AspNetUsers.Id
+  RoleId           nvarchar(450)    NOT NULL  PK, FK -> AspNetRoles.Id
+
+--------------------------------------------------------------------------------
+Table: AspNetUserClaims
+--------------------------------------------------------------------------------
+  Id               int              NOT NULL  PK
+  UserId           nvarchar(450)    NOT NULL  FK -> AspNetUsers.Id
+  ClaimType        nvarchar(MAX)    NULL
+  ClaimValue       nvarchar(MAX)    NULL
+
+--------------------------------------------------------------------------------
+Table: AspNetRoleClaims
+--------------------------------------------------------------------------------
+  Id               int              NOT NULL  PK
+  RoleId           nvarchar(450)    NOT NULL  FK -> AspNetRoles.Id
+  ClaimType        nvarchar(MAX)    NULL
+  ClaimValue       nvarchar(MAX)    NULL
+
+--------------------------------------------------------------------------------
+Table: AspNetUserLogins
+--------------------------------------------------------------------------------
+  LoginProvider         nvarchar(128)  NOT NULL  PK
+  ProviderKey           nvarchar(128)  NOT NULL  PK
+  ProviderDisplayName   nvarchar(MAX)  NULL
+  UserId                nvarchar(450)  NOT NULL  FK -> AspNetUsers.Id
+
+--------------------------------------------------------------------------------
+Table: AspNetUserTokens
+--------------------------------------------------------------------------------
+  UserId           nvarchar(450)    NOT NULL  PK, FK -> AspNetUsers.Id
+  LoginProvider    nvarchar(128)    NOT NULL  PK
+  Name             nvarchar(128)    NOT NULL  PK
+  Value            nvarchar(MAX)    NULL
+
+--------------------------------------------------------------------------------
+Table: __EFMigrationsHistory
+--------------------------------------------------------------------------------
+  MigrationId      nvarchar(150)    NOT NULL  PK
+  ProductVersion   nvarchar(32)     NOT NULL
+
+
+================================================================================
+FOREIGN KEY RELATIONSHIPS (Business Tables)
+================================================================================
+
+  ServiceProviders.CategoryUID       -> ServiceCategories.UID
+  ProviderLocations.ProviderUID      -> ServiceProviders.UID
+  ProviderAvailability.ProviderUID   -> ServiceProviders.UID
+  ProviderDocuments.ProviderUID      -> ServiceProviders.UID
+  ServiceRequests.CustomerUID        -> Customers.UID
+  ServiceRequests.CategoryUID        -> ServiceCategories.UID
+  ProviderQuotes.RequestUID          -> ServiceRequests.UID
+  ProviderQuotes.ProviderUID         -> ServiceProviders.UID
+  Bookings.RequestUID                -> ServiceRequests.UID
+  Bookings.ProviderUID               -> ServiceProviders.UID
+  BookingTracking.BookingUID         -> Bookings.UID
+  Payments.BookingUID                -> Bookings.UID
+  Reviews.BookingUID                 -> Bookings.UID
+  Reviews.CustomerUID                -> Customers.UID
+  Reviews.ProviderUID                -> ServiceProviders.UID
