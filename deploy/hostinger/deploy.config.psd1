@@ -4,5 +4,5 @@
     SshKey      = 'D:\.ssh\hostinger_vps'
     RemotePath  = '/var/www/sahulatghartak'
     ServiceName = 'sahulatghartak'
-    AppPort     = 5000
+    AppPort     = 5300
 }

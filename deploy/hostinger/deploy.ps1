@@ -32,8 +32,11 @@ if (-not (Test-Path $config.SshKey)) {
     throw "SSH key not found: $($config.SshKey). Update deploy.config.psd1"
 }
 
-Write-Host "==> Publishing Release build (linux-x64)..." -ForegroundColor Cyan
-dotnet publish $projectFile -c Release -o $publishDir --self-contained false -r linux-x64
+Write-Host "==> Publishing Release build (portable, framework-dependent)..." -ForegroundColor Cyan
+if (Test-Path $publishDir) {
+    Remove-Item -Recurse -Force $publishDir
+}
+dotnet publish $projectFile -c Release -o $publishDir --self-contained false
 if ($LASTEXITCODE -ne 0) { throw "dotnet publish failed" }
 
 if (-not (Test-Path "$env:TEMP\empty_ssh_config")) {
@@ -65,14 +68,7 @@ scp @sshArgs -r "$publishDir\*" "${remote}:${remotePath}/"
 if ($LASTEXITCODE -ne 0) { throw "scp upload failed" }
 
 Write-Host "==> Setting permissions and restarting service..." -ForegroundColor Cyan
-ssh @sshArgs $remote @"
-chown -R www-data:www-data $remotePath
-if systemctl list-unit-files | grep -q '$($config.ServiceName)'; then
-  systemctl restart $($config.ServiceName)
-  systemctl status $($config.ServiceName) --no-pager -l | head -20
-else
-  echo 'Service not installed yet. Run setup-server.sh on the server once.'
-fi
-"@
+$serviceName = $config.ServiceName
+ssh @sshArgs $remote "chown -R www-data:www-data $remotePath && systemctl restart $serviceName && systemctl is-active $serviceName && curl -s -o /dev/null -w 'HTTP=%{http_code}' http://127.0.0.1:5300/"
 
 Write-Host "==> Deployment complete: https://sahulatghartak.com/" -ForegroundColor Green

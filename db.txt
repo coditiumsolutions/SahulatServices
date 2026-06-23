@@ -1,4 +1,4 @@
-# Version: 1.0 | UpdatedAt: 17/06/2026
+# Version: 1.1 | UpdatedAt: 23/06/2026
 # Database: SahulatAppDB
 # Server: 93.127.199.220,1433
 
@@ -134,6 +134,55 @@ Table: Reviews
 
 
 ================================================================================
+APP USER & PROFILE TABLES
+================================================================================
+
+--------------------------------------------------------------------------------
+Table: Users
+--------------------------------------------------------------------------------
+  UID              int              NOT NULL  PK
+  FullName         varchar(150)     NULL
+  MobileNo         varchar(20)      NULL
+  Email            varchar(150)     NULL
+  PasswordHash     varchar(500)     NULL
+  UserType         varchar(20)      NULL
+  IsActive         bit              NULL      DEFAULT (1)
+  CreatedOn        datetime         NULL      DEFAULT (getdate())
+
+--------------------------------------------------------------------------------
+Table: CustomerProfiles
+--------------------------------------------------------------------------------
+  UID              int              NOT NULL  PK
+  UserUID          int              NOT NULL  FK -> Users.UID
+  DefaultAddress   varchar(500)     NULL
+  Latitude         decimal(10,7)    NULL
+  Longitude        decimal(10,7)    NULL
+  ProfileImage     varchar(300)     NULL
+
+--------------------------------------------------------------------------------
+Table: ProviderProfiles
+--------------------------------------------------------------------------------
+  UID              int              NOT NULL  PK
+  UserUID          int              NOT NULL  FK -> Users.UID
+  CategoryUID      int              NULL
+  CNIC             varchar(20)      NULL
+  ExperienceYears  int              NULL
+  Rating           decimal(3,2)     NULL
+  IsVerified       bit              NULL      DEFAULT (0)
+
+--------------------------------------------------------------------------------
+Table: ProviderUsers
+--------------------------------------------------------------------------------
+  UID              int              NOT NULL  PK
+  ProviderUID      int              NOT NULL  FK -> ServiceProviders.UID
+  Email            varchar(200)     NOT NULL
+  PasswordHash     varchar(500)     NOT NULL
+  IsActive         bit              NULL      DEFAULT (1)
+  LastLoginDate    datetime         NULL
+  CreatedOn        datetime         NULL      DEFAULT (getdate())
+
+
+================================================================================
 IDENTITY TABLES (ASP.NET Core Authentication)
 ================================================================================
 
@@ -228,3 +277,6 @@ FOREIGN KEY RELATIONSHIPS (Business Tables)
   Reviews.BookingUID                 -> Bookings.UID
   Reviews.CustomerUID                -> Customers.UID
   Reviews.ProviderUID                -> ServiceProviders.UID
+  CustomerProfiles.UserUID           -> Users.UID
+  ProviderProfiles.UserUID           -> Users.UID
+  ProviderUsers.ProviderUID          -> ServiceProviders.UID
