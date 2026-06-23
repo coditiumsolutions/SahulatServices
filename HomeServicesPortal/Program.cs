@@ -20,6 +20,14 @@ builder.Services.AddScoped<IServiceCategoryService, ServiceCategoryService>();
 builder.Services.AddScoped<IServiceProviderService, ServiceProviderService>();
 builder.Services.AddScoped<IProviderLocationService, ProviderLocationService>();
 builder.Services.AddScoped<IProviderAvailabilityService, ProviderAvailabilityService>();
+builder.Services.AddScoped<IProviderDocumentService, ProviderDocumentService>();
+builder.Services.AddScoped<ICustomerService, CustomerService>();
+builder.Services.AddScoped<IServiceRequestService, ServiceRequestService>();
+builder.Services.AddScoped<IProviderQuoteService, ProviderQuoteService>();
+builder.Services.AddScoped<IBookingService, BookingService>();
+builder.Services.AddScoped<IBookingTrackingService, BookingTrackingService>();
+builder.Services.AddScoped<IPaymentService, PaymentService>();
+builder.Services.AddScoped<IReviewService, ReviewService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
@@ -38,6 +46,19 @@ builder.Services.ConfigureApplicationCookie(options =>
 
 builder.Services.AddControllersWithViews();
 
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.SwaggerDoc("v1", new Microsoft.OpenApi.OpenApiInfo
+    {
+        Title = "Sahulat Ghar Tak API",
+        Version = "v1",
+        Description = "Public REST APIs for Sahulat Ghar Tak mobile and web clients."
+    });
+    options.DocInclusionPredicate((_, apiDesc) =>
+        apiDesc.RelativePath?.StartsWith("api/", StringComparison.OrdinalIgnoreCase) == true);
+});
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -55,6 +76,13 @@ else
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 
+app.UseSwagger();
+app.UseSwaggerUI(options =>
+{
+    options.SwaggerEndpoint("/swagger/v1/swagger.json", "Sahulat Ghar Tak API v1");
+    options.RoutePrefix = "swagger";
+});
+
 app.UseRouting();
 
 app.UseAuthentication();
@@ -62,6 +90,8 @@ app.UseAuthorization();
 
 // Seed Identity roles and a default Super Admin account (development / first run).
 // Note: In production, run a dedicated migration/seed step.
+try
+{
 using (var scope = app.Services.CreateScope())
 {
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
@@ -109,10 +139,17 @@ using (var scope = app.Services.CreateScope())
         }
     }
 }
+}
+catch (Exception ex) when (app.Environment.IsDevelopment())
+{
+    var logger = app.Services.GetRequiredService<ILoggerFactory>().CreateLogger("Startup");
+    logger.LogWarning(ex, "Database seed skipped — is the SQL tunnel running? (scripts/dev-sql-tunnel.ps1)");
+}
 
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
+app.MapControllers();
 app.MapRazorPages();
 
 app.Run();

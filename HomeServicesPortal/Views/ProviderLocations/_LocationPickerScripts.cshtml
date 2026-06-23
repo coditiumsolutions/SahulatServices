@@ -1,0 +1,119 @@
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script>
+    (function () {
+        const latInput = document.getElementById('Latitude');
+        const lngInput = document.getElementById('Longitude');
+        const statusEl = document.getElementById('locationStatus');
+        const currentBtn = document.getElementById('btnCurrentLocation');
+
+        if (!latInput || !lngInput || !document.getElementById('locationMap')) {
+            return;
+        }
+
+        const defaultLat = 31.5204;
+        const defaultLng = 74.3587;
+        const parsedLat = parseFloat(latInput.value);
+        const parsedLng = parseFloat(lngInput.value);
+        const hasCoords = !Number.isNaN(parsedLat) && !Number.isNaN(parsedLng);
+
+        let lat = hasCoords ? parsedLat : defaultLat;
+        let lng = hasCoords ? parsedLng : defaultLng;
+
+        const map = L.map('locationMap').setView([lat, lng], hasCoords ? 15 : 6);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>'
+        }).addTo(map);
+
+        const marker = L.marker([lat, lng], { draggable: true }).addTo(map);
+
+        function setStatus(message, isError) {
+            if (!statusEl) return;
+            statusEl.textContent = message || '';
+            statusEl.classList.toggle('text-danger', !!isError);
+            statusEl.classList.toggle('text-muted', !isError);
+        }
+
+        function roundCoord(value) {
+            return Math.round(value * 10000000) / 10000000;
+        }
+
+        function setCoords(newLat, newLng, zoom) {
+            lat = roundCoord(newLat);
+            lng = roundCoord(newLng);
+            marker.setLatLng([lat, lng]);
+            if (zoom) {
+                map.setView([lat, lng], zoom);
+            }
+            latInput.value = lat;
+            lngInput.value = lng;
+            setStatus(`Selected: ${lat}, ${lng}`, false);
+        }
+
+        map.on('click', function (e) {
+            setCoords(e.latlng.lat, e.latlng.lng);
+        });
+
+        marker.on('dragend', function (e) {
+            const pos = e.target.getLatLng();
+            setCoords(pos.lat, pos.lng);
+        });
+
+        function syncFromInputs() {
+            const newLat = parseFloat(latInput.value);
+            const newLng = parseFloat(lngInput.value);
+            if (Number.isNaN(newLat) || Number.isNaN(newLng)) {
+                return;
+            }
+            setCoords(newLat, newLng, map.getZoom());
+        }
+
+        latInput.addEventListener('change', syncFromInputs);
+        lngInput.addEventListener('change', syncFromInputs);
+
+        if (currentBtn) {
+            currentBtn.addEventListener('click', function () {
+                if (!navigator.geolocation) {
+                    setStatus('Geolocation is not supported by this browser.', true);
+                    return;
+                }
+
+                currentBtn.disabled = true;
+                setStatus('Detecting your current location…', false);
+
+                navigator.geolocation.getCurrentPosition(
+                    function (position) {
+                        setCoords(position.coords.latitude, position.coords.longitude, 16);
+                        setStatus('Current location applied.', false);
+                        currentBtn.disabled = false;
+                    },
+                    function (error) {
+                        let message = 'Unable to get current location.';
+                        if (error.code === error.PERMISSION_DENIED) {
+                            message = 'Location permission denied. Allow location access in your browser and try again.';
+                        } else if (error.code === error.POSITION_UNAVAILABLE) {
+                            message = 'Location information is unavailable.';
+                        } else if (error.code === error.TIMEOUT) {
+                            message = 'Location request timed out. Try again.';
+                        }
+                        setStatus(message, true);
+                        currentBtn.disabled = false;
+                    },
+                    { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+                );
+            });
+        }
+
+        if (hasCoords) {
+            setCoords(parsedLat, parsedLng);
+        } else {
+            setStatus('Click the map or use your current location to set coordinates.', false);
+        }
+
+        setTimeout(function () {
+            map.invalidateSize();
+        }, 200);
+    })();
+</script>

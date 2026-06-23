@@ -1,0 +1,28 @@
+@model HomeServicesPortal.Models.ViewModels.ReviewDetailsVm
+@{ Layout = "_AdminLayout"; ViewData["Title"] = "Review Details"; }
+<div class="mb-4">
+    <a asp-action="Index" class="text-decoration-none text-muted"><i class="fa-solid fa-arrow-left me-1"></i>Back to Reviews</a>
+    <h2 class="mt-2 mb-0"><i class="fa-solid fa-eye me-2 text-primary"></i>Review Details</h2>
+</div>
+<div class="row justify-content-center"><div class="col-lg-8"><div class="card hs-card"><div class="card-body p-4">
+    <dl class="row mb-0">
+        <dt class="col-sm-4 text-muted">Booking</dt><dd class="col-sm-8 fw-semibold">@Model.BookingLabel</dd>
+        <dt class="col-sm-4 text-muted">Customer</dt><dd class="col-sm-8">@Model.CustomerName</dd>
+        <dt class="col-sm-4 text-muted">Provider</dt><dd class="col-sm-8">@Model.ProviderName</dd>
+        <dt class="col-sm-4 text-muted">Rating</dt>
+        <dd class="col-sm-8">
+            @if (Model.Rating.HasValue)
+            {
+                <span class="text-warning">@string.Concat(Enumerable.Repeat("★", Model.Rating.Value))</span>
+                <span class="text-muted">(@Model.Rating/5)</span>
+            }
+            else { <text>—</text> }
+        </dd>
+        <dt class="col-sm-4 text-muted">Review Text</dt><dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.ReviewText) ? "—" : Model.ReviewText)</dd>
+        <dt class="col-sm-4 text-muted">Review Date</dt><dd class="col-sm-8">@(Model.ReviewDate?.ToString("dd MMM yyyy HH:mm") ?? "—")</dd>
+    </dl>
+    <hr /><div class="d-flex gap-2">
+        <a asp-action="Edit" asp-route-id="@Model.Uid" class="btn btn-primary"><i class="fa-solid fa-pen me-1"></i>Edit</a>
+        <a asp-action="Delete" asp-route-id="@Model.Uid" class="btn btn-outline-danger"><i class="fa-solid fa-trash me-1"></i>Delete</a>
+    </div>
+</div></div></div></div>

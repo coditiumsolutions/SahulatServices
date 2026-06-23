@@ -1,0 +1,36 @@
+@model HomeServicesPortal.Models.ViewModels.ProviderQuoteFormVm
+
+<div class="row">
+    <div class="col-md-6 mb-3">
+        <label asp-for="RequestUid" class="form-label"></label>
+        <select asp-for="RequestUid" class="form-select" asp-items="Model.Requests"><option value="">-- Select S-Request --</option></select>
+        <span asp-validation-for="RequestUid" class="text-danger small"></span>
+    </div>
+    <div class="col-md-6 mb-3">
+        <label asp-for="ProviderUid" class="form-label"></label>
+        <select asp-for="ProviderUid" class="form-select" asp-items="Model.Providers"><option value="">-- Select S-Provider --</option></select>
+        <span asp-validation-for="ProviderUid" class="text-danger small"></span>
+    </div>
+</div>
+<div class="row">
+    <div class="col-md-4 mb-3">
+        <label asp-for="QuoteAmount" class="form-label"></label>
+        <input asp-for="QuoteAmount" class="form-control" type="number" step="0.01" />
+        <span asp-validation-for="QuoteAmount" class="text-danger small"></span>
+    </div>
+    <div class="col-md-4 mb-3">
+        <label asp-for="EstimatedArrivalMinutes" class="form-label"></label>
+        <input asp-for="EstimatedArrivalMinutes" class="form-control" type="number" />
+        <span asp-validation-for="EstimatedArrivalMinutes" class="text-danger small"></span>
+    </div>
+    <div class="col-md-4 mb-3">
+        <label asp-for="DistanceKm" class="form-label"></label>
+        <input asp-for="DistanceKm" class="form-control" type="number" step="0.01" />
+        <span asp-validation-for="DistanceKm" class="text-danger small"></span>
+    </div>
+</div>
+<div class="mb-3">
+    <label asp-for="Remarks" class="form-label"></label>
+    <textarea asp-for="Remarks" class="form-control" rows="3"></textarea>
+    <span asp-validation-for="Remarks" class="text-danger small"></span>
+</div>

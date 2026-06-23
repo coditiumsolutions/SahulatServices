@@ -1,0 +1,24 @@
+@model HomeServicesPortal.Models.ViewModels.PaymentFormVm
+
+<div class="mb-3">
+    <label asp-for="BookingUid" class="form-label"></label>
+    <select asp-for="BookingUid" class="form-select" asp-items="Model.Bookings"><option value="">-- Select Booking --</option></select>
+    <span asp-validation-for="BookingUid" class="text-danger small"></span>
+</div>
+<div class="row">
+    <div class="col-md-4 mb-3">
+        <label asp-for="Amount" class="form-label"></label>
+        <input asp-for="Amount" class="form-control" type="number" step="0.01" />
+        <span asp-validation-for="Amount" class="text-danger small"></span>
+    </div>
+    <div class="col-md-4 mb-3">
+        <label asp-for="PaymentMethod" class="form-label"></label>
+        <select asp-for="PaymentMethod" class="form-select" asp-items="Model.PaymentMethods"><option value="">-- Select Method --</option></select>
+        <span asp-validation-for="PaymentMethod" class="text-danger small"></span>
+    </div>
+    <div class="col-md-4 mb-3">
+        <label asp-for="TransactionNo" class="form-label"></label>
+        <input asp-for="TransactionNo" class="form-control" />
+        <span asp-validation-for="TransactionNo" class="text-danger small"></span>
+    </div>
+</div>

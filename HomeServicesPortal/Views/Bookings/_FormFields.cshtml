@@ -1,0 +1,26 @@
+@model HomeServicesPortal.Models.ViewModels.BookingFormVm
+
+<div class="row">
+    <div class="col-md-6 mb-3">
+        <label asp-for="RequestUid" class="form-label"></label>
+        <select asp-for="RequestUid" class="form-select" asp-items="Model.Requests"><option value="">-- Select S-Request --</option></select>
+        <span asp-validation-for="RequestUid" class="text-danger small"></span>
+    </div>
+    <div class="col-md-6 mb-3">
+        <label asp-for="ProviderUid" class="form-label"></label>
+        <select asp-for="ProviderUid" class="form-select" asp-items="Model.Providers"><option value="">-- Select S-Provider --</option></select>
+        <span asp-validation-for="ProviderUid" class="text-danger small"></span>
+    </div>
+</div>
+<div class="row">
+    <div class="col-md-6 mb-3">
+        <label asp-for="FinalAmount" class="form-label"></label>
+        <input asp-for="FinalAmount" class="form-control" type="number" step="0.01" />
+        <span asp-validation-for="FinalAmount" class="text-danger small"></span>
+    </div>
+    <div class="col-md-6 mb-3">
+        <label asp-for="Status" class="form-label"></label>
+        <select asp-for="Status" class="form-select" asp-items="Model.StatusOptions"></select>
+        <span asp-validation-for="Status" class="text-danger small"></span>
+    </div>
+</div>

@@ -1,0 +1,42 @@
+@model HomeServicesPortal.Models.ViewModels.ProviderDocumentDetailsVm
+@{ Layout = "_AdminLayout"; ViewData["Title"] = "P-Document Details"; }
+<div class="mb-4">
+    <a asp-action="Index" class="text-decoration-none text-muted"><i class="fa-solid fa-arrow-left me-1"></i>Back to P-Documents</a>
+    <h2 class="mt-2 mb-0"><i class="fa-solid fa-eye me-2 text-primary"></i>P-Document Details</h2>
+</div>
+<div class="row justify-content-center"><div class="col-lg-8"><div class="card hs-card"><div class="card-body p-4">
+    <dl class="row mb-0">
+        <dt class="col-sm-4 text-muted">Provider</dt><dd class="col-sm-8 fw-semibold">@Model.ProviderName</dd>
+        <dt class="col-sm-4 text-muted">Document Type</dt><dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.DocumentType) ? "—" : Model.DocumentType)</dd>
+        <dt class="col-sm-4 text-muted">Document No</dt><dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.DocumentNo) ? "—" : Model.DocumentNo)</dd>
+        <dt class="col-sm-4 text-muted">Expiry Date</dt>
+        <dd class="col-sm-8">
+            @if (Model.ExpiryDate.HasValue)
+            {
+                @Model.ExpiryDate.Value.ToString("dd MMM yyyy")
+                @if (Model.IsExpired) { <span class="badge bg-danger ms-1">Expired</span> }
+            }
+            else { <text>—</text> }
+        </dd>
+        <dt class="col-sm-4 text-muted">File</dt>
+        <dd class="col-sm-8">
+            @if (!string.IsNullOrWhiteSpace(Model.FilePath))
+            {
+                var isImage = Model.FilePath.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase)
+                    || Model.FilePath.EndsWith(".jpeg", StringComparison.OrdinalIgnoreCase)
+                    || Model.FilePath.EndsWith(".png", StringComparison.OrdinalIgnoreCase)
+                    || Model.FilePath.EndsWith(".webp", StringComparison.OrdinalIgnoreCase);
+                if (isImage)
+                {
+                    <img src="@Model.FilePath" alt="Document" class="img-fluid rounded border mb-2" style="max-height:200px" />
+                }
+                <div><a href="@Model.FilePath" target="_blank" rel="noopener" class="btn btn-outline-primary btn-sm"><i class="fa-solid fa-file-arrow-down me-1"></i>Download / View</a></div>
+            }
+            else { <text>—</text> }
+        </dd>
+    </dl>
+    <hr /><div class="d-flex gap-2">
+        <a asp-action="Edit" asp-route-id="@Model.Uid" class="btn btn-primary"><i class="fa-solid fa-pen me-1"></i>Edit</a>
+        <a asp-action="Delete" asp-route-id="@Model.Uid" class="btn btn-outline-danger"><i class="fa-solid fa-trash me-1"></i>Delete</a>
+    </div>
+</div></div></div></div>

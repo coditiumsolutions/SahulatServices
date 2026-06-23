@@ -1,0 +1,25 @@
+@model HomeServicesPortal.Models.ViewModels.CustomerFormVm
+
+<div class="mb-3">
+    <label asp-for="FullName" class="form-label"></label>
+    <input asp-for="FullName" class="form-control" placeholder="Enter full name" />
+    <span asp-validation-for="FullName" class="text-danger small"></span>
+</div>
+
+<div class="mb-3">
+    <label asp-for="MobileNo" class="form-label"></label>
+    <input asp-for="MobileNo" class="form-control" placeholder="Enter mobile number" />
+    <span asp-validation-for="MobileNo" class="text-danger small"></span>
+</div>
+
+<div class="mb-3">
+    <label asp-for="Email" class="form-label"></label>
+    <input asp-for="Email" class="form-control" placeholder="Enter email address" />
+    <span asp-validation-for="Email" class="text-danger small"></span>
+</div>
+
+<div class="mb-3">
+    <label asp-for="Address" class="form-label"></label>
+    <textarea asp-for="Address" class="form-control" rows="3" placeholder="Enter address"></textarea>
+    <span asp-validation-for="Address" class="text-danger small"></span>
+</div>

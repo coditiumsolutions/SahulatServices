@@ -1,3 +1,4 @@
+using HomeServicesPortal.Models.Api;
 using HomeServicesPortal.Models.Entities;
 using HomeServicesPortal.Models.ViewModels;
 using HomeServicesPortal.Repositories;
@@ -12,6 +13,38 @@ public class ServiceCategoryService : IServiceCategoryService
     public ServiceCategoryService(IRepository<ServiceCategory> repo)
     {
         _repo = repo;
+    }
+
+    public async Task<IReadOnlyList<ServiceCategoryApiDto>> GetActiveCategoriesForApiAsync(
+        CancellationToken cancellationToken = default)
+    {
+        return await _repo.Query()
+            .Where(c => c.IsActive != false)
+            .OrderBy(c => c.CategoryName)
+            .Select(c => new ServiceCategoryApiDto
+            {
+                Id = c.Uid,
+                Name = c.CategoryName,
+                Description = c.Description,
+                CreatedOn = c.CreatedOn
+            })
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<ServiceCategoryApiDto?> GetActiveCategoryForApiAsync(
+        int id,
+        CancellationToken cancellationToken = default)
+    {
+        return await _repo.Query()
+            .Where(c => c.Uid == id && c.IsActive != false)
+            .Select(c => new ServiceCategoryApiDto
+            {
+                Id = c.Uid,
+                Name = c.CategoryName,
+                Description = c.Description,
+                CreatedOn = c.CreatedOn
+            })
+            .FirstOrDefaultAsync(cancellationToken);
     }
 
     public async Task<ServiceCategoryListVm> GetListAsync(

@@ -3,7 +3,9 @@
 .env.*
 !.env.example
 **/appsettings.json
+**/appsettings.Development.json
 !**/appsettings.example.json
+!**/appsettings.Development.example.json
 *.local.json
 **/secrets.json
 **/credentials.json
@@ -11,6 +13,8 @@
 # .NET
 bin/
 obj/
+publish/
+publish.zip
 *.user
 *.suo
 .vs/

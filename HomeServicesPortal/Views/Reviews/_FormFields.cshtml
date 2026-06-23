@@ -1,0 +1,32 @@
+@model HomeServicesPortal.Models.ViewModels.ReviewFormVm
+
+<div class="mb-3">
+    <label asp-for="BookingUid" class="form-label"></label>
+    <select asp-for="BookingUid" class="form-select" asp-items="Model.Bookings"><option value="">-- Select Booking --</option></select>
+    <span asp-validation-for="BookingUid" class="text-danger small"></span>
+</div>
+<div class="row">
+    <div class="col-md-6 mb-3">
+        <label asp-for="CustomerUid" class="form-label"></label>
+        <select asp-for="CustomerUid" class="form-select" asp-items="Model.Customers"><option value="">-- Select Customer --</option></select>
+        <span asp-validation-for="CustomerUid" class="text-danger small"></span>
+    </div>
+    <div class="col-md-6 mb-3">
+        <label asp-for="ProviderUid" class="form-label"></label>
+        <select asp-for="ProviderUid" class="form-select" asp-items="Model.Providers"><option value="">-- Select S-Provider --</option></select>
+        <span asp-validation-for="ProviderUid" class="text-danger small"></span>
+    </div>
+</div>
+<div class="mb-3">
+    <label asp-for="Rating" class="form-label"></label>
+    <select asp-for="Rating" class="form-select">
+        <option value="">-- Select Rating --</option>
+        @for (var i = 1; i <= 5; i++) { <option value="@i">@i Star@(i > 1 ? "s" : "")</option> }
+    </select>
+    <span asp-validation-for="Rating" class="text-danger small"></span>
+</div>
+<div class="mb-3">
+    <label asp-for="ReviewText" class="form-label"></label>
+    <textarea asp-for="ReviewText" class="form-control" rows="4" placeholder="Write review text"></textarea>
+    <span asp-validation-for="ReviewText" class="text-danger small"></span>
+</div>

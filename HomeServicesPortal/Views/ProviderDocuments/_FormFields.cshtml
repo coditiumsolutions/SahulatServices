@@ -1,0 +1,46 @@
+@model HomeServicesPortal.Models.ViewModels.ProviderDocumentFormVm
+
+<div class="mb-3">
+    <label asp-for="ProviderUid" class="form-label"></label>
+    <select asp-for="ProviderUid" class="form-select" asp-items="Model.Providers"><option value="">-- Select S-Provider --</option></select>
+    <span asp-validation-for="ProviderUid" class="text-danger small"></span>
+</div>
+
+<div class="row">
+    <div class="col-md-6 mb-3">
+        <label asp-for="DocumentType" class="form-label"></label>
+        <select asp-for="DocumentType" class="form-select" asp-items="Model.DocumentTypes"><option value="">-- Select Type --</option></select>
+        <span asp-validation-for="DocumentType" class="text-danger small"></span>
+    </div>
+    <div class="col-md-6 mb-3">
+        <label asp-for="DocumentNo" class="form-label"></label>
+        <input asp-for="DocumentNo" class="form-control" placeholder="e.g. CNIC or license number" />
+        <span asp-validation-for="DocumentNo" class="text-danger small"></span>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6 mb-3">
+        <label asp-for="DocumentFile" class="form-label"></label>
+        <input asp-for="DocumentFile" class="form-control" type="file" accept=".pdf,.jpg,.jpeg,.png,.webp" />
+        @if (!string.IsNullOrWhiteSpace(Model.ExistingFilePath))
+        {
+            <div class="mt-2">
+                <a href="@Model.ExistingFilePath" target="_blank" rel="noopener" class="btn btn-outline-secondary btn-sm">
+                    <i class="fa-solid fa-file me-1"></i>View current file
+                </a>
+                <div class="form-text">Upload a new file only if you want to replace the current one.</div>
+            </div>
+        }
+        else
+        {
+            <div class="form-text">PDF, JPG, PNG, or WEBP — max 5 MB.</div>
+        }
+        <span asp-validation-for="DocumentFile" class="text-danger small"></span>
+    </div>
+    <div class="col-md-6 mb-3">
+        <label asp-for="ExpiryDate" class="form-label"></label>
+        <input asp-for="ExpiryDate" class="form-control" type="date" />
+        <span asp-validation-for="ExpiryDate" class="text-danger small"></span>
+    </div>
+</div>

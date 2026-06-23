@@ -1,3 +1,4 @@
+using HomeServicesPortal.Models.Api;
 using HomeServicesPortal.Models.Entities;
 using HomeServicesPortal.Models.ViewModels;
 using HomeServicesPortal.Repositories;
@@ -29,6 +30,65 @@ public class ServiceProviderService : IServiceProviderService
         _documentRepo = documentRepo;
         _env = env;
         _logger = logger;
+    }
+
+    public async Task<IReadOnlyList<ServiceProviderApiDto>> GetActiveProvidersForApiAsync(
+        int? categoryId,
+        CancellationToken cancellationToken = default)
+    {
+        var profileMap = await GetProfilePictureMapAsync(cancellationToken);
+        var categoryMap = await GetActiveCategoryMapAsync(cancellationToken);
+
+        var query = _providerRepo.Query().Where(p => p.IsActive != false);
+
+        if (categoryId.HasValue)
+        {
+            if (!categoryMap.ContainsKey(categoryId.Value))
+            {
+                return [];
+            }
+
+            query = query.Where(p => p.CategoryUid == categoryId.Value);
+        }
+
+        var providers = await query
+            .OrderBy(p => p.FullName)
+            .ToListAsync(cancellationToken);
+
+        return providers
+            .Where(p => categoryMap.ContainsKey(p.CategoryUid))
+            .Select(p => MapProviderApiDto(p, categoryMap[p.CategoryUid], profileMap.GetValueOrDefault(p.Uid)))
+            .ToList();
+    }
+
+    public async Task<ServiceProviderApiDto?> GetActiveProviderForApiAsync(
+        int id,
+        CancellationToken cancellationToken = default)
+    {
+        var provider = await _providerRepo.Query()
+            .FirstOrDefaultAsync(p => p.Uid == id && p.IsActive != false, cancellationToken);
+
+        if (provider == null)
+        {
+            return null;
+        }
+
+        var categoryName = await _categoryRepo.Query()
+            .Where(c => c.Uid == provider.CategoryUid && c.IsActive != false)
+            .Select(c => c.CategoryName)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (categoryName == null)
+        {
+            return null;
+        }
+
+        var profilePath = await _documentRepo.Query()
+            .Where(d => d.ProviderUid == id && d.DocumentType == ProfileDocType)
+            .Select(d => d.FilePath)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        return MapProviderApiDto(provider, categoryName, profilePath);
     }
 
     public async Task<List<SelectListItem>> GetCategoryOptionsAsync(CancellationToken cancellationToken = default)
@@ -375,5 +435,44 @@ public class ServiceProviderService : IServiceProviderService
         }
 
         return (true, null);
+    }
+
+    private async Task<Dictionary<int, string>> GetActiveCategoryMapAsync(CancellationToken cancellationToken)
+    {
+        return await _categoryRepo.Query()
+            .Where(c => c.IsActive != false)
+            .ToDictionaryAsync(c => c.Uid, c => c.CategoryName, cancellationToken);
+    }
+
+    private async Task<Dictionary<int, string?>> GetProfilePictureMapAsync(CancellationToken cancellationToken)
+    {
+        var profileDocs = await _documentRepo.Query()
+            .Where(d => d.DocumentType == ProfileDocType)
+            .Select(d => new { d.ProviderUid, d.FilePath })
+            .ToListAsync(cancellationToken);
+
+        return profileDocs
+            .GroupBy(d => d.ProviderUid)
+            .ToDictionary(g => g.Key, g => g.First().FilePath);
+    }
+
+    private static ServiceProviderApiDto MapProviderApiDto(
+        ServiceProviderEntity provider,
+        string categoryName,
+        string? profilePath)
+    {
+        return new ServiceProviderApiDto
+        {
+            Id = provider.Uid,
+            FullName = provider.FullName,
+            MobileNo = provider.MobileNo,
+            CategoryId = provider.CategoryUid,
+            CategoryName = categoryName,
+            ExperienceYears = provider.ExperienceYears ?? 0,
+            Rating = provider.Rating ?? 0,
+            IsVerified = provider.IsVerified ?? false,
+            ProfileImageUrl = profilePath,
+            CreatedOn = provider.CreatedOn
+        };
     }
 }

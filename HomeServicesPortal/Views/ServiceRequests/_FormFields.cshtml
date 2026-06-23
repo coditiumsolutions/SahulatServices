@@ -1,0 +1,49 @@
+@model HomeServicesPortal.Models.ViewModels.ServiceRequestFormVm
+
+<div class="row">
+    <div class="col-md-6 mb-3">
+        <label asp-for="CustomerUid" class="form-label"></label>
+        <select asp-for="CustomerUid" class="form-select" asp-items="Model.Customers">
+            <option value="">-- Select Customer --</option>
+        </select>
+        <span asp-validation-for="CustomerUid" class="text-danger small"></span>
+    </div>
+    <div class="col-md-6 mb-3">
+        <label asp-for="CategoryUid" class="form-label"></label>
+        <select asp-for="CategoryUid" class="form-select" asp-items="Model.Categories">
+            <option value="">-- Select S-Category --</option>
+        </select>
+        <span asp-validation-for="CategoryUid" class="text-danger small"></span>
+    </div>
+</div>
+
+<div class="mb-3">
+    <label asp-for="ServiceAddress" class="form-label"></label>
+    <textarea asp-for="ServiceAddress" class="form-control" rows="2" placeholder="Enter service address"></textarea>
+    <span asp-validation-for="ServiceAddress" class="text-danger small"></span>
+</div>
+
+<div class="row">
+    <div class="col-md-6 mb-3">
+        <label asp-for="Latitude" class="form-label"></label>
+        <input asp-for="Latitude" class="form-control" type="number" step="0.0000001" placeholder="e.g. 31.5204" />
+        <span asp-validation-for="Latitude" class="text-danger small"></span>
+    </div>
+    <div class="col-md-6 mb-3">
+        <label asp-for="Longitude" class="form-label"></label>
+        <input asp-for="Longitude" class="form-control" type="number" step="0.0000001" placeholder="e.g. 74.3587" />
+        <span asp-validation-for="Longitude" class="text-danger small"></span>
+    </div>
+</div>
+
+<div class="mb-3">
+    <label asp-for="ProblemDescription" class="form-label"></label>
+    <textarea asp-for="ProblemDescription" class="form-control" rows="4" placeholder="Describe the problem"></textarea>
+    <span asp-validation-for="ProblemDescription" class="text-danger small"></span>
+</div>
+
+<div class="mb-3">
+    <label asp-for="Status" class="form-label"></label>
+    <select asp-for="Status" class="form-select" asp-items="Model.StatusOptions"></select>
+    <span asp-validation-for="Status" class="text-danger small"></span>
+</div>
