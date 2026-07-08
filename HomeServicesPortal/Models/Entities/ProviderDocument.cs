@@ -17,5 +17,5 @@ public partial class ProviderDocument
 
     public DateOnly? ExpiryDate { get; set; }
 
-    public virtual ServiceProvider ProviderU { get; set; } = null!;
+    public virtual ProviderProfile ProviderU { get; set; } = null!;
 }

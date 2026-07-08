@@ -15,5 +15,5 @@ public partial class ProviderAvailability
 
     public TimeOnly? AvailableTo { get; set; }
 
-    public virtual ServiceProvider ProviderU { get; set; } = null!;
+    public virtual ProviderProfile ProviderU { get; set; } = null!;
 }

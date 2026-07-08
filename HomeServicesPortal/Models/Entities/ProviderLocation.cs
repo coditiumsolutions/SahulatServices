@@ -15,5 +15,5 @@ public partial class ProviderLocation
 
     public DateTime? LastUpdated { get; set; }
 
-    public virtual ServiceProvider ProviderU { get; set; } = null!;
+    public virtual ProviderProfile ProviderU { get; set; } = null!;
 }

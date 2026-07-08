@@ -2,29 +2,59 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using System.Security.Claims;
 using System.Text;
 using HomeServicesPortal.Data;
+using HomeServicesPortal.Infrastructure;
+using HomeServicesPortal.Interfaces;
+using HomeServicesPortal.Mappings;
+using HomeServicesPortal.Middleware;
 using HomeServicesPortal.Models.Api;
 using HomeServicesPortal.Repositories;
 using HomeServicesPortal.Services;
-using HomeServicesPortal.Services.Auth;
 
 var builder = WebApplication.CreateBuilder(args);
 
+if (builder.Environment.IsDevelopment())
+{
+    DevSqlTunnelBootstrap.EnsureStarted(
+        builder.Configuration,
+        builder.Environment,
+        LoggerFactory.Create(b => b.AddConsole()).CreateLogger("DevSqlTunnel"));
+}
+
 // Add services to the container.
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(connectionString));
+var isDevelopment = builder.Environment.IsDevelopment();
 
-builder.Services.AddDbContext<SahulatAppDbContext>(options =>
-    options.UseSqlServer(connectionString));
+void ConfigureSqlServer(DbContextOptionsBuilder options) =>
+    options.UseSqlServer(connectionString, sql =>
+    {
+        if (isDevelopment)
+        {
+            sql.EnableRetryOnFailure(
+                maxRetryCount: 5,
+                maxRetryDelay: TimeSpan.FromSeconds(3),
+                errorNumbersToAdd: null);
+        }
+    });
+
+builder.Services.AddDbContext<ApplicationDbContext>(ConfigureSqlServer);
+builder.Services.AddDbContext<SahulatAppDbContext>(ConfigureSqlServer);
+builder.Services.AddDbContext<AppDbContext>(ConfigureSqlServer);
+
+builder.Services.AddAutoMapper(typeof(AuthMappingProfile));
 
 builder.Services.AddScoped(typeof(IRepository<>), typeof(EfRepository<>));
+builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddScoped<IServiceCategoryService, ServiceCategoryService>();
 builder.Services.AddScoped<IServiceProviderService, ServiceProviderService>();
 builder.Services.AddScoped<IProviderLocationService, ProviderLocationService>();
 builder.Services.AddScoped<IProviderAvailabilityService, ProviderAvailabilityService>();
+builder.Services.AddScoped<IProviderDetailService, ProviderDetailService>();
+builder.Services.AddScoped<IClientAddressService, ClientAddressService>();
+builder.Services.AddScoped<ICustomerServiceRequestService, CustomerServiceRequestService>();
 builder.Services.AddScoped<IProviderDocumentService, ProviderDocumentService>();
 builder.Services.AddScoped<ICustomerService, CustomerService>();
 builder.Services.AddScoped<IServiceRequestService, ServiceRequestService>();
@@ -50,6 +80,7 @@ var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "SahulatGharTakClient
 builder.Services.AddAuthentication()
     .AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options =>
     {
+        options.MapInboundClaims = false;
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
@@ -59,7 +90,34 @@ builder.Services.AddAuthentication()
             ValidIssuer = jwtIssuer,
             ValidAudience = jwtAudience,
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
-            ClockSkew = TimeSpan.FromMinutes(1)
+            ClockSkew = TimeSpan.FromMinutes(1),
+            RoleClaimType = ClaimTypes.Role,
+            NameClaimType = ClaimTypes.NameIdentifier
+        };
+
+        options.Events = new JwtBearerEvents
+        {
+            OnChallenge = async context =>
+            {
+                if (context.Request.Path.StartsWithSegments("/api"))
+                {
+                    context.HandleResponse();
+                    context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                    context.Response.ContentType = "application/json";
+                    await context.Response.WriteAsJsonAsync(
+                        ApiResponse<object>.Fail("Authentication required. Provide a valid Bearer token."));
+                }
+            },
+            OnForbidden = async context =>
+            {
+                if (context.Request.Path.StartsWithSegments("/api"))
+                {
+                    context.Response.StatusCode = StatusCodes.Status403Forbidden;
+                    context.Response.ContentType = "application/json";
+                    await context.Response.WriteAsJsonAsync(
+                        ApiResponse<object>.Fail("Access denied."));
+                }
+            }
         };
     });
 
@@ -70,6 +128,34 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.AccessDeniedPath = "/adminportal";
     options.SlidingExpiration = true;
     options.ExpireTimeSpan = TimeSpan.FromHours(8);
+
+    options.Events.OnRedirectToLogin = context =>
+    {
+        if (context.Request.Path.StartsWithSegments("/api"))
+        {
+            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+            context.Response.ContentType = "application/json";
+            return context.Response.WriteAsJsonAsync(
+                ApiResponse<object>.Fail("Authentication required. Provide a valid Bearer token."));
+        }
+
+        context.Response.Redirect(context.RedirectUri);
+        return Task.CompletedTask;
+    };
+
+    options.Events.OnRedirectToAccessDenied = context =>
+    {
+        if (context.Request.Path.StartsWithSegments("/api"))
+        {
+            context.Response.StatusCode = StatusCodes.Status403Forbidden;
+            context.Response.ContentType = "application/json";
+            return context.Response.WriteAsJsonAsync(
+                ApiResponse<object>.Fail("Access denied."));
+        }
+
+        context.Response.Redirect(context.RedirectUri);
+        return Task.CompletedTask;
+    };
 });
 
 builder.Services.AddControllersWithViews();
@@ -85,23 +171,6 @@ builder.Services.AddSwaggerGen(options =>
     });
     options.DocInclusionPredicate((_, apiDesc) =>
         apiDesc.RelativePath?.StartsWith("api/", StringComparison.OrdinalIgnoreCase) == true);
-
-    options.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.OpenApiSecurityScheme
-    {
-        Name = "Authorization",
-        Type = Microsoft.OpenApi.SecuritySchemeType.Http,
-        Scheme = "bearer",
-        BearerFormat = "JWT",
-        In = Microsoft.OpenApi.ParameterLocation.Header,
-        Description = "Enter JWT token from POST /api/auth/login"
-    });
-    options.AddSecurityRequirement(_ => new Microsoft.OpenApi.OpenApiSecurityRequirement
-    {
-        {
-            new Microsoft.OpenApi.OpenApiSecuritySchemeReference("Bearer"),
-            []
-        }
-    });
 });
 
 var app = builder.Build();
@@ -134,6 +203,8 @@ else
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 
+app.UseMiddleware<ExceptionHandlingMiddleware>();
+
 app.UseSwagger();
 app.UseSwaggerUI(options =>
 {
@@ -146,8 +217,8 @@ app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 
-// Seed Identity roles and a default Super Admin account (development / first run).
-// Note: In production, run a dedicated migration/seed step.
+// Seed Identity roles and a default Super Admin account (MVC admin portal only).
+// Skipped gracefully when AspNet Identity tables are not present (API-only database).
 try
 {
 using (var scope = app.Services.CreateScope())
@@ -164,7 +235,6 @@ using (var scope = app.Services.CreateScope())
         }
     }
 
-    // Seed default admin users (created on first run only).
     var defaultUsers = new[]
     {
         new { UserName = "admin", Email = "admin@homeservices.local", Password = "Admin@123", Role = "Super Admin" },
@@ -198,10 +268,10 @@ using (var scope = app.Services.CreateScope())
     }
 }
 }
-catch (Exception ex) when (app.Environment.IsDevelopment())
+catch (Exception ex)
 {
     var logger = app.Services.GetRequiredService<ILoggerFactory>().CreateLogger("Startup");
-    logger.LogWarning(ex, "Database seed skipped — is the SQL tunnel running? (scripts/dev-sql-tunnel.ps1)");
+    logger.LogWarning(ex, "Identity admin seed skipped — AspNet Identity tables may not exist on this database.");
 }
 
 app.MapControllerRoute(

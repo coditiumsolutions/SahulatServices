@@ -21,7 +21,7 @@ public partial class Booking
 
     public virtual ICollection<Payment> Payments { get; set; } = new List<Payment>();
 
-    public virtual ServiceProvider ProviderU { get; set; } = null!;
+    public virtual ProviderProfile ProviderU { get; set; } = null!;
 
     public virtual ServiceRequest RequestU { get; set; } = null!;
 

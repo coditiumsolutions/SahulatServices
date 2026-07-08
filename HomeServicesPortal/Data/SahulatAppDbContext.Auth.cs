@@ -78,6 +78,10 @@ public partial class SahulatAppDbContext
             entity.HasOne(d => d.UserU).WithOne(p => p.ProviderProfile)
                 .HasForeignKey<ProviderProfile>(d => d.UserUid)
                 .OnDelete(DeleteBehavior.ClientSetNull);
+
+            entity.HasOne(d => d.CategoryU).WithMany(p => p.ProviderProfiles)
+                .HasForeignKey(d => d.CategoryUid)
+                .OnDelete(DeleteBehavior.ClientSetNull);
         });
     }
 }

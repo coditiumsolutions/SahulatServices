@@ -23,5 +23,5 @@ public partial class Review
 
     public virtual Customer CustomerU { get; set; } = null!;
 
-    public virtual ServiceProvider ProviderU { get; set; } = null!;
+    public virtual ProviderProfile ProviderU { get; set; } = null!;
 }

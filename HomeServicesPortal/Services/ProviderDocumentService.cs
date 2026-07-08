@@ -4,7 +4,7 @@ using HomeServicesPortal.Repositories;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 
-using ServiceProviderEntity = HomeServicesPortal.Models.Entities.ServiceProvider;
+using HomeServicesPortal.Helpers;
 
 namespace HomeServicesPortal.Services;
 
@@ -16,12 +16,12 @@ public class ProviderDocumentService : IProviderDocumentService
     private static readonly string[] AllowedExtensions = [".pdf", ".jpg", ".jpeg", ".png", ".webp"];
 
     private readonly IRepository<ProviderDocument> _documentRepo;
-    private readonly IRepository<ServiceProviderEntity> _providerRepo;
+    private readonly IRepository<ProviderProfile> _providerRepo;
     private readonly IWebHostEnvironment _env;
 
     public ProviderDocumentService(
         IRepository<ProviderDocument> documentRepo,
-        IRepository<ServiceProviderEntity> providerRepo,
+        IRepository<ProviderProfile> providerRepo,
         IWebHostEnvironment env)
     {
         _documentRepo = documentRepo;
@@ -32,12 +32,12 @@ public class ProviderDocumentService : IProviderDocumentService
     public async Task<List<SelectListItem>> GetProviderOptionsAsync(CancellationToken cancellationToken = default)
     {
         return await _providerRepo.Query()
-            .Where(p => p.IsActive != false)
-            .OrderBy(p => p.FullName)
+            .Where(p => p.UserU.IsActive != false && p.UserU.UserType == UserTypeConstants.Provider)
+            .OrderBy(p => p.UserU.FullName)
             .Select(p => new SelectListItem
             {
                 Value = p.Uid.ToString(),
-                Text = p.FullName
+                Text = p.UserU.FullName ?? ""
             })
             .ToListAsync(cancellationToken);
     }
@@ -65,7 +65,7 @@ public class ProviderDocumentService : IProviderDocumentService
         {
             var term = search.Trim();
             query = query.Where(d =>
-                d.ProviderU.FullName.Contains(term) ||
+                d.ProviderU.UserU.FullName.Contains(term) ||
                 (d.DocumentType != null && d.DocumentType.Contains(term)) ||
                 (d.DocumentNo != null && d.DocumentNo.Contains(term)));
         }
@@ -82,8 +82,8 @@ public class ProviderDocumentService : IProviderDocumentService
                 ? query.OrderByDescending(d => d.ExpiryDate)
                 : query.OrderBy(d => d.ExpiryDate),
             _ => sortDir == "desc"
-                ? query.OrderByDescending(d => d.ProviderU.FullName)
-                : query.OrderBy(d => d.ProviderU.FullName)
+                ? query.OrderByDescending(d => d.ProviderU.UserU.FullName)
+                : query.OrderBy(d => d.ProviderU.UserU.FullName)
         };
 
         var totalCount = await query.CountAsync(cancellationToken);
@@ -94,7 +94,7 @@ public class ProviderDocumentService : IProviderDocumentService
             .Select(d => new ProviderDocumentItemVm
             {
                 Uid = d.Uid,
-                ProviderName = d.ProviderU.FullName,
+                ProviderName = d.ProviderU.UserU.FullName,
                 DocumentType = d.DocumentType,
                 DocumentNo = d.DocumentNo,
                 FilePath = d.FilePath,
@@ -122,7 +122,7 @@ public class ProviderDocumentService : IProviderDocumentService
             {
                 Uid = d.Uid,
                 ProviderUid = d.ProviderUid,
-                ProviderName = d.ProviderU.FullName,
+                ProviderName = d.ProviderU.UserU.FullName,
                 DocumentType = d.DocumentType,
                 DocumentNo = d.DocumentNo,
                 FilePath = d.FilePath,
@@ -154,7 +154,7 @@ public class ProviderDocumentService : IProviderDocumentService
             .Select(d => new ProviderDocumentDeleteVm
             {
                 Uid = d.Uid,
-                ProviderName = d.ProviderU.FullName,
+                ProviderName = d.ProviderU.UserU.FullName,
                 DocumentType = d.DocumentType,
                 DocumentNo = d.DocumentNo,
                 FilePath = d.FilePath,

@@ -17,4 +17,18 @@ public partial class ProviderProfile
     public bool? IsVerified { get; set; }
 
     public virtual AppUser UserU { get; set; } = null!;
+
+    public virtual ServiceCategory? CategoryU { get; set; }
+
+    public virtual ICollection<Booking> Bookings { get; set; } = new List<Booking>();
+
+    public virtual ICollection<ProviderAvailability> ProviderAvailabilities { get; set; } = new List<ProviderAvailability>();
+
+    public virtual ICollection<ProviderDocument> ProviderDocuments { get; set; } = new List<ProviderDocument>();
+
+    public virtual ICollection<ProviderLocation> ProviderLocations { get; set; } = new List<ProviderLocation>();
+
+    public virtual ICollection<ProviderQuote> ProviderQuotes { get; set; } = new List<ProviderQuote>();
+
+    public virtual ICollection<Review> Reviews { get; set; } = new List<Review>();
 }

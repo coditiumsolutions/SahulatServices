@@ -29,7 +29,7 @@ public class BookingTrackingService : IBookingTrackingService
             .Select(b => new SelectListItem
             {
                 Value = b.Uid.ToString(),
-                Text = $"#{b.Uid} - {b.ProviderU.FullName} / Req #{b.RequestUid}"
+                Text = $"#{b.Uid} - {b.ProviderU.UserU.FullName} / Req #{b.RequestUid}"
             })
             .ToListAsync(cancellationToken);
     }
@@ -57,7 +57,7 @@ public class BookingTrackingService : IBookingTrackingService
         {
             var term = search.Trim();
             query = query.Where(t =>
-                t.Bookin.ProviderU.FullName.Contains(term) ||
+                t.Bookin.ProviderU.UserU.FullName.Contains(term) ||
                 (t.Status != null && t.Status.Contains(term)) ||
                 (t.Remarks != null && t.Remarks.Contains(term)));
         }
@@ -83,7 +83,7 @@ public class BookingTrackingService : IBookingTrackingService
             .Select(t => new BookingTrackingItemVm
             {
                 Uid = t.Uid,
-                BookingLabel = $"#{t.BookingUid} - {t.Bookin.ProviderU.FullName}",
+                BookingLabel = $"#{t.BookingUid} - {t.Bookin.ProviderU.UserU.FullName}",
                 Status = t.Status,
                 Remarks = t.Remarks,
                 StatusDate = t.StatusDate
@@ -110,7 +110,7 @@ public class BookingTrackingService : IBookingTrackingService
             {
                 Uid = t.Uid,
                 BookingUid = t.BookingUid,
-                BookingLabel = $"#{t.BookingUid} - {t.Bookin.ProviderU.FullName} / Req #{t.Bookin.RequestUid}",
+                BookingLabel = $"#{t.BookingUid} - {t.Bookin.ProviderU.UserU.FullName} / Req #{t.Bookin.RequestUid}",
                 Status = t.Status,
                 Remarks = t.Remarks,
                 StatusDate = t.StatusDate
@@ -139,7 +139,7 @@ public class BookingTrackingService : IBookingTrackingService
             .Select(t => new BookingTrackingDeleteVm
             {
                 Uid = t.Uid,
-                BookingLabel = $"#{t.BookingUid} - {t.Bookin.ProviderU.FullName}",
+                BookingLabel = $"#{t.BookingUid} - {t.Bookin.ProviderU.UserU.FullName}",
                 Status = t.Status,
                 StatusDate = t.StatusDate
             })

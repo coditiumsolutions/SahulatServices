@@ -4,7 +4,7 @@ using HomeServicesPortal.Repositories;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 
-using ServiceProviderEntity = HomeServicesPortal.Models.Entities.ServiceProvider;
+using HomeServicesPortal.Helpers;
 
 namespace HomeServicesPortal.Services;
 
@@ -12,12 +12,12 @@ public class ProviderQuoteService : IProviderQuoteService
 {
     private readonly IRepository<ProviderQuote> _quoteRepo;
     private readonly IRepository<ServiceRequest> _requestRepo;
-    private readonly IRepository<ServiceProviderEntity> _providerRepo;
+    private readonly IRepository<ProviderProfile> _providerRepo;
 
     public ProviderQuoteService(
         IRepository<ProviderQuote> quoteRepo,
         IRepository<ServiceRequest> requestRepo,
-        IRepository<ServiceProviderEntity> providerRepo)
+        IRepository<ProviderProfile> providerRepo)
     {
         _quoteRepo = quoteRepo;
         _requestRepo = requestRepo;
@@ -39,12 +39,12 @@ public class ProviderQuoteService : IProviderQuoteService
     public async Task<List<SelectListItem>> GetProviderOptionsAsync(CancellationToken cancellationToken = default)
     {
         return await _providerRepo.Query()
-            .Where(p => p.IsActive != false)
-            .OrderBy(p => p.FullName)
+            .Where(p => p.UserU.IsActive != false && p.UserU.UserType == UserTypeConstants.Provider)
+            .OrderBy(p => p.UserU.FullName)
             .Select(p => new SelectListItem
             {
                 Value = p.Uid.ToString(),
-                Text = p.FullName
+                Text = p.UserU.FullName ?? ""
             })
             .ToListAsync(cancellationToken);
     }
@@ -69,7 +69,7 @@ public class ProviderQuoteService : IProviderQuoteService
             query = query.Where(q =>
                 q.RequestU.CustomerU.FullName.Contains(term) ||
                 q.RequestU.CategoryU.CategoryName.Contains(term) ||
-                q.ProviderU.FullName.Contains(term) ||
+                q.ProviderU.UserU.FullName.Contains(term) ||
                 (q.Remarks != null && q.Remarks.Contains(term)));
         }
 
@@ -79,8 +79,8 @@ public class ProviderQuoteService : IProviderQuoteService
                 ? query.OrderByDescending(q => q.RequestUid)
                 : query.OrderBy(q => q.RequestUid),
             "provider" => sortDir == "desc"
-                ? query.OrderByDescending(q => q.ProviderU.FullName)
-                : query.OrderBy(q => q.ProviderU.FullName),
+                ? query.OrderByDescending(q => q.ProviderU.UserU.FullName)
+                : query.OrderBy(q => q.ProviderU.UserU.FullName),
             "amount" => sortDir == "desc"
                 ? query.OrderByDescending(q => q.QuoteAmount)
                 : query.OrderBy(q => q.QuoteAmount),
@@ -98,7 +98,7 @@ public class ProviderQuoteService : IProviderQuoteService
             {
                 Uid = q.Uid,
                 RequestLabel = $"#{q.RequestUid} - {q.RequestU.CustomerU.FullName}",
-                ProviderName = q.ProviderU.FullName,
+                ProviderName = q.ProviderU.UserU.FullName,
                 QuoteAmount = q.QuoteAmount,
                 EstimatedArrivalMinutes = q.EstimatedArrivalMinutes,
                 DistanceKm = q.DistanceKm,
@@ -128,7 +128,7 @@ public class ProviderQuoteService : IProviderQuoteService
                 RequestUid = q.RequestUid,
                 RequestLabel = $"#{q.RequestUid} - {q.RequestU.CustomerU.FullName} ({q.RequestU.CategoryU.CategoryName})",
                 ProviderUid = q.ProviderUid,
-                ProviderName = q.ProviderU.FullName,
+                ProviderName = q.ProviderU.UserU.FullName,
                 QuoteAmount = q.QuoteAmount,
                 EstimatedArrivalMinutes = q.EstimatedArrivalMinutes,
                 DistanceKm = q.DistanceKm,
@@ -163,7 +163,7 @@ public class ProviderQuoteService : IProviderQuoteService
             {
                 Uid = q.Uid,
                 RequestLabel = $"#{q.RequestUid} - {q.RequestU.CustomerU.FullName}",
-                ProviderName = q.ProviderU.FullName,
+                ProviderName = q.ProviderU.UserU.FullName,
                 QuoteAmount = q.QuoteAmount,
                 QuoteDate = q.QuoteDate
             })

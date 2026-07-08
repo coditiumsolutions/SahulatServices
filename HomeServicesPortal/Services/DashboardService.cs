@@ -4,14 +4,12 @@ using HomeServicesPortal.Repositories;
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
 
-using ServiceProviderEntity = HomeServicesPortal.Models.Entities.ServiceProvider;
-
 namespace HomeServicesPortal.Services;
 
 public class DashboardService : IDashboardService
 {
     private readonly IRepository<ServiceCategory> _categoryRepo;
-    private readonly IRepository<ServiceProviderEntity> _providerRepo;
+    private readonly IRepository<ProviderProfile> _providerRepo;
     private readonly IRepository<ProviderAvailability> _availabilityRepo;
     private readonly IRepository<Customer> _customerRepo;
     private readonly IRepository<ServiceRequest> _requestRepo;
@@ -21,7 +19,7 @@ public class DashboardService : IDashboardService
 
     public DashboardService(
         IRepository<ServiceCategory> categoryRepo,
-        IRepository<ServiceProviderEntity> providerRepo,
+        IRepository<ProviderProfile> providerRepo,
         IRepository<ProviderAvailability> availabilityRepo,
         IRepository<Customer> customerRepo,
         IRepository<ServiceRequest> requestRepo,
@@ -176,7 +174,7 @@ public class DashboardService : IDashboardService
         var providerIds = providerPerf.Select(x => x.ProviderUid).ToList();
         var providers = await _providerRepo.Query()
             .Where(p => providerIds.Contains(p.Uid))
-            .Select(p => new { p.Uid, p.FullName })
+            .Select(p => new { p.Uid, FullName = p.UserU.FullName ?? "—" })
             .ToListAsync(cancellationToken);
 
         var ratings = await _reviewRepo.Query()
@@ -223,7 +221,7 @@ public class DashboardService : IDashboardService
             .Join(_providerRepo.Query(), b => b.ProviderUid, p => p.Uid, (b, p) => new LatestBookingVm
             {
                 Uid = b.Uid,
-                ProviderName = p.FullName,
+                ProviderName = p.UserU.FullName ?? "—",
                 BookingDate = b.BookingDate,
                 FinalAmount = b.FinalAmount,
                 Status = b.Status

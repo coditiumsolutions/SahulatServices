@@ -6,6 +6,7 @@
 **/appsettings.Development.json
 !**/appsettings.example.json
 !**/appsettings.Development.example.json
+deploy/gcp/appsettings.Production.json
 *.local.json
 **/secrets.json
 **/credentials.json
@@ -14,8 +15,8 @@
 bin/
 obj/
 publish/
+publish-*/
 publish.zip
-publish-test/
 *.user
 *.suo
 .vs/

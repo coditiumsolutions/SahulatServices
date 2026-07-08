@@ -3,9 +3,7 @@ using HomeServicesPortal.Models.ViewModels;
 using HomeServicesPortal.Repositories;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
-
-using ServiceProviderEntity = HomeServicesPortal.Models.Entities.ServiceProvider;
-
+using HomeServicesPortal.Helpers;
 namespace HomeServicesPortal.Services;
 
 public class BookingService : IBookingService
@@ -14,12 +12,12 @@ public class BookingService : IBookingService
 
     private readonly IRepository<Booking> _bookingRepo;
     private readonly IRepository<ServiceRequest> _requestRepo;
-    private readonly IRepository<ServiceProviderEntity> _providerRepo;
+    private readonly IRepository<ProviderProfile> _providerRepo;
 
     public BookingService(
         IRepository<Booking> bookingRepo,
         IRepository<ServiceRequest> requestRepo,
-        IRepository<ServiceProviderEntity> providerRepo)
+        IRepository<ProviderProfile> providerRepo)
     {
         _bookingRepo = bookingRepo;
         _requestRepo = requestRepo;
@@ -41,12 +39,12 @@ public class BookingService : IBookingService
     public async Task<List<SelectListItem>> GetProviderOptionsAsync(CancellationToken cancellationToken = default)
     {
         return await _providerRepo.Query()
-            .Where(p => p.IsActive != false)
-            .OrderBy(p => p.FullName)
+            .Where(p => p.UserU.IsActive != false && p.UserU.UserType == UserTypeConstants.Provider)
+            .OrderBy(p => p.UserU.FullName)
             .Select(p => new SelectListItem
             {
                 Value = p.Uid.ToString(),
-                Text = p.FullName
+                Text = p.UserU.FullName ?? "—"
             })
             .ToListAsync(cancellationToken);
     }
@@ -76,7 +74,7 @@ public class BookingService : IBookingService
             query = query.Where(b =>
                 b.RequestU.CustomerU.FullName.Contains(term) ||
                 b.RequestU.CategoryU.CategoryName.Contains(term) ||
-                b.ProviderU.FullName.Contains(term) ||
+                b.ProviderU.UserU.FullName.Contains(term) ||
                 (b.Status != null && b.Status.Contains(term)));
         }
 
@@ -86,8 +84,8 @@ public class BookingService : IBookingService
                 ? query.OrderByDescending(b => b.RequestUid)
                 : query.OrderBy(b => b.RequestUid),
             "provider" => sortDir == "desc"
-                ? query.OrderByDescending(b => b.ProviderU.FullName)
-                : query.OrderBy(b => b.ProviderU.FullName),
+                ? query.OrderByDescending(b => b.ProviderU.UserU.FullName)
+                : query.OrderBy(b => b.ProviderU.UserU.FullName),
             "status" => sortDir == "desc"
                 ? query.OrderByDescending(b => b.Status)
                 : query.OrderBy(b => b.Status),
@@ -108,7 +106,7 @@ public class BookingService : IBookingService
             {
                 Uid = b.Uid,
                 RequestLabel = $"#{b.RequestUid} - {b.RequestU.CustomerU.FullName}",
-                ProviderName = b.ProviderU.FullName,
+                ProviderName = b.ProviderU.UserU.FullName,
                 BookingDate = b.BookingDate,
                 FinalAmount = b.FinalAmount,
                 Status = b.Status
@@ -137,7 +135,7 @@ public class BookingService : IBookingService
                 RequestUid = b.RequestUid,
                 RequestLabel = $"#{b.RequestUid} - {b.RequestU.CustomerU.FullName} ({b.RequestU.CategoryU.CategoryName})",
                 ProviderUid = b.ProviderUid,
-                ProviderName = b.ProviderU.FullName,
+                ProviderName = b.ProviderU.UserU.FullName,
                 BookingDate = b.BookingDate,
                 FinalAmount = b.FinalAmount,
                 Status = b.Status,
@@ -171,7 +169,7 @@ public class BookingService : IBookingService
             {
                 Uid = b.Uid,
                 RequestLabel = $"#{b.RequestUid} - {b.RequestU.CustomerU.FullName}",
-                ProviderName = b.ProviderU.FullName,
+                ProviderName = b.ProviderU.UserU.FullName,
                 BookingDate = b.BookingDate,
                 Status = b.Status
             })

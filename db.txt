@@ -1,10 +1,32 @@
-# Version: 1.1 | UpdatedAt: 23/06/2026
+# Version: 1.9 | UpdatedAt: 08/07/2026
 # Database: SahulatAppDB
-# Server: 93.127.199.220,1433
+# Server: 34.131.132.158,1433
 
 ================================================================================
-BUSINESS TABLES (Home Services Portal)
+CORE TABLES (Live Schema)
 ================================================================================
+
+--------------------------------------------------------------------------------
+Table: UsersLogin
+--------------------------------------------------------------------------------
+  UID              int              NOT NULL  PK
+  MobileNo         nvarchar(20)     NOT NULL
+  PasswordHash     nvarchar(500)    NOT NULL
+  UserType         nvarchar(20)     NOT NULL
+  IsActive         bit              NOT NULL  DEFAULT (1)
+  IsVerified       bit              NOT NULL  DEFAULT (0)
+  CreatedOn        datetime         NOT NULL  DEFAULT (getdate())
+  LastLogin        datetime         NULL
+
+--------------------------------------------------------------------------------
+Table: Clients
+--------------------------------------------------------------------------------
+  UID              int              NOT NULL  PK
+  UserUID          int              NOT NULL  FK -> UsersLogin.UID
+  FullName         nvarchar(150)    NOT NULL
+  CNIC             nvarchar(15)     NULL
+  Gender           nvarchar(20)     NULL
+  CreatedOn        datetime         NOT NULL  DEFAULT (getdate())
 
 --------------------------------------------------------------------------------
 Table: ServiceCategories
@@ -16,7 +38,82 @@ Table: ServiceCategories
   CreatedOn        datetime         NULL      DEFAULT (getdate())
 
 --------------------------------------------------------------------------------
-Table: ServiceProviders
+Table: Providers
+--------------------------------------------------------------------------------
+  UID              int              NOT NULL  PK
+  UserUID          int              NOT NULL  FK -> UsersLogin.UID
+  FullName         nvarchar(150)    NOT NULL
+  CNIC             nvarchar(15)     NOT NULL
+  Gender           nvarchar(20)     NULL
+  ExperienceYears  int              NULL      DEFAULT (0)
+  Description      nvarchar(MAX)    NULL
+  IsVerified       bit              NOT NULL  DEFAULT (0)
+  AverageRating    decimal(3,2)     NOT NULL  DEFAULT (0)
+  TotalReviews     int              NOT NULL  DEFAULT (0)
+  TotalJobsCompleted int            NOT NULL  DEFAULT (0)
+  IsAvailable      bit              NOT NULL  DEFAULT (1)
+  CreatedOn        datetime         NOT NULL  DEFAULT (getdate())
+  CategoryUID      int              NOT NULL  FK -> ServiceCategories.UID
+  AvailableTiming  nvarchar(100)    NULL
+
+--------------------------------------------------------------------------------
+Table: Staff
+--------------------------------------------------------------------------------
+  UID              int              NOT NULL  PK
+  UserUID          int              NOT NULL  FK -> UsersLogin.UID
+  FullName         nvarchar(150)    NOT NULL
+  Designation      nvarchar(100)    NULL
+  Department       nvarchar(100)    NULL
+  IsAdmin          bit              NOT NULL  DEFAULT (0)
+  CreatedOn        datetime         NOT NULL  DEFAULT (getdate())
+
+--------------------------------------------------------------------------------
+Table: ClientAddresses
+--------------------------------------------------------------------------------
+  UID              int              NOT NULL  PK
+  ClientUID        int              NOT NULL  FK -> Clients.UID
+  AddressTitle     nvarchar(100)    NOT NULL
+  FullAddress      nvarchar(500)    NOT NULL
+  Area             nvarchar(150)    NOT NULL
+  City             nvarchar(100)    NOT NULL
+  Latitude         decimal(10,7)    NULL
+  Longitude        decimal(10,7)    NULL
+
+--------------------------------------------------------------------------------
+Table: CustomerServiceRequests
+--------------------------------------------------------------------------------
+  UID                  int              NOT NULL  PK
+  ClientUID            int              NOT NULL  FK -> Clients.UID
+  CategoryUID          int              NOT NULL  FK -> ServiceCategories.UID
+  ClientAddressUID     int              NOT NULL  FK -> ClientAddresses.UID
+  ServiceTitle         nvarchar(150)    NOT NULL
+  ServiceDescription   nvarchar(MAX)    NOT NULL
+  PreferredServiceDate date             NULL
+  PreferredServiceTime nvarchar(50)     NULL
+  IsUrgent             bit              NOT NULL  DEFAULT (0)
+  ContactPerson        nvarchar(150)    NULL
+  ContactNo            nvarchar(20)     NOT NULL
+  EstimatedBudget      decimal(12,2)    NULL
+  Status               nvarchar(30)     NOT NULL  DEFAULT ('Pending')
+  Remarks              nvarchar(500)    NULL
+  CreatedOn            datetime         NOT NULL  DEFAULT (getdate())
+
+
+================================================================================
+BUSINESS TABLES (Home Services Portal) [REMOVED]
+================================================================================
+
+--------------------------------------------------------------------------------
+Table: ServiceCategories [REMOVED — restored; see CORE TABLES]
+--------------------------------------------------------------------------------
+  UID              int              NOT NULL  PK
+  CategoryName     varchar(100)     NOT NULL
+  Description      varchar(500)     NULL
+  IsActive         bit              NULL      DEFAULT (1)
+  CreatedOn        datetime         NULL      DEFAULT (getdate())
+
+--------------------------------------------------------------------------------
+Table: ServiceProviders [REMOVED]
 --------------------------------------------------------------------------------
   UID              int              NOT NULL  PK
   FullName         varchar(150)     NOT NULL
@@ -30,7 +127,7 @@ Table: ServiceProviders
   CreatedOn        datetime         NULL      DEFAULT (getdate())
 
 --------------------------------------------------------------------------------
-Table: ProviderLocations
+Table: ProviderLocations [REMOVED]
 --------------------------------------------------------------------------------
   UID              int              NOT NULL  PK
   ProviderUID      int              NOT NULL  FK -> ServiceProviders.UID
@@ -39,7 +136,7 @@ Table: ProviderLocations
   LastUpdated      datetime         NULL      DEFAULT (getdate())
 
 --------------------------------------------------------------------------------
-Table: ProviderAvailability
+Table: ProviderAvailability [REMOVED]
 --------------------------------------------------------------------------------
   UID              int              NOT NULL  PK
   ProviderUID      int              NOT NULL  FK -> ServiceProviders.UID
@@ -48,7 +145,7 @@ Table: ProviderAvailability
   AvailableTo      time             NULL
 
 --------------------------------------------------------------------------------
-Table: ProviderDocuments
+Table: ProviderDocuments [REMOVED]
 --------------------------------------------------------------------------------
   UID              int              NOT NULL  PK
   ProviderUID      int              NOT NULL  FK -> ServiceProviders.UID
@@ -58,7 +155,7 @@ Table: ProviderDocuments
   ExpiryDate       date             NULL
 
 --------------------------------------------------------------------------------
-Table: Customers
+Table: Customers [REMOVED]
 --------------------------------------------------------------------------------
   UID              int              NOT NULL  PK
   FullName         varchar(150)     NOT NULL
@@ -68,7 +165,7 @@ Table: Customers
   CreatedOn        datetime         NULL      DEFAULT (getdate())
 
 --------------------------------------------------------------------------------
-Table: ServiceRequests
+Table: ServiceRequests [REMOVED]
 --------------------------------------------------------------------------------
   UID                  int              NOT NULL  PK
   CustomerUID          int              NOT NULL  FK -> Customers.UID
@@ -81,7 +178,7 @@ Table: ServiceRequests
   Status               varchar(50)      NULL      DEFAULT ('Pending')
 
 --------------------------------------------------------------------------------
-Table: ProviderQuotes
+Table: ProviderQuotes [REMOVED]
 --------------------------------------------------------------------------------
   UID                      int              NOT NULL  PK
   RequestUID               int              NOT NULL  FK -> ServiceRequests.UID
@@ -93,7 +190,7 @@ Table: ProviderQuotes
   QuoteDate                datetime         NULL      DEFAULT (getdate())
 
 --------------------------------------------------------------------------------
-Table: Bookings
+Table: Bookings [REMOVED]
 --------------------------------------------------------------------------------
   UID              int              NOT NULL  PK
   RequestUID       int              NOT NULL  FK -> ServiceRequests.UID
@@ -103,7 +200,7 @@ Table: Bookings
   Status           varchar(50)      NULL      DEFAULT ('Accepted')
 
 --------------------------------------------------------------------------------
-Table: BookingTracking
+Table: BookingTracking [REMOVED]
 --------------------------------------------------------------------------------
   UID              int              NOT NULL  PK
   BookingUID       int              NOT NULL  FK -> Bookings.UID
@@ -112,7 +209,7 @@ Table: BookingTracking
   StatusDate       datetime         NULL      DEFAULT (getdate())
 
 --------------------------------------------------------------------------------
-Table: Payments
+Table: Payments [REMOVED]
 --------------------------------------------------------------------------------
   UID              int              NOT NULL  PK
   BookingUID       int              NOT NULL  FK -> Bookings.UID
@@ -122,7 +219,7 @@ Table: Payments
   PaymentDate      datetime         NULL      DEFAULT (getdate())
 
 --------------------------------------------------------------------------------
-Table: Reviews
+Table: Reviews [REMOVED]
 --------------------------------------------------------------------------------
   UID              int              NOT NULL  PK
   BookingUID       int              NOT NULL  FK -> Bookings.UID
@@ -134,11 +231,11 @@ Table: Reviews
 
 
 ================================================================================
-APP USER & PROFILE TABLES
+APP USER & PROFILE TABLES [REMOVED]
 ================================================================================
 
 --------------------------------------------------------------------------------
-Table: Users
+Table: Users [REMOVED]
 --------------------------------------------------------------------------------
   UID              int              NOT NULL  PK
   FullName         varchar(150)     NULL
@@ -150,7 +247,7 @@ Table: Users
   CreatedOn        datetime         NULL      DEFAULT (getdate())
 
 --------------------------------------------------------------------------------
-Table: CustomerProfiles
+Table: CustomerProfiles [REMOVED]
 --------------------------------------------------------------------------------
   UID              int              NOT NULL  PK
   UserUID          int              NOT NULL  FK -> Users.UID
@@ -160,7 +257,7 @@ Table: CustomerProfiles
   ProfileImage     varchar(300)     NULL
 
 --------------------------------------------------------------------------------
-Table: ProviderProfiles
+Table: ProviderProfiles [REMOVED]
 --------------------------------------------------------------------------------
   UID              int              NOT NULL  PK
   UserUID          int              NOT NULL  FK -> Users.UID
@@ -171,7 +268,7 @@ Table: ProviderProfiles
   IsVerified       bit              NULL      DEFAULT (0)
 
 --------------------------------------------------------------------------------
-Table: ProviderUsers
+Table: ProviderUsers [REMOVED]
 --------------------------------------------------------------------------------
   UID              int              NOT NULL  PK
   ProviderUID      int              NOT NULL  FK -> ServiceProviders.UID
@@ -183,11 +280,11 @@ Table: ProviderUsers
 
 
 ================================================================================
-IDENTITY TABLES (ASP.NET Core Authentication)
+IDENTITY TABLES (ASP.NET Core Authentication) [REMOVED]
 ================================================================================
 
 --------------------------------------------------------------------------------
-Table: AspNetUsers
+Table: AspNetUsers [REMOVED]
 --------------------------------------------------------------------------------
   Id                   nvarchar(450)    NOT NULL  PK
   UserName             nvarchar(256)    NULL
@@ -206,7 +303,7 @@ Table: AspNetUsers
   AccessFailedCount    int              NOT NULL
 
 --------------------------------------------------------------------------------
-Table: AspNetRoles
+Table: AspNetRoles [REMOVED]
 --------------------------------------------------------------------------------
   Id               nvarchar(450)    NOT NULL  PK
   Name             nvarchar(256)    NULL
@@ -214,13 +311,13 @@ Table: AspNetRoles
   ConcurrencyStamp nvarchar(MAX)    NULL
 
 --------------------------------------------------------------------------------
-Table: AspNetUserRoles
+Table: AspNetUserRoles [REMOVED]
 --------------------------------------------------------------------------------
   UserId           nvarchar(450)    NOT NULL  PK, FK -> AspNetUsers.Id
   RoleId           nvarchar(450)    NOT NULL  PK, FK -> AspNetRoles.Id
 
 --------------------------------------------------------------------------------
-Table: AspNetUserClaims
+Table: AspNetUserClaims [REMOVED]
 --------------------------------------------------------------------------------
   Id               int              NOT NULL  PK
   UserId           nvarchar(450)    NOT NULL  FK -> AspNetUsers.Id
@@ -228,7 +325,7 @@ Table: AspNetUserClaims
   ClaimValue       nvarchar(MAX)    NULL
 
 --------------------------------------------------------------------------------
-Table: AspNetRoleClaims
+Table: AspNetRoleClaims [REMOVED]
 --------------------------------------------------------------------------------
   Id               int              NOT NULL  PK
   RoleId           nvarchar(450)    NOT NULL  FK -> AspNetRoles.Id
@@ -236,7 +333,7 @@ Table: AspNetRoleClaims
   ClaimValue       nvarchar(MAX)    NULL
 
 --------------------------------------------------------------------------------
-Table: AspNetUserLogins
+Table: AspNetUserLogins [REMOVED]
 --------------------------------------------------------------------------------
   LoginProvider         nvarchar(128)  NOT NULL  PK
   ProviderKey           nvarchar(128)  NOT NULL  PK
@@ -244,7 +341,7 @@ Table: AspNetUserLogins
   UserId                nvarchar(450)  NOT NULL  FK -> AspNetUsers.Id
 
 --------------------------------------------------------------------------------
-Table: AspNetUserTokens
+Table: AspNetUserTokens [REMOVED]
 --------------------------------------------------------------------------------
   UserId           nvarchar(450)    NOT NULL  PK, FK -> AspNetUsers.Id
   LoginProvider    nvarchar(128)    NOT NULL  PK
@@ -252,31 +349,46 @@ Table: AspNetUserTokens
   Value            nvarchar(MAX)    NULL
 
 --------------------------------------------------------------------------------
-Table: __EFMigrationsHistory
+Table: __EFMigrationsHistory [REMOVED]
 --------------------------------------------------------------------------------
   MigrationId      nvarchar(150)    NOT NULL  PK
   ProductVersion   nvarchar(32)     NOT NULL
 
 
 ================================================================================
-FOREIGN KEY RELATIONSHIPS (Business Tables)
+FOREIGN KEY RELATIONSHIPS
 ================================================================================
 
-  ServiceProviders.CategoryUID       -> ServiceCategories.UID
-  ProviderLocations.ProviderUID      -> ServiceProviders.UID
-  ProviderAvailability.ProviderUID   -> ServiceProviders.UID
-  ProviderDocuments.ProviderUID      -> ServiceProviders.UID
-  ServiceRequests.CustomerUID        -> Customers.UID
-  ServiceRequests.CategoryUID        -> ServiceCategories.UID
-  ProviderQuotes.RequestUID          -> ServiceRequests.UID
-  ProviderQuotes.ProviderUID         -> ServiceProviders.UID
-  Bookings.RequestUID                -> ServiceRequests.UID
-  Bookings.ProviderUID               -> ServiceProviders.UID
-  BookingTracking.BookingUID         -> Bookings.UID
-  Payments.BookingUID                -> Bookings.UID
-  Reviews.BookingUID                 -> Bookings.UID
-  Reviews.CustomerUID                -> Customers.UID
-  Reviews.ProviderUID                -> ServiceProviders.UID
-  CustomerProfiles.UserUID           -> Users.UID
-  ProviderProfiles.UserUID           -> Users.UID
-  ProviderUsers.ProviderUID          -> ServiceProviders.UID
+  Clients.UserUID                    -> UsersLogin.UID
+  Providers.UserUID                  -> UsersLogin.UID
+  Providers.CategoryUID              -> ServiceCategories.UID
+  Staff.UserUID                      -> UsersLogin.UID
+  ClientAddresses.ClientUID          -> Clients.UID
+  CustomerServiceRequests.ClientUID        -> Clients.UID
+  CustomerServiceRequests.CategoryUID      -> ServiceCategories.UID
+  CustomerServiceRequests.ClientAddressUID -> ClientAddresses.UID
+
+  ServiceProviders.CategoryUID       -> ServiceCategories.UID          [REMOVED]
+  ProviderLocations.ProviderUID      -> ServiceProviders.UID           [REMOVED]
+  ProviderAvailability.ProviderUID   -> ServiceProviders.UID           [REMOVED]
+  ProviderDocuments.ProviderUID      -> ServiceProviders.UID           [REMOVED]
+  ServiceRequests.CustomerUID        -> Customers.UID                  [REMOVED]
+  ServiceRequests.CategoryUID        -> ServiceCategories.UID          [REMOVED]
+  ProviderQuotes.RequestUID          -> ServiceRequests.UID            [REMOVED]
+  ProviderQuotes.ProviderUID         -> ServiceProviders.UID           [REMOVED]
+  Bookings.RequestUID                -> ServiceRequests.UID            [REMOVED]
+  Bookings.ProviderUID               -> ServiceProviders.UID           [REMOVED]
+  BookingTracking.BookingUID         -> Bookings.UID                   [REMOVED]
+  Payments.BookingUID                -> Bookings.UID                   [REMOVED]
+  Reviews.BookingUID                 -> Bookings.UID                   [REMOVED]
+  Reviews.CustomerUID                -> Customers.UID                  [REMOVED]
+  Reviews.ProviderUID                -> ServiceProviders.UID           [REMOVED]
+  CustomerProfiles.UserUID           -> Users.UID                      [REMOVED]
+  ProviderProfiles.UserUID           -> Users.UID                      [REMOVED]
+  ProviderUsers.ProviderUID          -> ServiceProviders.UID           [REMOVED]
+  AspNetRoleClaims.RoleId            -> AspNetRoles.Id                 [REMOVED]
+  AspNetUserClaims.UserId            -> AspNetUsers.Id                 [REMOVED]
+  AspNetUserLogins.UserId            -> AspNetUsers.Id                 [REMOVED]
+  AspNetUserRoles.RoleId             -> AspNetRoles.Id                 [REMOVED]
+  AspNetUserRoles.UserId             -> AspNetUsers.Id                 [REMOVED]
+  AspNetUserTokens.UserId            -> AspNetUsers.Id                 [REMOVED]

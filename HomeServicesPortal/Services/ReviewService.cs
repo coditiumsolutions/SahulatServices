@@ -4,7 +4,7 @@ using HomeServicesPortal.Repositories;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 
-using ServiceProviderEntity = HomeServicesPortal.Models.Entities.ServiceProvider;
+using HomeServicesPortal.Helpers;
 
 namespace HomeServicesPortal.Services;
 
@@ -13,13 +13,13 @@ public class ReviewService : IReviewService
     private readonly IRepository<Review> _reviewRepo;
     private readonly IRepository<Booking> _bookingRepo;
     private readonly IRepository<Customer> _customerRepo;
-    private readonly IRepository<ServiceProviderEntity> _providerRepo;
+    private readonly IRepository<ProviderProfile> _providerRepo;
 
     public ReviewService(
         IRepository<Review> reviewRepo,
         IRepository<Booking> bookingRepo,
         IRepository<Customer> customerRepo,
-        IRepository<ServiceProviderEntity> providerRepo)
+        IRepository<ProviderProfile> providerRepo)
     {
         _reviewRepo = reviewRepo;
         _bookingRepo = bookingRepo;
@@ -34,7 +34,7 @@ public class ReviewService : IReviewService
             .Select(b => new SelectListItem
             {
                 Value = b.Uid.ToString(),
-                Text = $"#{b.Uid} - {b.ProviderU.FullName} / Req #{b.RequestUid}"
+                Text = $"#{b.Uid} - {b.ProviderU.UserU.FullName} / Req #{b.RequestUid}"
             })
             .ToListAsync(cancellationToken);
     }
@@ -54,12 +54,12 @@ public class ReviewService : IReviewService
     public async Task<List<SelectListItem>> GetProviderOptionsAsync(CancellationToken cancellationToken = default)
     {
         return await _providerRepo.Query()
-            .Where(p => p.IsActive != false)
-            .OrderBy(p => p.FullName)
+            .Where(p => p.UserU.IsActive != false && p.UserU.UserType == UserTypeConstants.Provider)
+            .OrderBy(p => p.UserU.FullName)
             .Select(p => new SelectListItem
             {
                 Value = p.Uid.ToString(),
-                Text = p.FullName
+                Text = p.UserU.FullName ?? ""
             })
             .ToListAsync(cancellationToken);
     }
@@ -83,7 +83,7 @@ public class ReviewService : IReviewService
             var term = search.Trim();
             query = query.Where(r =>
                 r.CustomerU.FullName.Contains(term) ||
-                r.ProviderU.FullName.Contains(term) ||
+                r.ProviderU.UserU.FullName.Contains(term) ||
                 (r.ReviewText != null && r.ReviewText.Contains(term)));
         }
 
@@ -93,8 +93,8 @@ public class ReviewService : IReviewService
                 ? query.OrderByDescending(r => r.CustomerU.FullName)
                 : query.OrderBy(r => r.CustomerU.FullName),
             "provider" => sortDir == "desc"
-                ? query.OrderByDescending(r => r.ProviderU.FullName)
-                : query.OrderBy(r => r.ProviderU.FullName),
+                ? query.OrderByDescending(r => r.ProviderU.UserU.FullName)
+                : query.OrderBy(r => r.ProviderU.UserU.FullName),
             "rating" => sortDir == "desc"
                 ? query.OrderByDescending(r => r.Rating)
                 : query.OrderBy(r => r.Rating),
@@ -114,9 +114,9 @@ public class ReviewService : IReviewService
             .Select(r => new ReviewItemVm
             {
                 Uid = r.Uid,
-                BookingLabel = $"#{r.BookingUid} - {r.Bookin.ProviderU.FullName}",
+                BookingLabel = $"#{r.BookingUid} - {r.Bookin.ProviderU.UserU.FullName}",
                 CustomerName = r.CustomerU.FullName,
-                ProviderName = r.ProviderU.FullName,
+                ProviderName = r.ProviderU.UserU.FullName,
                 Rating = r.Rating,
                 ReviewDate = r.ReviewDate
             })
@@ -142,11 +142,11 @@ public class ReviewService : IReviewService
             {
                 Uid = r.Uid,
                 BookingUid = r.BookingUid,
-                BookingLabel = $"#{r.BookingUid} - {r.Bookin.ProviderU.FullName} / Req #{r.Bookin.RequestUid}",
+                BookingLabel = $"#{r.BookingUid} - {r.Bookin.ProviderU.UserU.FullName} / Req #{r.Bookin.RequestUid}",
                 CustomerUid = r.CustomerUid,
                 CustomerName = r.CustomerU.FullName,
                 ProviderUid = r.ProviderUid,
-                ProviderName = r.ProviderU.FullName,
+                ProviderName = r.ProviderU.UserU.FullName,
                 Rating = r.Rating,
                 ReviewText = r.ReviewText,
                 ReviewDate = r.ReviewDate
@@ -177,9 +177,9 @@ public class ReviewService : IReviewService
             .Select(r => new ReviewDeleteVm
             {
                 Uid = r.Uid,
-                BookingLabel = $"#{r.BookingUid} - {r.Bookin.ProviderU.FullName}",
+                BookingLabel = $"#{r.BookingUid} - {r.Bookin.ProviderU.UserU.FullName}",
                 CustomerName = r.CustomerU.FullName,
-                ProviderName = r.ProviderU.FullName,
+                ProviderName = r.ProviderU.UserU.FullName,
                 Rating = r.Rating,
                 ReviewDate = r.ReviewDate
             })

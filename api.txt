@@ -1,0 +1,915 @@
+# Version: 1.5 | UpdatedAt: 08/07/2026
+# Database: SahulatAppDB
+# Local Base URL:  https://localhost:7265/api/
+# Deployed Base URL: https://sahulatghartak.com/api/
+# Server: 34.131.132.158,1433
+
+RULES:
+- ALSO UPDATE: D:\Flutter Installation\SahulatGharTak\api.txt
+- Only active/in-use APIs are listed below
+- Mention APIs with both local and deployed base URLs
+- Each API includes Request Body and Success/Fail response bodies
+
+================================================================================
+COMMON RESPONSE WRAPPER (most APIs)
+================================================================================
+{
+  "success": true|false,
+  "message": "string",
+  "data": { ... } | null
+}
+
+================================================================================
+AUTH APIs
+================================================================================
+
+--------------------------------------------------------------------------------
+POST Register Client
+--------------------------------------------------------------------------------
+Local:     https://localhost:7265/api/auth/register-client
+Deployed:  https://sahulatghartak.com/api/auth/register-client
+
+Request Body:
+{
+  "mobileNo": "03335191392",
+  "password": "ghauri12",
+  "confirmPassword": "ghauri12",
+  "fullName": "Shahid",
+  "cnic": "1-1-1",
+  "gender": "Male"
+}
+
+Success (201):
+{
+  "success": true,
+  "message": "Client registered successfully.",
+  "data": {
+    "userId": 1,
+    "profileId": 1,
+    "userType": "Client",
+    "fullName": "Shahid",
+    "mobileNo": "03335191392",
+    "categoryId": null,
+    "categoryName": null
+  }
+}
+
+Fail (400):
+{
+  "success": false,
+  "message": "Mobile number is already registered.",
+  "data": null
+}
+
+--------------------------------------------------------------------------------
+POST Register Provider (upgrade client to provider)
+--------------------------------------------------------------------------------
+Local:     https://localhost:7265/api/auth/register-provider
+Deployed:  https://sahulatghartak.com/api/auth/register-provider
+
+Request Body:
+{
+  "mobileNo": "03335191392",
+  "password": "ghauri",
+  "fullName": "Shahid",
+  "cnic": "1-1-1",
+  "gender": "Male",
+  "experienceYears": 2,
+  "description": "Experienced provider",
+  "categoryId": 1
+}
+
+Notes:
+- categoryId OR categoryName is required
+- verifies existing client using mobileNo + password
+
+Success (200):
+{
+  "success": true,
+  "message": "Account upgraded to provider successfully.",
+  "data": {
+    "userId": 1,
+    "profileId": 4,
+    "userType": "Provider",
+    "fullName": "Shahid",
+    "mobileNo": "03335191392",
+    "categoryId": 1,
+    "categoryName": "Plumber"
+  }
+}
+
+Fail (401):
+{
+  "success": false,
+  "message": "Invalid mobile number or password.",
+  "data": null
+}
+
+Fail (409):
+{
+  "success": false,
+  "message": "Account is already registered as a provider.",
+  "data": null
+}
+
+--------------------------------------------------------------------------------
+POST Register Staff
+--------------------------------------------------------------------------------
+Local:     https://localhost:7265/api/auth/register-staff
+Deployed:  https://sahulatghartak.com/api/auth/register-staff
+
+Request Body:
+{
+  "mobileNo": "03001234567",
+  "password": "staff123",
+  "confirmPassword": "staff123",
+  "fullName": "Admin User",
+  "designation": "Manager",
+  "department": "Operations",
+  "isAdmin": true
+}
+
+Success (201):
+{
+  "success": true,
+  "message": "Staff registered successfully.",
+  "data": {
+    "userId": 2,
+    "profileId": 1,
+    "userType": "Staff",
+    "fullName": "Admin User",
+    "mobileNo": "03001234567",
+    "categoryId": null,
+    "categoryName": null
+  }
+}
+
+Fail (400):
+{
+  "success": false,
+  "message": "Mobile number is already registered.",
+  "data": null
+}
+
+--------------------------------------------------------------------------------
+POST Login
+--------------------------------------------------------------------------------
+Local:     https://localhost:7265/api/auth/login
+Deployed:  https://sahulatghartak.com/api/auth/login
+
+Request Body:
+{
+  "mobileNo": "03335191392",
+  "password": "ghauri"
+}
+
+Success (200):
+{
+  "success": true,
+  "message": "Login successful.",
+  "data": {
+    "userId": 1,
+    "profileId": 4,
+    "userType": "Provider",
+    "fullName": "Shahid",
+    "mobileNo": "03335191392"
+  }
+}
+
+Fail (401):
+{
+  "success": false,
+  "message": "Invalid mobile number or password.",
+  "data": null
+}
+
+Fail (403):
+{
+  "success": false,
+  "message": "Account is inactive. Contact support.",
+  "data": null
+}
+
+================================================================================
+PROVIDER AVAILABILITY STATUS APIs (Providers table)
+================================================================================
+Swagger group: ProviderAvailabilityStatus
+Updates: Providers.IsAvailable, Providers.AvailableTiming
+
+--------------------------------------------------------------------------------
+GET Provider Availability Status
+--------------------------------------------------------------------------------
+Local:     https://localhost:7265/api/provider-avability-status/{providerUid}
+Deployed:  https://sahulatghartak.com/api/provider-avability-status/{providerUid}
+
+Example:
+GET https://localhost:7265/api/provider-avability-status/4
+
+Request Body: none
+
+Success (200):
+{
+  "success": true,
+  "message": "Provider availability status fetched successfully.",
+  "data": {
+    "uid": 4,
+    "providerUid": 4,
+    "isOnline": true,
+    "availableFrom": "09:00",
+    "availableTo": "18:00",
+    "availableTiming": "09:00 - 18:00"
+  }
+}
+
+Fail (404):
+{
+  "success": false,
+  "message": "Provider not found.",
+  "data": null
+}
+
+--------------------------------------------------------------------------------
+POST Provider Availability Status
+--------------------------------------------------------------------------------
+Local:     https://localhost:7265/api/provider-avability-status
+Deployed:  https://sahulatghartak.com/api/provider-avability-status
+
+Request Body (option 1 - separate times):
+{
+  "providerUid": 4,
+  "isOnline": true,
+  "availableFrom": "09:00",
+  "availableTo": "18:00"
+}
+
+Request Body (option 2 - single timing field):
+{
+  "providerUid": 4,
+  "isOnline": true,
+  "availableTiming": "09:00 - 18:00"
+}
+
+Request Body (offline):
+{
+  "providerUid": 4,
+  "isOnline": false
+}
+
+Notes:
+- if isOnline=true, send availableFrom + availableTo OR availableTiming
+- time format: HH:mm (example: 09:00 or 9:00)
+
+Success (200):
+{
+  "success": true,
+  "message": "Provider availability status saved successfully.",
+  "data": {
+    "uid": 4,
+    "providerUid": 4,
+    "isOnline": true,
+    "availableFrom": "09:00",
+    "availableTo": "18:00",
+    "availableTiming": "09:00 - 18:00"
+  }
+}
+
+Fail (400):
+{
+  "success": false,
+  "message": "AvailableFrom and AvailableTo are required when provider is online.",
+  "data": null
+}
+
+Fail (404):
+{
+  "success": false,
+  "message": "Provider not found.",
+  "data": null
+}
+
+--------------------------------------------------------------------------------
+PUT Provider Availability Status (Edit)
+--------------------------------------------------------------------------------
+Local:     https://localhost:7265/api/provider-avability-status/{providerUid}
+Deployed:  https://sahulatghartak.com/api/provider-avability-status/{providerUid}
+
+Example:
+PUT https://localhost:7265/api/provider-avability-status/4
+
+Request Body:
+{
+  "providerUid": 4,
+  "isOnline": true,
+  "availableFrom": "10:00",
+  "availableTo": "20:00"
+}
+
+Notes:
+- providerUid in URL and body must match
+
+Success (200):
+{
+  "success": true,
+  "message": "Provider availability status updated successfully.",
+  "data": {
+    "uid": 4,
+    "providerUid": 4,
+    "isOnline": true,
+    "availableFrom": "10:00",
+    "availableTo": "20:00",
+    "availableTiming": "10:00 - 20:00"
+  }
+}
+
+Fail (400):
+{
+  "success": false,
+  "message": "ProviderUid in URL and body must match.",
+  "data": null
+}
+
+================================================================================
+PROVIDERS DETAIL APIs
+================================================================================
+
+--------------------------------------------------------------------------------
+GET Provider Detail (Fetch)
+--------------------------------------------------------------------------------
+Local:     https://localhost:7265/api/providers-detail/{providerUid}
+Deployed:  https://sahulatghartak.com/api/providers-detail/{providerUid}
+
+Example:
+GET https://localhost:7265/api/providers-detail/4
+
+Request Body: none
+
+Success (200):
+{
+  "success": true,
+  "message": "Provider detail fetched successfully.",
+  "data": {
+    "uid": 4,
+    "userUid": 4,
+    "mobileNo": "03335191392",
+    "fullName": "Shahid",
+    "cnic": "1-1-1",
+    "gender": "Male",
+    "experienceYears": 2,
+    "description": "Experienced provider",
+    "isVerified": false,
+    "averageRating": 0.0,
+    "totalReviews": 0,
+    "totalJobsCompleted": 0,
+    "isAvailable": true,
+    "availableTiming": "09:00 - 18:00",
+    "categoryId": 1,
+    "categoryName": "Plumber",
+    "createdOn": "2026-07-01T00:00:00"
+  }
+}
+
+Fail (404):
+{
+  "success": false,
+  "message": "Provider not found.",
+  "data": null
+}
+
+--------------------------------------------------------------------------------
+PUT Provider Detail (Edit)
+--------------------------------------------------------------------------------
+Local:     https://localhost:7265/api/providers-detail/{providerUid}
+Deployed:  https://sahulatghartak.com/api/providers-detail/{providerUid}
+
+Example:
+PUT https://localhost:7265/api/providers-detail/4
+
+Request Body:
+{
+  "providerUid": 4,
+  "fullName": "Shahid Ghauri",
+  "cnic": "1-1-1",
+  "gender": "Male",
+  "experienceYears": 3,
+  "description": "Updated provider profile",
+  "categoryId": 1
+}
+
+Notes:
+- providerUid in URL and body must match
+- send categoryId OR categoryName (one is required)
+- editable: fullName, cnic, gender, experienceYears, description, category
+- read-only in response: isVerified, ratings, jobs, isAvailable, availableTiming, mobileNo
+
+Success (200):
+{
+  "success": true,
+  "message": "Provider detail updated successfully.",
+  "data": {
+    "uid": 4,
+    "userUid": 4,
+    "mobileNo": "03335191392",
+    "fullName": "Shahid Ghauri",
+    "cnic": "1-1-1",
+    "gender": "Male",
+    "experienceYears": 3,
+    "description": "Updated provider profile",
+    "isVerified": false,
+    "averageRating": 0.0,
+    "totalReviews": 0,
+    "totalJobsCompleted": 0,
+    "isAvailable": true,
+    "availableTiming": "09:00 - 18:00",
+    "categoryId": 1,
+    "categoryName": "Plumber",
+    "createdOn": "2026-07-01T00:00:00"
+  }
+}
+
+Fail (400):
+{
+  "success": false,
+  "message": "CategoryId or CategoryName is required.",
+  "data": null
+}
+
+Fail (404):
+{
+  "success": false,
+  "message": "Provider not found.",
+  "data": null
+}
+
+================================================================================
+CLIENT ADDRESSES APIs
+================================================================================
+
+--------------------------------------------------------------------------------
+GET All Client Addresses
+--------------------------------------------------------------------------------
+Local:     https://localhost:7265/api/client-addresses
+Deployed:  https://sahulatghartak.com/api/client-addresses
+
+Optional query: ?clientUid=1
+
+Request Body: none
+
+Success (200):
+{
+  "success": true,
+  "message": "Client addresses fetched successfully.",
+  "data": [
+    {
+      "uid": 1,
+      "clientUid": 1,
+      "addressTitle": "Home",
+      "fullAddress": "House 12, Street 5",
+      "area": "DHA Phase 2",
+      "city": "Karachi",
+      "latitude": 24.8607000,
+      "longitude": 67.0011000
+    }
+  ]
+}
+
+Fail: returns empty data array [] when no addresses found
+
+--------------------------------------------------------------------------------
+GET Client Address By Id
+--------------------------------------------------------------------------------
+Local:     https://localhost:7265/api/client-addresses/{addressUid}
+Deployed:  https://sahulatghartak.com/api/client-addresses/{addressUid}
+
+Example:
+GET https://localhost:7265/api/client-addresses/1
+
+Request Body: none
+
+Success (200):
+{
+  "success": true,
+  "message": "Client address fetched successfully.",
+  "data": {
+    "uid": 1,
+    "clientUid": 1,
+    "addressTitle": "Home",
+    "fullAddress": "House 12, Street 5",
+    "area": "DHA Phase 2",
+    "city": "Karachi",
+    "latitude": 24.8607000,
+    "longitude": 67.0011000
+  }
+}
+
+Fail (404):
+{
+  "success": false,
+  "message": "Client address not found.",
+  "data": null
+}
+
+--------------------------------------------------------------------------------
+POST Client Address (Create)
+--------------------------------------------------------------------------------
+Local:     https://localhost:7265/api/client-addresses
+Deployed:  https://sahulatghartak.com/api/client-addresses
+
+Request Body:
+{
+  "clientUid": 1,
+  "addressTitle": "Home",
+  "fullAddress": "House 12, Street 5",
+  "area": "DHA Phase 2",
+  "city": "Karachi",
+  "latitude": 24.8607,
+  "longitude": 67.0011
+}
+
+Success (201):
+{
+  "success": true,
+  "message": "Client address created successfully.",
+  "data": {
+    "uid": 1,
+    "clientUid": 1,
+    "addressTitle": "Home",
+    "fullAddress": "House 12, Street 5",
+    "area": "DHA Phase 2",
+    "city": "Karachi",
+    "latitude": 24.8607000,
+    "longitude": 67.0011000
+  }
+}
+
+Fail (400):
+{
+  "success": false,
+  "message": "Client not found.",
+  "data": null
+}
+
+--------------------------------------------------------------------------------
+PUT Client Address (Update)
+--------------------------------------------------------------------------------
+Local:     https://localhost:7265/api/client-addresses/{addressUid}
+Deployed:  https://sahulatghartak.com/api/client-addresses/{addressUid}
+
+Example:
+PUT https://localhost:7265/api/client-addresses/1
+
+Request Body:
+{
+  "addressUid": 1,
+  "clientUid": 1,
+  "addressTitle": "Office",
+  "fullAddress": "Office 3, Business Center",
+  "area": "Clifton",
+  "city": "Karachi",
+  "latitude": 24.8138000,
+  "longitude": 67.0299000
+}
+
+Notes:
+- addressUid in URL and body must match
+
+Success (200):
+{
+  "success": true,
+  "message": "Client address updated successfully.",
+  "data": {
+    "uid": 1,
+    "clientUid": 1,
+    "addressTitle": "Office",
+    "fullAddress": "Office 3, Business Center",
+    "area": "Clifton",
+    "city": "Karachi",
+    "latitude": 24.8138000,
+    "longitude": 67.0299000
+  }
+}
+
+Fail (404):
+{
+  "success": false,
+  "message": "Client address not found.",
+  "data": null
+}
+
+--------------------------------------------------------------------------------
+DELETE Client Address
+--------------------------------------------------------------------------------
+Local:     https://localhost:7265/api/client-addresses/{addressUid}
+Deployed:  https://sahulatghartak.com/api/client-addresses/{addressUid}
+
+Example:
+DELETE https://localhost:7265/api/client-addresses/1
+
+Request Body: none
+
+Success (200):
+{
+  "success": true,
+  "message": "Client address deleted successfully.",
+  "data": {
+    "addressUid": 1
+  }
+}
+
+Fail (400):
+{
+  "success": false,
+  "message": "Cannot delete address because it is linked to service requests.",
+  "data": null
+}
+
+Fail (404):
+{
+  "success": false,
+  "message": "Client address not found.",
+  "data": null
+}
+
+================================================================================
+CUSTOMER SERVICE REQUESTS APIs
+================================================================================
+
+--------------------------------------------------------------------------------
+GET All Customer Service Requests
+--------------------------------------------------------------------------------
+Local:     https://localhost:7265/api/customer-service-requests
+Deployed:  https://sahulatghartak.com/api/customer-service-requests
+
+Optional query: ?clientUid=1
+
+Request Body: none
+
+Success (200):
+{
+  "success": true,
+  "message": "Service requests fetched successfully.",
+  "data": [
+    {
+      "uid": 1,
+      "clientUid": 1,
+      "clientName": "Shahid",
+      "categoryUid": 4,
+      "categoryName": "Electrician",
+      "clientAddressUid": 1,
+      "addressTitle": "Home",
+      "serviceTitle": "AC Repair",
+      "serviceDescription": "AC not cooling properly",
+      "preferredServiceDate": "2026-07-10",
+      "preferredServiceTime": "10:00",
+      "isUrgent": true,
+      "contactPerson": "Shahid",
+      "contactNo": "03335191392",
+      "estimatedBudget": 2500.00,
+      "status": "Pending",
+      "remarks": "Please call before arrival",
+      "createdOn": "2026-07-08T00:00:00"
+    }
+  ]
+}
+
+Fail: returns empty data array [] when no requests found
+
+--------------------------------------------------------------------------------
+GET Customer Service Request By Id
+--------------------------------------------------------------------------------
+Local:     https://localhost:7265/api/customer-service-requests/{requestUid}
+Deployed:  https://sahulatghartak.com/api/customer-service-requests/{requestUid}
+
+Example:
+GET https://localhost:7265/api/customer-service-requests/1
+
+Request Body: none
+
+Success (200):
+{
+  "success": true,
+  "message": "Service request fetched successfully.",
+  "data": {
+    "uid": 1,
+    "clientUid": 1,
+    "clientName": "Shahid",
+    "categoryUid": 4,
+    "categoryName": "Electrician",
+    "clientAddressUid": 1,
+    "addressTitle": "Home",
+    "serviceTitle": "AC Repair",
+    "serviceDescription": "AC not cooling properly",
+    "preferredServiceDate": "2026-07-10",
+    "preferredServiceTime": "10:00",
+    "isUrgent": true,
+    "contactPerson": "Shahid",
+    "contactNo": "03335191392",
+    "estimatedBudget": 2500.00,
+    "status": "Pending",
+    "remarks": "Please call before arrival",
+    "createdOn": "2026-07-08T00:00:00"
+  }
+}
+
+Fail (404):
+{
+  "success": false,
+  "message": "Service request not found.",
+  "data": null
+}
+
+--------------------------------------------------------------------------------
+POST Customer Service Request (Create)
+--------------------------------------------------------------------------------
+Local:     https://localhost:7265/api/customer-service-requests
+Deployed:  https://sahulatghartak.com/api/customer-service-requests
+
+Request Body:
+{
+  "clientUid": 1,
+  "categoryUid": 4,
+  "clientAddressUid": 1,
+  "serviceTitle": "AC Repair",
+  "serviceDescription": "AC not cooling properly",
+  "preferredServiceDate": "2026-07-10",
+  "preferredServiceTime": "10:00",
+  "isUrgent": true,
+  "contactPerson": "Shahid",
+  "contactNo": "03335191392",
+  "estimatedBudget": 2500,
+  "remarks": "Please call before arrival"
+}
+
+Notes:
+- status defaults to "Pending" on create
+- clientAddressUid must belong to the same clientUid
+
+Success (201):
+{
+  "success": true,
+  "message": "Service request created successfully.",
+  "data": {
+    "uid": 1,
+    "clientUid": 1,
+    "clientName": "Shahid",
+    "categoryUid": 4,
+    "categoryName": "Electrician",
+    "clientAddressUid": 1,
+    "addressTitle": "Home",
+    "serviceTitle": "AC Repair",
+    "serviceDescription": "AC not cooling properly",
+    "preferredServiceDate": "2026-07-10",
+    "preferredServiceTime": "10:00",
+    "isUrgent": true,
+    "contactPerson": "Shahid",
+    "contactNo": "03335191392",
+    "estimatedBudget": 2500.00,
+    "status": "Pending",
+    "remarks": "Please call before arrival",
+    "createdOn": "2026-07-08T00:00:00"
+  }
+}
+
+Fail (400):
+{
+  "success": false,
+  "message": "Client address not found for this client.",
+  "data": null
+}
+
+--------------------------------------------------------------------------------
+PUT Customer Service Request (Update)
+--------------------------------------------------------------------------------
+Local:     https://localhost:7265/api/customer-service-requests/{requestUid}
+Deployed:  https://sahulatghartak.com/api/customer-service-requests/{requestUid}
+
+Example:
+PUT https://localhost:7265/api/customer-service-requests/1
+
+Request Body:
+{
+  "requestUid": 1,
+  "categoryUid": 4,
+  "clientAddressUid": 1,
+  "serviceTitle": "AC Repair",
+  "serviceDescription": "Updated description",
+  "preferredServiceDate": "2026-07-11",
+  "preferredServiceTime": "14:00",
+  "isUrgent": false,
+  "contactPerson": "Shahid",
+  "contactNo": "03335191392",
+  "estimatedBudget": 3000,
+  "status": "InProgress",
+  "remarks": "Technician assigned"
+}
+
+Notes:
+- requestUid in URL and body must match
+- clientUid cannot be changed on update
+
+Success (200):
+{
+  "success": true,
+  "message": "Service request updated successfully.",
+  "data": {
+    "uid": 1,
+    "clientUid": 1,
+    "clientName": "Shahid",
+    "categoryUid": 4,
+    "categoryName": "Electrician",
+    "clientAddressUid": 1,
+    "addressTitle": "Home",
+    "serviceTitle": "AC Repair",
+    "serviceDescription": "Updated description",
+    "preferredServiceDate": "2026-07-11",
+    "preferredServiceTime": "14:00",
+    "isUrgent": false,
+    "contactPerson": "Shahid",
+    "contactNo": "03335191392",
+    "estimatedBudget": 3000.00,
+    "status": "InProgress",
+    "remarks": "Technician assigned",
+    "createdOn": "2026-07-08T00:00:00"
+  }
+}
+
+Fail (404):
+{
+  "success": false,
+  "message": "Service request not found.",
+  "data": null
+}
+
+--------------------------------------------------------------------------------
+DELETE Customer Service Request
+--------------------------------------------------------------------------------
+Local:     https://localhost:7265/api/customer-service-requests/{requestUid}
+Deployed:  https://sahulatghartak.com/api/customer-service-requests/{requestUid}
+
+Example:
+DELETE https://localhost:7265/api/customer-service-requests/1
+
+Request Body: none
+
+Success (200):
+{
+  "success": true,
+  "message": "Service request deleted successfully.",
+  "data": {
+    "requestUid": 1
+  }
+}
+
+Fail (404):
+{
+  "success": false,
+  "message": "Service request not found.",
+  "data": null
+}
+
+================================================================================
+SERVICE CATEGORIES APIs
+================================================================================
+
+--------------------------------------------------------------------------------
+GET All Service Categories
+--------------------------------------------------------------------------------
+Local:     https://localhost:7265/api/service-categories
+Deployed:  https://sahulatghartak.com/api/service-categories
+
+Request Body: none
+
+Success (200):
+[
+  {
+    "id": 1,
+    "name": "Plumber",
+    "description": "Plumbing services",
+    "createdOn": "2026-07-01T00:00:00"
+  }
+]
+
+Fail: returns empty array [] when no categories found
+
+--------------------------------------------------------------------------------
+GET Service Category By Id
+--------------------------------------------------------------------------------
+Local:     https://localhost:7265/api/service-categories/{id}
+Deployed:  https://sahulatghartak.com/api/service-categories/{id}
+
+Example:
+GET https://localhost:7265/api/service-categories/1
+
+Request Body: none
+
+Success (200):
+{
+  "id": 1,
+  "name": "Plumber",
+  "description": "Plumbing services",
+  "createdOn": "2026-07-01T00:00:00"
+}
+
+Fail (404):
+{
+  "message": "Service category not found."
+}

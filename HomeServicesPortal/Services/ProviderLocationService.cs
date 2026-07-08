@@ -4,18 +4,18 @@ using HomeServicesPortal.Repositories;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 
-using ServiceProviderEntity = HomeServicesPortal.Models.Entities.ServiceProvider;
+using HomeServicesPortal.Helpers;
 
 namespace HomeServicesPortal.Services;
 
 public class ProviderLocationService : IProviderLocationService
 {
     private readonly IRepository<ProviderLocation> _locationRepo;
-    private readonly IRepository<ServiceProviderEntity> _providerRepo;
+    private readonly IRepository<ProviderProfile> _providerRepo;
 
     public ProviderLocationService(
         IRepository<ProviderLocation> locationRepo,
-        IRepository<ServiceProviderEntity> providerRepo)
+        IRepository<ProviderProfile> providerRepo)
     {
         _locationRepo = locationRepo;
         _providerRepo = providerRepo;
@@ -24,12 +24,12 @@ public class ProviderLocationService : IProviderLocationService
     public async Task<List<SelectListItem>> GetProviderOptionsAsync(CancellationToken cancellationToken = default)
     {
         return await _providerRepo.Query()
-            .Where(p => p.IsActive != false)
-            .OrderBy(p => p.FullName)
+            .Where(p => p.UserU.IsActive != false && p.UserU.UserType == UserTypeConstants.Provider)
+            .OrderBy(p => p.UserU.FullName)
             .Select(p => new SelectListItem
             {
                 Value = p.Uid.ToString(),
-                Text = p.FullName
+                Text = p.UserU.FullName ?? "?"
             })
             .ToListAsync(cancellationToken);
     }
@@ -47,7 +47,7 @@ public class ProviderLocationService : IProviderLocationService
         sortDir = string.Equals(sortDir, "desc", StringComparison.OrdinalIgnoreCase) ? "desc" : "asc";
 
         var providerMap = await _providerRepo.Query()
-            .Select(p => new { p.Uid, p.FullName })
+            .Select(p => new { p.Uid, FullName = p.UserU.FullName ?? "?" })
             .ToDictionaryAsync(p => p.Uid, p => p.FullName, cancellationToken);
 
         var query = _locationRepo.Query();
@@ -72,7 +72,7 @@ public class ProviderLocationService : IProviderLocationService
         {
             Uid = l.Uid,
             ProviderUid = l.ProviderUid,
-            ProviderName = providerMap.GetValueOrDefault(l.ProviderUid, "—"),
+            ProviderName = providerMap.GetValueOrDefault(l.ProviderUid, "?"),
             Latitude = l.Latitude,
             Longitude = l.Longitude,
             LastUpdated = l.LastUpdated
@@ -119,8 +119,8 @@ public class ProviderLocationService : IProviderLocationService
 
         var providerName = await _providerRepo.Query()
             .Where(p => p.Uid == location.ProviderUid)
-            .Select(p => p.FullName)
-            .FirstOrDefaultAsync(cancellationToken) ?? "—";
+            .Select(p => p.UserU.FullName)
+            .FirstOrDefaultAsync(cancellationToken) ?? "?";
 
         return MapDetails(location, providerName);
     }
@@ -149,8 +149,8 @@ public class ProviderLocationService : IProviderLocationService
 
         var providerName = await _providerRepo.Query()
             .Where(p => p.Uid == location.ProviderUid)
-            .Select(p => p.FullName)
-            .FirstOrDefaultAsync(cancellationToken) ?? "—";
+            .Select(p => p.UserU.FullName)
+            .FirstOrDefaultAsync(cancellationToken) ?? "?";
 
         return new ProviderLocationDeleteVm
         {

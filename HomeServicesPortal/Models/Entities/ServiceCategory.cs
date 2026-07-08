@@ -15,7 +15,7 @@ public partial class ServiceCategory
 
     public DateTime? CreatedOn { get; set; }
 
-    public virtual ICollection<ServiceProvider> ServiceProviders { get; set; } = new List<ServiceProvider>();
+    public virtual ICollection<ProviderProfile> ProviderProfiles { get; set; } = new List<ProviderProfile>();
 
     public virtual ICollection<ServiceRequest> ServiceRequests { get; set; } = new List<ServiceRequest>();
 }

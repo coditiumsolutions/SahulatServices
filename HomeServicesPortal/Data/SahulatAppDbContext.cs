@@ -5,8 +5,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HomeServicesPortal.Data;
 
-using ServiceProviderEntity = HomeServicesPortal.Models.Entities.ServiceProvider;
-
 public partial class SahulatAppDbContext : DbContext
 {
     public SahulatAppDbContext(DbContextOptions<SahulatAppDbContext> options)
@@ -33,8 +31,6 @@ public partial class SahulatAppDbContext : DbContext
     public virtual DbSet<Review> Reviews { get; set; }
 
     public virtual DbSet<ServiceCategory> ServiceCategories { get; set; }
-
-    public virtual DbSet<ServiceProviderEntity> ServiceProviders { get; set; }
 
     public virtual DbSet<ServiceRequest> ServiceRequests { get; set; }
 
@@ -267,38 +263,6 @@ public partial class SahulatAppDbContext : DbContext
                 .HasMaxLength(500)
                 .IsUnicode(false);
             entity.Property(e => e.IsActive).HasDefaultValue(true);
-        });
-
-        modelBuilder.Entity<ServiceProviderEntity>(entity =>
-        {
-            entity.HasKey(e => e.Uid).HasName("PK__ServiceP__C5B19602305BB5D0");
-
-            entity.Property(e => e.Uid).HasColumnName("UID");
-            entity.Property(e => e.CategoryUid).HasColumnName("CategoryUID");
-            entity.Property(e => e.Cnic)
-                .HasMaxLength(20)
-                .IsUnicode(false)
-                .HasColumnName("CNIC");
-            entity.Property(e => e.CreatedOn)
-                .HasDefaultValueSql("(getdate())")
-                .HasColumnType("datetime");
-            entity.Property(e => e.ExperienceYears).HasDefaultValue(0);
-            entity.Property(e => e.FullName)
-                .HasMaxLength(150)
-                .IsUnicode(false);
-            entity.Property(e => e.IsActive).HasDefaultValue(true);
-            entity.Property(e => e.IsVerified).HasDefaultValue(false);
-            entity.Property(e => e.MobileNo)
-                .HasMaxLength(20)
-                .IsUnicode(false);
-            entity.Property(e => e.Rating)
-                .HasDefaultValue(0m)
-                .HasColumnType("decimal(3, 2)");
-
-            entity.HasOne(d => d.CategoryU).WithMany(p => p.ServiceProviders)
-                .HasForeignKey(d => d.CategoryUid)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__ServicePr__Categ__403A8C7D");
         });
 
         modelBuilder.Entity<ServiceRequest>(entity =>

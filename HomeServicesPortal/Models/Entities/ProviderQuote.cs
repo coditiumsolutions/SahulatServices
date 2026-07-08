@@ -21,7 +21,7 @@ public partial class ProviderQuote
 
     public DateTime? QuoteDate { get; set; }
 
-    public virtual ServiceProvider ProviderU { get; set; } = null!;
+    public virtual ProviderProfile ProviderU { get; set; } = null!;
 
     public virtual ServiceRequest RequestU { get; set; } = null!;
 }

@@ -29,7 +29,7 @@ public class PaymentService : IPaymentService
             .Select(b => new SelectListItem
             {
                 Value = b.Uid.ToString(),
-                Text = $"#{b.Uid} - {b.ProviderU.FullName} / Req #{b.RequestUid}"
+                Text = $"#{b.Uid} - {b.ProviderU.UserU.FullName} / Req #{b.RequestUid}"
             })
             .ToListAsync(cancellationToken);
     }
@@ -57,7 +57,7 @@ public class PaymentService : IPaymentService
         {
             var term = search.Trim();
             query = query.Where(p =>
-                p.Bookin.ProviderU.FullName.Contains(term) ||
+                p.Bookin.ProviderU.UserU.FullName.Contains(term) ||
                 (p.PaymentMethod != null && p.PaymentMethod.Contains(term)) ||
                 (p.TransactionNo != null && p.TransactionNo.Contains(term)));
         }
@@ -86,7 +86,7 @@ public class PaymentService : IPaymentService
             .Select(p => new PaymentItemVm
             {
                 Uid = p.Uid,
-                BookingLabel = $"#{p.BookingUid} - {p.Bookin.ProviderU.FullName}",
+                BookingLabel = $"#{p.BookingUid} - {p.Bookin.ProviderU.UserU.FullName}",
                 Amount = p.Amount,
                 PaymentMethod = p.PaymentMethod,
                 TransactionNo = p.TransactionNo,
@@ -114,7 +114,7 @@ public class PaymentService : IPaymentService
             {
                 Uid = p.Uid,
                 BookingUid = p.BookingUid,
-                BookingLabel = $"#{p.BookingUid} - {p.Bookin.ProviderU.FullName} / Req #{p.Bookin.RequestUid}",
+                BookingLabel = $"#{p.BookingUid} - {p.Bookin.ProviderU.UserU.FullName} / Req #{p.Bookin.RequestUid}",
                 Amount = p.Amount,
                 PaymentMethod = p.PaymentMethod,
                 TransactionNo = p.TransactionNo,
@@ -145,7 +145,7 @@ public class PaymentService : IPaymentService
             .Select(p => new PaymentDeleteVm
             {
                 Uid = p.Uid,
-                BookingLabel = $"#{p.BookingUid} - {p.Bookin.ProviderU.FullName}",
+                BookingLabel = $"#{p.BookingUid} - {p.Bookin.ProviderU.UserU.FullName}",
                 Amount = p.Amount,
                 PaymentMethod = p.PaymentMethod,
                 PaymentDate = p.PaymentDate
