@@ -1,5 +1,5 @@
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Security.Claims;
@@ -39,7 +39,6 @@ void ConfigureSqlServer(DbContextOptionsBuilder options) =>
         }
     });
 
-builder.Services.AddDbContext<ApplicationDbContext>(ConfigureSqlServer);
 builder.Services.AddDbContext<SahulatAppDbContext>(ConfigureSqlServer);
 builder.Services.AddDbContext<AppDbContext>(ConfigureSqlServer);
 
@@ -62,22 +61,61 @@ builder.Services.AddScoped<IProviderQuoteService, ProviderQuoteService>();
 builder.Services.AddScoped<IBookingService, BookingService>();
 builder.Services.AddScoped<IBookingTrackingService, BookingTrackingService>();
 builder.Services.AddScoped<IPaymentService, PaymentService>();
+builder.Services.AddScoped<ICommissionRuleService, CommissionRuleService>();
 builder.Services.AddScoped<IReviewService, ReviewService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
-builder.Services.AddDatabaseDeveloperPageExceptionFilter();
-
-builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = false)
-    .AddRoles<IdentityRole>()
-    .AddEntityFrameworkStores<ApplicationDbContext>();
 
 var jwtKey = builder.Configuration["Jwt:Key"]
              ?? throw new InvalidOperationException("Jwt:Key is not configured in appsettings.");
 var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "SahulatGharTak";
 var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "SahulatGharTakClients";
 
-builder.Services.AddAuthentication()
+// Cookie auth for admin portal (UsersLogin + Staff). No AspNet Identity tables / migrations.
+builder.Services.AddAuthentication(options =>
+    {
+        options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+        options.DefaultAuthenticateScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+        options.DefaultChallengeScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+        options.DefaultSignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+    })
+    .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
+    {
+        options.LoginPath = "/adminportal";
+        options.LogoutPath = "/Account/Logout";
+        options.AccessDeniedPath = "/adminportal";
+        options.SlidingExpiration = true;
+        options.ExpireTimeSpan = TimeSpan.FromHours(8);
+
+        options.Events.OnRedirectToLogin = context =>
+        {
+            if (context.Request.Path.StartsWithSegments("/api"))
+            {
+                context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                context.Response.ContentType = "application/json";
+                return context.Response.WriteAsJsonAsync(
+                    ApiResponse<object>.Fail("Authentication required. Provide a valid Bearer token."));
+            }
+
+            context.Response.Redirect(context.RedirectUri);
+            return Task.CompletedTask;
+        };
+
+        options.Events.OnRedirectToAccessDenied = context =>
+        {
+            if (context.Request.Path.StartsWithSegments("/api"))
+            {
+                context.Response.StatusCode = StatusCodes.Status403Forbidden;
+                context.Response.ContentType = "application/json";
+                return context.Response.WriteAsJsonAsync(
+                    ApiResponse<object>.Fail("Access denied."));
+            }
+
+            context.Response.Redirect(context.RedirectUri);
+            return Task.CompletedTask;
+        };
+    })
     .AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options =>
     {
         options.MapInboundClaims = false;
@@ -121,43 +159,6 @@ builder.Services.AddAuthentication()
         };
     });
 
-builder.Services.ConfigureApplicationCookie(options =>
-{
-    options.LoginPath = "/adminportal";
-    options.LogoutPath = "/Account/Logout";
-    options.AccessDeniedPath = "/adminportal";
-    options.SlidingExpiration = true;
-    options.ExpireTimeSpan = TimeSpan.FromHours(8);
-
-    options.Events.OnRedirectToLogin = context =>
-    {
-        if (context.Request.Path.StartsWithSegments("/api"))
-        {
-            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-            context.Response.ContentType = "application/json";
-            return context.Response.WriteAsJsonAsync(
-                ApiResponse<object>.Fail("Authentication required. Provide a valid Bearer token."));
-        }
-
-        context.Response.Redirect(context.RedirectUri);
-        return Task.CompletedTask;
-    };
-
-    options.Events.OnRedirectToAccessDenied = context =>
-    {
-        if (context.Request.Path.StartsWithSegments("/api"))
-        {
-            context.Response.StatusCode = StatusCodes.Status403Forbidden;
-            context.Response.ContentType = "application/json";
-            return context.Response.WriteAsJsonAsync(
-                ApiResponse<object>.Fail("Access denied."));
-        }
-
-        context.Response.Redirect(context.RedirectUri);
-        return Task.CompletedTask;
-    };
-});
-
 builder.Services.AddControllersWithViews();
 
 builder.Services.AddEndpointsApiExplorer();
@@ -176,11 +177,7 @@ builder.Services.AddSwaggerGen(options =>
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.UseMigrationsEndPoint();
-}
-else
+if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler(errorApp =>
     {
@@ -217,67 +214,9 @@ app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 
-// Seed Identity roles and a default Super Admin account (MVC admin portal only).
-// Skipped gracefully when AspNet Identity tables are not present (API-only database).
-try
-{
-using (var scope = app.Services.CreateScope())
-{
-    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
-    var userManager = scope.ServiceProvider.GetRequiredService<UserManager<IdentityUser>>();
-
-    string[] roles = ["Super Admin", "Admin", "Dispatcher", "Customer Support"];
-    foreach (var role in roles)
-    {
-        if (!await roleManager.RoleExistsAsync(role))
-        {
-            await roleManager.CreateAsync(new IdentityRole(role));
-        }
-    }
-
-    var defaultUsers = new[]
-    {
-        new { UserName = "admin", Email = "admin@homeservices.local", Password = "Admin@123", Role = "Super Admin" },
-        new { UserName = "superadmin@homeservices.local", Email = "superadmin@homeservices.local", Password = "Pakistan@786", Role = "Super Admin" }
-    };
-
-    foreach (var seed in defaultUsers)
-    {
-        var existing = await userManager.FindByNameAsync(seed.UserName)
-                       ?? await userManager.FindByEmailAsync(seed.Email);
-
-        if (existing == null)
-        {
-            var user = new IdentityUser
-            {
-                UserName = seed.UserName,
-                Email = seed.Email,
-                EmailConfirmed = true
-            };
-
-            var result = await userManager.CreateAsync(user, seed.Password);
-            if (result.Succeeded)
-            {
-                await userManager.AddToRoleAsync(user, seed.Role);
-            }
-        }
-        else if (!await userManager.IsInRoleAsync(existing, seed.Role))
-        {
-            await userManager.AddToRoleAsync(existing, seed.Role);
-        }
-    }
-}
-}
-catch (Exception ex)
-{
-    var logger = app.Services.GetRequiredService<ILoggerFactory>().CreateLogger("Startup");
-    logger.LogWarning(ex, "Identity admin seed skipped — AspNet Identity tables may not exist on this database.");
-}
-
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
 app.MapControllers();
-app.MapRazorPages();
 
 app.Run();

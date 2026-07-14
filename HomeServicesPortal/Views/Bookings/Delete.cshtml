@@ -1,19 +1,40 @@
 @model HomeServicesPortal.Models.ViewModels.BookingDeleteVm
-@{ Layout = "_AdminLayout"; ViewData["Title"] = "Delete Booking"; }
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Delete Booking";
+}
+
 <div class="mb-4">
-    <a asp-action="Index" class="text-decoration-none text-muted"><i class="fa-solid fa-arrow-left me-1"></i>Back to Booking</a>
+    <a asp-action="Index" class="text-decoration-none text-muted"><i class="fa-solid fa-arrow-left me-1"></i>Back to Bookings</a>
     <h2 class="mt-2 mb-0 text-danger"><i class="fa-solid fa-triangle-exclamation me-2"></i>Delete Booking</h2>
 </div>
-<div class="row justify-content-center"><div class="col-lg-6"><div class="card hs-card border-danger"><div class="card-body p-4">
-    <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
-    <p>Are you sure you want to delete this booking?</p>
-    <dl class="row mb-4">
-        <dt class="col-sm-4 text-muted">Service Request</dt><dd class="col-sm-8 fw-semibold">@Model.RequestLabel</dd>
-        <dt class="col-sm-4 text-muted">Provider</dt><dd class="col-sm-8">@Model.ProviderName</dd>
-        <dt class="col-sm-4 text-muted">Booking Date</dt><dd class="col-sm-8">@(Model.BookingDate?.ToString("dd MMM yyyy HH:mm") ?? "—")</dd>
-        <dt class="col-sm-4 text-muted">Status</dt><dd class="col-sm-8">@(Model.Status ?? "Accepted")</dd>
-    </dl>
-    <form asp-action="DeleteConfirmed" asp-route-id="@Model.Uid" method="post">@Html.AntiForgeryToken()
-        <div class="d-flex gap-2"><button type="submit" class="btn btn-danger"><i class="fa-solid fa-trash me-1"></i>Yes, Delete</button><a asp-action="Index" class="btn btn-outline-secondary">Cancel</a></div>
-    </form>
-</div></div></div></div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="card hs-card border-danger">
+            <div class="card-body p-4">
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+                <p>Are you sure you want to delete this booking?</p>
+                <dl class="row mb-4">
+                    <dt class="col-sm-4 text-muted">Service Request</dt>
+                    <dd class="col-sm-8 fw-semibold">@Model.RequestLabel</dd>
+                    <dt class="col-sm-4 text-muted">Client</dt>
+                    <dd class="col-sm-8">@Model.ClientName</dd>
+                    <dt class="col-sm-4 text-muted">Provider</dt>
+                    <dd class="col-sm-8">@Model.ProviderName</dd>
+                    <dt class="col-sm-4 text-muted">Created On</dt>
+                    <dd class="col-sm-8">@(Model.BookingDate?.ToString("dd MMM yyyy HH:mm") ?? "—")</dd>
+                    <dt class="col-sm-4 text-muted">Status</dt>
+                    <dd class="col-sm-8">@(Model.Status ?? "—")</dd>
+                </dl>
+                <form asp-action="DeleteConfirmed" asp-route-id="@Model.Uid" method="post">
+                    @Html.AntiForgeryToken()
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-danger"><i class="fa-solid fa-trash me-1"></i>Yes, Delete</button>
+                        <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

@@ -15,19 +15,19 @@ public class ProviderDocumentsController : Controller
         _service = service;
     }
 
-    [HttpGet("/ProviderDocuments")]
+    [HttpGet("/Admin/ProviderDocuments")]
     public async Task<IActionResult> Index(string? search, string? sort, string? sortDir, int page = 1, CancellationToken cancellationToken = default)
     {
         return View(await _service.GetListAsync(search, sort, sortDir, page, cancellationToken));
     }
 
-    [HttpGet("/ProviderDocuments/Create")]
+    [HttpGet("/Admin/ProviderDocuments/Create")]
     public async Task<IActionResult> Create(CancellationToken cancellationToken)
     {
         return View(await _service.PopulateFormAsync(new ProviderDocumentFormVm(), cancellationToken));
     }
 
-    [HttpPost("/ProviderDocuments/Create")]
+    [HttpPost("/Admin/ProviderDocuments/Create")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(ProviderDocumentFormVm model, CancellationToken cancellationToken)
     {
@@ -45,7 +45,7 @@ public class ProviderDocumentsController : Controller
         return RedirectToAction(nameof(Index));
     }
 
-    [HttpGet("/ProviderDocuments/Details/{id:int}")]
+    [HttpGet("/Admin/ProviderDocuments/Details/{id:int}")]
     public async Task<IActionResult> Details(int id, CancellationToken cancellationToken)
     {
         var vm = await _service.GetDetailsAsync(id, cancellationToken);
@@ -53,7 +53,7 @@ public class ProviderDocumentsController : Controller
         return View(vm);
     }
 
-    [HttpGet("/ProviderDocuments/Edit/{id:int}")]
+    [HttpGet("/Admin/ProviderDocuments/Edit/{id:int}")]
     public async Task<IActionResult> Edit(int id, CancellationToken cancellationToken)
     {
         var vm = await _service.GetForEditAsync(id, cancellationToken);
@@ -61,7 +61,7 @@ public class ProviderDocumentsController : Controller
         return View(vm);
     }
 
-    [HttpPost("/ProviderDocuments/Edit/{id:int}")]
+    [HttpPost("/Admin/ProviderDocuments/Edit/{id:int}")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(int id, ProviderDocumentFormVm model, CancellationToken cancellationToken)
     {
@@ -80,7 +80,7 @@ public class ProviderDocumentsController : Controller
         return RedirectToAction(nameof(Index));
     }
 
-    [HttpGet("/ProviderDocuments/Delete/{id:int}")]
+    [HttpGet("/Admin/ProviderDocuments/Delete/{id:int}")]
     public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
     {
         var vm = await _service.GetForDeleteAsync(id, cancellationToken);
@@ -88,7 +88,7 @@ public class ProviderDocumentsController : Controller
         return View(vm);
     }
 
-    [HttpPost("/ProviderDocuments/Delete/{id:int}")]
+    [HttpPost("/Admin/ProviderDocuments/Delete/{id:int}")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteConfirmed(int id, CancellationToken cancellationToken)
     {

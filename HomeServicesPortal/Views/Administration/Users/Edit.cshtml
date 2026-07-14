@@ -2,6 +2,12 @@
 @{
     Layout = "_AdminLayout";
     ViewData["Title"] = "Edit User";
+    var isProvider = string.Equals(Model.Role, "Provider", StringComparison.OrdinalIgnoreCase);
+    var isStaffRole = string.Equals(Model.Role, "Staff", StringComparison.OrdinalIgnoreCase)
+                      || string.Equals(Model.Role, "Super Admin", StringComparison.OrdinalIgnoreCase);
+    var roleOptions = isStaffRole
+        ? Model.AvailableRoles.Where(r => r is "Staff" or "Super Admin")
+        : Model.AvailableRoles.Where(r => string.Equals(r, Model.Role, StringComparison.OrdinalIgnoreCase));
 }
 
 <div class="mb-4">
@@ -9,7 +15,7 @@
         <i class="fa-solid fa-arrow-left me-1"></i>Back to Users
     </a>
     <h2 class="mt-2 mb-1"><i class="fa-solid fa-pen me-2 text-primary"></i>Edit User</h2>
-    <p class="text-muted mb-0">Update account details or reset password</p>
+    <p class="text-muted mb-0">Update UsersLogin credentials and profile. Staff privilege can switch between Staff and Super Admin.</p>
 </div>
 
 <div class="row justify-content-center">
@@ -23,32 +29,60 @@
                     <input type="hidden" asp-for="Id" />
 
                     <div class="mb-3">
-                        <label asp-for="UserName" class="form-label"></label>
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="fa-solid fa-user"></i></span>
-                            <input asp-for="UserName" class="form-control" />
-                        </div>
-                        <span asp-validation-for="UserName" class="text-danger small"></span>
+                        <label asp-for="MobileNo" class="form-label"></label>
+                        <input asp-for="MobileNo" class="form-control" />
+                        <span asp-validation-for="MobileNo" class="text-danger small"></span>
                     </div>
 
                     <div class="mb-3">
-                        <label asp-for="Email" class="form-label"></label>
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="fa-solid fa-envelope"></i></span>
-                            <input asp-for="Email" class="form-control" />
-                        </div>
-                        <span asp-validation-for="Email" class="text-danger small"></span>
+                        <label asp-for="FullName" class="form-label"></label>
+                        <input asp-for="FullName" class="form-control" />
+                        <span asp-validation-for="FullName" class="text-danger small"></span>
                     </div>
 
                     <div class="mb-3">
                         <label asp-for="Role" class="form-label"></label>
-                        <select asp-for="Role" class="form-select" asp-items="@(new SelectList(Model.AvailableRoles))"></select>
+                        <select asp-for="Role" class="form-select" asp-items="@(new SelectList(roleOptions))"></select>
                         <span asp-validation-for="Role" class="text-danger small"></span>
                     </div>
 
-                    <div class="mb-3 form-check">
-                        <input asp-for="EmailConfirmed" class="form-check-input" />
-                        <label asp-for="EmailConfirmed" class="form-check-label"></label>
+                    @if (isProvider)
+                    {
+                        <div class="mb-3">
+                            <label asp-for="Cnic" class="form-label"></label>
+                            <input asp-for="Cnic" class="form-control" />
+                            <span asp-validation-for="Cnic" class="text-danger small"></span>
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="CategoryUid" class="form-label"></label>
+                            <select asp-for="CategoryUid" class="form-select" asp-items="Model.Categories">
+                                <option value="">-- Select Category --</option>
+                            </select>
+                            <span asp-validation-for="CategoryUid" class="text-danger small"></span>
+                        </div>
+                    }
+                    else if (!isStaffRole)
+                    {
+                        <div class="mb-3">
+                            <label asp-for="Cnic" class="form-label"></label>
+                            <input asp-for="Cnic" class="form-control" />
+                            <span asp-validation-for="Cnic" class="text-danger small"></span>
+                        </div>
+                    }
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                <input asp-for="IsActive" class="form-check-input" />
+                                <label asp-for="IsActive" class="form-check-label"></label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                <input asp-for="IsVerified" class="form-check-input" />
+                                <label asp-for="IsVerified" class="form-check-label"></label>
+                            </div>
+                        </div>
                     </div>
 
                     <hr class="my-4" />

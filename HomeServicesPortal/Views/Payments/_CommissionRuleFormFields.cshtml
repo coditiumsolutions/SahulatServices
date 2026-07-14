@@ -1,0 +1,69 @@
+@model HomeServicesPortal.Models.ViewModels.CommissionRuleFormVm
+
+<div class="mb-3">
+    <label asp-for="Scope" class="form-label"></label>
+    <select asp-for="Scope" class="form-select" id="scopeSelect" asp-items="Model.ScopeOptions"></select>
+    <span asp-validation-for="Scope" class="text-danger small"></span>
+</div>
+
+<div class="mb-3" id="categoryField">
+    <label asp-for="CategoryUid" class="form-label"></label>
+    <select asp-for="CategoryUid" class="form-select" asp-items="Model.Categories">
+        <option value="">-- Select Category --</option>
+    </select>
+    <span asp-validation-for="CategoryUid" class="text-danger small"></span>
+</div>
+
+<div class="mb-3" id="providerField">
+    <label asp-for="ProviderUid" class="form-label"></label>
+    <select asp-for="ProviderUid" class="form-select" asp-items="Model.Providers">
+        <option value="">-- Select Provider --</option>
+    </select>
+    <span asp-validation-for="ProviderUid" class="text-danger small"></span>
+</div>
+
+<div class="row">
+    <div class="col-md-6 mb-3">
+        <label asp-for="RuleType" class="form-label"></label>
+        <select asp-for="RuleType" class="form-select" asp-items="Model.RuleTypeOptions"></select>
+        <span asp-validation-for="RuleType" class="text-danger small"></span>
+    </div>
+    <div class="col-md-6 mb-3">
+        <label asp-for="Value" class="form-label"></label>
+        <input asp-for="Value" class="form-control" type="number" step="0.01" min="0" />
+        <span asp-validation-for="Value" class="text-danger small"></span>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6 mb-3">
+        <label asp-for="EffectiveFrom" class="form-label"></label>
+        <input asp-for="EffectiveFrom" class="form-control" type="date" />
+        <span asp-validation-for="EffectiveFrom" class="text-danger small"></span>
+    </div>
+    <div class="col-md-6 mb-3">
+        <label asp-for="EffectiveTo" class="form-label"></label>
+        <input asp-for="EffectiveTo" class="form-control" type="date" />
+        <span asp-validation-for="EffectiveTo" class="text-danger small"></span>
+    </div>
+</div>
+
+<div class="form-check mb-2">
+    <input asp-for="IsActive" class="form-check-input" />
+    <label asp-for="IsActive" class="form-check-label"></label>
+</div>
+
+<script>
+(function () {
+    var scopeSelect = document.getElementById('scopeSelect');
+    var categoryField = document.getElementById('categoryField');
+    var providerField = document.getElementById('providerField');
+    function sync() {
+        var scope = scopeSelect ? scopeSelect.value : 'Global';
+        if (categoryField) categoryField.style.display = scope === 'Category' ? '' : 'none';
+        if (providerField) providerField.style.display = scope === 'Provider' ? '' : 'none';
+    }
+    scopeSelect?.addEventListener('change', sync);
+    sync();
+})();
+</script>

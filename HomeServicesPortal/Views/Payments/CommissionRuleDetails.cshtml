@@ -1,0 +1,44 @@
+@model HomeServicesPortal.Models.ViewModels.CommissionRuleDetailsVm
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Commission Rule Details";
+}
+
+<div class="mb-4">
+    <a asp-action="CommissionRules" class="text-decoration-none text-muted"><i class="fa-solid fa-arrow-left me-1"></i>Back to Commission Rules</a>
+    <h2 class="mt-2 mb-0"><i class="fa-solid fa-eye me-2 text-primary"></i>Commission Rule #@Model.Uid</h2>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-7">
+        <div class="card hs-card">
+            <div class="card-body p-4">
+                <dl class="row mb-0">
+                    <dt class="col-sm-4 text-muted">Scope</dt>
+                    <dd class="col-sm-8"><span class="badge bg-primary">@Model.Scope</span></dd>
+                    <dt class="col-sm-4 text-muted">Category</dt>
+                    <dd class="col-sm-8">@(Model.CategoryName ?? "—")</dd>
+                    <dt class="col-sm-4 text-muted">Provider</dt>
+                    <dd class="col-sm-8">@(Model.ProviderName ?? "—")</dd>
+                    <dt class="col-sm-4 text-muted">Rule Type</dt>
+                    <dd class="col-sm-8">@Model.RuleType</dd>
+                    <dt class="col-sm-4 text-muted">Value</dt>
+                    <dd class="col-sm-8 fw-semibold">@Model.Value.ToString("N2")</dd>
+                    <dt class="col-sm-4 text-muted">Effective From</dt>
+                    <dd class="col-sm-8">@Model.EffectiveFrom.ToString("dd MMM yyyy")</dd>
+                    <dt class="col-sm-4 text-muted">Effective To</dt>
+                    <dd class="col-sm-8">@(Model.EffectiveTo?.ToString("dd MMM yyyy") ?? "—")</dd>
+                    <dt class="col-sm-4 text-muted">Active</dt>
+                    <dd class="col-sm-8">@(Model.IsActive ? "Yes" : "No")</dd>
+                    <dt class="col-sm-4 text-muted">Created On</dt>
+                    <dd class="col-sm-8">@Model.CreatedOn.ToString("dd MMM yyyy HH:mm")</dd>
+                </dl>
+                <hr />
+                <div class="d-flex gap-2">
+                    <a asp-action="CommissionRuleEdit" asp-route-id="@Model.Uid" class="btn btn-primary"><i class="fa-solid fa-pen me-1"></i>Edit</a>
+                    <a asp-action="CommissionRuleDelete" asp-route-id="@Model.Uid" class="btn btn-outline-danger"><i class="fa-solid fa-trash me-1"></i>Delete</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

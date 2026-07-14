@@ -15,14 +15,14 @@ public class ServiceProvidersController : Controller
         _service = service;
     }
 
-    [HttpGet("/ServiceProviders")]
+    [HttpGet("/Admin/ServiceProviders")]
     public async Task<IActionResult> Index(string? search, string? sort, string? sortDir, int page = 1, CancellationToken cancellationToken = default)
     {
         var vm = await _service.GetListAsync(search, sort, sortDir, page, cancellationToken);
         return View(vm);
     }
 
-    [HttpGet("/ServiceProviders/Create")]
+    [HttpGet("/Admin/ServiceProviders/Create")]
     public async Task<IActionResult> Create(CancellationToken cancellationToken)
     {
         return View(new ServiceProviderFormVm
@@ -31,7 +31,7 @@ public class ServiceProvidersController : Controller
         });
     }
 
-    [HttpPost("/ServiceProviders/Create")]
+    [HttpPost("/Admin/ServiceProviders/Create")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(ServiceProviderFormVm model, CancellationToken cancellationToken)
     {
@@ -49,7 +49,7 @@ public class ServiceProvidersController : Controller
         return RedirectToAction(nameof(Index));
     }
 
-    [HttpGet("/ServiceProviders/Details/{id:int}")]
+    [HttpGet("/Admin/ServiceProviders/Details/{id:int}")]
     public async Task<IActionResult> Details(int id, CancellationToken cancellationToken)
     {
         var vm = await _service.GetDetailsAsync(id, cancellationToken);
@@ -57,7 +57,7 @@ public class ServiceProvidersController : Controller
         return View(vm);
     }
 
-    [HttpGet("/ServiceProviders/Edit/{id:int}")]
+    [HttpGet("/Admin/ServiceProviders/Edit/{id:int}")]
     public async Task<IActionResult> Edit(int id, CancellationToken cancellationToken)
     {
         var vm = await _service.GetForEditAsync(id, cancellationToken);
@@ -65,7 +65,7 @@ public class ServiceProvidersController : Controller
         return View(vm);
     }
 
-    [HttpPost("/ServiceProviders/Edit/{id:int}")]
+    [HttpPost("/Admin/ServiceProviders/Edit/{id:int}")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(int id, ServiceProviderFormVm model, CancellationToken cancellationToken)
     {
@@ -84,7 +84,7 @@ public class ServiceProvidersController : Controller
         return RedirectToAction(nameof(Index));
     }
 
-    [HttpGet("/ServiceProviders/Delete/{id:int}")]
+    [HttpGet("/Admin/ServiceProviders/Delete/{id:int}")]
     public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
     {
         var vm = await _service.GetForDeleteAsync(id, cancellationToken);
@@ -92,7 +92,7 @@ public class ServiceProvidersController : Controller
         return View(vm);
     }
 
-    [HttpPost("/ServiceProviders/Delete/{id:int}")]
+    [HttpPost("/Admin/ServiceProviders/Delete/{id:int}")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteConfirmed(int id, CancellationToken cancellationToken)
     {

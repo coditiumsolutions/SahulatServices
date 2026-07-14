@@ -15,20 +15,20 @@ public class BookingsController : Controller
         _service = service;
     }
 
-    [HttpGet("/Bookings")]
+    [HttpGet("/Admin/Bookings")]
     public async Task<IActionResult> Index(string? search, string? sort, string? sortDir, int page = 1, CancellationToken cancellationToken = default)
     {
         var vm = await _service.GetListAsync(search, sort, sortDir, page, cancellationToken);
         return View(vm);
     }
 
-    [HttpGet("/Bookings/Create")]
+    [HttpGet("/Admin/Bookings/Create")]
     public async Task<IActionResult> Create(CancellationToken cancellationToken)
     {
         return View(await _service.PopulateFormAsync(new BookingFormVm(), cancellationToken));
     }
 
-    [HttpPost("/Bookings/Create")]
+    [HttpPost("/Admin/Bookings/Create")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(BookingFormVm model, CancellationToken cancellationToken)
     {
@@ -46,7 +46,7 @@ public class BookingsController : Controller
         return RedirectToAction(nameof(Index));
     }
 
-    [HttpGet("/Bookings/Details/{id:int}")]
+    [HttpGet("/Admin/Bookings/Details/{id:int}")]
     public async Task<IActionResult> Details(int id, CancellationToken cancellationToken)
     {
         var vm = await _service.GetDetailsAsync(id, cancellationToken);
@@ -54,7 +54,7 @@ public class BookingsController : Controller
         return View(vm);
     }
 
-    [HttpGet("/Bookings/Edit/{id:int}")]
+    [HttpGet("/Admin/Bookings/Edit/{id:int}")]
     public async Task<IActionResult> Edit(int id, CancellationToken cancellationToken)
     {
         var vm = await _service.GetForEditAsync(id, cancellationToken);
@@ -62,7 +62,7 @@ public class BookingsController : Controller
         return View(vm);
     }
 
-    [HttpPost("/Bookings/Edit/{id:int}")]
+    [HttpPost("/Admin/Bookings/Edit/{id:int}")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(int id, BookingFormVm model, CancellationToken cancellationToken)
     {
@@ -81,7 +81,7 @@ public class BookingsController : Controller
         return RedirectToAction(nameof(Index));
     }
 
-    [HttpGet("/Bookings/Delete/{id:int}")]
+    [HttpGet("/Admin/Bookings/Delete/{id:int}")]
     public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
     {
         var vm = await _service.GetForDeleteAsync(id, cancellationToken);
@@ -89,7 +89,7 @@ public class BookingsController : Controller
         return View(vm);
     }
 
-    [HttpPost("/Bookings/Delete/{id:int}")]
+    [HttpPost("/Admin/Bookings/Delete/{id:int}")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteConfirmed(int id, CancellationToken cancellationToken)
     {

@@ -16,29 +16,38 @@
         <div class="card hs-card">
             <div class="card-body p-4">
                 <dl class="row mb-0">
-                    <dt class="col-sm-4 text-muted">Username</dt>
-                    <dd class="col-sm-8 fw-semibold">@Model.UserName</dd>
+                    <dt class="col-sm-4 text-muted">User UID</dt>
+                    <dd class="col-sm-8 fw-semibold">@Model.Id</dd>
 
-                    <dt class="col-sm-4 text-muted">Email</dt>
-                    <dd class="col-sm-8">@Model.Email</dd>
+                    <dt class="col-sm-4 text-muted">Mobile No</dt>
+                    <dd class="col-sm-8">@Model.MobileNo</dd>
 
-                    <dt class="col-sm-4 text-muted">Role(s)</dt>
-                    <dd class="col-sm-8">
-                        @foreach (var role in Model.Roles)
-                        {
-                            <span class="badge bg-primary me-1">@role</span>
-                        }
-                    </dd>
+                    <dt class="col-sm-4 text-muted">Full Name</dt>
+                    <dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.FullName) ? "—" : Model.FullName)</dd>
 
-                    <dt class="col-sm-4 text-muted">Email Confirmed</dt>
-                    <dd class="col-sm-8">
-                        @(Model.EmailConfirmed
-                            ? Html.Raw("<span class='badge bg-success'>Yes</span>")
-                            : Html.Raw("<span class='badge bg-warning text-dark'>No</span>"))
-                    </dd>
+                    <dt class="col-sm-4 text-muted">Role</dt>
+                    <dd class="col-sm-8"><span class="badge bg-primary">@Model.Role</span></dd>
 
-                    <dt class="col-sm-4 text-muted">Lockout Enabled</dt>
-                    <dd class="col-sm-8">@(Model.LockoutEnabled ? "Yes" : "No")</dd>
+                    <dt class="col-sm-4 text-muted">User Type</dt>
+                    <dd class="col-sm-8">@Model.UserType</dd>
+
+                    <dt class="col-sm-4 text-muted">Active</dt>
+                    <dd class="col-sm-8">@(Model.IsActive ? "Yes" : "No")</dd>
+
+                    <dt class="col-sm-4 text-muted">Verified</dt>
+                    <dd class="col-sm-8">@(Model.IsVerified ? "Yes" : "No")</dd>
+
+                    <dt class="col-sm-4 text-muted">CNIC</dt>
+                    <dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.Cnic) ? "—" : Model.Cnic)</dd>
+
+                    <dt class="col-sm-4 text-muted">Category</dt>
+                    <dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.CategoryName) ? "—" : Model.CategoryName)</dd>
+
+                    <dt class="col-sm-4 text-muted">Created On</dt>
+                    <dd class="col-sm-8">@Model.CreatedOn.ToString("dd MMM yyyy HH:mm")</dd>
+
+                    <dt class="col-sm-4 text-muted">Last Login</dt>
+                    <dd class="col-sm-8">@(Model.LastLogin?.ToString("dd MMM yyyy HH:mm") ?? "—")</dd>
                 </dl>
 
                 <hr />

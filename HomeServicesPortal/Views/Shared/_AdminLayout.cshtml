@@ -1,33 +1,38 @@
-@using Microsoft.AspNetCore.Identity
-@inject SignInManager<IdentityUser> SignInManager
-@inject UserManager<IdentityUser> UserManager
-
 @{
     var userName = User.Identity?.Name ?? "User";
     var pageTitle = ViewData["Title"]?.ToString() ?? "Dashboard";
-    var path = (Context.Request.Path.Value ?? "/").ToLowerInvariant();
+    var path = (Context.Request.Path.Value ?? "/").ToLowerInvariant().TrimEnd('/');
+    if (string.IsNullOrEmpty(path)) path = "/";
 
     string TabClass(params string[] prefixes) =>
-        prefixes.Any(p => path.StartsWith(p, StringComparison.OrdinalIgnoreCase)) ? "active" : "";
+        prefixes.Any(p => path.Equals(p, StringComparison.OrdinalIgnoreCase)
+                          || path.StartsWith(p + "/", StringComparison.OrdinalIgnoreCase))
+            ? "active" : "";
 
-    string NavClass(string prefix) => path.StartsWith(prefix, StringComparison.OrdinalIgnoreCase) ? "active" : "";
+    string NavClass(params string[] prefixes) => TabClass(prefixes);
+
+    bool IsDashboardPath() =>
+        path.Equals("/admin", StringComparison.OrdinalIgnoreCase)
+        || path.StartsWith("/admin/dashboard", StringComparison.OrdinalIgnoreCase);
 
     bool IsBookingsPath() =>
-        path.StartsWith("/bookings", StringComparison.OrdinalIgnoreCase) &&
-        !path.StartsWith("/bookingtracking", StringComparison.OrdinalIgnoreCase);
+        path.StartsWith("/admin/bookings", StringComparison.OrdinalIgnoreCase) &&
+        !path.StartsWith("/admin/bookingtracking", StringComparison.OrdinalIgnoreCase);
 
     var activeSection = "dashboard";
-    if (TabClass("/servicecategories", "/serviceproviders", "/providerlocations", "/provideravailability", "/providerdocuments", "/customers") == "active")
+    if (IsDashboardPath())
+        activeSection = "dashboard";
+    else if (TabClass("/admin/servicecategories", "/admin/serviceproviders", "/admin/providerlocations", "/admin/provideravailability", "/admin/providerdocuments", "/admin/customers", "/admin/clients") == "active")
         activeSection = "masters";
-    else if (TabClass("/servicerequests", "/providerquotes") == "active" || IsBookingsPath())
+    else if (TabClass("/admin/servicerequests", "/admin/providerquotes") == "active" || IsBookingsPath())
         activeSection = "operations";
-    else if (TabClass("/bookingtracking") == "active")
+    else if (TabClass("/admin/bookingtracking") == "active")
         activeSection = "tracking";
-    else if (TabClass("/payments", "/reviews") == "active")
+    else if (TabClass("/admin/payments", "/admin/reviews") == "active")
         activeSection = "finance";
-    else if (TabClass("/reports") == "active")
+    else if (TabClass("/admin/reports") == "active")
         activeSection = "reports";
-    else if (TabClass("/administration") == "active")
+    else if (TabClass("/admin/administration") == "active")
         activeSection = "administration";
 }
 
@@ -383,7 +388,7 @@
     <header class="hs-topbar-primary">
         <div class="container-fluid px-3 px-lg-4">
             <div class="d-flex align-items-center justify-content-between py-2 gap-2">
-                <a class="hs-brand" href="/Admin/Dashboard">
+                <a class="hs-brand" href="/Admin">
                     <span class="hs-brand-main">Sahulat</span>
                     <span class="hs-brand-sub">Ghar Tak</span>
                 </a>
@@ -409,12 +414,7 @@
                             </span>
                         </li>
                         <li>
-                            <a class="hs-utility-link" asp-area="Identity" asp-page="/Account/Manage/Index">
-                                Profile<i class="fa-solid fa-chevron-right"></i>
-                            </a>
-                        </li>
-                        <li>
-                            <a class="hs-utility-link" href="/Administration/Users">
+                            <a class="hs-utility-link" href="/Admin/Administration/Users">
                                 Users<i class="fa-solid fa-chevron-right"></i>
                             </a>
                         </li>
@@ -445,29 +445,29 @@
             <div class="collapse d-lg-block" id="hsTabNav">
                 <ul class="hs-tab-nav">
                     <li>
-                        <a class="hs-tab-link @TabClass("/admin/dashboard")" href="#" data-hs-section="dashboard">Dashboard</a>
+                        <a class="hs-tab-link @(IsDashboardPath() ? "active" : "")" href="/Admin" data-hs-section="dashboard">Dashboard</a>
                     </li>
                     <li>
-                        <a class="hs-tab-link @TabClass("/servicecategories", "/serviceproviders", "/providerlocations", "/provideravailability", "/providerdocuments", "/customers")"
+                        <a class="hs-tab-link @TabClass("/admin/servicecategories", "/admin/serviceproviders", "/admin/providerlocations", "/admin/provideravailability", "/admin/providerdocuments", "/admin/customers", "/admin/clients")"
                            href="#" data-hs-section="masters">Masters</a>
                     </li>
                     <li>
-                        <a class="hs-tab-link @(TabClass("/servicerequests", "/providerquotes") == "active" || IsBookingsPath() ? "active" : "")"
+                        <a class="hs-tab-link @(TabClass("/admin/servicerequests", "/admin/providerquotes") == "active" || IsBookingsPath() ? "active" : "")"
                            href="#" data-hs-section="operations">Operations</a>
                     </li>
                     <li>
-                        <a class="hs-tab-link @TabClass("/bookingtracking")"
+                        <a class="hs-tab-link @TabClass("/admin/bookingtracking")"
                            href="#" data-hs-section="tracking">Tracking</a>
                     </li>
                     <li>
-                        <a class="hs-tab-link @TabClass("/payments", "/reviews")" href="#" data-hs-section="finance">Finance</a>
+                        <a class="hs-tab-link @TabClass("/admin/payments", "/admin/reviews")" href="#" data-hs-section="finance">Finance</a>
                     </li>
                     <li>
-                        <a class="hs-tab-link @TabClass("/reports")"
+                        <a class="hs-tab-link @TabClass("/admin/reports")"
                            href="#" data-hs-section="reports">Reports</a>
                     </li>
                     <li>
-                        <a class="hs-tab-link @TabClass("/administration")"
+                        <a class="hs-tab-link @TabClass("/admin/administration")"
                            href="#" data-hs-section="administration">Administration</a>
                     </li>
                 </ul>
@@ -483,89 +483,92 @@
 
                     <div class="hs-sidebar-panel @(activeSection == "dashboard" ? "" : "d-none")" data-section="dashboard">
                         <div class="hs-nav-parent"><i class="fa-solid fa-gauge"></i> Dashboard</div>
-                        <a class="hs-nav-link hs-nav-sublink @NavClass("/admin/dashboard")" href="/Admin/Dashboard">
+                        <a class="hs-nav-link hs-nav-sublink @(IsDashboardPath() ? "active" : "")" href="/Admin">
                             <i class="fa-solid fa-chart-line"></i> Overview
                         </a>
                     </div>
 
                     <div class="hs-sidebar-panel @(activeSection == "masters" ? "" : "d-none")" data-section="masters">
                         <div class="hs-nav-parent"><i class="fa-solid fa-layer-group"></i> Masters</div>
-                        <a class="hs-nav-link hs-nav-sublink @NavClass("/servicecategories")" href="/ServiceCategories">
+                        <a class="hs-nav-link hs-nav-sublink @NavClass("/admin/servicecategories")" href="/Admin/ServiceCategories">
                             <i class="fa-solid fa-layer-group"></i> S-Categories
                         </a>
-                        <a class="hs-nav-link hs-nav-sublink @NavClass("/serviceproviders")" href="/ServiceProviders">
+                        <a class="hs-nav-link hs-nav-sublink @NavClass("/admin/serviceproviders")" href="/Admin/ServiceProviders">
                             <i class="fa-solid fa-user-tie"></i> S-Provider
                         </a>
-                        <a class="hs-nav-link hs-nav-sublink @NavClass("/providerlocations")" href="/ProviderLocations">
+                        <a class="hs-nav-link hs-nav-sublink @NavClass("/admin/providerlocations")" href="/Admin/ProviderLocations">
                             <i class="fa-solid fa-location-dot"></i> P-Locations
                         </a>
-                        <a class="hs-nav-link hs-nav-sublink @NavClass("/provideravailability")" href="/ProviderAvailability">
+                        <a class="hs-nav-link hs-nav-sublink @NavClass("/admin/provideravailability")" href="/Admin/ProviderAvailability">
                             <i class="fa-solid fa-clock"></i> P-Availability
                         </a>
-                        <a class="hs-nav-link hs-nav-sublink @NavClass("/providerdocuments")" href="/ProviderDocuments">
+                        <a class="hs-nav-link hs-nav-sublink @NavClass("/admin/providerdocuments")" href="/Admin/ProviderDocuments">
                             <i class="fa-solid fa-file-signature"></i> P-Documents
                         </a>
-                        <a class="hs-nav-link hs-nav-sublink @NavClass("/customers")" href="/Customers">
-                            <i class="fa-solid fa-users"></i> Customers
+                        <a class="hs-nav-link hs-nav-sublink @NavClass("/admin/clients", "/admin/customers")" href="/Admin/Clients">
+                            <i class="fa-solid fa-users"></i> Clients
                         </a>
                     </div>
 
                     <div class="hs-sidebar-panel @(activeSection == "operations" ? "" : "d-none")" data-section="operations">
                         <div class="hs-nav-parent"><i class="fa-solid fa-list-check"></i> Operations</div>
-                        <a class="hs-nav-link hs-nav-sublink @NavClass("/servicerequests")" href="/ServiceRequests">
+                        <a class="hs-nav-link hs-nav-sublink @NavClass("/admin/servicerequests")" href="/Admin/ServiceRequests">
                             <i class="fa-solid fa-list-check"></i> S-Requeste
                         </a>
-                        <a class="hs-nav-link hs-nav-sublink @NavClass("/providerquotes")" href="/ProviderQuotes">
+                        <a class="hs-nav-link hs-nav-sublink @NavClass("/admin/providerquotes")" href="/Admin/ProviderQuotes">
                             <i class="fa-solid fa-tags"></i> P-Quote
                         </a>
-                        <a class="hs-nav-link hs-nav-sublink @(IsBookingsPath() ? "active" : "")" href="/Bookings">
+                        <a class="hs-nav-link hs-nav-sublink @(IsBookingsPath() ? "active" : "")" href="/Admin/Bookings">
                             <i class="fa-solid fa-clipboard-list"></i> Booking
                         </a>
                     </div>
 
                     <div class="hs-sidebar-panel @(activeSection == "tracking" ? "" : "d-none")" data-section="tracking">
                         <div class="hs-nav-parent"><i class="fa-solid fa-location-dot"></i> Tracking</div>
-                        <a class="hs-nav-link hs-nav-sublink @NavClass("/bookingtracking")" href="/BookingTracking">
+                        <a class="hs-nav-link hs-nav-sublink @NavClass("/admin/bookingtracking")" href="/Admin/BookingTracking">
                             <i class="fa-solid fa-diagram-project"></i> BookingTracking
                         </a>
                     </div>
 
                     <div class="hs-sidebar-panel @(activeSection == "finance" ? "" : "d-none")" data-section="finance">
                         <div class="hs-nav-parent"><i class="fa-solid fa-money-bill-wave"></i> Finance</div>
-                        <a class="hs-nav-link hs-nav-sublink @NavClass("/payments")" href="/Payments">
-                            <i class="fa-solid fa-money-bill-wave"></i> Payments
+                        <a class="hs-nav-link hs-nav-sublink @NavClass("/admin/payments/ledger")" href="/Admin/Payments/Ledger">
+                            <i class="fa-solid fa-book"></i> Payment Ledger
                         </a>
-                        <a class="hs-nav-link hs-nav-sublink @NavClass("/reviews")" href="/Reviews">
+                        <a class="hs-nav-link hs-nav-sublink @NavClass("/admin/payments/payouts")" href="/Admin/Payments/Payouts">
+                            <i class="fa-solid fa-hand-holding-dollar"></i> Provider Payouts
+                        </a>
+                        <a class="hs-nav-link hs-nav-sublink @NavClass("/admin/payments/commissionrules")" href="/Admin/Payments/CommissionRules">
+                            <i class="fa-solid fa-percent"></i> Commission Rules
+                        </a>
+                        <a class="hs-nav-link hs-nav-sublink @NavClass("/admin/reviews")" href="/Admin/Reviews">
                             <i class="fa-solid fa-star"></i> Reviews
                         </a>
                     </div>
 
                     <div class="hs-sidebar-panel @(activeSection == "reports" ? "" : "d-none")" data-section="reports">
                         <div class="hs-nav-parent"><i class="fa-solid fa-chart-column"></i> Reports</div>
-                        <a class="hs-nav-link hs-nav-sublink @NavClass("/reports/provider")" href="/Reports/Provider">
+                        <a class="hs-nav-link hs-nav-sublink @NavClass("/admin/reports/provider")" href="/Admin/Reports/Provider">
                             <i class="fa-solid fa-chart-column"></i> Provider Report
                         </a>
-                        <a class="hs-nav-link hs-nav-sublink @NavClass("/reports/customer")" href="/Reports/Customer">
+                        <a class="hs-nav-link hs-nav-sublink @NavClass("/admin/reports/customer")" href="/Admin/Reports/Customer">
                             <i class="fa-solid fa-chart-pie"></i> Customer Report
                         </a>
-                        <a class="hs-nav-link hs-nav-sublink @NavClass("/reports/bookings")" href="/Reports/Bookings">
+                        <a class="hs-nav-link hs-nav-sublink @NavClass("/admin/reports/bookings")" href="/Admin/Reports/Bookings">
                             <i class="fa-solid fa-chart-line"></i> Booking Report
                         </a>
-                        <a class="hs-nav-link hs-nav-sublink @NavClass("/reports/payments")" href="/Reports/Payments">
+                        <a class="hs-nav-link hs-nav-sublink @NavClass("/admin/reports/payments")" href="/Admin/Reports/Payments">
                             <i class="fa-solid fa-chart-bar"></i> Payment Report
                         </a>
-                        <a class="hs-nav-link hs-nav-sublink @NavClass("/reports/servicerequests")" href="/Reports/ServiceRequests">
+                        <a class="hs-nav-link hs-nav-sublink @NavClass("/admin/reports/servicerequests")" href="/Admin/Reports/ServiceRequests">
                             <i class="fa-solid fa-chart-area"></i> Service Request Report
                         </a>
                     </div>
 
                     <div class="hs-sidebar-panel @(activeSection == "administration" ? "" : "d-none")" data-section="administration">
                         <div class="hs-nav-parent"><i class="fa-solid fa-user-shield"></i> Administration</div>
-                        <a class="hs-nav-link hs-nav-sublink @NavClass("/administration/users")" href="/Administration/Users">
-                            <i class="fa-solid fa-user-shield"></i> Users
-                        </a>
-                        <a class="hs-nav-link hs-nav-sublink @NavClass("/administration/roles")" href="/Administration/Roles">
-                            <i class="fa-solid fa-key"></i> Roles
+                        <a class="hs-nav-link hs-nav-sublink @NavClass("/admin/administration/users", "/admin/administration/roles")" href="/Admin/Administration/Users">
+                            <i class="fa-solid fa-user-shield"></i> Users &amp; Roles
                         </a>
                     </div>
 

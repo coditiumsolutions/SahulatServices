@@ -3,8 +3,8 @@
 <div class="row">
     <div class="col-md-6 mb-3">
         <label asp-for="CustomerUid" class="form-label"></label>
-        <select asp-for="CustomerUid" class="form-select" asp-items="Model.Customers">
-            <option value="">-- Select Customer --</option>
+        <select asp-for="CustomerUid" class="form-select" asp-items="Model.Customers" id="clientSelect">
+            <option value="">-- Select Client --</option>
         </select>
         <span asp-validation-for="CustomerUid" class="text-danger small"></span>
     </div>
@@ -18,32 +18,73 @@
 </div>
 
 <div class="mb-3">
-    <label asp-for="ServiceAddress" class="form-label"></label>
-    <textarea asp-for="ServiceAddress" class="form-control" rows="2" placeholder="Enter service address"></textarea>
-    <span asp-validation-for="ServiceAddress" class="text-danger small"></span>
+    <label asp-for="ClientAddressUid" class="form-label"></label>
+    <select asp-for="ClientAddressUid" class="form-select" asp-items="Model.Addresses" id="addressSelect">
+        <option value="">-- Select Client Address --</option>
+    </select>
+    <span asp-validation-for="ClientAddressUid" class="text-danger small"></span>
+    <div class="form-text">Addresses come from ClientAddresses for the selected client.</div>
+</div>
+
+<div class="mb-3">
+    <label asp-for="ServiceTitle" class="form-label"></label>
+    <input asp-for="ServiceTitle" class="form-control" placeholder="e.g. AC Repair" />
+    <span asp-validation-for="ServiceTitle" class="text-danger small"></span>
+</div>
+
+<div class="mb-3">
+    <label asp-for="ServiceDescription" class="form-label"></label>
+    <textarea asp-for="ServiceDescription" class="form-control" rows="4" placeholder="Describe the service needed"></textarea>
+    <span asp-validation-for="ServiceDescription" class="text-danger small"></span>
 </div>
 
 <div class="row">
     <div class="col-md-6 mb-3">
-        <label asp-for="Latitude" class="form-label"></label>
-        <input asp-for="Latitude" class="form-control" type="number" step="0.0000001" placeholder="e.g. 31.5204" />
-        <span asp-validation-for="Latitude" class="text-danger small"></span>
+        <label asp-for="PreferredServiceDate" class="form-label"></label>
+        <input asp-for="PreferredServiceDate" class="form-control" type="date" />
+        <span asp-validation-for="PreferredServiceDate" class="text-danger small"></span>
     </div>
     <div class="col-md-6 mb-3">
-        <label asp-for="Longitude" class="form-label"></label>
-        <input asp-for="Longitude" class="form-control" type="number" step="0.0000001" placeholder="e.g. 74.3587" />
-        <span asp-validation-for="Longitude" class="text-danger small"></span>
+        <label asp-for="PreferredServiceTime" class="form-label"></label>
+        <input asp-for="PreferredServiceTime" class="form-control" placeholder="e.g. 10:00" />
+        <span asp-validation-for="PreferredServiceTime" class="text-danger small"></span>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6 mb-3">
+        <label asp-for="ContactPerson" class="form-label"></label>
+        <input asp-for="ContactPerson" class="form-control" />
+        <span asp-validation-for="ContactPerson" class="text-danger small"></span>
+    </div>
+    <div class="col-md-6 mb-3">
+        <label asp-for="ContactNo" class="form-label"></label>
+        <input asp-for="ContactNo" class="form-control" />
+        <span asp-validation-for="ContactNo" class="text-danger small"></span>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-4 mb-3">
+        <label asp-for="EstimatedBudget" class="form-label"></label>
+        <input asp-for="EstimatedBudget" class="form-control" type="number" step="0.01" />
+        <span asp-validation-for="EstimatedBudget" class="text-danger small"></span>
+    </div>
+    <div class="col-md-4 mb-3">
+        <label asp-for="Status" class="form-label"></label>
+        <select asp-for="Status" class="form-select" asp-items="Model.StatusOptions"></select>
+        <span asp-validation-for="Status" class="text-danger small"></span>
+    </div>
+    <div class="col-md-4 mb-3 d-flex align-items-end">
+        <div class="form-check mb-2">
+            <input asp-for="IsUrgent" class="form-check-input" />
+            <label asp-for="IsUrgent" class="form-check-label"></label>
+        </div>
     </div>
 </div>
 
 <div class="mb-3">
-    <label asp-for="ProblemDescription" class="form-label"></label>
-    <textarea asp-for="ProblemDescription" class="form-control" rows="4" placeholder="Describe the problem"></textarea>
-    <span asp-validation-for="ProblemDescription" class="text-danger small"></span>
-</div>
-
-<div class="mb-3">
-    <label asp-for="Status" class="form-label"></label>
-    <select asp-for="Status" class="form-select" asp-items="Model.StatusOptions"></select>
-    <span asp-validation-for="Status" class="text-danger small"></span>
+    <label asp-for="Remarks" class="form-label"></label>
+    <textarea asp-for="Remarks" class="form-control" rows="2"></textarea>
+    <span asp-validation-for="Remarks" class="text-danger small"></span>
 </div>

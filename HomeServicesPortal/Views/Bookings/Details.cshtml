@@ -6,27 +6,49 @@
     {
         "Completed" => "success",
         "In Progress" => "primary",
+        "Accepted" => "info",
         "Cancelled" => "secondary",
-        _ => "info"
+        _ => "warning"
     };
 }
+
 <div class="mb-4">
-    <a asp-action="Index" class="text-decoration-none text-muted"><i class="fa-solid fa-arrow-left me-1"></i>Back to Booking</a>
+    <a asp-action="Index" class="text-decoration-none text-muted"><i class="fa-solid fa-arrow-left me-1"></i>Back to Bookings</a>
     <h2 class="mt-2 mb-0"><i class="fa-solid fa-eye me-2 text-primary"></i>Booking Details</h2>
 </div>
-<div class="row justify-content-center"><div class="col-lg-8"><div class="card hs-card"><div class="card-body p-4">
-    <dl class="row mb-0">
-        <dt class="col-sm-4 text-muted">Service Request</dt><dd class="col-sm-8 fw-semibold">@Model.RequestLabel</dd>
-        <dt class="col-sm-4 text-muted">Provider</dt><dd class="col-sm-8">@Model.ProviderName</dd>
-        <dt class="col-sm-4 text-muted">Booking Date</dt><dd class="col-sm-8">@(Model.BookingDate?.ToString("dd MMM yyyy HH:mm") ?? "—")</dd>
-        <dt class="col-sm-4 text-muted">Final Amount</dt><dd class="col-sm-8">@(Model.FinalAmount?.ToString("N2") ?? "—")</dd>
-        <dt class="col-sm-4 text-muted">Status</dt><dd class="col-sm-8"><span class="badge bg-@statusClass">@(Model.Status ?? "Accepted")</span></dd>
-        <dt class="col-sm-4 text-muted">Tracking Records</dt><dd class="col-sm-8"><span class="badge bg-info">@Model.TrackingCount</span></dd>
-        <dt class="col-sm-4 text-muted">Payments</dt><dd class="col-sm-8"><span class="badge bg-success">@Model.PaymentCount</span></dd>
-        <dt class="col-sm-4 text-muted">Reviews</dt><dd class="col-sm-8"><span class="badge bg-secondary">@Model.ReviewCount</span></dd>
-    </dl>
-    <hr /><div class="d-flex gap-2">
-        <a asp-action="Edit" asp-route-id="@Model.Uid" class="btn btn-primary"><i class="fa-solid fa-pen me-1"></i>Edit</a>
-        <a asp-action="Delete" asp-route-id="@Model.Uid" class="btn btn-outline-danger"><i class="fa-solid fa-trash me-1"></i>Delete</a>
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card hs-card">
+            <div class="card-body p-4">
+                <dl class="row mb-0">
+                    <dt class="col-sm-4 text-muted">Service Request</dt>
+                    <dd class="col-sm-8 fw-semibold">@Model.RequestLabel</dd>
+                    <dt class="col-sm-4 text-muted">Client</dt>
+                    <dd class="col-sm-8">@Model.ClientName</dd>
+                    <dt class="col-sm-4 text-muted">Provider</dt>
+                    <dd class="col-sm-8">@Model.ProviderName</dd>
+                    <dt class="col-sm-4 text-muted">Created On</dt>
+                    <dd class="col-sm-8">@(Model.BookingDate?.ToString("dd MMM yyyy HH:mm") ?? "—")</dd>
+                    <dt class="col-sm-4 text-muted">Final Amount</dt>
+                    <dd class="col-sm-8">@Model.FinalAmount.ToString("N2")</dd>
+                    <dt class="col-sm-4 text-muted">Payment Mode</dt>
+                    <dd class="col-sm-8">@Model.PaymentMode</dd>
+                    <dt class="col-sm-4 text-muted">Commission</dt>
+                    <dd class="col-sm-8">@Model.CommissionType @Model.CommissionValue → @Model.CommissionAmount.ToString("N2")</dd>
+                    <dt class="col-sm-4 text-muted">Provider Earning</dt>
+                    <dd class="col-sm-8">@Model.ProviderEarning.ToString("N2")</dd>
+                    <dt class="col-sm-4 text-muted">Status</dt>
+                    <dd class="col-sm-8"><span class="badge bg-@statusClass">@(Model.Status ?? "—")</span></dd>
+                    <dt class="col-sm-4 text-muted">Ledger Entries</dt>
+                    <dd class="col-sm-8"><span class="badge bg-info">@Model.LedgerCount</span></dd>
+                </dl>
+                <hr />
+                <div class="d-flex gap-2">
+                    <a asp-action="Edit" asp-route-id="@Model.Uid" class="btn btn-primary"><i class="fa-solid fa-pen me-1"></i>Edit</a>
+                    <a asp-action="Delete" asp-route-id="@Model.Uid" class="btn btn-outline-danger"><i class="fa-solid fa-trash me-1"></i>Delete</a>
+                </div>
+            </div>
+        </div>
     </div>
-</div></div></div></div>
+</div>

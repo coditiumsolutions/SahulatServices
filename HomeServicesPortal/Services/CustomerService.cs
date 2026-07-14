@@ -1,17 +1,18 @@
-using HomeServicesPortal.Models.Entities;
+using HomeServicesPortal.Data;
+using HomeServicesPortal.Entities;
+using HomeServicesPortal.Helpers;
 using HomeServicesPortal.Models.ViewModels;
-using HomeServicesPortal.Repositories;
 using Microsoft.EntityFrameworkCore;
 
 namespace HomeServicesPortal.Services;
 
 public class CustomerService : ICustomerService
 {
-    private readonly IRepository<Customer> _repo;
+    private readonly AppDbContext _db;
 
-    public CustomerService(IRepository<Customer> repo)
+    public CustomerService(AppDbContext db)
     {
-        _repo = repo;
+        _db = db;
     }
 
     public async Task<CustomerListVm> GetListAsync(
@@ -26,26 +27,23 @@ public class CustomerService : ICustomerService
         sort = string.IsNullOrWhiteSpace(sort) ? "name" : sort.ToLowerInvariant();
         sortDir = string.Equals(sortDir, "desc", StringComparison.OrdinalIgnoreCase) ? "desc" : "asc";
 
-        var query = _repo.Query();
+        var query = _db.Clients.AsNoTracking();
 
         if (!string.IsNullOrWhiteSpace(search))
         {
             var term = search.Trim();
             query = query.Where(c =>
                 c.FullName.Contains(term) ||
-                (c.MobileNo != null && c.MobileNo.Contains(term)) ||
-                (c.Email != null && c.Email.Contains(term)) ||
-                (c.Address != null && c.Address.Contains(term)));
+                c.User.MobileNo.Contains(term) ||
+                (c.Cnic != null && c.Cnic.Contains(term)) ||
+                (c.Gender != null && c.Gender.Contains(term)));
         }
 
         query = sort switch
         {
-            "email" => sortDir == "desc"
-                ? query.OrderByDescending(c => c.Email)
-                : query.OrderBy(c => c.Email),
             "mobile" => sortDir == "desc"
-                ? query.OrderByDescending(c => c.MobileNo)
-                : query.OrderBy(c => c.MobileNo),
+                ? query.OrderByDescending(c => c.User.MobileNo)
+                : query.OrderBy(c => c.User.MobileNo),
             "date" => sortDir == "desc"
                 ? query.OrderByDescending(c => c.CreatedOn)
                 : query.OrderBy(c => c.CreatedOn),
@@ -63,9 +61,9 @@ public class CustomerService : ICustomerService
             {
                 Uid = c.Uid,
                 FullName = c.FullName,
-                MobileNo = c.MobileNo,
-                Email = c.Email,
-                Address = c.Address,
+                MobileNo = c.User.MobileNo,
+                Cnic = c.Cnic,
+                Gender = c.Gender,
                 CreatedOn = c.CreatedOn
             })
             .ToListAsync(cancellationToken);
@@ -84,47 +82,50 @@ public class CustomerService : ICustomerService
 
     public async Task<CustomerDetailsVm?> GetDetailsAsync(int id, CancellationToken cancellationToken = default)
     {
-        return await _repo.Query()
+        return await _db.Clients
+            .AsNoTracking()
             .Where(c => c.Uid == id)
             .Select(c => new CustomerDetailsVm
             {
                 Uid = c.Uid,
                 FullName = c.FullName,
-                MobileNo = c.MobileNo,
-                Email = c.Email,
-                Address = c.Address,
+                MobileNo = c.User.MobileNo,
+                Cnic = c.Cnic,
+                Gender = c.Gender,
                 CreatedOn = c.CreatedOn,
-                ServiceRequestCount = c.ServiceRequests.Count,
-                ReviewCount = c.Reviews.Count
+                ServiceRequestCount = _db.CustomerServiceRequests.Count(r => r.ClientUid == c.Uid),
+                AddressCount = _db.ClientAddresses.Count(a => a.ClientUid == c.Uid)
             })
             .FirstOrDefaultAsync(cancellationToken);
     }
 
     public async Task<CustomerFormVm?> GetForEditAsync(int id, CancellationToken cancellationToken = default)
     {
-        var entity = await _repo.GetByIdAsync(id, cancellationToken);
-        if (entity == null) return null;
-
-        return new CustomerFormVm
-        {
-            Uid = entity.Uid,
-            FullName = entity.FullName,
-            MobileNo = entity.MobileNo,
-            Email = entity.Email,
-            Address = entity.Address
-        };
+        return await _db.Clients
+            .AsNoTracking()
+            .Where(c => c.Uid == id)
+            .Select(c => new CustomerFormVm
+            {
+                Uid = c.Uid,
+                FullName = c.FullName,
+                MobileNo = c.User.MobileNo,
+                Cnic = c.Cnic,
+                Gender = c.Gender
+            })
+            .FirstOrDefaultAsync(cancellationToken);
     }
 
     public async Task<CustomerDeleteVm?> GetForDeleteAsync(int id, CancellationToken cancellationToken = default)
     {
-        return await _repo.Query()
+        return await _db.Clients
+            .AsNoTracking()
             .Where(c => c.Uid == id)
             .Select(c => new CustomerDeleteVm
             {
                 Uid = c.Uid,
                 FullName = c.FullName,
-                MobileNo = c.MobileNo,
-                Email = c.Email
+                MobileNo = c.User.MobileNo,
+                Cnic = c.Cnic
             })
             .FirstOrDefaultAsync(cancellationToken);
     }
@@ -133,27 +134,43 @@ public class CustomerService : ICustomerService
         CustomerFormVm model,
         CancellationToken cancellationToken = default)
     {
-        if (!string.IsNullOrWhiteSpace(model.Email))
+        if (string.IsNullOrWhiteSpace(model.MobileNo))
         {
-            var emailExists = await _repo.Query()
-                .AnyAsync(c => c.Email == model.Email.Trim(), cancellationToken);
-
-            if (emailExists)
-            {
-                return (false, "A customer with this email already exists.");
-            }
+            return (false, "Mobile number is required.");
         }
 
-        var entity = new Customer
+        var mobile = model.MobileNo.Trim();
+        var mobileExists = await _db.UsersLogins
+            .AnyAsync(u => u.MobileNo == mobile, cancellationToken);
+
+        if (mobileExists)
         {
-            FullName = model.FullName.Trim(),
-            MobileNo = model.MobileNo?.Trim(),
-            Email = model.Email?.Trim(),
-            Address = model.Address?.Trim(),
+            return (false, "A user with this mobile number already exists.");
+        }
+
+        var user = new UsersLogin
+        {
+            MobileNo = mobile,
+            PasswordHash = PasswordHasher.Hash(Guid.NewGuid().ToString("N")[..8]),
+            UserType = UserTypeConstants.Client,
+            IsActive = true,
+            IsVerified = false,
             CreatedOn = DateTime.Now
         };
 
-        await _repo.AddAsync(entity, cancellationToken);
+        _db.UsersLogins.Add(user);
+        await _db.SaveChangesAsync(cancellationToken);
+
+        _db.Clients.Add(new Client
+        {
+            UserUid = user.Uid,
+            FullName = model.FullName.Trim(),
+            Cnic = model.Cnic?.Trim(),
+            Gender = model.Gender?.Trim(),
+            CreatedOn = DateTime.Now
+        });
+
+        await _db.SaveChangesAsync(cancellationToken);
         return (true, null);
     }
 
@@ -161,48 +178,64 @@ public class CustomerService : ICustomerService
         CustomerFormVm model,
         CancellationToken cancellationToken = default)
     {
-        var entity = await _repo.GetByIdAsync(model.Uid, cancellationToken);
-        if (entity == null)
+        var client = await _db.Clients
+            .Include(c => c.User)
+            .FirstOrDefaultAsync(c => c.Uid == model.Uid, cancellationToken);
+
+        if (client == null)
         {
-            return (false, "Customer not found.");
+            return (false, "Client not found.");
         }
 
-        if (!string.IsNullOrWhiteSpace(model.Email))
+        if (string.IsNullOrWhiteSpace(model.MobileNo))
         {
-            var duplicate = await _repo.Query()
-                .AnyAsync(c => c.Email == model.Email.Trim() && c.Uid != model.Uid, cancellationToken);
-
-            if (duplicate)
-            {
-                return (false, "A customer with this email already exists.");
-            }
+            return (false, "Mobile number is required.");
         }
 
-        entity.FullName = model.FullName.Trim();
-        entity.MobileNo = model.MobileNo?.Trim();
-        entity.Email = model.Email?.Trim();
-        entity.Address = model.Address?.Trim();
+        var mobile = model.MobileNo.Trim();
+        var mobileTaken = await _db.UsersLogins
+            .AnyAsync(u => u.MobileNo == mobile && u.Uid != client.UserUid, cancellationToken);
 
-        await _repo.UpdateAsync(entity, cancellationToken);
+        if (mobileTaken)
+        {
+            return (false, "A user with this mobile number already exists.");
+        }
+
+        client.FullName = model.FullName.Trim();
+        client.Cnic = model.Cnic?.Trim();
+        client.Gender = model.Gender?.Trim();
+        client.User.MobileNo = mobile;
+
+        await _db.SaveChangesAsync(cancellationToken);
         return (true, null);
     }
 
     public async Task<(bool Success, string? Error)> DeleteAsync(int id, CancellationToken cancellationToken = default)
     {
-        var entity = await _repo.GetByIdAsync(id, cancellationToken);
-        if (entity == null)
+        var client = await _db.Clients
+            .Include(c => c.User)
+            .FirstOrDefaultAsync(c => c.Uid == id, cancellationToken);
+
+        if (client == null)
         {
-            return (false, "Customer not found.");
+            return (false, "Client not found.");
         }
 
-        try
+        var hasRequests = await _db.CustomerServiceRequests
+            .AnyAsync(r => r.ClientUid == id, cancellationToken);
+
+        var hasAddresses = await _db.ClientAddresses
+            .AnyAsync(a => a.ClientUid == id, cancellationToken);
+
+        if (hasRequests || hasAddresses)
         {
-            await _repo.DeleteAsync(entity, cancellationToken);
-            return (true, null);
+            return (false, "Cannot delete this client because they have linked addresses or service requests.");
         }
-        catch (DbUpdateException)
-        {
-            return (false, "Cannot delete this customer because they have linked service requests or reviews.");
-        }
+
+        var user = client.User;
+        _db.Clients.Remove(client);
+        _db.UsersLogins.Remove(user);
+        await _db.SaveChangesAsync(cancellationToken);
+        return (true, null);
     }
 }

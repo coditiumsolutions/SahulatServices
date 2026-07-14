@@ -13,7 +13,7 @@
 }
 
 <div class="mb-4">
-    <a asp-action="Index" class="text-decoration-none text-muted"><i class="fa-solid fa-arrow-left me-1"></i>Back to S-Requeste</a>
+    <a asp-action="Index" class="text-decoration-none text-muted"><i class="fa-solid fa-arrow-left me-1"></i>Back to S-Requests</a>
     <h2 class="mt-2 mb-0"><i class="fa-solid fa-eye me-2 text-primary"></i>S-Request Details</h2>
 </div>
 
@@ -22,31 +22,42 @@
         <div class="card hs-card">
             <div class="card-body p-4">
                 <dl class="row mb-0">
-                    <dt class="col-sm-4 text-muted">Customer</dt>
+                    <dt class="col-sm-4 text-muted">Client</dt>
                     <dd class="col-sm-8 fw-semibold">@Model.CustomerName</dd>
                     <dt class="col-sm-4 text-muted">Category</dt>
                     <dd class="col-sm-8">@Model.CategoryName</dd>
-                    <dt class="col-sm-4 text-muted">Service Address</dt>
+                    <dt class="col-sm-4 text-muted">Service Title</dt>
+                    <dd class="col-sm-8">@Model.ServiceTitle</dd>
+                    <dt class="col-sm-4 text-muted">Description</dt>
+                    <dd class="col-sm-8">@Model.ServiceDescription</dd>
+                    <dt class="col-sm-4 text-muted">Address</dt>
                     <dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.ServiceAddress) ? "—" : Model.ServiceAddress)</dd>
-                    <dt class="col-sm-4 text-muted">Latitude</dt>
-                    <dd class="col-sm-8">@(Model.Latitude?.ToString("0.0000000") ?? "—")</dd>
-                    <dt class="col-sm-4 text-muted">Longitude</dt>
-                    <dd class="col-sm-8">@(Model.Longitude?.ToString("0.0000000") ?? "—")</dd>
-                    <dt class="col-sm-4 text-muted">Problem Description</dt>
-                    <dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.ProblemDescription) ? "—" : Model.ProblemDescription)</dd>
-                    <dt class="col-sm-4 text-muted">Request Date</dt>
+                    <dt class="col-sm-4 text-muted">Preferred Date</dt>
+                    <dd class="col-sm-8">@(Model.PreferredServiceDate?.ToString("dd MMM yyyy") ?? "—")</dd>
+                    <dt class="col-sm-4 text-muted">Preferred Time</dt>
+                    <dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.PreferredServiceTime) ? "—" : Model.PreferredServiceTime)</dd>
+                    <dt class="col-sm-4 text-muted">Urgent</dt>
+                    <dd class="col-sm-8">@(Model.IsUrgent ? "Yes" : "No")</dd>
+                    <dt class="col-sm-4 text-muted">Contact</dt>
+                    <dd class="col-sm-8">@(Model.ContactPerson ?? "—") / @Model.ContactNo</dd>
+                    <dt class="col-sm-4 text-muted">Budget</dt>
+                    <dd class="col-sm-8">@(Model.EstimatedBudget?.ToString("N2") ?? "—")</dd>
+                    <dt class="col-sm-4 text-muted">Created On</dt>
                     <dd class="col-sm-8">@(Model.RequestDate?.ToString("dd MMM yyyy HH:mm") ?? "—")</dd>
                     <dt class="col-sm-4 text-muted">Status</dt>
                     <dd class="col-sm-8"><span class="badge bg-@statusClass">@(Model.Status ?? "Pending")</span></dd>
-                    <dt class="col-sm-4 text-muted">Provider Quotes</dt>
-                    <dd class="col-sm-8"><span class="badge bg-info">@Model.QuoteCount</span></dd>
-                    <dt class="col-sm-4 text-muted">Bookings</dt>
-                    <dd class="col-sm-8"><span class="badge bg-secondary">@Model.BookingCount</span></dd>
+                    <dt class="col-sm-4 text-muted">Remarks</dt>
+                    <dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.Remarks) ? "—" : Model.Remarks)</dd>
                 </dl>
                 <hr />
                 <div class="d-flex gap-2">
-                    <a asp-action="Edit" asp-route-id="@Model.Uid" class="btn btn-primary"><i class="fa-solid fa-pen me-1"></i>Edit</a>
-                    <a asp-action="Delete" asp-route-id="@Model.Uid" class="btn btn-outline-danger"><i class="fa-solid fa-trash me-1"></i>Delete</a>
+                    @if (string.Equals(Model.Status, "Pending", StringComparison.OrdinalIgnoreCase))
+                    {
+                        <a asp-action="Assign" asp-route-id="@Model.Uid" class="btn btn-success">
+                            <i class="fa-solid fa-user-check me-1"></i>Assign Provider
+                        </a>
+                    }
+                    <a asp-action="Index" class="btn btn-outline-secondary">Back</a>
                 </div>
             </div>
         </div>

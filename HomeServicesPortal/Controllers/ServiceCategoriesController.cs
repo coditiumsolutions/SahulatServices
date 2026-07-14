@@ -15,20 +15,20 @@ public class ServiceCategoriesController : Controller
         _service = service;
     }
 
-    [HttpGet("/ServiceCategories")]
+    [HttpGet("/Admin/ServiceCategories")]
     public async Task<IActionResult> Index(string? search, string? sort, string? sortDir, int page = 1, CancellationToken cancellationToken = default)
     {
         var vm = await _service.GetListAsync(search, sort, sortDir, page, cancellationToken);
         return View(vm);
     }
 
-    [HttpGet("/ServiceCategories/Create")]
+    [HttpGet("/Admin/ServiceCategories/Create")]
     public IActionResult Create()
     {
         return View(new ServiceCategoryFormVm());
     }
 
-    [HttpPost("/ServiceCategories/Create")]
+    [HttpPost("/Admin/ServiceCategories/Create")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(ServiceCategoryFormVm model, CancellationToken cancellationToken)
     {
@@ -45,7 +45,7 @@ public class ServiceCategoriesController : Controller
         return RedirectToAction(nameof(Index));
     }
 
-    [HttpGet("/ServiceCategories/Details/{id:int}")]
+    [HttpGet("/Admin/ServiceCategories/Details/{id:int}")]
     public async Task<IActionResult> Details(int id, CancellationToken cancellationToken)
     {
         var vm = await _service.GetDetailsAsync(id, cancellationToken);
@@ -53,7 +53,7 @@ public class ServiceCategoriesController : Controller
         return View(vm);
     }
 
-    [HttpGet("/ServiceCategories/Edit/{id:int}")]
+    [HttpGet("/Admin/ServiceCategories/Edit/{id:int}")]
     public async Task<IActionResult> Edit(int id, CancellationToken cancellationToken)
     {
         var vm = await _service.GetForEditAsync(id, cancellationToken);
@@ -61,7 +61,7 @@ public class ServiceCategoriesController : Controller
         return View(vm);
     }
 
-    [HttpPost("/ServiceCategories/Edit/{id:int}")]
+    [HttpPost("/Admin/ServiceCategories/Edit/{id:int}")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(int id, ServiceCategoryFormVm model, CancellationToken cancellationToken)
     {
@@ -79,7 +79,7 @@ public class ServiceCategoriesController : Controller
         return RedirectToAction(nameof(Index));
     }
 
-    [HttpGet("/ServiceCategories/Delete/{id:int}")]
+    [HttpGet("/Admin/ServiceCategories/Delete/{id:int}")]
     public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
     {
         var vm = await _service.GetForDeleteAsync(id, cancellationToken);
@@ -87,7 +87,7 @@ public class ServiceCategoriesController : Controller
         return View(vm);
     }
 
-    [HttpPost("/ServiceCategories/Delete/{id:int}")]
+    [HttpPost("/Admin/ServiceCategories/Delete/{id:int}")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteConfirmed(int id, CancellationToken cancellationToken)
     {

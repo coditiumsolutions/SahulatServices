@@ -9,27 +9,36 @@ namespace HomeServicesPortal.Controllers;
 public class ServiceRequestsController : Controller
 {
     private readonly IServiceRequestService _service;
+    private readonly IBookingService _bookingService;
 
-    public ServiceRequestsController(IServiceRequestService service)
+    public ServiceRequestsController(IServiceRequestService service, IBookingService bookingService)
     {
         _service = service;
+        _bookingService = bookingService;
     }
 
-    [HttpGet("/ServiceRequests")]
+    [HttpGet("/Admin/ServiceRequests")]
     public async Task<IActionResult> Index(string? search, string? sort, string? sortDir, int page = 1, CancellationToken cancellationToken = default)
     {
         var vm = await _service.GetListAsync(search, sort, sortDir, page, cancellationToken);
         return View(vm);
     }
 
-    [HttpGet("/ServiceRequests/Create")]
+    [HttpGet("/Admin/ServiceRequests/Addresses")]
+    public async Task<IActionResult> Addresses(int clientUid, CancellationToken cancellationToken = default)
+    {
+        var options = await _service.GetAddressOptionsAsync(clientUid, cancellationToken);
+        return Json(options.Select(o => new { value = o.Value, text = o.Text }));
+    }
+
+    [HttpGet("/Admin/ServiceRequests/Create")]
     public async Task<IActionResult> Create(CancellationToken cancellationToken)
     {
         var vm = await _service.PopulateFormAsync(new ServiceRequestFormVm(), cancellationToken);
         return View(vm);
     }
 
-    [HttpPost("/ServiceRequests/Create")]
+    [HttpPost("/Admin/ServiceRequests/Create")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(ServiceRequestFormVm model, CancellationToken cancellationToken)
     {
@@ -47,7 +56,7 @@ public class ServiceRequestsController : Controller
         return RedirectToAction(nameof(Index));
     }
 
-    [HttpGet("/ServiceRequests/Details/{id:int}")]
+    [HttpGet("/Admin/ServiceRequests/Details/{id:int}")]
     public async Task<IActionResult> Details(int id, CancellationToken cancellationToken)
     {
         var vm = await _service.GetDetailsAsync(id, cancellationToken);
@@ -55,56 +64,51 @@ public class ServiceRequestsController : Controller
         return View(vm);
     }
 
-    [HttpGet("/ServiceRequests/Edit/{id:int}")]
-    public async Task<IActionResult> Edit(int id, CancellationToken cancellationToken)
+    [HttpGet("/Admin/ServiceRequests/Assign/{id:int}")]
+    public async Task<IActionResult> Assign(int id, CancellationToken cancellationToken)
     {
-        var vm = await _service.GetForEditAsync(id, cancellationToken);
-        if (vm == null) return NotFound();
+        var vm = await _bookingService.GetAssignProviderFormAsync(id, cancellationToken);
+        if (vm == null)
+        {
+            TempData["ErrorMessage"] = "Request not found, not pending, or already assigned.";
+            return RedirectToAction(nameof(Index));
+        }
+
         return View(vm);
     }
 
-    [HttpPost("/ServiceRequests/Edit/{id:int}")]
+    [HttpPost("/Admin/ServiceRequests/Assign/{id:int}")]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Edit(int id, ServiceRequestFormVm model, CancellationToken cancellationToken)
+    public async Task<IActionResult> Assign(int id, AssignProviderVm model, CancellationToken cancellationToken)
     {
-        if (id != model.Uid) return BadRequest();
-        await _service.PopulateFormAsync(model, cancellationToken);
+        if (id != model.RequestUid) return BadRequest();
+
+        var form = await _bookingService.GetAssignProviderFormAsync(id, cancellationToken);
+        if (form == null)
+        {
+            return RedirectToAction(nameof(Index));
+        }
+
+        model.ClientName = form.ClientName;
+        model.ServiceTitle = form.ServiceTitle;
+        model.CategoryName = form.CategoryName;
+        model.ServiceAddress = form.ServiceAddress;
+        model.Status = form.Status;
+        model.EstimatedBudget = form.EstimatedBudget;
+        model.Providers = form.Providers;
+        model.PaymentModeOptions = form.PaymentModeOptions;
+        model.CommissionTypeOptions = form.CommissionTypeOptions;
+
         if (!ModelState.IsValid) return View(model);
 
-        var (success, error) = await _service.UpdateAsync(model, cancellationToken);
+        var (success, error) = await _bookingService.AssignProviderAsync(model, cancellationToken);
         if (!success)
         {
-            ModelState.AddModelError(string.Empty, error ?? "Failed to update service request.");
+            ModelState.AddModelError(string.Empty, error ?? "Failed to assign provider.");
             return View(model);
         }
 
-        TempData["SuccessMessage"] = "S-Request updated successfully.";
-        return RedirectToAction(nameof(Index));
-    }
-
-    [HttpGet("/ServiceRequests/Delete/{id:int}")]
-    public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
-    {
-        var vm = await _service.GetForDeleteAsync(id, cancellationToken);
-        if (vm == null) return NotFound();
-        return View(vm);
-    }
-
-    [HttpPost("/ServiceRequests/Delete/{id:int}")]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> DeleteConfirmed(int id, CancellationToken cancellationToken)
-    {
-        var vm = await _service.GetForDeleteAsync(id, cancellationToken);
-        if (vm == null) return NotFound();
-
-        var (success, error) = await _service.DeleteAsync(id, cancellationToken);
-        if (!success)
-        {
-            ModelState.AddModelError(string.Empty, error ?? "Failed to delete service request.");
-            return View("Delete", vm);
-        }
-
-        TempData["SuccessMessage"] = "S-Request deleted successfully.";
+        TempData["SuccessMessage"] = $"Provider assigned and booking created for request #{id}.";
         return RedirectToAction(nameof(Index));
     }
 }

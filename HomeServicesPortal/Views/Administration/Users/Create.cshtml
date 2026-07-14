@@ -9,7 +9,7 @@
         <i class="fa-solid fa-arrow-left me-1"></i>Back to Users
     </a>
     <h2 class="mt-2 mb-1"><i class="fa-solid fa-user-plus me-2 text-primary"></i>Create User</h2>
-    <p class="text-muted mb-0">Add a new login account with username and password</p>
+    <p class="text-muted mb-0">Creates a UsersLogin record and matching profile (Client / Provider / Staff)</p>
 </div>
 
 <div class="row justify-content-center">
@@ -22,54 +22,66 @@
                     @Html.AntiForgeryToken()
 
                     <div class="mb-3">
-                        <label asp-for="UserName" class="form-label"></label>
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="fa-solid fa-user"></i></span>
-                            <input asp-for="UserName" class="form-control" placeholder="Enter username" autocomplete="off" />
-                        </div>
-                        <span asp-validation-for="UserName" class="text-danger small"></span>
+                        <label asp-for="MobileNo" class="form-label"></label>
+                        <input asp-for="MobileNo" class="form-control" placeholder="03xx-xxxxxxx" autocomplete="off" />
+                        <span asp-validation-for="MobileNo" class="text-danger small"></span>
                     </div>
 
                     <div class="mb-3">
-                        <label asp-for="Email" class="form-label"></label>
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="fa-solid fa-envelope"></i></span>
-                            <input asp-for="Email" class="form-control" placeholder="user@example.com" />
-                        </div>
-                        <span asp-validation-for="Email" class="text-danger small"></span>
+                        <label asp-for="FullName" class="form-label"></label>
+                        <input asp-for="FullName" class="form-control" placeholder="Full name" />
+                        <span asp-validation-for="FullName" class="text-danger small"></span>
                     </div>
 
                     <div class="mb-3">
                         <label asp-for="Role" class="form-label"></label>
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="fa-solid fa-key"></i></span>
-                            <select asp-for="Role" class="form-select" asp-items="@(new SelectList(Model.AvailableRoles))">
-                                <option value="">-- Select Role --</option>
-                            </select>
-                        </div>
+                        <select asp-for="Role" class="form-select" id="roleSelect" asp-items="@(new SelectList(Model.AvailableRoles))">
+                            <option value="">-- Select Role --</option>
+                        </select>
+                        <div class="form-text">Staff = Admin portal access. Super Admin = Staff with full admin rights.</div>
                         <span asp-validation-for="Role" class="text-danger small"></span>
                     </div>
 
-                    <div class="mb-3">
-                        <label asp-for="Password" class="form-label"></label>
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="fa-solid fa-lock"></i></span>
-                            <input asp-for="Password" class="form-control" id="passwordInput" />
-                            <button type="button" class="btn btn-outline-secondary" id="togglePassword" aria-label="Show password">
-                                <i class="fa-solid fa-eye" id="toggleIcon"></i>
-                            </button>
-                        </div>
-                        <div class="form-text">Min 6 characters. Include uppercase, lowercase, and a number.</div>
-                        <span asp-validation-for="Password" class="text-danger small"></span>
+                    <div class="mb-3 provider-only d-none">
+                        <label asp-for="Cnic" class="form-label"></label>
+                        <input asp-for="Cnic" class="form-control" placeholder="xxxxx-xxxxxxx-x" />
+                        <span asp-validation-for="Cnic" class="text-danger small"></span>
                     </div>
 
-                    <div class="mb-4">
-                        <label asp-for="ConfirmPassword" class="form-label"></label>
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="fa-solid fa-lock"></i></span>
-                            <input asp-for="ConfirmPassword" class="form-control" />
+                    <div class="mb-3 provider-only d-none">
+                        <label asp-for="CategoryUid" class="form-label"></label>
+                        <select asp-for="CategoryUid" class="form-select" asp-items="Model.Categories">
+                            <option value="">-- Select Category --</option>
+                        </select>
+                        <span asp-validation-for="CategoryUid" class="text-danger small"></span>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="Password" class="form-label"></label>
+                            <input asp-for="Password" class="form-control" id="passwordInput" />
+                            <span asp-validation-for="Password" class="text-danger small"></span>
                         </div>
-                        <span asp-validation-for="ConfirmPassword" class="text-danger small"></span>
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="ConfirmPassword" class="form-label"></label>
+                            <input asp-for="ConfirmPassword" class="form-control" />
+                            <span asp-validation-for="ConfirmPassword" class="text-danger small"></span>
+                        </div>
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                <input asp-for="IsActive" class="form-check-input" />
+                                <label asp-for="IsActive" class="form-check-label"></label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                <input asp-for="IsVerified" class="form-check-input" />
+                                <label asp-for="IsVerified" class="form-check-label"></label>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="d-flex gap-2">
@@ -87,13 +99,16 @@
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
     <script>
-        document.getElementById('togglePassword')?.addEventListener('click', function () {
-            const input = document.getElementById('passwordInput');
-            const icon = document.getElementById('toggleIcon');
-            const isPassword = input.type === 'password';
-            input.type = isPassword ? 'text' : 'password';
-            icon.classList.toggle('fa-eye', !isPassword);
-            icon.classList.toggle('fa-eye-slash', isPassword);
-        });
+        (function () {
+            var roleSelect = document.getElementById('roleSelect');
+            function syncProviderFields() {
+                var isProvider = roleSelect && roleSelect.value === 'Provider';
+                document.querySelectorAll('.provider-only').forEach(function (el) {
+                    el.classList.toggle('d-none', !isProvider);
+                });
+            }
+            roleSelect?.addEventListener('change', syncProviderFields);
+            syncProviderFields();
+        })();
     </script>
 }

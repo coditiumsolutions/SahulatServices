@@ -1,0 +1,31 @@
+<script>
+(function () {
+    var clientSelect = document.getElementById('clientSelect');
+    var addressSelect = document.getElementById('addressSelect');
+    if (!clientSelect || !addressSelect) return;
+
+    function fillAddresses(clientUid, selectedValue) {
+        addressSelect.innerHTML = '<option value="">-- Select Client Address --</option>';
+        if (!clientUid) return;
+
+        fetch('/Admin/ServiceRequests/Addresses?clientUid=' + encodeURIComponent(clientUid))
+            .then(function (r) { return r.json(); })
+            .then(function (items) {
+                items.forEach(function (item) {
+                    var opt = document.createElement('option');
+                    opt.value = item.value;
+                    opt.textContent = item.text;
+                    if (selectedValue && String(selectedValue) === String(item.value)) {
+                        opt.selected = true;
+                    }
+                    addressSelect.appendChild(opt);
+                });
+            })
+            .catch(function () { /* leave empty dropdown */ });
+    }
+
+    clientSelect.addEventListener('change', function () {
+        fillAddresses(clientSelect.value, null);
+    });
+})();
+</script>

@@ -1,4 +1,4 @@
-# Version: 1.9 | UpdatedAt: 08/07/2026
+# Version: 2.0 | UpdatedAt: 14/07/2026
 # Database: SahulatAppDB
 # Server: 34.131.132.158,1433
 
@@ -97,6 +97,59 @@ Table: CustomerServiceRequests
   Status               nvarchar(30)     NOT NULL  DEFAULT ('Pending')
   Remarks              nvarchar(500)    NULL
   CreatedOn            datetime         NOT NULL  DEFAULT (getdate())
+
+--------------------------------------------------------------------------------
+Table: ServiceBookings
+--------------------------------------------------------------------------------
+  UID                  int              NOT NULL  PK
+  RequestUID           int              NOT NULL  FK -> CustomerServiceRequests.UID
+  ClientUID            int              NOT NULL  FK -> Clients.UID
+  ProviderUID          int              NOT NULL  FK -> Providers.UID
+  FinalAmount          decimal(12,2)    NOT NULL
+  PaymentMode          nvarchar(30)     NOT NULL  CHECK (CashToProvider | OnlineToCompany)
+  CommissionType       nvarchar(10)     NOT NULL
+  CommissionValue      decimal(10,2)    NOT NULL
+  CommissionAmount     decimal(12,2)    NOT NULL
+  ProviderEarning      decimal(12,2)    NOT NULL
+  Status               nvarchar(20)     NOT NULL  DEFAULT ('Completed')
+  CreatedOn            datetime         NOT NULL  DEFAULT (getdate())
+
+--------------------------------------------------------------------------------
+Table: CommissionRules
+--------------------------------------------------------------------------------
+  UID                  int              NOT NULL  PK
+  Scope                nvarchar(20)     NOT NULL
+  CategoryUID          int              NULL      FK -> ServiceCategories.UID
+  ProviderUID          int              NULL      FK -> Providers.UID
+  RuleType             nvarchar(10)     NOT NULL  CHECK (Percentage | Fixed)
+  Value                decimal(10,2)    NOT NULL
+  EffectiveFrom        datetime         NOT NULL
+  EffectiveTo          datetime         NULL
+  IsActive             bit              NOT NULL  DEFAULT (1)
+  CreatedOn            datetime         NOT NULL  DEFAULT (getdate())
+
+--------------------------------------------------------------------------------
+Table: PaymentLedger
+--------------------------------------------------------------------------------
+  UID                  int              NOT NULL  PK
+  BookingUID           int              NULL      FK -> ServiceBookings.UID
+  AccountType          nvarchar(10)     NOT NULL
+  ProviderUID          int              NULL      FK -> Providers.UID
+  EntryType            nvarchar(10)     NOT NULL
+  Amount               decimal(12,2)    NOT NULL
+  Reason               nvarchar(30)     NOT NULL
+  CreatedOn            datetime         NOT NULL  DEFAULT (getdate())
+
+--------------------------------------------------------------------------------
+Table: ProviderPayouts
+--------------------------------------------------------------------------------
+  UID                  int              NOT NULL  PK
+  ProviderUID          int              NOT NULL  FK -> Providers.UID
+  Amount               decimal(12,2)    NOT NULL
+  Status               nvarchar(20)     NOT NULL  DEFAULT ('Pending')
+  Method               nvarchar(20)     NULL
+  CreatedOn            datetime         NOT NULL  DEFAULT (getdate())
+  PaidOn               datetime         NULL
 
 
 ================================================================================
@@ -367,6 +420,14 @@ FOREIGN KEY RELATIONSHIPS
   CustomerServiceRequests.ClientUID        -> Clients.UID
   CustomerServiceRequests.CategoryUID      -> ServiceCategories.UID
   CustomerServiceRequests.ClientAddressUID -> ClientAddresses.UID
+  ServiceBookings.RequestUID               -> CustomerServiceRequests.UID
+  ServiceBookings.ClientUID                -> Clients.UID
+  ServiceBookings.ProviderUID              -> Providers.UID
+  CommissionRules.CategoryUID              -> ServiceCategories.UID
+  CommissionRules.ProviderUID              -> Providers.UID
+  PaymentLedger.BookingUID                 -> ServiceBookings.UID
+  PaymentLedger.ProviderUID                -> Providers.UID
+  ProviderPayouts.ProviderUID              -> Providers.UID
 
   ServiceProviders.CategoryUID       -> ServiceCategories.UID          [REMOVED]
   ProviderLocations.ProviderUID      -> ServiceProviders.UID           [REMOVED]

@@ -17,7 +17,7 @@ public class HomeController : Controller
     {
         if (User?.Identity?.IsAuthenticated == true)
         {
-            return Redirect("/ServiceCategories");
+            return Redirect("/Admin");
         }
 
         return View();

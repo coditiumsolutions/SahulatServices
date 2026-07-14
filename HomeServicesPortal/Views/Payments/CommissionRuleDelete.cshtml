@@ -1,0 +1,38 @@
+@model HomeServicesPortal.Models.ViewModels.CommissionRuleDeleteVm
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Delete Commission Rule";
+}
+
+<div class="mb-4">
+    <a asp-action="CommissionRules" class="text-decoration-none text-muted"><i class="fa-solid fa-arrow-left me-1"></i>Back to Commission Rules</a>
+    <h2 class="mt-2 mb-0 text-danger"><i class="fa-solid fa-triangle-exclamation me-2"></i>Delete Commission Rule</h2>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="card hs-card border-danger">
+            <div class="card-body p-4">
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+                <p>Are you sure you want to delete this commission rule?</p>
+                <dl class="row mb-4">
+                    <dt class="col-sm-4 text-muted">Scope</dt>
+                    <dd class="col-sm-8">@Model.Scope</dd>
+                    <dt class="col-sm-4 text-muted">Target</dt>
+                    <dd class="col-sm-8">@Model.TargetLabel</dd>
+                    <dt class="col-sm-4 text-muted">Type</dt>
+                    <dd class="col-sm-8">@Model.RuleType</dd>
+                    <dt class="col-sm-4 text-muted">Value</dt>
+                    <dd class="col-sm-8">@Model.Value.ToString("N2")</dd>
+                </dl>
+                <form asp-action="CommissionRuleDeleteConfirmed" asp-route-id="@Model.Uid" method="post">
+                    @Html.AntiForgeryToken()
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-danger"><i class="fa-solid fa-trash me-1"></i>Yes, Delete</button>
+                        <a asp-action="CommissionRules" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

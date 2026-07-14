@@ -7,8 +7,8 @@ namespace HomeServicesPortal.Models.ViewModels;
 /// </summary>
 public class LoginViewModel
 {
-    [Required(ErrorMessage = "Username is required.")]
-    [Display(Name = "Username")]
+    [Required(ErrorMessage = "Login name is required.")]
+    [Display(Name = "Login Name (Mobile)")]
     public string Username { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "Password is required.")]

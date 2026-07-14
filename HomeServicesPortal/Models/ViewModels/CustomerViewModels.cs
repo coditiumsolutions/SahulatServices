@@ -19,8 +19,8 @@ public class CustomerItemVm
     public int Uid { get; set; }
     public string FullName { get; set; } = string.Empty;
     public string? MobileNo { get; set; }
-    public string? Email { get; set; }
-    public string? Address { get; set; }
+    public string? Cnic { get; set; }
+    public string? Gender { get; set; }
     public DateTime? CreatedOn { get; set; }
 }
 
@@ -33,18 +33,18 @@ public class CustomerFormVm
     [Display(Name = "Full Name")]
     public string FullName { get; set; } = string.Empty;
 
+    [Required(ErrorMessage = "Mobile number is required.")]
     [StringLength(20)]
     [Display(Name = "Mobile No")]
-    public string? MobileNo { get; set; }
+    public string MobileNo { get; set; } = string.Empty;
 
-    [StringLength(150)]
-    [EmailAddress(ErrorMessage = "Enter a valid email address.")]
-    [Display(Name = "Email")]
-    public string? Email { get; set; }
+    [StringLength(15)]
+    [Display(Name = "CNIC")]
+    public string? Cnic { get; set; }
 
-    [StringLength(500)]
-    [Display(Name = "Address")]
-    public string? Address { get; set; }
+    [StringLength(20)]
+    [Display(Name = "Gender")]
+    public string? Gender { get; set; }
 }
 
 public class CustomerDetailsVm
@@ -52,11 +52,11 @@ public class CustomerDetailsVm
     public int Uid { get; set; }
     public string FullName { get; set; } = string.Empty;
     public string? MobileNo { get; set; }
-    public string? Email { get; set; }
-    public string? Address { get; set; }
+    public string? Cnic { get; set; }
+    public string? Gender { get; set; }
     public DateTime? CreatedOn { get; set; }
     public int ServiceRequestCount { get; set; }
-    public int ReviewCount { get; set; }
+    public int AddressCount { get; set; }
 }
 
 public class CustomerDeleteVm
@@ -64,5 +64,5 @@ public class CustomerDeleteVm
     public int Uid { get; set; }
     public string FullName { get; set; } = string.Empty;
     public string? MobileNo { get; set; }
-    public string? Email { get; set; }
+    public string? Cnic { get; set; }
 }

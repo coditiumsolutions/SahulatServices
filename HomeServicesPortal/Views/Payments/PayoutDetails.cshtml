@@ -1,0 +1,40 @@
+@model HomeServicesPortal.Models.ViewModels.ProviderPayoutDetailsVm
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Payout Details";
+    var statusClass = Model.Status switch
+    {
+        "Paid" => "success",
+        "Pending" => "warning",
+        "Cancelled" => "secondary",
+        _ => "info"
+    };
+}
+
+<div class="mb-4">
+    <a asp-action="Payouts" class="text-decoration-none text-muted"><i class="fa-solid fa-arrow-left me-1"></i>Back to Provider Payouts</a>
+    <h2 class="mt-2 mb-0"><i class="fa-solid fa-eye me-2 text-primary"></i>Payout #@Model.Uid</h2>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-7">
+        <div class="card hs-card">
+            <div class="card-body p-4">
+                <dl class="row mb-0">
+                    <dt class="col-sm-4 text-muted">Provider</dt>
+                    <dd class="col-sm-8 fw-semibold">@Model.ProviderName</dd>
+                    <dt class="col-sm-4 text-muted">Amount</dt>
+                    <dd class="col-sm-8">@Model.Amount.ToString("N2")</dd>
+                    <dt class="col-sm-4 text-muted">Status</dt>
+                    <dd class="col-sm-8"><span class="badge bg-@statusClass">@Model.Status</span></dd>
+                    <dt class="col-sm-4 text-muted">Method</dt>
+                    <dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.Method) ? "—" : Model.Method)</dd>
+                    <dt class="col-sm-4 text-muted">Created On</dt>
+                    <dd class="col-sm-8">@Model.CreatedOn.ToString("dd MMM yyyy HH:mm")</dd>
+                    <dt class="col-sm-4 text-muted">Paid On</dt>
+                    <dd class="col-sm-8">@(Model.PaidOn?.ToString("dd MMM yyyy HH:mm") ?? "—")</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>

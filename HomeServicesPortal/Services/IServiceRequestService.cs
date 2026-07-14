@@ -16,4 +16,5 @@ public interface IServiceRequestService
     Task<(bool Success, string? Error)> UpdateAsync(ServiceRequestFormVm model, CancellationToken cancellationToken = default);
     Task<(bool Success, string? Error)> DeleteAsync(int id, CancellationToken cancellationToken = default);
     Task<ServiceRequestFormVm> PopulateFormAsync(ServiceRequestFormVm model, CancellationToken cancellationToken = default);
+    Task<List<SelectListItem>> GetAddressOptionsAsync(int clientUid, CancellationToken cancellationToken = default);
 }

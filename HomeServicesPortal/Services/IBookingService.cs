@@ -16,4 +16,6 @@ public interface IBookingService
     Task<(bool Success, string? Error)> UpdateAsync(BookingFormVm model, CancellationToken cancellationToken = default);
     Task<(bool Success, string? Error)> DeleteAsync(int id, CancellationToken cancellationToken = default);
     Task<BookingFormVm> PopulateFormAsync(BookingFormVm model, CancellationToken cancellationToken = default);
+    Task<AssignProviderVm?> GetAssignProviderFormAsync(int requestUid, CancellationToken cancellationToken = default);
+    Task<(bool Success, string? Error)> AssignProviderAsync(AssignProviderVm model, CancellationToken cancellationToken = default);
 }

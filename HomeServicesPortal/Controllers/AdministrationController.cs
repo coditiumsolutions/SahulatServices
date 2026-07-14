@@ -16,28 +16,35 @@ public class AdministrationController : Controller
         _userService = userService;
     }
 
-    [HttpGet("/Administration/Users")]
+    [HttpGet("/Admin/Administration/Roles")]
+    public IActionResult Roles() => RedirectToAction(nameof(Users));
+
+    [HttpGet("/Admin/Administration/Users")]
     public async Task<IActionResult> Users(string? search, CancellationToken cancellationToken)
     {
         var vm = await _userService.GetUsersAsync(search, cancellationToken);
         return View("Users/Index", vm);
     }
 
-    [HttpGet("/Administration/Users/Create")]
+    [HttpGet("/Admin/Administration/Users/Create")]
     public async Task<IActionResult> CreateUser(CancellationToken cancellationToken)
     {
+        var lookups = await _userService.GetFormLookupsAsync(cancellationToken);
         var vm = new UserCreateVm
         {
-            AvailableRoles = await _userService.GetAllRolesAsync(cancellationToken)
+            AvailableRoles = lookups.Roles,
+            Categories = lookups.Categories
         };
         return View("Users/Create", vm);
     }
 
-    [HttpPost("/Administration/Users/Create")]
+    [HttpPost("/Admin/Administration/Users/Create")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> CreateUser(UserCreateVm model, CancellationToken cancellationToken)
     {
-        model.AvailableRoles = await _userService.GetAllRolesAsync(cancellationToken);
+        var lookups = await _userService.GetFormLookupsAsync(cancellationToken);
+        model.AvailableRoles = lookups.Roles;
+        model.Categories = lookups.Categories;
 
         if (!ModelState.IsValid)
         {
@@ -54,33 +61,35 @@ public class AdministrationController : Controller
             return View("Users/Create", model);
         }
 
-        TempData["SuccessMessage"] = $"User '{model.UserName}' created successfully.";
+        TempData["SuccessMessage"] = $"User '{model.MobileNo}' ({model.Role}) created successfully.";
         return RedirectToAction(nameof(Users));
     }
 
-    [HttpGet("/Administration/Users/Details/{id}")]
-    public async Task<IActionResult> UserDetails(string id, CancellationToken cancellationToken)
+    [HttpGet("/Admin/Administration/Users/Details/{id:int}")]
+    public async Task<IActionResult> UserDetails(int id, CancellationToken cancellationToken)
     {
         var vm = await _userService.GetUserDetailsAsync(id, cancellationToken);
         if (vm == null) return NotFound();
         return View("Users/Details", vm);
     }
 
-    [HttpGet("/Administration/Users/Edit/{id}")]
-    public async Task<IActionResult> EditUser(string id, CancellationToken cancellationToken)
+    [HttpGet("/Admin/Administration/Users/Edit/{id:int}")]
+    public async Task<IActionResult> EditUser(int id, CancellationToken cancellationToken)
     {
         var vm = await _userService.GetUserForEditAsync(id, cancellationToken);
         if (vm == null) return NotFound();
         return View("Users/Edit", vm);
     }
 
-    [HttpPost("/Administration/Users/Edit/{id}")]
+    [HttpPost("/Admin/Administration/Users/Edit/{id:int}")]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> EditUser(string id, UserEditVm model, CancellationToken cancellationToken)
+    public async Task<IActionResult> EditUser(int id, UserEditVm model, CancellationToken cancellationToken)
     {
         if (id != model.Id) return BadRequest();
 
-        model.AvailableRoles = await _userService.GetAllRolesAsync(cancellationToken);
+        var lookups = await _userService.GetFormLookupsAsync(cancellationToken);
+        model.AvailableRoles = lookups.Roles;
+        model.Categories = lookups.Categories;
 
         if (!ModelState.IsValid)
         {
@@ -97,21 +106,21 @@ public class AdministrationController : Controller
             return View("Users/Edit", model);
         }
 
-        TempData["SuccessMessage"] = $"User '{model.UserName}' updated successfully.";
+        TempData["SuccessMessage"] = $"User '{model.MobileNo}' updated successfully.";
         return RedirectToAction(nameof(Users));
     }
 
-    [HttpGet("/Administration/Users/Delete/{id}")]
-    public async Task<IActionResult> DeleteUser(string id, CancellationToken cancellationToken)
+    [HttpGet("/Admin/Administration/Users/Delete/{id:int}")]
+    public async Task<IActionResult> DeleteUser(int id, CancellationToken cancellationToken)
     {
         var vm = await _userService.GetUserForDeleteAsync(id, cancellationToken);
         if (vm == null) return NotFound();
         return View("Users/Delete", vm);
     }
 
-    [HttpPost("/Administration/Users/Delete/{id}")]
+    [HttpPost("/Admin/Administration/Users/Delete/{id:int}")]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> DeleteUserConfirmed(string id, CancellationToken cancellationToken)
+    public async Task<IActionResult> DeleteUserConfirmed(int id, CancellationToken cancellationToken)
     {
         var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         var (success, errors) = await _userService.DeleteUserAsync(id, currentUserId, cancellationToken);

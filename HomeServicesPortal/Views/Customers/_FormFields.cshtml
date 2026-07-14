@@ -13,13 +13,18 @@
 </div>
 
 <div class="mb-3">
-    <label asp-for="Email" class="form-label"></label>
-    <input asp-for="Email" class="form-control" placeholder="Enter email address" />
-    <span asp-validation-for="Email" class="text-danger small"></span>
+    <label asp-for="Cnic" class="form-label"></label>
+    <input asp-for="Cnic" class="form-control" placeholder="Enter CNIC" />
+    <span asp-validation-for="Cnic" class="text-danger small"></span>
 </div>
 
 <div class="mb-3">
-    <label asp-for="Address" class="form-label"></label>
-    <textarea asp-for="Address" class="form-control" rows="3" placeholder="Enter address"></textarea>
-    <span asp-validation-for="Address" class="text-danger small"></span>
+    <label asp-for="Gender" class="form-label"></label>
+    <select asp-for="Gender" class="form-select">
+        <option value="">-- Select Gender --</option>
+        <option value="Male">Male</option>
+        <option value="Female">Female</option>
+        <option value="Other">Other</option>
+    </select>
+    <span asp-validation-for="Gender" class="text-danger small"></span>
 </div>

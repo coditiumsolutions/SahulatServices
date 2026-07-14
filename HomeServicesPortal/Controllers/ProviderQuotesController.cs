@@ -15,20 +15,20 @@ public class ProviderQuotesController : Controller
         _service = service;
     }
 
-    [HttpGet("/ProviderQuotes")]
+    [HttpGet("/Admin/ProviderQuotes")]
     public async Task<IActionResult> Index(string? search, string? sort, string? sortDir, int page = 1, CancellationToken cancellationToken = default)
     {
         var vm = await _service.GetListAsync(search, sort, sortDir, page, cancellationToken);
         return View(vm);
     }
 
-    [HttpGet("/ProviderQuotes/Create")]
+    [HttpGet("/Admin/ProviderQuotes/Create")]
     public async Task<IActionResult> Create(CancellationToken cancellationToken)
     {
         return View(await _service.PopulateFormAsync(new ProviderQuoteFormVm(), cancellationToken));
     }
 
-    [HttpPost("/ProviderQuotes/Create")]
+    [HttpPost("/Admin/ProviderQuotes/Create")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(ProviderQuoteFormVm model, CancellationToken cancellationToken)
     {
@@ -46,7 +46,7 @@ public class ProviderQuotesController : Controller
         return RedirectToAction(nameof(Index));
     }
 
-    [HttpGet("/ProviderQuotes/Details/{id:int}")]
+    [HttpGet("/Admin/ProviderQuotes/Details/{id:int}")]
     public async Task<IActionResult> Details(int id, CancellationToken cancellationToken)
     {
         var vm = await _service.GetDetailsAsync(id, cancellationToken);
@@ -54,7 +54,7 @@ public class ProviderQuotesController : Controller
         return View(vm);
     }
 
-    [HttpGet("/ProviderQuotes/Edit/{id:int}")]
+    [HttpGet("/Admin/ProviderQuotes/Edit/{id:int}")]
     public async Task<IActionResult> Edit(int id, CancellationToken cancellationToken)
     {
         var vm = await _service.GetForEditAsync(id, cancellationToken);
@@ -62,7 +62,7 @@ public class ProviderQuotesController : Controller
         return View(vm);
     }
 
-    [HttpPost("/ProviderQuotes/Edit/{id:int}")]
+    [HttpPost("/Admin/ProviderQuotes/Edit/{id:int}")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(int id, ProviderQuoteFormVm model, CancellationToken cancellationToken)
     {
@@ -81,7 +81,7 @@ public class ProviderQuotesController : Controller
         return RedirectToAction(nameof(Index));
     }
 
-    [HttpGet("/ProviderQuotes/Delete/{id:int}")]
+    [HttpGet("/Admin/ProviderQuotes/Delete/{id:int}")]
     public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
     {
         var vm = await _service.GetForDeleteAsync(id, cancellationToken);
@@ -89,7 +89,7 @@ public class ProviderQuotesController : Controller
         return View(vm);
     }
 
-    [HttpPost("/ProviderQuotes/Delete/{id:int}")]
+    [HttpPost("/Admin/ProviderQuotes/Delete/{id:int}")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteConfirmed(int id, CancellationToken cancellationToken)
     {

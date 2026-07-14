@@ -9,100 +9,133 @@ namespace HomeServicesPortal.Controllers;
 public class PaymentsController : Controller
 {
     private readonly IPaymentService _service;
+    private readonly ICommissionRuleService _commissionRules;
 
-    public PaymentsController(IPaymentService service)
+    public PaymentsController(IPaymentService service, ICommissionRuleService commissionRules)
     {
         _service = service;
+        _commissionRules = commissionRules;
     }
 
-    [HttpGet("/Payments")]
-    public async Task<IActionResult> Index(string? search, string? sort, string? sortDir, int page = 1, CancellationToken cancellationToken = default)
+    [HttpGet("/Admin/Payments")]
+    public IActionResult Index() => RedirectToAction(nameof(Ledger));
+
+    [HttpGet("/Admin/Payments/Ledger")]
+    public async Task<IActionResult> Ledger(string? search, int page = 1, CancellationToken cancellationToken = default)
     {
-        return View(await _service.GetListAsync(search, sort, sortDir, page, cancellationToken));
+        return View(await _service.GetLedgerListAsync(search, page, cancellationToken));
     }
 
-    [HttpGet("/Payments/Create")]
-    public async Task<IActionResult> Create(CancellationToken cancellationToken)
+    [HttpGet("/Admin/Payments/Ledger/Details/{id:int}")]
+    public async Task<IActionResult> LedgerDetails(int id, CancellationToken cancellationToken = default)
     {
-        return View(await _service.PopulateFormAsync(new PaymentFormVm(), cancellationToken));
+        var vm = await _service.GetLedgerDetailsAsync(id, cancellationToken);
+        if (vm == null) return NotFound();
+        return View(vm);
     }
 
-    [HttpPost("/Payments/Create")]
+    [HttpGet("/Admin/Payments/Payouts")]
+    public async Task<IActionResult> Payouts(string? search, int page = 1, CancellationToken cancellationToken = default)
+    {
+        return View(await _service.GetPayoutListAsync(search, page, cancellationToken));
+    }
+
+    [HttpGet("/Admin/Payments/Payouts/Details/{id:int}")]
+    public async Task<IActionResult> PayoutDetails(int id, CancellationToken cancellationToken = default)
+    {
+        var vm = await _service.GetPayoutDetailsAsync(id, cancellationToken);
+        if (vm == null) return NotFound();
+        return View(vm);
+    }
+
+    [HttpGet("/Admin/Payments/CommissionRules")]
+    public async Task<IActionResult> CommissionRules(string? search, int page = 1, CancellationToken cancellationToken = default)
+    {
+        return View(await _commissionRules.GetListAsync(search, page, cancellationToken));
+    }
+
+    [HttpGet("/Admin/Payments/CommissionRules/Create")]
+    public async Task<IActionResult> CommissionRuleCreate(CancellationToken cancellationToken)
+    {
+        return View(await _commissionRules.PopulateFormAsync(new CommissionRuleFormVm(), cancellationToken));
+    }
+
+    [HttpPost("/Admin/Payments/CommissionRules/Create")]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create(PaymentFormVm model, CancellationToken cancellationToken)
+    public async Task<IActionResult> CommissionRuleCreate(CommissionRuleFormVm model, CancellationToken cancellationToken)
     {
-        await _service.PopulateFormAsync(model, cancellationToken);
+        await _commissionRules.PopulateFormAsync(model, cancellationToken);
         if (!ModelState.IsValid) return View(model);
 
-        var (success, error) = await _service.CreateAsync(model, cancellationToken);
+        var (success, error) = await _commissionRules.CreateAsync(model, cancellationToken);
         if (!success)
         {
-            ModelState.AddModelError(string.Empty, error ?? "Failed to create payment.");
+            ModelState.AddModelError(string.Empty, error ?? "Failed to create commission rule.");
             return View(model);
         }
 
-        TempData["SuccessMessage"] = "Payment created successfully.";
-        return RedirectToAction(nameof(Index));
+        TempData["SuccessMessage"] = "Commission rule created successfully.";
+        return RedirectToAction(nameof(CommissionRules));
     }
 
-    [HttpGet("/Payments/Details/{id:int}")]
-    public async Task<IActionResult> Details(int id, CancellationToken cancellationToken)
+    [HttpGet("/Admin/Payments/CommissionRules/Details/{id:int}")]
+    public async Task<IActionResult> CommissionRuleDetails(int id, CancellationToken cancellationToken)
     {
-        var vm = await _service.GetDetailsAsync(id, cancellationToken);
+        var vm = await _commissionRules.GetDetailsAsync(id, cancellationToken);
         if (vm == null) return NotFound();
         return View(vm);
     }
 
-    [HttpGet("/Payments/Edit/{id:int}")]
-    public async Task<IActionResult> Edit(int id, CancellationToken cancellationToken)
+    [HttpGet("/Admin/Payments/CommissionRules/Edit/{id:int}")]
+    public async Task<IActionResult> CommissionRuleEdit(int id, CancellationToken cancellationToken)
     {
-        var vm = await _service.GetForEditAsync(id, cancellationToken);
+        var vm = await _commissionRules.GetForEditAsync(id, cancellationToken);
         if (vm == null) return NotFound();
         return View(vm);
     }
 
-    [HttpPost("/Payments/Edit/{id:int}")]
+    [HttpPost("/Admin/Payments/CommissionRules/Edit/{id:int}")]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Edit(int id, PaymentFormVm model, CancellationToken cancellationToken)
+    public async Task<IActionResult> CommissionRuleEdit(int id, CommissionRuleFormVm model, CancellationToken cancellationToken)
     {
         if (id != model.Uid) return BadRequest();
-        await _service.PopulateFormAsync(model, cancellationToken);
+        await _commissionRules.PopulateFormAsync(model, cancellationToken);
         if (!ModelState.IsValid) return View(model);
 
-        var (success, error) = await _service.UpdateAsync(model, cancellationToken);
+        var (success, error) = await _commissionRules.UpdateAsync(model, cancellationToken);
         if (!success)
         {
-            ModelState.AddModelError(string.Empty, error ?? "Failed to update payment.");
+            ModelState.AddModelError(string.Empty, error ?? "Failed to update commission rule.");
             return View(model);
         }
 
-        TempData["SuccessMessage"] = "Payment updated successfully.";
-        return RedirectToAction(nameof(Index));
+        TempData["SuccessMessage"] = "Commission rule updated successfully.";
+        return RedirectToAction(nameof(CommissionRules));
     }
 
-    [HttpGet("/Payments/Delete/{id:int}")]
-    public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
+    [HttpGet("/Admin/Payments/CommissionRules/Delete/{id:int}")]
+    public async Task<IActionResult> CommissionRuleDelete(int id, CancellationToken cancellationToken)
     {
-        var vm = await _service.GetForDeleteAsync(id, cancellationToken);
+        var vm = await _commissionRules.GetForDeleteAsync(id, cancellationToken);
         if (vm == null) return NotFound();
         return View(vm);
     }
 
-    [HttpPost("/Payments/Delete/{id:int}")]
+    [HttpPost("/Admin/Payments/CommissionRules/Delete/{id:int}")]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> DeleteConfirmed(int id, CancellationToken cancellationToken)
+    public async Task<IActionResult> CommissionRuleDeleteConfirmed(int id, CancellationToken cancellationToken)
     {
-        var vm = await _service.GetForDeleteAsync(id, cancellationToken);
+        var vm = await _commissionRules.GetForDeleteAsync(id, cancellationToken);
         if (vm == null) return NotFound();
 
-        var (success, error) = await _service.DeleteAsync(id, cancellationToken);
+        var (success, error) = await _commissionRules.DeleteAsync(id, cancellationToken);
         if (!success)
         {
-            ModelState.AddModelError(string.Empty, error ?? "Failed to delete payment.");
-            return View("Delete", vm);
+            ModelState.AddModelError(string.Empty, error ?? "Failed to delete commission rule.");
+            return View("CommissionRuleDelete", vm);
         }
 
-        TempData["SuccessMessage"] = "Payment deleted successfully.";
-        return RedirectToAction(nameof(Index));
+        TempData["SuccessMessage"] = "Commission rule deleted successfully.";
+        return RedirectToAction(nameof(CommissionRules));
     }
 }

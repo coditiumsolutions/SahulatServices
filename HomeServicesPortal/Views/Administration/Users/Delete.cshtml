@@ -17,20 +17,15 @@
             <div class="card-body p-4">
                 <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
 
-                <p class="mb-3">Are you sure you want to permanently delete this user?</p>
+                <p class="mb-3">Are you sure you want to permanently delete this UsersLogin account and its profile?</p>
 
                 <dl class="row mb-4">
-                    <dt class="col-sm-4 text-muted">Username</dt>
-                    <dd class="col-sm-8 fw-semibold">@Model.UserName</dd>
-                    <dt class="col-sm-4 text-muted">Email</dt>
-                    <dd class="col-sm-8">@Model.Email</dd>
-                    <dt class="col-sm-4 text-muted">Role(s)</dt>
-                    <dd class="col-sm-8">
-                        @foreach (var role in Model.Roles)
-                        {
-                            <span class="badge bg-primary me-1">@role</span>
-                        }
-                    </dd>
+                    <dt class="col-sm-4 text-muted">Mobile No</dt>
+                    <dd class="col-sm-8 fw-semibold">@Model.MobileNo</dd>
+                    <dt class="col-sm-4 text-muted">Full Name</dt>
+                    <dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.FullName) ? "—" : Model.FullName)</dd>
+                    <dt class="col-sm-4 text-muted">Role</dt>
+                    <dd class="col-sm-8"><span class="badge bg-primary">@Model.Role</span></dd>
                 </dl>
 
                 <form asp-action="DeleteUserConfirmed" asp-route-id="@Model.Id" method="post">

@@ -1,0 +1,102 @@
+@model HomeServicesPortal.Models.ViewModels.AssignProviderVm
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Assign Provider";
+}
+
+<div class="mb-4">
+    <a asp-action="Index" class="text-decoration-none text-muted"><i class="fa-solid fa-arrow-left me-1"></i>Back to S-Requests</a>
+    <h2 class="mt-2 mb-0"><i class="fa-solid fa-user-check me-2 text-primary"></i>Assign Provider</h2>
+    <p class="text-muted mb-0">Create a ServiceBookings record for this pending request</p>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card hs-card mb-3">
+            <div class="card-body p-4">
+                <dl class="row mb-0">
+                    <dt class="col-sm-4 text-muted">Request</dt>
+                    <dd class="col-sm-8 fw-semibold">#@Model.RequestUid — @Model.ServiceTitle</dd>
+                    <dt class="col-sm-4 text-muted">Client</dt>
+                    <dd class="col-sm-8">@Model.ClientName</dd>
+                    <dt class="col-sm-4 text-muted">Category</dt>
+                    <dd class="col-sm-8">@Model.CategoryName</dd>
+                    <dt class="col-sm-4 text-muted">Address</dt>
+                    <dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.ServiceAddress) ? "—" : Model.ServiceAddress)</dd>
+                    <dt class="col-sm-4 text-muted">Estimated Budget</dt>
+                    <dd class="col-sm-8">@(Model.EstimatedBudget?.ToString("N2") ?? "—")</dd>
+                    <dt class="col-sm-4 text-muted">Status</dt>
+                    <dd class="col-sm-8"><span class="badge bg-warning text-dark">@(Model.Status ?? "Pending")</span></dd>
+                </dl>
+            </div>
+        </div>
+
+        <div class="card hs-card">
+            <div class="card-body p-4">
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+                <form asp-action="Assign" asp-route-id="@Model.RequestUid" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" asp-for="RequestUid" />
+
+                    <div class="mb-3">
+                        <label asp-for="ProviderUid" class="form-label"></label>
+                        <select asp-for="ProviderUid" class="form-select" asp-items="Model.Providers">
+                            <option value="">-- Select Provider --</option>
+                        </select>
+                        <span asp-validation-for="ProviderUid" class="text-danger small"></span>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="FinalAmount" class="form-label"></label>
+                            <input asp-for="FinalAmount" class="form-control" type="number" step="0.01" min="0" />
+                            <span asp-validation-for="FinalAmount" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="PaymentMode" class="form-label"></label>
+                            <select asp-for="PaymentMode" class="form-select" asp-items="Model.PaymentModeOptions"></select>
+                            <span asp-validation-for="PaymentMode" class="text-danger small"></span>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label asp-for="CommissionType" class="form-label"></label>
+                            <select asp-for="CommissionType" class="form-select" asp-items="Model.CommissionTypeOptions"></select>
+                            <span asp-validation-for="CommissionType" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label asp-for="CommissionValue" class="form-label"></label>
+                            <input asp-for="CommissionValue" class="form-control" type="number" step="0.01" min="0" />
+                            <span asp-validation-for="CommissionValue" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label asp-for="CommissionAmount" class="form-label"></label>
+                            <input asp-for="CommissionAmount" class="form-control" type="number" step="0.01" min="0" />
+                            <div class="form-text">Optional — auto-calculated if blank</div>
+                            <span asp-validation-for="CommissionAmount" class="text-danger small"></span>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label asp-for="ProviderEarning" class="form-label"></label>
+                        <input asp-for="ProviderEarning" class="form-control" type="number" step="0.01" min="0" />
+                        <div class="form-text">Optional — auto-calculated as total − commission</div>
+                        <span asp-validation-for="ProviderEarning" class="text-danger small"></span>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fa-solid fa-check me-1"></i>Assign &amp; Create Booking
+                        </button>
+                        <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

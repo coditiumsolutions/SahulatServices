@@ -1,26 +1,26 @@
+using System.Security.Claims;
+using HomeServicesPortal.Data;
+using HomeServicesPortal.Helpers;
 using HomeServicesPortal.Models.ViewModels;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace HomeServicesPortal.Controllers;
 
 /// <summary>
-/// Handles custom account pages including login and logout.
+/// Admin portal login using UsersLogin + Staff (UserType = Staff).
 /// </summary>
 public class AccountController : Controller
 {
-    private readonly SignInManager<IdentityUser> _signInManager;
-    private readonly UserManager<IdentityUser> _userManager;
+    private readonly AppDbContext _db;
     private readonly ILogger<AccountController> _logger;
 
-    public AccountController(
-        SignInManager<IdentityUser> signInManager,
-        UserManager<IdentityUser> userManager,
-        ILogger<AccountController> logger)
+    public AccountController(AppDbContext db, ILogger<AccountController> logger)
     {
-        _signInManager = signInManager;
-        _userManager = userManager;
+        _db = db;
         _logger = logger;
     }
 
@@ -41,7 +41,7 @@ public class AccountController : Controller
     }
 
     /// <summary>
-    /// Processes login credentials and signs the user in via ASP.NET Identity.
+    /// Validates Staff credentials from UsersLogin (UserType must be Staff) and Staff profile.
     /// </summary>
     [HttpPost("/adminportal")]
     [HttpPost("/Account/Login")]
@@ -53,49 +53,83 @@ public class AccountController : Controller
             return View(model);
         }
 
-        var user = await _userManager.FindByNameAsync(model.Username)
-                   ?? await _userManager.FindByEmailAsync(model.Username);
+        var loginName = model.Username.Trim();
 
-        if (user == null)
+        var user = await _db.UsersLogins
+            .AsNoTracking()
+            .FirstOrDefaultAsync(u => u.MobileNo == loginName, cancellationToken);
+
+        if (user == null || !PasswordHasher.Verify(model.Password, user.PasswordHash))
         {
-            _logger.LogWarning("Login failed: user {Username} not found.", model.Username);
-            ModelState.AddModelError(string.Empty, "Invalid username or password.");
+            _logger.LogWarning("Staff login failed: invalid credentials for {LoginName}.", loginName);
+            ModelState.AddModelError(string.Empty, "Invalid login name or password.");
             return View(model);
         }
 
-        var result = await _signInManager.PasswordSignInAsync(
-            user.UserName!,
-            model.Password,
-            model.RememberMe,
-            lockoutOnFailure: true);
-
-        if (result.Succeeded)
+        if (!user.UserType.Equals(UserTypeConstants.Staff, StringComparison.OrdinalIgnoreCase))
         {
-            _logger.LogInformation("User {Username} logged in successfully.", model.Username);
-            return RedirectToLocal(model.ReturnUrl);
-        }
-
-        if (result.IsLockedOut)
-        {
-            _logger.LogWarning("User {Username} account locked out.", model.Username);
-            ModelState.AddModelError(string.Empty, "Account locked out. Please try again later.");
+            _logger.LogWarning("Staff login denied: UserType={UserType} for {LoginName}.", user.UserType, loginName);
+            ModelState.AddModelError(string.Empty, "Only Staff accounts can sign in to the admin portal.");
             return View(model);
         }
 
-        _logger.LogWarning("Login failed for user {Username}.", model.Username);
-        ModelState.AddModelError(string.Empty, "Invalid username or password.");
-        return View(model);
+        if (!user.IsActive)
+        {
+            ModelState.AddModelError(string.Empty, "Account is inactive. Contact support.");
+            return View(model);
+        }
+
+        var staff = await _db.Staff
+            .AsNoTracking()
+            .FirstOrDefaultAsync(s => s.UserUid == user.Uid, cancellationToken);
+
+        if (staff == null)
+        {
+            _logger.LogWarning("Staff login failed: no Staff profile for user UID {UserUid}.", user.Uid);
+            ModelState.AddModelError(string.Empty, "Staff profile not found.");
+            return View(model);
+        }
+
+        var trackedUser = await _db.UsersLogins.FirstAsync(u => u.Uid == user.Uid, cancellationToken);
+        trackedUser.LastLogin = DateTime.Now;
+        await _db.SaveChangesAsync(cancellationToken);
+
+        var role = staff.IsAdmin ? "Super Admin" : "Admin";
+        var claims = new List<Claim>
+        {
+            new(ClaimTypes.NameIdentifier, user.Uid.ToString()),
+            new(ClaimTypes.Name, staff.FullName),
+            new(ClaimTypes.MobilePhone, user.MobileNo),
+            new("UserType", UserTypeConstants.Staff),
+            new("StaffUid", staff.Uid.ToString()),
+            new(ClaimTypes.Role, role),
+            new(ClaimTypes.Role, "Dispatcher"),
+            new(ClaimTypes.Role, "Customer Support")
+        };
+
+        var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+        var principal = new ClaimsPrincipal(identity);
+        var authProperties = new AuthenticationProperties
+        {
+            IsPersistent = model.RememberMe,
+            ExpiresUtc = DateTimeOffset.UtcNow.AddHours(8)
+        };
+
+        await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal, authProperties);
+
+        _logger.LogInformation("Staff {FullName} ({LoginName}) signed in to admin portal.", staff.FullName, loginName);
+        return RedirectToLocal(model.ReturnUrl);
     }
 
     /// <summary>
-    /// Signs the user out and redirects to the login page.
+    /// Signs the staff user out and redirects to the login page.
     /// </summary>
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Logout()
     {
-        await _signInManager.SignOutAsync();
-        _logger.LogInformation("User logged out.");
+        await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+        _logger.LogInformation("Staff logged out.");
         return Redirect("/adminportal");
     }
 
@@ -106,6 +140,6 @@ public class AccountController : Controller
             return Redirect(returnUrl);
         }
 
-        return Redirect("/ServiceCategories");
+        return Redirect("/Admin");
     }
 }

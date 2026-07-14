@@ -1,12 +1,12 @@
 @model HomeServicesPortal.Models.ViewModels.CustomerDetailsVm
 @{
     Layout = "_AdminLayout";
-    ViewData["Title"] = "Customer Details";
+    ViewData["Title"] = "Client Details";
 }
 
 <div class="mb-4">
-    <a asp-action="Index" class="text-decoration-none text-muted"><i class="fa-solid fa-arrow-left me-1"></i>Back to Customers</a>
-    <h2 class="mt-2 mb-0"><i class="fa-solid fa-eye me-2 text-primary"></i>Customer Details</h2>
+    <a asp-action="Index" class="text-decoration-none text-muted"><i class="fa-solid fa-arrow-left me-1"></i>Back to Clients</a>
+    <h2 class="mt-2 mb-0"><i class="fa-solid fa-eye me-2 text-primary"></i>Client Details</h2>
 </div>
 
 <div class="row justify-content-center">
@@ -18,16 +18,16 @@
                     <dd class="col-sm-8 fw-semibold">@Model.FullName</dd>
                     <dt class="col-sm-4 text-muted">Mobile No</dt>
                     <dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.MobileNo) ? "—" : Model.MobileNo)</dd>
-                    <dt class="col-sm-4 text-muted">Email</dt>
-                    <dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.Email) ? "—" : Model.Email)</dd>
-                    <dt class="col-sm-4 text-muted">Address</dt>
-                    <dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.Address) ? "—" : Model.Address)</dd>
+                    <dt class="col-sm-4 text-muted">CNIC</dt>
+                    <dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.Cnic) ? "—" : Model.Cnic)</dd>
+                    <dt class="col-sm-4 text-muted">Gender</dt>
+                    <dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.Gender) ? "—" : Model.Gender)</dd>
                     <dt class="col-sm-4 text-muted">Created On</dt>
                     <dd class="col-sm-8">@(Model.CreatedOn?.ToString("dd MMM yyyy HH:mm") ?? "—")</dd>
                     <dt class="col-sm-4 text-muted">Service Requests</dt>
                     <dd class="col-sm-8"><span class="badge bg-info">@Model.ServiceRequestCount</span></dd>
-                    <dt class="col-sm-4 text-muted">Reviews</dt>
-                    <dd class="col-sm-8"><span class="badge bg-secondary">@Model.ReviewCount</span></dd>
+                    <dt class="col-sm-4 text-muted">Addresses</dt>
+                    <dd class="col-sm-8"><span class="badge bg-secondary">@Model.AddressCount</span></dd>
                 </dl>
                 <hr />
                 <div class="d-flex gap-2">

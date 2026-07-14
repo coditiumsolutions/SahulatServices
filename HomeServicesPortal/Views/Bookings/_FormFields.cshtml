@@ -3,24 +3,60 @@
 <div class="row">
     <div class="col-md-6 mb-3">
         <label asp-for="RequestUid" class="form-label"></label>
-        <select asp-for="RequestUid" class="form-select" asp-items="Model.Requests"><option value="">-- Select S-Request --</option></select>
+        <select asp-for="RequestUid" class="form-select" asp-items="Model.Requests">
+            <option value="">-- Select S-Request --</option>
+        </select>
         <span asp-validation-for="RequestUid" class="text-danger small"></span>
+        <div class="form-text">Client is taken from the selected request.</div>
     </div>
     <div class="col-md-6 mb-3">
         <label asp-for="ProviderUid" class="form-label"></label>
-        <select asp-for="ProviderUid" class="form-select" asp-items="Model.Providers"><option value="">-- Select S-Provider --</option></select>
+        <select asp-for="ProviderUid" class="form-select" asp-items="Model.Providers">
+            <option value="">-- Select Provider --</option>
+        </select>
         <span asp-validation-for="ProviderUid" class="text-danger small"></span>
     </div>
 </div>
+
 <div class="row">
-    <div class="col-md-6 mb-3">
+    <div class="col-md-4 mb-3">
         <label asp-for="FinalAmount" class="form-label"></label>
-        <input asp-for="FinalAmount" class="form-control" type="number" step="0.01" />
+        <input asp-for="FinalAmount" class="form-control" type="number" step="0.01" min="0" />
         <span asp-validation-for="FinalAmount" class="text-danger small"></span>
     </div>
-    <div class="col-md-6 mb-3">
+    <div class="col-md-4 mb-3">
+        <label asp-for="PaymentMode" class="form-label"></label>
+        <select asp-for="PaymentMode" class="form-select" asp-items="Model.PaymentModeOptions"></select>
+        <span asp-validation-for="PaymentMode" class="text-danger small"></span>
+    </div>
+    <div class="col-md-4 mb-3">
         <label asp-for="Status" class="form-label"></label>
         <select asp-for="Status" class="form-select" asp-items="Model.StatusOptions"></select>
         <span asp-validation-for="Status" class="text-danger small"></span>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-3 mb-3">
+        <label asp-for="CommissionType" class="form-label"></label>
+        <select asp-for="CommissionType" class="form-select" asp-items="Model.CommissionTypeOptions"></select>
+        <span asp-validation-for="CommissionType" class="text-danger small"></span>
+    </div>
+    <div class="col-md-3 mb-3">
+        <label asp-for="CommissionValue" class="form-label"></label>
+        <input asp-for="CommissionValue" class="form-control" type="number" step="0.01" min="0" />
+        <span asp-validation-for="CommissionValue" class="text-danger small"></span>
+    </div>
+    <div class="col-md-3 mb-3">
+        <label asp-for="CommissionAmount" class="form-label"></label>
+        <input asp-for="CommissionAmount" class="form-control" type="number" step="0.01" min="0" />
+        <div class="form-text">Leave blank to auto-calculate.</div>
+        <span asp-validation-for="CommissionAmount" class="text-danger small"></span>
+    </div>
+    <div class="col-md-3 mb-3">
+        <label asp-for="ProviderEarning" class="form-label"></label>
+        <input asp-for="ProviderEarning" class="form-control" type="number" step="0.01" min="0" />
+        <div class="form-text">Leave blank to auto-calculate.</div>
+        <span asp-validation-for="ProviderEarning" class="text-danger small"></span>
     </div>
 </div>

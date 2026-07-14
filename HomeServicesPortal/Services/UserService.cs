@@ -1,249 +1,380 @@
+using HomeServicesPortal.Data;
+using HomeServicesPortal.Entities;
+using HomeServicesPortal.Helpers;
 using HomeServicesPortal.Models.ViewModels;
-using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 
 namespace HomeServicesPortal.Services;
 
 public class UserService : IUserService
 {
-    private readonly UserManager<IdentityUser> _userManager;
-    private readonly RoleManager<IdentityRole> _roleManager;
+    private readonly AppDbContext _db;
     private readonly ILogger<UserService> _logger;
 
-    public UserService(
-        UserManager<IdentityUser> userManager,
-        RoleManager<IdentityRole> roleManager,
-        ILogger<UserService> logger)
+    public UserService(AppDbContext db, ILogger<UserService> logger)
     {
-        _userManager = userManager;
-        _roleManager = roleManager;
+        _db = db;
         _logger = logger;
     }
 
     public async Task<UserListVm> GetUsersAsync(string? search, CancellationToken cancellationToken = default)
     {
-        var query = _userManager.Users.AsNoTracking();
+        var query = _db.UsersLogins
+            .AsNoTracking()
+            .Include(u => u.Client)
+            .Include(u => u.Provider)
+            .Include(u => u.Staff)
+            .AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(search))
         {
             var term = search.Trim();
             query = query.Where(u =>
-                (u.UserName != null && u.UserName.Contains(term)) ||
-                (u.Email != null && u.Email.Contains(term)));
+                u.MobileNo.Contains(term) ||
+                u.UserType.Contains(term) ||
+                (u.Client != null && u.Client.FullName.Contains(term)) ||
+                (u.Provider != null && u.Provider.FullName.Contains(term)) ||
+                (u.Staff != null && u.Staff.FullName.Contains(term)));
         }
 
         var users = await query
-            .OrderBy(u => u.UserName)
+            .OrderByDescending(u => u.CreatedOn)
             .ToListAsync(cancellationToken);
 
-        var result = new UserListVm { Search = search };
-
-        foreach (var user in users)
+        return new UserListVm
         {
-            var roles = await _userManager.GetRolesAsync(user);
-            result.Users.Add(new UserListItemVm
+            Search = search,
+            Users = users.Select(u => new UserListItemVm
             {
-                Id = user.Id,
-                UserName = user.UserName ?? string.Empty,
-                Email = user.Email,
-                EmailConfirmed = user.EmailConfirmed,
-                Roles = roles.ToList(),
-                LockoutEnabled = user.LockoutEnabled
-            });
-        }
-
-        return result;
+                Id = u.Uid,
+                MobileNo = u.MobileNo,
+                FullName = ResolveFullName(u),
+                Role = PortalRoleConstants.FromUser(u.UserType, u.Staff?.IsAdmin == true),
+                IsActive = u.IsActive,
+                IsVerified = u.IsVerified,
+                CreatedOn = u.CreatedOn,
+                LastLogin = u.LastLogin
+            }).ToList()
+        };
     }
 
-    public async Task<UserDetailsVm?> GetUserDetailsAsync(string id, CancellationToken cancellationToken = default)
+    public async Task<UserDetailsVm?> GetUserDetailsAsync(int id, CancellationToken cancellationToken = default)
     {
-        var user = await _userManager.FindByIdAsync(id);
+        var user = await _db.UsersLogins
+            .AsNoTracking()
+            .Include(u => u.Client)
+            .Include(u => u.Provider!)
+                .ThenInclude(p => p.Category)
+            .Include(u => u.Staff)
+            .FirstOrDefaultAsync(u => u.Uid == id, cancellationToken);
+
         if (user == null) return null;
 
-        var roles = await _userManager.GetRolesAsync(user);
         return new UserDetailsVm
         {
-            Id = user.Id,
-            UserName = user.UserName ?? string.Empty,
-            Email = user.Email,
-            EmailConfirmed = user.EmailConfirmed,
-            LockoutEnabled = user.LockoutEnabled,
-            Roles = roles.ToList()
+            Id = user.Uid,
+            MobileNo = user.MobileNo,
+            FullName = ResolveFullName(user),
+            Role = PortalRoleConstants.FromUser(user.UserType, user.Staff?.IsAdmin == true),
+            UserType = user.UserType,
+            IsActive = user.IsActive,
+            IsVerified = user.IsVerified,
+            CreatedOn = user.CreatedOn,
+            LastLogin = user.LastLogin,
+            Cnic = user.Client?.Cnic ?? user.Provider?.Cnic,
+            CategoryName = user.Provider?.Category?.CategoryName
         };
     }
 
-    public async Task<UserEditVm?> GetUserForEditAsync(string id, CancellationToken cancellationToken = default)
+    public async Task<UserEditVm?> GetUserForEditAsync(int id, CancellationToken cancellationToken = default)
     {
-        var user = await _userManager.FindByIdAsync(id);
+        var user = await _db.UsersLogins
+            .AsNoTracking()
+            .Include(u => u.Client)
+            .Include(u => u.Provider)
+            .Include(u => u.Staff)
+            .FirstOrDefaultAsync(u => u.Uid == id, cancellationToken);
+
         if (user == null) return null;
 
-        var roles = await _userManager.GetRolesAsync(user);
+        var lookups = await GetFormLookupsAsync(cancellationToken);
         return new UserEditVm
         {
-            Id = user.Id,
-            UserName = user.UserName ?? string.Empty,
-            Email = user.Email ?? string.Empty,
-            Role = roles.FirstOrDefault() ?? string.Empty,
-            EmailConfirmed = user.EmailConfirmed,
-            AvailableRoles = await GetAllRolesAsync(cancellationToken)
+            Id = user.Uid,
+            MobileNo = user.MobileNo,
+            FullName = ResolveFullName(user) ?? string.Empty,
+            Role = PortalRoleConstants.FromUser(user.UserType, user.Staff?.IsAdmin == true),
+            IsActive = user.IsActive,
+            IsVerified = user.IsVerified,
+            Cnic = user.Client?.Cnic ?? user.Provider?.Cnic,
+            CategoryUid = user.Provider?.CategoryUid,
+            AvailableRoles = lookups.Roles,
+            Categories = lookups.Categories
         };
     }
 
-    public async Task<UserDeleteVm?> GetUserForDeleteAsync(string id, CancellationToken cancellationToken = default)
+    public async Task<UserDeleteVm?> GetUserForDeleteAsync(int id, CancellationToken cancellationToken = default)
     {
-        var user = await _userManager.FindByIdAsync(id);
+        var user = await _db.UsersLogins
+            .AsNoTracking()
+            .Include(u => u.Client)
+            .Include(u => u.Provider)
+            .Include(u => u.Staff)
+            .FirstOrDefaultAsync(u => u.Uid == id, cancellationToken);
+
         if (user == null) return null;
 
-        var roles = await _userManager.GetRolesAsync(user);
         return new UserDeleteVm
         {
-            Id = user.Id,
-            UserName = user.UserName ?? string.Empty,
-            Email = user.Email,
-            Roles = roles.ToList()
+            Id = user.Uid,
+            MobileNo = user.MobileNo,
+            FullName = ResolveFullName(user),
+            Role = PortalRoleConstants.FromUser(user.UserType, user.Staff?.IsAdmin == true)
         };
     }
 
-    public async Task<List<string>> GetAllRolesAsync(CancellationToken cancellationToken = default)
+    public async Task<(List<string> Roles, List<SelectListItem> Categories)> GetFormLookupsAsync(
+        CancellationToken cancellationToken = default)
     {
-        return await _roleManager.Roles
+        var categories = await _db.ServiceCategories
             .AsNoTracking()
-            .OrderBy(r => r.Name)
-            .Select(r => r.Name!)
+            .Where(c => c.IsActive)
+            .OrderBy(c => c.CategoryName)
+            .Select(c => new SelectListItem
+            {
+                Value = c.Uid.ToString(),
+                Text = c.CategoryName
+            })
             .ToListAsync(cancellationToken);
+
+        return (PortalRoleConstants.All.ToList(), categories);
     }
 
     public async Task<(bool Success, IEnumerable<string> Errors)> CreateUserAsync(
         UserCreateVm model,
         CancellationToken cancellationToken = default)
     {
-        if (!await _roleManager.RoleExistsAsync(model.Role))
+        if (!PortalRoleConstants.IsValid(model.Role))
         {
-            return (false, new[] { $"Role '{model.Role}' does not exist." });
+            return (false, new[] { "Invalid role selected." });
         }
 
-        var existing = await _userManager.FindByNameAsync(model.UserName);
-        if (existing != null)
+        var mobile = model.MobileNo.Trim();
+        if (await _db.UsersLogins.AnyAsync(u => u.MobileNo == mobile, cancellationToken))
         {
-            return (false, new[] { "Username is already taken." });
+            return (false, new[] { "Mobile number is already registered." });
         }
 
-        var existingEmail = await _userManager.FindByEmailAsync(model.Email);
-        if (existingEmail != null)
+        var (userType, isAdmin) = PortalRoleConstants.ToUserType(model.Role);
+
+        if (userType == UserTypeConstants.Provider)
         {
-            return (false, new[] { "Email is already registered." });
+            if (string.IsNullOrWhiteSpace(model.Cnic))
+                return (false, new[] { "CNIC is required for Provider role." });
+            if (!model.CategoryUid.HasValue || model.CategoryUid.Value <= 0)
+                return (false, new[] { "Category is required for Provider role." });
+
+            var categoryExists = await _db.ServiceCategories
+                .AnyAsync(c => c.Uid == model.CategoryUid.Value, cancellationToken);
+            if (!categoryExists)
+                return (false, new[] { "Selected category was not found." });
         }
 
-        var user = new IdentityUser
+        await using var tx = await _db.Database.BeginTransactionAsync(cancellationToken);
+        try
         {
-            UserName = model.UserName,
-            Email = model.Email,
-            EmailConfirmed = true
-        };
+            var user = new UsersLogin
+            {
+                MobileNo = mobile,
+                PasswordHash = PasswordHasher.Hash(model.Password),
+                UserType = userType,
+                IsActive = model.IsActive,
+                IsVerified = model.IsVerified,
+                CreatedOn = DateTime.Now
+            };
 
-        var result = await _userManager.CreateAsync(user, model.Password);
-        if (!result.Succeeded)
-        {
-            return (false, result.Errors.Select(e => e.Description));
+            _db.UsersLogins.Add(user);
+            await _db.SaveChangesAsync(cancellationToken);
+
+            var fullName = model.FullName.Trim();
+            if (userType == UserTypeConstants.Client)
+            {
+                _db.Clients.Add(new Client
+                {
+                    UserUid = user.Uid,
+                    FullName = fullName,
+                    Cnic = model.Cnic?.Trim(),
+                    CreatedOn = DateTime.Now
+                });
+            }
+            else if (userType == UserTypeConstants.Provider)
+            {
+                _db.Providers.Add(new Provider
+                {
+                    UserUid = user.Uid,
+                    FullName = fullName,
+                    Cnic = model.Cnic!.Trim(),
+                    CategoryUid = model.CategoryUid!.Value,
+                    CreatedOn = DateTime.Now,
+                    IsAvailable = true
+                });
+            }
+            else
+            {
+                _db.Staff.Add(new Staff
+                {
+                    UserUid = user.Uid,
+                    FullName = fullName,
+                    IsAdmin = isAdmin,
+                    Designation = model.Role,
+                    CreatedOn = DateTime.Now
+                });
+            }
+
+            await _db.SaveChangesAsync(cancellationToken);
+            await tx.CommitAsync(cancellationToken);
+
+            _logger.LogInformation("UsersLogin {Uid} created with role {Role}.", user.Uid, model.Role);
+            return (true, Array.Empty<string>());
         }
-
-        var roleResult = await _userManager.AddToRoleAsync(user, model.Role);
-        if (!roleResult.Succeeded)
+        catch (Exception ex)
         {
-            await _userManager.DeleteAsync(user);
-            return (false, roleResult.Errors.Select(e => e.Description));
+            await tx.RollbackAsync(cancellationToken);
+            _logger.LogError(ex, "Failed to create UsersLogin.");
+            return (false, new[] { "Failed to create user." });
         }
-
-        _logger.LogInformation("User {UserName} created with role {Role}.", model.UserName, model.Role);
-        return (true, Array.Empty<string>());
     }
 
     public async Task<(bool Success, IEnumerable<string> Errors)> UpdateUserAsync(
         UserEditVm model,
         CancellationToken cancellationToken = default)
     {
-        var user = await _userManager.FindByIdAsync(model.Id);
+        if (!PortalRoleConstants.IsValid(model.Role))
+        {
+            return (false, new[] { "Invalid role selected." });
+        }
+
+        var user = await _db.UsersLogins
+            .Include(u => u.Client)
+            .Include(u => u.Provider)
+            .Include(u => u.Staff)
+            .FirstOrDefaultAsync(u => u.Uid == model.Id, cancellationToken);
+
         if (user == null)
         {
             return (false, new[] { "User not found." });
         }
 
-        if (!await _roleManager.RoleExistsAsync(model.Role))
+        var mobile = model.MobileNo.Trim();
+        var mobileTaken = await _db.UsersLogins
+            .AnyAsync(u => u.MobileNo == mobile && u.Uid != user.Uid, cancellationToken);
+        if (mobileTaken)
         {
-            return (false, new[] { $"Role '{model.Role}' does not exist." });
+            return (false, new[] { "Mobile number is already registered." });
         }
 
-        var duplicateName = await _userManager.FindByNameAsync(model.UserName);
-        if (duplicateName != null && duplicateName.Id != user.Id)
+        var (newUserType, isAdmin) = PortalRoleConstants.ToUserType(model.Role);
+        var currentRole = PortalRoleConstants.FromUser(user.UserType, user.Staff?.IsAdmin == true);
+
+        // Allow Staff ↔ Super Admin only; other UserType changes are blocked.
+        var currentBase = PortalRoleConstants.ToUserType(currentRole).UserType;
+        if (!string.Equals(currentBase, newUserType, StringComparison.OrdinalIgnoreCase))
         {
-            return (false, new[] { "Username is already taken." });
+            return (false, new[] { "User type (Client / Provider / Staff) cannot be changed after creation. Delete and recreate, or use the Clients / Providers modules." });
         }
 
-        var duplicateEmail = await _userManager.FindByEmailAsync(model.Email);
-        if (duplicateEmail != null && duplicateEmail.Id != user.Id)
+        if (newUserType == UserTypeConstants.Provider)
         {
-            return (false, new[] { "Email is already registered." });
+            if (string.IsNullOrWhiteSpace(model.Cnic))
+                return (false, new[] { "CNIC is required for Provider role." });
+            if (!model.CategoryUid.HasValue || model.CategoryUid.Value <= 0)
+                return (false, new[] { "Category is required for Provider role." });
         }
 
-        user.UserName = model.UserName;
-        user.Email = model.Email;
-        user.EmailConfirmed = model.EmailConfirmed;
-        user.NormalizedUserName = _userManager.NormalizeName(model.UserName);
-        user.NormalizedEmail = _userManager.NormalizeEmail(model.Email);
-
-        var updateResult = await _userManager.UpdateAsync(user);
-        if (!updateResult.Succeeded)
-        {
-            return (false, updateResult.Errors.Select(e => e.Description));
-        }
+        user.MobileNo = mobile;
+        user.IsActive = model.IsActive;
+        user.IsVerified = model.IsVerified;
 
         if (!string.IsNullOrWhiteSpace(model.NewPassword))
         {
-            var token = await _userManager.GeneratePasswordResetTokenAsync(user);
-            var passwordResult = await _userManager.ResetPasswordAsync(user, token, model.NewPassword);
-            if (!passwordResult.Succeeded)
-            {
-                return (false, passwordResult.Errors.Select(e => e.Description));
-            }
+            user.PasswordHash = PasswordHasher.Hash(model.NewPassword);
         }
 
-        var currentRoles = await _userManager.GetRolesAsync(user);
-        if (!currentRoles.Contains(model.Role))
+        var fullName = model.FullName.Trim();
+        if (user.Client != null)
         {
-            if (currentRoles.Count > 0)
-            {
-                await _userManager.RemoveFromRolesAsync(user, currentRoles);
-            }
-            await _userManager.AddToRoleAsync(user, model.Role);
+            user.Client.FullName = fullName;
+            user.Client.Cnic = model.Cnic?.Trim();
+        }
+        else if (user.Provider != null)
+        {
+            user.Provider.FullName = fullName;
+            user.Provider.Cnic = model.Cnic!.Trim();
+            user.Provider.CategoryUid = model.CategoryUid!.Value;
+        }
+        else if (user.Staff != null)
+        {
+            user.Staff.FullName = fullName;
+            user.Staff.IsAdmin = isAdmin;
+            user.Staff.Designation = model.Role;
         }
 
-        _logger.LogInformation("User {UserId} updated.", model.Id);
+        await _db.SaveChangesAsync(cancellationToken);
+        _logger.LogInformation("UsersLogin {Uid} updated.", user.Uid);
         return (true, Array.Empty<string>());
     }
 
     public async Task<(bool Success, IEnumerable<string> Errors)> DeleteUserAsync(
-        string id,
+        int id,
         string? currentUserId,
         CancellationToken cancellationToken = default)
     {
-        if (id == currentUserId)
+        if (int.TryParse(currentUserId, out var currentId) && currentId == id)
         {
             return (false, new[] { "You cannot delete your own account." });
         }
 
-        var user = await _userManager.FindByIdAsync(id);
+        var user = await _db.UsersLogins
+            .Include(u => u.Client)
+            .Include(u => u.Provider)
+            .Include(u => u.Staff)
+            .FirstOrDefaultAsync(u => u.Uid == id, cancellationToken);
+
         if (user == null)
         {
             return (false, new[] { "User not found." });
         }
 
-        var result = await _userManager.DeleteAsync(user);
-        if (!result.Succeeded)
+        if (user.Client != null)
         {
-            return (false, result.Errors.Select(e => e.Description));
+            var clientUid = user.Client.Uid;
+            var hasAddresses = await _db.ClientAddresses.AnyAsync(a => a.ClientUid == clientUid, cancellationToken);
+            var hasRequests = await _db.CustomerServiceRequests.AnyAsync(r => r.ClientUid == clientUid, cancellationToken);
+            if (hasAddresses || hasRequests)
+            {
+                return (false, new[] { "Cannot delete: client has addresses or service requests. Remove those first." });
+            }
+
+            _db.Clients.Remove(user.Client);
         }
 
-        _logger.LogInformation("User {UserId} deleted.", id);
+        if (user.Provider != null)
+        {
+            _db.Providers.Remove(user.Provider);
+        }
+
+        if (user.Staff != null)
+        {
+            _db.Staff.Remove(user.Staff);
+        }
+
+        _db.UsersLogins.Remove(user);
+        await _db.SaveChangesAsync(cancellationToken);
+        _logger.LogInformation("UsersLogin {Uid} deleted.", id);
         return (true, Array.Empty<string>());
     }
+
+    private static string? ResolveFullName(UsersLogin user) =>
+        user.Staff?.FullName ?? user.Client?.FullName ?? user.Provider?.FullName;
 }

@@ -15,19 +15,19 @@ public class ReviewsController : Controller
         _service = service;
     }
 
-    [HttpGet("/Reviews")]
+    [HttpGet("/Admin/Reviews")]
     public async Task<IActionResult> Index(string? search, string? sort, string? sortDir, int page = 1, CancellationToken cancellationToken = default)
     {
         return View(await _service.GetListAsync(search, sort, sortDir, page, cancellationToken));
     }
 
-    [HttpGet("/Reviews/Create")]
+    [HttpGet("/Admin/Reviews/Create")]
     public async Task<IActionResult> Create(CancellationToken cancellationToken)
     {
         return View(await _service.PopulateFormAsync(new ReviewFormVm(), cancellationToken));
     }
 
-    [HttpPost("/Reviews/Create")]
+    [HttpPost("/Admin/Reviews/Create")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(ReviewFormVm model, CancellationToken cancellationToken)
     {
@@ -45,7 +45,7 @@ public class ReviewsController : Controller
         return RedirectToAction(nameof(Index));
     }
 
-    [HttpGet("/Reviews/Details/{id:int}")]
+    [HttpGet("/Admin/Reviews/Details/{id:int}")]
     public async Task<IActionResult> Details(int id, CancellationToken cancellationToken)
     {
         var vm = await _service.GetDetailsAsync(id, cancellationToken);
@@ -53,7 +53,7 @@ public class ReviewsController : Controller
         return View(vm);
     }
 
-    [HttpGet("/Reviews/Edit/{id:int}")]
+    [HttpGet("/Admin/Reviews/Edit/{id:int}")]
     public async Task<IActionResult> Edit(int id, CancellationToken cancellationToken)
     {
         var vm = await _service.GetForEditAsync(id, cancellationToken);
@@ -61,7 +61,7 @@ public class ReviewsController : Controller
         return View(vm);
     }
 
-    [HttpPost("/Reviews/Edit/{id:int}")]
+    [HttpPost("/Admin/Reviews/Edit/{id:int}")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(int id, ReviewFormVm model, CancellationToken cancellationToken)
     {
@@ -80,7 +80,7 @@ public class ReviewsController : Controller
         return RedirectToAction(nameof(Index));
     }
 
-    [HttpGet("/Reviews/Delete/{id:int}")]
+    [HttpGet("/Admin/Reviews/Delete/{id:int}")]
     public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
     {
         var vm = await _service.GetForDeleteAsync(id, cancellationToken);
@@ -88,7 +88,7 @@ public class ReviewsController : Controller
         return View(vm);
     }
 
-    [HttpPost("/Reviews/Delete/{id:int}")]
+    [HttpPost("/Admin/Reviews/Delete/{id:int}")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteConfirmed(int id, CancellationToken cancellationToken)
     {

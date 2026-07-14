@@ -15,20 +15,23 @@ public class CustomersController : Controller
         _service = service;
     }
 
-    [HttpGet("/Customers")]
+    [HttpGet("/Admin/Clients")]
+    [HttpGet("/Admin/Customers")]
     public async Task<IActionResult> Index(string? search, string? sort, string? sortDir, int page = 1, CancellationToken cancellationToken = default)
     {
         var vm = await _service.GetListAsync(search, sort, sortDir, page, cancellationToken);
         return View(vm);
     }
 
-    [HttpGet("/Customers/Create")]
+    [HttpGet("/Admin/Clients/Create")]
+    [HttpGet("/Admin/Customers/Create")]
     public IActionResult Create()
     {
         return View(new CustomerFormVm());
     }
 
-    [HttpPost("/Customers/Create")]
+    [HttpPost("/Admin/Clients/Create")]
+    [HttpPost("/Admin/Customers/Create")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(CustomerFormVm model, CancellationToken cancellationToken)
     {
@@ -37,15 +40,16 @@ public class CustomersController : Controller
         var (success, error) = await _service.CreateAsync(model, cancellationToken);
         if (!success)
         {
-            ModelState.AddModelError(string.Empty, error ?? "Failed to create customer.");
+            ModelState.AddModelError(string.Empty, error ?? "Failed to create client.");
             return View(model);
         }
 
-        TempData["SuccessMessage"] = $"Customer '{model.FullName}' created successfully.";
+        TempData["SuccessMessage"] = $"Client '{model.FullName}' created successfully.";
         return RedirectToAction(nameof(Index));
     }
 
-    [HttpGet("/Customers/Details/{id:int}")]
+    [HttpGet("/Admin/Clients/Details/{id:int}")]
+    [HttpGet("/Admin/Customers/Details/{id:int}")]
     public async Task<IActionResult> Details(int id, CancellationToken cancellationToken)
     {
         var vm = await _service.GetDetailsAsync(id, cancellationToken);
@@ -53,7 +57,8 @@ public class CustomersController : Controller
         return View(vm);
     }
 
-    [HttpGet("/Customers/Edit/{id:int}")]
+    [HttpGet("/Admin/Clients/Edit/{id:int}")]
+    [HttpGet("/Admin/Customers/Edit/{id:int}")]
     public async Task<IActionResult> Edit(int id, CancellationToken cancellationToken)
     {
         var vm = await _service.GetForEditAsync(id, cancellationToken);
@@ -61,7 +66,8 @@ public class CustomersController : Controller
         return View(vm);
     }
 
-    [HttpPost("/Customers/Edit/{id:int}")]
+    [HttpPost("/Admin/Clients/Edit/{id:int}")]
+    [HttpPost("/Admin/Customers/Edit/{id:int}")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(int id, CustomerFormVm model, CancellationToken cancellationToken)
     {
@@ -71,15 +77,16 @@ public class CustomersController : Controller
         var (success, error) = await _service.UpdateAsync(model, cancellationToken);
         if (!success)
         {
-            ModelState.AddModelError(string.Empty, error ?? "Failed to update customer.");
+            ModelState.AddModelError(string.Empty, error ?? "Failed to update client.");
             return View(model);
         }
 
-        TempData["SuccessMessage"] = $"Customer '{model.FullName}' updated successfully.";
+        TempData["SuccessMessage"] = $"Client '{model.FullName}' updated successfully.";
         return RedirectToAction(nameof(Index));
     }
 
-    [HttpGet("/Customers/Delete/{id:int}")]
+    [HttpGet("/Admin/Clients/Delete/{id:int}")]
+    [HttpGet("/Admin/Customers/Delete/{id:int}")]
     public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
     {
         var vm = await _service.GetForDeleteAsync(id, cancellationToken);
@@ -87,7 +94,8 @@ public class CustomersController : Controller
         return View(vm);
     }
 
-    [HttpPost("/Customers/Delete/{id:int}")]
+    [HttpPost("/Admin/Clients/Delete/{id:int}")]
+    [HttpPost("/Admin/Customers/Delete/{id:int}")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteConfirmed(int id, CancellationToken cancellationToken)
     {
@@ -97,11 +105,11 @@ public class CustomersController : Controller
         var (success, error) = await _service.DeleteAsync(id, cancellationToken);
         if (!success)
         {
-            ModelState.AddModelError(string.Empty, error ?? "Failed to delete customer.");
+            ModelState.AddModelError(string.Empty, error ?? "Failed to delete client.");
             return View("Delete", vm);
         }
 
-        TempData["SuccessMessage"] = $"Customer '{vm.FullName}' deleted successfully.";
+        TempData["SuccessMessage"] = $"Client '{vm.FullName}' deleted successfully.";
         return RedirectToAction(nameof(Index));
     }
 }

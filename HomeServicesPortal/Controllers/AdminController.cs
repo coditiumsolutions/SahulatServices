@@ -15,6 +15,7 @@ public class AdminController : Controller
         _dashboardService = dashboardService;
     }
 
+    [HttpGet("/Admin")]
     [HttpGet("/Admin/Dashboard")]
     public async Task<IActionResult> Dashboard(CancellationToken cancellationToken)
     {
@@ -22,4 +23,3 @@ public class AdminController : Controller
         return View(vm);
     }
 }
-

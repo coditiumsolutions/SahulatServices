@@ -1,0 +1,102 @@
+@model HomeServicesPortal.Models.ViewModels.CommissionRuleListVm
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Commission Rules";
+}
+
+<div class="d-flex flex-wrap align-items-center justify-content-between mb-4 gap-2">
+    <div>
+        <h2 class="mb-1"><i class="fa-solid fa-percent me-2 text-primary"></i>Commission Rules</h2>
+        <p class="text-muted mb-0">CRUD for CommissionRules table</p>
+    </div>
+    <a asp-action="CommissionRuleCreate" class="btn btn-primary"><i class="fa-solid fa-plus me-1"></i>Add Rule</a>
+</div>
+
+@if (TempData["SuccessMessage"] is string success)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="fa-solid fa-circle-check me-2"></i>@success
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<div class="card hs-card">
+    <div class="card-body">
+        <form method="get" asp-action="CommissionRules" class="row g-2 mb-3">
+            <div class="col-md-6 col-lg-4">
+                <div class="input-group">
+                    <span class="input-group-text"><i class="fa-solid fa-search"></i></span>
+                    <input type="text" name="search" value="@Model.Search" class="form-control" placeholder="Search rules..." />
+                    <button type="submit" class="btn btn-outline-primary">Search</button>
+                </div>
+            </div>
+            @if (!string.IsNullOrWhiteSpace(Model.Search))
+            {
+                <div class="col-auto"><a asp-action="CommissionRules" class="btn btn-outline-secondary">Clear</a></div>
+            }
+        </form>
+
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Scope</th>
+                        <th>Target</th>
+                        <th>Type</th>
+                        <th>Value</th>
+                        <th>Effective</th>
+                        <th>Active</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.Items.Any())
+                    {
+                        <tr><td colspan="7" class="text-center text-muted py-4">No commission rules found.</td></tr>
+                    }
+                    @foreach (var item in Model.Items)
+                    {
+                        var target = item.Scope switch
+                        {
+                            "Category" => item.CategoryName ?? "—",
+                            "Provider" => item.ProviderName ?? "—",
+                            _ => "All"
+                        };
+                        <tr>
+                            <td><span class="badge bg-primary">@item.Scope</span></td>
+                            <td>@target</td>
+                            <td>@item.RuleType</td>
+                            <td>@item.Value.ToString("N2")</td>
+                            <td>
+                                @item.EffectiveFrom.ToString("dd MMM yyyy")
+                                @(item.EffectiveTo.HasValue ? " → " + item.EffectiveTo.Value.ToString("dd MMM yyyy") : "")
+                            </td>
+                            <td>
+                                @if (item.IsActive)
+                                { <span class="badge bg-success">Yes</span> }
+                                else
+                                { <span class="badge bg-secondary">No</span> }
+                            </td>
+                            <td class="text-end">
+                                <div class="btn-group btn-group-sm">
+                                    <a asp-action="CommissionRuleDetails" asp-route-id="@item.Uid" class="btn btn-outline-secondary" title="Details"><i class="fa-solid fa-eye"></i></a>
+                                    <a asp-action="CommissionRuleEdit" asp-route-id="@item.Uid" class="btn btn-outline-primary" title="Edit"><i class="fa-solid fa-pen"></i></a>
+                                    <a asp-action="CommissionRuleDelete" asp-route-id="@item.Uid" class="btn btn-outline-danger" title="Delete"><i class="fa-solid fa-trash"></i></a>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        @if (Model.TotalPages > 1)
+        {
+            <nav class="mt-3"><ul class="pagination pagination-sm justify-content-center mb-0">
+                <li class="page-item @(Model.Page <= 1 ? "disabled" : "")"><a class="page-link" asp-action="CommissionRules" asp-route-page="@(Model.Page - 1)" asp-route-search="@Model.Search">Previous</a></li>
+                @for (var p = 1; p <= Model.TotalPages; p++) { <li class="page-item @(p == Model.Page ? "active" : "")"><a class="page-link" asp-action="CommissionRules" asp-route-page="@p" asp-route-search="@Model.Search">@p</a></li> }
+                <li class="page-item @(Model.Page >= Model.TotalPages ? "disabled" : "")"><a class="page-link" asp-action="CommissionRules" asp-route-page="@(Model.Page + 1)" asp-route-search="@Model.Search">Next</a></li>
+            </ul></nav>
+        }
+    </div>
+</div>

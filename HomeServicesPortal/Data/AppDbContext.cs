@@ -25,6 +25,14 @@ public class AppDbContext : DbContext
 
     public DbSet<CustomerServiceRequest> CustomerServiceRequests => Set<CustomerServiceRequest>();
 
+    public DbSet<ServiceBooking> ServiceBookings => Set<ServiceBooking>();
+
+    public DbSet<PaymentLedger> PaymentLedgers => Set<PaymentLedger>();
+
+    public DbSet<ProviderPayout> ProviderPayouts => Set<ProviderPayout>();
+
+    public DbSet<CommissionRule> CommissionRules => Set<CommissionRule>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<UsersLogin>(entity =>
@@ -193,6 +201,123 @@ public class AppDbContext : DbContext
                 .WithMany(a => a.ServiceRequests)
                 .HasForeignKey(e => e.ClientAddressUid)
                 .HasConstraintName("FK_CustomerServiceRequests_ClientAddresses")
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<ServiceBooking>(entity =>
+        {
+            entity.ToTable("ServiceBookings");
+            entity.HasKey(e => e.Uid);
+            entity.Property(e => e.Uid).HasColumnName("UID");
+            entity.Property(e => e.RequestUid).HasColumnName("RequestUID");
+            entity.Property(e => e.ClientUid).HasColumnName("ClientUID");
+            entity.Property(e => e.ProviderUid).HasColumnName("ProviderUID");
+            entity.Property(e => e.FinalAmount).HasColumnType("decimal(12,2)");
+            entity.Property(e => e.PaymentMode).HasMaxLength(30).IsRequired();
+            entity.Property(e => e.CommissionType).HasMaxLength(10).IsRequired();
+            entity.Property(e => e.CommissionValue).HasColumnType("decimal(10,2)");
+            entity.Property(e => e.CommissionAmount).HasColumnType("decimal(12,2)");
+            entity.Property(e => e.ProviderEarning).HasColumnType("decimal(12,2)");
+            entity.Property(e => e.Status).HasMaxLength(20).IsRequired().HasDefaultValue("Completed");
+            entity.Property(e => e.CreatedOn)
+                .HasColumnType("datetime")
+                .HasDefaultValueSql("(getdate())");
+
+            entity.HasOne(e => e.Request)
+                .WithMany()
+                .HasForeignKey(e => e.RequestUid)
+                .HasConstraintName("FK_ServiceBookings_CustomerServiceRequests")
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.Client)
+                .WithMany()
+                .HasForeignKey(e => e.ClientUid)
+                .HasConstraintName("FK_ServiceBookings_Clients")
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.Provider)
+                .WithMany()
+                .HasForeignKey(e => e.ProviderUid)
+                .HasConstraintName("FK_ServiceBookings_Providers")
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<PaymentLedger>(entity =>
+        {
+            entity.ToTable("PaymentLedger");
+            entity.HasKey(e => e.Uid);
+            entity.Property(e => e.Uid).HasColumnName("UID");
+            entity.Property(e => e.BookingUid).HasColumnName("BookingUID");
+            entity.Property(e => e.AccountType).HasMaxLength(10).IsRequired();
+            entity.Property(e => e.ProviderUid).HasColumnName("ProviderUID");
+            entity.Property(e => e.EntryType).HasMaxLength(10).IsRequired();
+            entity.Property(e => e.Amount).HasColumnType("decimal(12,2)");
+            entity.Property(e => e.Reason).HasMaxLength(30).IsRequired();
+            entity.Property(e => e.CreatedOn)
+                .HasColumnType("datetime")
+                .HasDefaultValueSql("(getdate())");
+
+            entity.HasOne(e => e.Booking)
+                .WithMany()
+                .HasForeignKey(e => e.BookingUid)
+                .HasConstraintName("FK_PaymentLedger_ServiceBookings")
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.Provider)
+                .WithMany()
+                .HasForeignKey(e => e.ProviderUid)
+                .HasConstraintName("FK_PaymentLedger_Providers")
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<ProviderPayout>(entity =>
+        {
+            entity.ToTable("ProviderPayouts");
+            entity.HasKey(e => e.Uid);
+            entity.Property(e => e.Uid).HasColumnName("UID");
+            entity.Property(e => e.ProviderUid).HasColumnName("ProviderUID");
+            entity.Property(e => e.Amount).HasColumnType("decimal(12,2)");
+            entity.Property(e => e.Status).HasMaxLength(20).IsRequired().HasDefaultValue("Pending");
+            entity.Property(e => e.Method).HasMaxLength(20);
+            entity.Property(e => e.CreatedOn)
+                .HasColumnType("datetime")
+                .HasDefaultValueSql("(getdate())");
+            entity.Property(e => e.PaidOn).HasColumnType("datetime");
+
+            entity.HasOne(e => e.Provider)
+                .WithMany()
+                .HasForeignKey(e => e.ProviderUid)
+                .HasConstraintName("FK_ProviderPayouts_Providers")
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<CommissionRule>(entity =>
+        {
+            entity.ToTable("CommissionRules");
+            entity.HasKey(e => e.Uid);
+            entity.Property(e => e.Uid).HasColumnName("UID");
+            entity.Property(e => e.Scope).HasMaxLength(20).IsRequired();
+            entity.Property(e => e.CategoryUid).HasColumnName("CategoryUID");
+            entity.Property(e => e.ProviderUid).HasColumnName("ProviderUID");
+            entity.Property(e => e.RuleType).HasMaxLength(10).IsRequired();
+            entity.Property(e => e.Value).HasColumnType("decimal(10,2)");
+            entity.Property(e => e.EffectiveFrom).HasColumnType("datetime");
+            entity.Property(e => e.EffectiveTo).HasColumnType("datetime");
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.CreatedOn)
+                .HasColumnType("datetime")
+                .HasDefaultValueSql("(getdate())");
+
+            entity.HasOne(e => e.Category)
+                .WithMany()
+                .HasForeignKey(e => e.CategoryUid)
+                .HasConstraintName("FK_CommissionRules_ServiceCategories")
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.Provider)
+                .WithMany()
+                .HasForeignKey(e => e.ProviderUid)
+                .HasConstraintName("FK_CommissionRules_Providers")
                 .OnDelete(DeleteBehavior.Restrict);
         });
     }

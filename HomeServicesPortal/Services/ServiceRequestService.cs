@@ -1,6 +1,6 @@
-using HomeServicesPortal.Models.Entities;
+using HomeServicesPortal.Data;
+using HomeServicesPortal.Entities;
 using HomeServicesPortal.Models.ViewModels;
-using HomeServicesPortal.Repositories;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 
@@ -10,36 +10,31 @@ public class ServiceRequestService : IServiceRequestService
 {
     private static readonly string[] ValidStatuses = ["Pending", "Assigned", "In Progress", "Completed", "Cancelled"];
 
-    private readonly IRepository<ServiceRequest> _requestRepo;
-    private readonly IRepository<Customer> _customerRepo;
-    private readonly IRepository<ServiceCategory> _categoryRepo;
+    private readonly AppDbContext _db;
 
-    public ServiceRequestService(
-        IRepository<ServiceRequest> requestRepo,
-        IRepository<Customer> customerRepo,
-        IRepository<ServiceCategory> categoryRepo)
+    public ServiceRequestService(AppDbContext db)
     {
-        _requestRepo = requestRepo;
-        _customerRepo = customerRepo;
-        _categoryRepo = categoryRepo;
+        _db = db;
     }
 
     public async Task<List<SelectListItem>> GetCustomerOptionsAsync(CancellationToken cancellationToken = default)
     {
-        return await _customerRepo.Query()
+        return await _db.Clients
+            .AsNoTracking()
             .OrderBy(c => c.FullName)
             .Select(c => new SelectListItem
             {
                 Value = c.Uid.ToString(),
-                Text = c.FullName
+                Text = c.FullName + " (" + c.User.MobileNo + ")"
             })
             .ToListAsync(cancellationToken);
     }
 
     public async Task<List<SelectListItem>> GetCategoryOptionsAsync(CancellationToken cancellationToken = default)
     {
-        return await _categoryRepo.Query()
-            .Where(c => c.IsActive != false)
+        return await _db.ServiceCategories
+            .AsNoTracking()
+            .Where(c => c.IsActive)
             .OrderBy(c => c.CategoryName)
             .Select(c => new SelectListItem
             {
@@ -68,33 +63,35 @@ public class ServiceRequestService : IServiceRequestService
         sort = string.IsNullOrWhiteSpace(sort) ? "date" : sort.ToLowerInvariant();
         sortDir = string.Equals(sortDir, "desc", StringComparison.OrdinalIgnoreCase) ? "desc" : "asc";
 
-        var query = _requestRepo.Query();
+        var query = _db.CustomerServiceRequests.AsNoTracking();
 
         if (!string.IsNullOrWhiteSpace(search))
         {
             var term = search.Trim();
             query = query.Where(r =>
-                r.CustomerU.FullName.Contains(term) ||
-                r.CategoryU.CategoryName.Contains(term) ||
-                (r.ServiceAddress != null && r.ServiceAddress.Contains(term)) ||
-                (r.ProblemDescription != null && r.ProblemDescription.Contains(term)) ||
-                (r.Status != null && r.Status.Contains(term)));
+                r.Client.FullName.Contains(term) ||
+                r.Category.CategoryName.Contains(term) ||
+                r.ServiceTitle.Contains(term) ||
+                r.ServiceDescription.Contains(term) ||
+                r.ContactNo.Contains(term) ||
+                r.Status.Contains(term) ||
+                r.ClientAddress.FullAddress.Contains(term));
         }
 
         query = sort switch
         {
             "customer" => sortDir == "desc"
-                ? query.OrderByDescending(r => r.CustomerU.FullName)
-                : query.OrderBy(r => r.CustomerU.FullName),
+                ? query.OrderByDescending(r => r.Client.FullName)
+                : query.OrderBy(r => r.Client.FullName),
             "category" => sortDir == "desc"
-                ? query.OrderByDescending(r => r.CategoryU.CategoryName)
-                : query.OrderBy(r => r.CategoryU.CategoryName),
+                ? query.OrderByDescending(r => r.Category.CategoryName)
+                : query.OrderBy(r => r.Category.CategoryName),
             "status" => sortDir == "desc"
                 ? query.OrderByDescending(r => r.Status)
                 : query.OrderBy(r => r.Status),
             _ => sortDir == "desc"
-                ? query.OrderByDescending(r => r.RequestDate)
-                : query.OrderBy(r => r.RequestDate)
+                ? query.OrderByDescending(r => r.CreatedOn)
+                : query.OrderBy(r => r.CreatedOn)
         };
 
         var totalCount = await query.CountAsync(cancellationToken);
@@ -105,11 +102,13 @@ public class ServiceRequestService : IServiceRequestService
             .Select(r => new ServiceRequestItemVm
             {
                 Uid = r.Uid,
-                CustomerName = r.CustomerU.FullName,
-                CategoryName = r.CategoryU.CategoryName,
-                ServiceAddress = r.ServiceAddress,
+                CustomerName = r.Client.FullName,
+                CategoryName = r.Category.CategoryName,
+                ServiceAddress = r.ClientAddress.AddressTitle + " - " + r.ClientAddress.FullAddress,
+                ServiceTitle = r.ServiceTitle,
                 Status = r.Status,
-                RequestDate = r.RequestDate
+                IsUrgent = r.IsUrgent,
+                RequestDate = r.CreatedOn
             })
             .ToListAsync(cancellationToken);
 
@@ -127,93 +126,77 @@ public class ServiceRequestService : IServiceRequestService
 
     public async Task<ServiceRequestDetailsVm?> GetDetailsAsync(int id, CancellationToken cancellationToken = default)
     {
-        var request = await _requestRepo.Query()
-            .FirstOrDefaultAsync(r => r.Uid == id, cancellationToken);
-
-        if (request == null) return null;
-
-        var customerName = await _customerRepo.Query()
-            .Where(c => c.Uid == request.CustomerUid)
-            .Select(c => c.FullName)
-            .FirstOrDefaultAsync(cancellationToken) ?? "—";
-
-        var categoryName = await _categoryRepo.Query()
-            .Where(c => c.Uid == request.CategoryUid)
-            .Select(c => c.CategoryName)
-            .FirstOrDefaultAsync(cancellationToken) ?? "—";
-
-        var quoteCount = await _requestRepo.Query()
+        return await _db.CustomerServiceRequests
+            .AsNoTracking()
             .Where(r => r.Uid == id)
-            .Select(r => r.ProviderQuotes.Count)
+            .Select(r => new ServiceRequestDetailsVm
+            {
+                Uid = r.Uid,
+                CustomerUid = r.ClientUid,
+                CustomerName = r.Client.FullName,
+                CategoryUid = r.CategoryUid,
+                CategoryName = r.Category.CategoryName,
+                ClientAddressUid = r.ClientAddressUid,
+                ServiceAddress = r.ClientAddress.AddressTitle + " - " + r.ClientAddress.FullAddress
+                                 + ", " + r.ClientAddress.Area + ", " + r.ClientAddress.City,
+                ServiceTitle = r.ServiceTitle,
+                ServiceDescription = r.ServiceDescription,
+                PreferredServiceDate = r.PreferredServiceDate,
+                PreferredServiceTime = r.PreferredServiceTime,
+                IsUrgent = r.IsUrgent,
+                ContactPerson = r.ContactPerson,
+                ContactNo = r.ContactNo,
+                EstimatedBudget = r.EstimatedBudget,
+                RequestDate = r.CreatedOn,
+                Status = r.Status,
+                Remarks = r.Remarks
+            })
             .FirstOrDefaultAsync(cancellationToken);
-
-        var bookingCount = await _requestRepo.Query()
-            .Where(r => r.Uid == id)
-            .Select(r => r.Bookings.Count)
-            .FirstOrDefaultAsync(cancellationToken);
-
-        return new ServiceRequestDetailsVm
-        {
-            Uid = request.Uid,
-            CustomerUid = request.CustomerUid,
-            CustomerName = customerName,
-            CategoryUid = request.CategoryUid,
-            CategoryName = categoryName,
-            ServiceAddress = request.ServiceAddress,
-            Latitude = request.Latitude,
-            Longitude = request.Longitude,
-            ProblemDescription = request.ProblemDescription,
-            RequestDate = request.RequestDate,
-            Status = request.Status,
-            QuoteCount = quoteCount,
-            BookingCount = bookingCount
-        };
     }
 
     public async Task<ServiceRequestFormVm?> GetForEditAsync(int id, CancellationToken cancellationToken = default)
     {
-        var entity = await _requestRepo.GetByIdAsync(id, cancellationToken);
+        var entity = await _db.CustomerServiceRequests
+            .AsNoTracking()
+            .FirstOrDefaultAsync(r => r.Uid == id, cancellationToken);
+
         if (entity == null) return null;
 
         return await PopulateFormAsync(new ServiceRequestFormVm
         {
             Uid = entity.Uid,
-            CustomerUid = entity.CustomerUid,
+            CustomerUid = entity.ClientUid,
             CategoryUid = entity.CategoryUid,
-            ServiceAddress = entity.ServiceAddress,
-            Latitude = entity.Latitude,
-            Longitude = entity.Longitude,
-            ProblemDescription = entity.ProblemDescription,
-            Status = entity.Status ?? "Pending"
+            ClientAddressUid = entity.ClientAddressUid,
+            ServiceTitle = entity.ServiceTitle,
+            ServiceDescription = entity.ServiceDescription,
+            PreferredServiceDate = entity.PreferredServiceDate,
+            PreferredServiceTime = entity.PreferredServiceTime,
+            IsUrgent = entity.IsUrgent,
+            ContactPerson = entity.ContactPerson,
+            ContactNo = entity.ContactNo,
+            EstimatedBudget = entity.EstimatedBudget,
+            Status = entity.Status,
+            Remarks = entity.Remarks
         }, cancellationToken);
     }
 
     public async Task<ServiceRequestDeleteVm?> GetForDeleteAsync(int id, CancellationToken cancellationToken = default)
     {
-        var request = await _requestRepo.Query()
-            .FirstOrDefaultAsync(r => r.Uid == id, cancellationToken);
-
-        if (request == null) return null;
-
-        var customerName = await _customerRepo.Query()
-            .Where(c => c.Uid == request.CustomerUid)
-            .Select(c => c.FullName)
-            .FirstOrDefaultAsync(cancellationToken) ?? "—";
-
-        var categoryName = await _categoryRepo.Query()
-            .Where(c => c.Uid == request.CategoryUid)
-            .Select(c => c.CategoryName)
-            .FirstOrDefaultAsync(cancellationToken) ?? "—";
-
-        return new ServiceRequestDeleteVm
-        {
-            Uid = request.Uid,
-            CustomerName = customerName,
-            CategoryName = categoryName,
-            ServiceAddress = request.ServiceAddress,
-            Status = request.Status,
-            RequestDate = request.RequestDate
-        };
+        return await _db.CustomerServiceRequests
+            .AsNoTracking()
+            .Where(r => r.Uid == id)
+            .Select(r => new ServiceRequestDeleteVm
+            {
+                Uid = r.Uid,
+                CustomerName = r.Client.FullName,
+                CategoryName = r.Category.CategoryName,
+                ServiceTitle = r.ServiceTitle,
+                ServiceAddress = r.ClientAddress.FullAddress,
+                Status = r.Status,
+                RequestDate = r.CreatedOn
+            })
+            .FirstOrDefaultAsync(cancellationToken);
     }
 
     public async Task<(bool Success, string? Error)> CreateAsync(
@@ -231,19 +214,25 @@ public class ServiceRequestService : IServiceRequestService
             return (false, "Invalid status value.");
         }
 
-        var entity = new ServiceRequest
+        _db.CustomerServiceRequests.Add(new CustomerServiceRequest
         {
-            CustomerUid = model.CustomerUid,
+            ClientUid = model.CustomerUid,
             CategoryUid = model.CategoryUid,
-            ServiceAddress = model.ServiceAddress?.Trim(),
-            Latitude = model.Latitude,
-            Longitude = model.Longitude,
-            ProblemDescription = model.ProblemDescription?.Trim(),
-            RequestDate = DateTime.Now,
-            Status = model.Status
-        };
+            ClientAddressUid = model.ClientAddressUid,
+            ServiceTitle = model.ServiceTitle.Trim(),
+            ServiceDescription = model.ServiceDescription.Trim(),
+            PreferredServiceDate = model.PreferredServiceDate,
+            PreferredServiceTime = model.PreferredServiceTime?.Trim(),
+            IsUrgent = model.IsUrgent,
+            ContactPerson = model.ContactPerson?.Trim(),
+            ContactNo = model.ContactNo.Trim(),
+            EstimatedBudget = model.EstimatedBudget,
+            Status = model.Status,
+            Remarks = model.Remarks?.Trim(),
+            CreatedOn = DateTime.Now
+        });
 
-        await _requestRepo.AddAsync(entity, cancellationToken);
+        await _db.SaveChangesAsync(cancellationToken);
         return (true, null);
     }
 
@@ -251,7 +240,9 @@ public class ServiceRequestService : IServiceRequestService
         ServiceRequestFormVm model,
         CancellationToken cancellationToken = default)
     {
-        var entity = await _requestRepo.GetByIdAsync(model.Uid, cancellationToken);
+        var entity = await _db.CustomerServiceRequests
+            .FirstOrDefaultAsync(r => r.Uid == model.Uid, cancellationToken);
+
         if (entity == null)
         {
             return (false, "Service request not found.");
@@ -268,35 +259,37 @@ public class ServiceRequestService : IServiceRequestService
             return (false, "Invalid status value.");
         }
 
-        entity.CustomerUid = model.CustomerUid;
+        entity.ClientUid = model.CustomerUid;
         entity.CategoryUid = model.CategoryUid;
-        entity.ServiceAddress = model.ServiceAddress?.Trim();
-        entity.Latitude = model.Latitude;
-        entity.Longitude = model.Longitude;
-        entity.ProblemDescription = model.ProblemDescription?.Trim();
+        entity.ClientAddressUid = model.ClientAddressUid;
+        entity.ServiceTitle = model.ServiceTitle.Trim();
+        entity.ServiceDescription = model.ServiceDescription.Trim();
+        entity.PreferredServiceDate = model.PreferredServiceDate;
+        entity.PreferredServiceTime = model.PreferredServiceTime?.Trim();
+        entity.IsUrgent = model.IsUrgent;
+        entity.ContactPerson = model.ContactPerson?.Trim();
+        entity.ContactNo = model.ContactNo.Trim();
+        entity.EstimatedBudget = model.EstimatedBudget;
         entity.Status = model.Status;
+        entity.Remarks = model.Remarks?.Trim();
 
-        await _requestRepo.UpdateAsync(entity, cancellationToken);
+        await _db.SaveChangesAsync(cancellationToken);
         return (true, null);
     }
 
     public async Task<(bool Success, string? Error)> DeleteAsync(int id, CancellationToken cancellationToken = default)
     {
-        var entity = await _requestRepo.GetByIdAsync(id, cancellationToken);
+        var entity = await _db.CustomerServiceRequests
+            .FirstOrDefaultAsync(r => r.Uid == id, cancellationToken);
+
         if (entity == null)
         {
             return (false, "Service request not found.");
         }
 
-        try
-        {
-            await _requestRepo.DeleteAsync(entity, cancellationToken);
-            return (true, null);
-        }
-        catch (DbUpdateException)
-        {
-            return (false, "Cannot delete this request because it has linked quotes or bookings.");
-        }
+        _db.CustomerServiceRequests.Remove(entity);
+        await _db.SaveChangesAsync(cancellationToken);
+        return (true, null);
     }
 
     public async Task<ServiceRequestFormVm> PopulateFormAsync(
@@ -306,27 +299,55 @@ public class ServiceRequestService : IServiceRequestService
         model.Customers = await GetCustomerOptionsAsync(cancellationToken);
         model.Categories = await GetCategoryOptionsAsync(cancellationToken);
         model.StatusOptions = GetStatusOptions();
+        model.Addresses = await GetAddressOptionsAsync(model.CustomerUid, cancellationToken);
         return model;
+    }
+
+    public async Task<List<SelectListItem>> GetAddressOptionsAsync(int clientUid, CancellationToken cancellationToken = default)
+    {
+        if (clientUid <= 0)
+        {
+            return new List<SelectListItem>();
+        }
+
+        return await _db.ClientAddresses
+            .AsNoTracking()
+            .Where(a => a.ClientUid == clientUid)
+            .OrderBy(a => a.AddressTitle)
+            .Select(a => new SelectListItem
+            {
+                Value = a.Uid.ToString(),
+                Text = a.AddressTitle + " - " + a.FullAddress
+            })
+            .ToListAsync(cancellationToken);
     }
 
     private async Task<string?> ValidateForeignKeysAsync(
         ServiceRequestFormVm model,
         CancellationToken cancellationToken)
     {
-        var customerExists = await _customerRepo.Query()
+        var clientExists = await _db.Clients
             .AnyAsync(c => c.Uid == model.CustomerUid, cancellationToken);
 
-        if (!customerExists)
+        if (!clientExists)
         {
-            return "Selected customer does not exist.";
+            return "Selected client does not exist.";
         }
 
-        var categoryExists = await _categoryRepo.Query()
-            .AnyAsync(c => c.Uid == model.CategoryUid, cancellationToken);
+        var categoryExists = await _db.ServiceCategories
+            .AnyAsync(c => c.Uid == model.CategoryUid && c.IsActive, cancellationToken);
 
         if (!categoryExists)
         {
-            return "Selected category does not exist.";
+            return "Selected category does not exist or is inactive.";
+        }
+
+        var addressValid = await _db.ClientAddresses
+            .AnyAsync(a => a.Uid == model.ClientAddressUid && a.ClientUid == model.CustomerUid, cancellationToken);
+
+        if (!addressValid)
+        {
+            return "Selected address does not belong to this client.";
         }
 
         return null;
