@@ -12,49 +12,82 @@
     };
 }
 
+<style>
+    .sr-details-grid .sr-title {
+        font-weight: normal;
+        color: inherit;
+    }
+    .sr-details-grid .sr-field {
+        color: #0d6efd;
+        font-weight: 500;
+    }
+</style>
+
 <div class="mb-4">
     <a asp-action="Index" class="text-decoration-none text-muted"><i class="fa-solid fa-arrow-left me-1"></i>Back to S-Requests</a>
     <h2 class="mt-2 mb-0"><i class="fa-solid fa-eye me-2 text-primary"></i>S-Request Details</h2>
 </div>
 
 <div class="row justify-content-center">
-    <div class="col-lg-8">
+    <div class="col-lg-10">
         <div class="card hs-card">
             <div class="card-body p-4">
-                <dl class="row mb-0">
-                    <dt class="col-sm-4 text-muted">Client</dt>
-                    <dd class="col-sm-8 fw-semibold">@Model.CustomerName</dd>
-                    <dt class="col-sm-4 text-muted">Category</dt>
-                    <dd class="col-sm-8">@Model.CategoryName</dd>
-                    <dt class="col-sm-4 text-muted">Service Title</dt>
-                    <dd class="col-sm-8">@Model.ServiceTitle</dd>
-                    <dt class="col-sm-4 text-muted">Description</dt>
-                    <dd class="col-sm-8">@Model.ServiceDescription</dd>
-                    <dt class="col-sm-4 text-muted">Address</dt>
-                    <dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.ServiceAddress) ? "—" : Model.ServiceAddress)</dd>
-                    <dt class="col-sm-4 text-muted">Preferred Date</dt>
-                    <dd class="col-sm-8">@(Model.PreferredServiceDate?.ToString("dd MMM yyyy") ?? "—")</dd>
-                    <dt class="col-sm-4 text-muted">Preferred Time</dt>
-                    <dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.PreferredServiceTime) ? "—" : Model.PreferredServiceTime)</dd>
-                    <dt class="col-sm-4 text-muted">Urgent</dt>
-                    <dd class="col-sm-8">@(Model.IsUrgent ? "Yes" : "No")</dd>
-                    <dt class="col-sm-4 text-muted">Contact</dt>
-                    <dd class="col-sm-8">@(Model.ContactPerson ?? "—") / @Model.ContactNo</dd>
-                    <dt class="col-sm-4 text-muted">Budget</dt>
-                    <dd class="col-sm-8">@(Model.EstimatedBudget?.ToString("N2") ?? "—")</dd>
-                    <dt class="col-sm-4 text-muted">Created On</dt>
-                    <dd class="col-sm-8">@(Model.RequestDate?.ToString("dd MMM yyyy HH:mm") ?? "—")</dd>
-                    <dt class="col-sm-4 text-muted">Status</dt>
-                    <dd class="col-sm-8"><span class="badge bg-@statusClass">@(Model.Status ?? "Pending")</span></dd>
-                    <dt class="col-sm-4 text-muted">Remarks</dt>
-                    <dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.Remarks) ? "—" : Model.Remarks)</dd>
-                </dl>
+                <div class="sr-details-grid">
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-3 sr-title">Client</div>
+                        <div class="col-md-3 sr-field">@Model.CustomerName</div>
+                        <div class="col-md-3 sr-title">Category</div>
+                        <div class="col-md-3 sr-field">@Model.CategoryName</div>
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-3 sr-title">Service Title</div>
+                        <div class="col-md-3 sr-field">@Model.ServiceTitle</div>
+                        <div class="col-md-3 sr-title">Urgent</div>
+                        <div class="col-md-3 sr-field">@(Model.IsUrgent ? "Yes" : "No")</div>
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-3 sr-title">Description</div>
+                        <div class="col-md-9 sr-field">@Model.ServiceDescription</div>
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-3 sr-title">Address</div>
+                        <div class="col-md-9 sr-field">@(string.IsNullOrWhiteSpace(Model.ServiceAddress) ? "—" : Model.ServiceAddress)</div>
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-3 sr-title">Preferred Date</div>
+                        <div class="col-md-3 sr-field">@(Model.PreferredServiceDate?.ToString("dd MMM yyyy") ?? "—")</div>
+                        <div class="col-md-3 sr-title">Preferred Time</div>
+                        <div class="col-md-3 sr-field">@(string.IsNullOrWhiteSpace(Model.PreferredServiceTime) ? "—" : Model.PreferredServiceTime)</div>
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-3 sr-title">Contact</div>
+                        <div class="col-md-3 sr-field">@(Model.ContactPerson ?? "—") / @Model.ContactNo</div>
+                        <div class="col-md-3 sr-title">Budget</div>
+                        <div class="col-md-3 sr-field">@(Model.EstimatedBudget?.ToString("N2") ?? "—")</div>
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-3 sr-title">Created On</div>
+                        <div class="col-md-3 sr-field">@(Model.RequestDate?.ToString("dd MMM yyyy HH:mm") ?? "—")</div>
+                        <div class="col-md-3 sr-title">Status</div>
+                        <div class="col-md-3 sr-field"><span class="badge bg-@statusClass">@(Model.Status ?? "Pending")</span></div>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-3 sr-title">Remarks</div>
+                        <div class="col-md-9 sr-field">@(string.IsNullOrWhiteSpace(Model.Remarks) ? "—" : Model.Remarks)</div>
+                    </div>
+                </div>
                 <hr />
                 <div class="d-flex gap-2">
                     @if (string.Equals(Model.Status, "Pending", StringComparison.OrdinalIgnoreCase))
                     {
                         <a asp-action="Assign" asp-route-id="@Model.Uid" class="btn btn-success">
                             <i class="fa-solid fa-user-check me-1"></i>Assign Provider
+                        </a>
+                    }
+                    @if (string.Equals(Model.Status, "Assigned", StringComparison.OrdinalIgnoreCase) && Model.BookingUid.HasValue)
+                    {
+                        <a href="/Admin/Bookings/Details/@Model.BookingUid.Value" class="btn btn-primary">
+                            <i class="fa-solid fa-clipboard-list me-1"></i>Open Booking
                         </a>
                     }
                     <a asp-action="Index" class="btn btn-outline-secondary">Back</a>

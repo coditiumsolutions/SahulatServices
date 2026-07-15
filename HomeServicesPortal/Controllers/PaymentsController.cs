@@ -138,4 +138,46 @@ public class PaymentsController : Controller
         TempData["SuccessMessage"] = "Commission rule deleted successfully.";
         return RedirectToAction(nameof(CommissionRules));
     }
+
+    [HttpGet("/Admin/Payments/PersonLedger")]
+    public async Task<IActionResult> PersonLedger(string? search, CancellationToken cancellationToken = default)
+    {
+        return View(await _service.GetPersonLedgerIndexAsync(search, cancellationToken));
+    }
+
+    [HttpGet("/Admin/Payments/PersonLedger/{providerUid:int}")]
+    public async Task<IActionResult> PersonLedgerStatement(int providerUid, CancellationToken cancellationToken = default)
+    {
+        var vm = await _service.GetPersonLedgerAsync(providerUid, cancellationToken);
+        if (vm == null) return NotFound();
+        return View(vm);
+    }
+
+    [HttpPost("/Admin/Payments/PersonLedger/{providerUid:int}/Add")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> PersonLedgerAdd(
+        int providerUid,
+        [Bind(Prefix = "AddEntry")] PersonLedgerAddEntryVm model,
+        CancellationToken cancellationToken = default)
+    {
+        model.ProviderUid = providerUid;
+
+        if (!ModelState.IsValid)
+        {
+            var invalidVm = await _service.GetPersonLedgerAsync(providerUid, cancellationToken);
+            if (invalidVm == null) return NotFound();
+            invalidVm.AddEntry = model;
+            return View("PersonLedgerStatement", invalidVm);
+        }
+
+        var (success, error) = await _service.AddPersonLedgerEntryAsync(model, cancellationToken);
+        if (!success)
+        {
+            TempData["ErrorMessage"] = error ?? "Failed to add ledger entry.";
+            return RedirectToAction(nameof(PersonLedgerStatement), new { providerUid });
+        }
+
+        TempData["SuccessMessage"] = $"Ledger entry added ({model.EntryType} {model.Amount:N2}).";
+        return RedirectToAction(nameof(PersonLedgerStatement), new { providerUid });
+    }
 }

@@ -13,10 +13,12 @@ public class BookingService : IBookingService
     private static readonly string[] ValidCommissionTypes = ["Percent", "Fixed"];
 
     private readonly AppDbContext _db;
+    private readonly IPaymentService _payments;
 
-    public BookingService(AppDbContext db)
+    public BookingService(AppDbContext db, IPaymentService payments)
     {
         _db = db;
+        _payments = payments;
     }
 
     public async Task<List<SelectListItem>> GetRequestOptionsAsync(CancellationToken cancellationToken = default)
@@ -27,7 +29,7 @@ public class BookingService : IBookingService
             .Select(r => new SelectListItem
             {
                 Value = r.Uid.ToString(),
-                Text = "#" + r.Uid + " - " + r.Client.FullName + " / " + r.ServiceTitle
+            Text = r.ServiceTitle + " / " + r.Client.FullName
             })
             .ToListAsync(cancellationToken);
     }
@@ -104,7 +106,7 @@ public class BookingService : IBookingService
             .Select(b => new BookingItemVm
             {
                 Uid = b.Uid,
-                RequestLabel = "#" + b.RequestUid + " - " + b.Request.ServiceTitle,
+                RequestLabel = b.Request.ServiceTitle,
                 ClientName = b.Client.FullName,
                 ProviderName = b.Provider.FullName,
                 BookingDate = b.CreatedOn,
@@ -135,14 +137,23 @@ public class BookingService : IBookingService
             {
                 Uid = b.Uid,
                 RequestUid = b.RequestUid,
-                RequestLabel = "#" + b.RequestUid + " - " + b.Request.ServiceTitle + " (" + b.Request.Category.CategoryName + ")",
+                RequestLabel = b.Request.ServiceTitle,
+                ServiceTitle = b.Request.ServiceTitle,
+                ServiceType = b.Request.Category.CategoryName,
+                ServiceDetail = b.ServiceDetail,
                 ClientUid = b.ClientUid,
                 ClientName = b.Client.FullName,
                 ProviderUid = b.ProviderUid,
                 ProviderName = b.Provider.FullName,
                 BookingDate = b.CreatedOn,
+                EstimatedAmount = b.EstimatedAmount,
+                VisitCharges = b.VisitCharges,
+                AdditionalCharges = b.AdditionalCharges,
+                Deductions = b.Deductions,
                 FinalAmount = b.FinalAmount,
+                CustomerPaid = b.CustomerPaid,
                 PaymentMode = b.PaymentMode,
+                CustomerRemaining = b.CustomerRemaining,
                 CommissionType = b.CommissionType,
                 CommissionValue = b.CommissionValue,
                 CommissionAmount = b.CommissionAmount,
@@ -157,22 +168,41 @@ public class BookingService : IBookingService
     {
         var entity = await _db.ServiceBookings
             .AsNoTracking()
-            .FirstOrDefaultAsync(b => b.Uid == id, cancellationToken);
+            .Where(b => b.Uid == id)
+            .Select(b => new
+            {
+                Booking = b,
+                ServiceTitle = b.Request.ServiceTitle,
+                ClientName = b.Client.FullName,
+                ServiceType = b.Request.Category.CategoryName
+            })
+            .FirstOrDefaultAsync(cancellationToken);
 
         if (entity == null) return null;
 
         return await PopulateFormAsync(new BookingFormVm
         {
-            Uid = entity.Uid,
-            RequestUid = entity.RequestUid,
-            ProviderUid = entity.ProviderUid,
-            FinalAmount = entity.FinalAmount,
-            PaymentMode = entity.PaymentMode,
-            CommissionType = entity.CommissionType,
-            CommissionValue = entity.CommissionValue,
-            CommissionAmount = entity.CommissionAmount,
-            ProviderEarning = entity.ProviderEarning,
-            Status = entity.Status
+            Uid = entity.Booking.Uid,
+            LockRequestFields = true,
+            RequestUid = entity.Booking.RequestUid,
+            ServiceTitle = entity.ServiceTitle,
+            ClientName = entity.ClientName,
+            ServiceType = entity.ServiceType,
+            ServiceDetail = entity.Booking.ServiceDetail,
+            ProviderUid = entity.Booking.ProviderUid,
+            EstimatedAmount = entity.Booking.EstimatedAmount,
+            VisitCharges = entity.Booking.VisitCharges,
+            AdditionalCharges = entity.Booking.AdditionalCharges,
+            Deductions = entity.Booking.Deductions,
+            FinalAmount = entity.Booking.FinalAmount,
+            CustomerPaid = entity.Booking.CustomerPaid,
+            PaymentMode = entity.Booking.PaymentMode,
+            CustomerRemaining = entity.Booking.CustomerRemaining,
+            CommissionType = entity.Booking.CommissionType,
+            CommissionValue = entity.Booking.CommissionValue,
+            CommissionAmount = entity.Booking.CommissionAmount,
+            ProviderEarning = entity.Booking.ProviderEarning,
+            Status = entity.Booking.Status
         }, cancellationToken);
     }
 
@@ -184,7 +214,7 @@ public class BookingService : IBookingService
             .Select(b => new BookingDeleteVm
             {
                 Uid = b.Uid,
-                RequestLabel = "#" + b.RequestUid + " - " + b.Request.ServiceTitle,
+                RequestLabel = b.Request.ServiceTitle,
                 ClientName = b.Client.FullName,
                 ProviderName = b.Provider.FullName,
                 BookingDate = b.CreatedOn,
@@ -204,24 +234,40 @@ public class BookingService : IBookingService
             .AsNoTracking()
             .FirstAsync(r => r.Uid == model.RequestUid, cancellationToken);
 
-        var (commissionAmount, providerEarning) = ResolveCommission(model);
+        ApplyBookingTotals(model);
+        var validationErrorAfterCalc = ValidateBookingTotals(model.FinalAmount, model.CommissionAmount, model.CustomerPaid);
+        if (validationErrorAfterCalc != null) return (false, validationErrorAfterCalc);
 
-        _db.ServiceBookings.Add(new ServiceBooking
+        var booking = new ServiceBooking
         {
             RequestUid = model.RequestUid,
             ClientUid = request.ClientUid,
             ProviderUid = model.ProviderUid,
+            ServiceDetail = string.IsNullOrWhiteSpace(model.ServiceDetail) ? null : model.ServiceDetail.Trim(),
+            EstimatedAmount = model.EstimatedAmount,
+            VisitCharges = model.VisitCharges,
+            AdditionalCharges = model.AdditionalCharges,
+            Deductions = model.Deductions,
             FinalAmount = model.FinalAmount,
+            CustomerPaid = model.CustomerPaid,
             PaymentMode = model.PaymentMode.Trim(),
+            CustomerRemaining = model.CustomerRemaining,
             CommissionType = model.CommissionType.Trim(),
             CommissionValue = model.CommissionValue,
-            CommissionAmount = commissionAmount,
-            ProviderEarning = providerEarning,
+            CommissionAmount = model.CommissionAmount ?? 0,
+            ProviderEarning = model.ProviderEarning ?? 0,
             Status = model.Status.Trim(),
             CreatedOn = DateTime.Now
-        });
+        };
 
+        _db.ServiceBookings.Add(booking);
         await _db.SaveChangesAsync(cancellationToken);
+
+        if (string.Equals(booking.Status, "Completed", StringComparison.OrdinalIgnoreCase))
+        {
+            await _payments.RecordBookingCompletionAsync(booking, cancellationToken);
+        }
+
         return (true, null);
     }
 
@@ -234,27 +280,48 @@ public class BookingService : IBookingService
 
         if (entity == null) return (false, "Booking not found.");
 
+        // Preserve original request link on update.
+        model.RequestUid = entity.RequestUid;
+
         var validationError = await ValidateAsync(model, cancellationToken);
         if (validationError != null) return (false, validationError);
 
-        var request = await _db.CustomerServiceRequests
-            .AsNoTracking()
-            .FirstAsync(r => r.Uid == model.RequestUid, cancellationToken);
+        ApplyBookingTotals(model);
+        var validationErrorAfterCalc = ValidateBookingTotals(model.FinalAmount, model.CommissionAmount, model.CustomerPaid);
+        if (validationErrorAfterCalc != null) return (false, validationErrorAfterCalc);
 
-        var (commissionAmount, providerEarning) = ResolveCommission(model);
-
-        entity.RequestUid = model.RequestUid;
-        entity.ClientUid = request.ClientUid;
+        // Keep request linkage stable on edit.
         entity.ProviderUid = model.ProviderUid;
+        entity.ServiceDetail = string.IsNullOrWhiteSpace(model.ServiceDetail) ? null : model.ServiceDetail.Trim();
+        entity.EstimatedAmount = model.EstimatedAmount;
+        entity.VisitCharges = model.VisitCharges;
+        entity.AdditionalCharges = model.AdditionalCharges;
+        entity.Deductions = model.Deductions;
         entity.FinalAmount = model.FinalAmount;
+        entity.CustomerPaid = model.CustomerPaid;
         entity.PaymentMode = model.PaymentMode.Trim();
+        entity.CustomerRemaining = model.CustomerRemaining;
         entity.CommissionType = model.CommissionType.Trim();
         entity.CommissionValue = model.CommissionValue;
-        entity.CommissionAmount = commissionAmount;
-        entity.ProviderEarning = providerEarning;
+        entity.CommissionAmount = model.CommissionAmount ?? 0;
+        entity.ProviderEarning = model.ProviderEarning ?? 0;
         entity.Status = model.Status.Trim();
 
         await _db.SaveChangesAsync(cancellationToken);
+
+        if (string.Equals(entity.Status, "Completed", StringComparison.OrdinalIgnoreCase))
+        {
+            var request = await _db.CustomerServiceRequests
+                .FirstOrDefaultAsync(r => r.Uid == entity.RequestUid, cancellationToken);
+            if (request != null && !string.Equals(request.Status, "Completed", StringComparison.OrdinalIgnoreCase))
+            {
+                request.Status = "Completed";
+                await _db.SaveChangesAsync(cancellationToken);
+            }
+
+            await _payments.RecordBookingCompletionAsync(entity, cancellationToken);
+        }
+
         return (true, null);
     }
 
@@ -300,6 +367,34 @@ public class BookingService : IBookingService
         model.CommissionTypeOptions = ValidCommissionTypes
             .Select(t => new SelectListItem { Value = t, Text = t })
             .ToList();
+
+        if (model.RequestUid > 0 &&
+            (model.LockRequestFields || string.IsNullOrWhiteSpace(model.ServiceTitle)))
+        {
+            var requestInfo = await _db.CustomerServiceRequests
+                .AsNoTracking()
+                .Where(r => r.Uid == model.RequestUid)
+                .Select(r => new
+                {
+                    r.ServiceTitle,
+                    ClientName = r.Client.FullName,
+                    ServiceType = r.Category.CategoryName,
+                    r.ServiceDescription
+                })
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (requestInfo != null)
+            {
+                model.ServiceTitle = requestInfo.ServiceTitle;
+                model.ClientName = requestInfo.ClientName;
+                model.ServiceType = requestInfo.ServiceType;
+                if (string.IsNullOrWhiteSpace(model.ServiceDetail))
+                {
+                    model.ServiceDetail = requestInfo.ServiceDescription;
+                }
+            }
+        }
+
         return model;
     }
 
@@ -315,6 +410,7 @@ public class BookingService : IBookingService
                 r.Uid,
                 r.Status,
                 r.ServiceTitle,
+                r.ServiceDescription,
                 r.EstimatedBudget,
                 r.CategoryUid,
                 ClientName = r.Client.FullName,
@@ -350,7 +446,8 @@ public class BookingService : IBookingService
             providers = await GetProviderOptionsAsync(cancellationToken);
         }
 
-        return new AssignProviderVm
+        var estimated = request.EstimatedBudget ?? 0m;
+        var vm = new AssignProviderVm
         {
             RequestUid = request.Uid,
             ClientName = request.ClientName,
@@ -359,7 +456,12 @@ public class BookingService : IBookingService
             ServiceAddress = request.ServiceAddress,
             Status = request.Status,
             EstimatedBudget = request.EstimatedBudget,
-            FinalAmount = request.EstimatedBudget ?? 0,
+            ServiceDetail = request.ServiceDescription,
+            EstimatedAmount = estimated,
+            VisitCharges = 0,
+            AdditionalCharges = 0,
+            Deductions = 0,
+            CustomerPaid = 0,
             CommissionType = "Percent",
             CommissionValue = 10,
             PaymentMode = "CashToProvider",
@@ -377,9 +479,21 @@ public class BookingService : IBookingService
                 })
                 .ToList(),
             CommissionTypeOptions = ValidCommissionTypes
-                .Select(t => new SelectListItem { Value = t, Text = t })
+                .Select(t => new SelectListItem
+                {
+                    Value = t,
+                    Text = t switch
+                    {
+                        "Percent" => "Percent",
+                        "Fixed" => "Fixed",
+                        _ => t
+                    }
+                })
                 .ToList()
         };
+
+        ApplyAssignTotals(vm);
+        return vm;
     }
 
     public async Task<(bool Success, string? Error)> AssignProviderAsync(
@@ -415,7 +529,7 @@ public class BookingService : IBookingService
 
         if (!ValidPaymentModes.Contains(model.PaymentMode))
         {
-            return (false, "Invalid payment mode.");
+            return (false, "Invalid payment method.");
         }
 
         if (!ValidCommissionTypes.Contains(model.CommissionType))
@@ -428,16 +542,12 @@ public class BookingService : IBookingService
             return (false, "Percent commission value cannot exceed 100.");
         }
 
-        var (commissionAmount, providerEarning) = ResolveCommissionAmounts(
-            model.FinalAmount,
-            model.CommissionType,
-            model.CommissionValue,
-            model.CommissionAmount,
-            model.ProviderEarning);
+        ApplyAssignTotals(model);
 
-        if (commissionAmount > model.FinalAmount)
+        var totalsError = ValidateBookingTotals(model.FinalAmount, model.CommissionAmount, model.CustomerPaid);
+        if (totalsError != null)
         {
-            return (false, "Commission amount cannot exceed total amount.");
+            return (false, totalsError);
         }
 
         // Single SaveChanges covers booking insert + request status update atomically
@@ -447,12 +557,21 @@ public class BookingService : IBookingService
             RequestUid = request.Uid,
             ClientUid = request.ClientUid,
             ProviderUid = model.ProviderUid,
+            ServiceDetail = string.IsNullOrWhiteSpace(model.ServiceDetail)
+                ? request.ServiceDescription
+                : model.ServiceDetail.Trim(),
+            EstimatedAmount = model.EstimatedAmount,
+            VisitCharges = model.VisitCharges,
+            AdditionalCharges = model.AdditionalCharges,
+            Deductions = model.Deductions,
             FinalAmount = model.FinalAmount,
+            CustomerPaid = model.CustomerPaid,
             PaymentMode = model.PaymentMode.Trim(),
+            CustomerRemaining = model.CustomerRemaining,
             CommissionType = model.CommissionType.Trim(),
             CommissionValue = model.CommissionValue,
-            CommissionAmount = commissionAmount,
-            ProviderEarning = providerEarning,
+            CommissionAmount = model.CommissionAmount,
+            ProviderEarning = model.ProviderEarning,
             Status = "Accepted",
             CreatedOn = DateTime.Now
         });
@@ -481,22 +600,85 @@ public class BookingService : IBookingService
             return "Percent commission value cannot exceed 100.";
         }
 
-        var (commissionAmount, _) = ResolveCommission(model);
-        if (commissionAmount > model.FinalAmount)
-        {
-            return "Commission amount cannot exceed final amount.";
-        }
-
         return null;
     }
 
-    private static (decimal CommissionAmount, decimal ProviderEarning) ResolveCommission(BookingFormVm model) =>
-        ResolveCommissionAmounts(
+    private static void ApplyAssignTotals(AssignProviderVm model)
+    {
+        model.FinalAmount = ComputeFinalBill(
+            model.EstimatedAmount,
+            model.VisitCharges,
+            model.AdditionalCharges,
+            model.Deductions);
+        model.CustomerRemaining = ComputeCustomerRemaining(model.FinalAmount, model.CustomerPaid);
+
+        var (commissionAmount, providerEarning) = ResolveCommissionAmounts(
+            model.FinalAmount,
+            model.CommissionType,
+            model.CommissionValue,
+            null,
+            null);
+
+        model.CommissionAmount = commissionAmount;
+        model.ProviderEarning = providerEarning;
+    }
+
+    private static void ApplyBookingTotals(BookingFormVm model)
+    {
+        // Backward compatible: if only FinalAmount was filled, treat it as EstimatedAmount.
+        if (model.EstimatedAmount == 0 && model.VisitCharges == 0 && model.AdditionalCharges == 0
+            && model.Deductions == 0 && model.FinalAmount > 0)
+        {
+            model.EstimatedAmount = model.FinalAmount;
+        }
+
+        model.FinalAmount = ComputeFinalBill(
+            model.EstimatedAmount,
+            model.VisitCharges,
+            model.AdditionalCharges,
+            model.Deductions);
+        model.CustomerRemaining = ComputeCustomerRemaining(model.FinalAmount, model.CustomerPaid);
+
+        var (commissionAmount, providerEarning) = ResolveCommissionAmounts(
             model.FinalAmount,
             model.CommissionType,
             model.CommissionValue,
             model.CommissionAmount,
             model.ProviderEarning);
+
+        model.CommissionAmount = commissionAmount;
+        model.ProviderEarning = providerEarning;
+    }
+
+    private static string? ValidateBookingTotals(decimal finalAmount, decimal? commissionAmount, decimal customerPaid)
+    {
+        if (finalAmount < 0)
+        {
+            return "Final bill cannot be negative. Reduce deductions.";
+        }
+
+        if (commissionAmount.HasValue && commissionAmount.Value > finalAmount)
+        {
+            return "Company commission cannot exceed final bill.";
+        }
+
+        if (customerPaid < 0)
+        {
+            return "Customer paid cannot be negative.";
+        }
+
+        return null;
+    }
+
+    private static decimal ComputeFinalBill(
+        decimal estimatedAmount,
+        decimal visitCharges,
+        decimal additionalCharges,
+        decimal deductions) =>
+        Math.Round(estimatedAmount + visitCharges + additionalCharges - deductions, 2);
+
+    private static decimal ComputeCustomerRemaining(decimal finalBill, decimal customerPaid) =>
+        Math.Round(finalBill - customerPaid, 2);
 
     private static (decimal CommissionAmount, decimal ProviderEarning) ResolveCommissionAmounts(
         decimal finalAmount,

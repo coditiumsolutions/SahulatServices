@@ -14,19 +14,50 @@ public class AssignProviderVm
     public string? Status { get; set; }
     public decimal? EstimatedBudget { get; set; }
 
+    [Display(Name = "Service Detail")]
+    [StringLength(1000)]
+    public string? ServiceDetail { get; set; }
+
     [Required(ErrorMessage = "Provider is required.")]
     [Display(Name = "Provider")]
     public int ProviderUid { get; set; }
 
-    [Required(ErrorMessage = "Total amount is required.")]
-    [Display(Name = "Total Amount")]
-    [Range(0.01, double.MaxValue)]
+    [Required]
+    [Display(Name = "Estimated Amount")]
+    [Range(0, double.MaxValue)]
+    public decimal EstimatedAmount { get; set; }
+
+    [Required]
+    [Display(Name = "Visit Charges")]
+    [Range(0, double.MaxValue)]
+    public decimal VisitCharges { get; set; }
+
+    [Required]
+    [Display(Name = "Additional Charges")]
+    [Range(0, double.MaxValue)]
+    public decimal AdditionalCharges { get; set; }
+
+    [Required]
+    [Display(Name = "Deductions")]
+    [Range(0, double.MaxValue)]
+    public decimal Deductions { get; set; }
+
+    [Display(Name = "Final Bill")]
+    [Range(0, double.MaxValue)]
     public decimal FinalAmount { get; set; }
 
-    [Required(ErrorMessage = "Payment mode is required.")]
+    [Required]
+    [Display(Name = "Customer Paid")]
+    [Range(0, double.MaxValue)]
+    public decimal CustomerPaid { get; set; }
+
+    [Required(ErrorMessage = "Payment method is required.")]
     [StringLength(30)]
-    [Display(Name = "Payment Mode")]
+    [Display(Name = "Payment Method")]
     public string PaymentMode { get; set; } = "CashToProvider";
+
+    [Display(Name = "Customer Remaining")]
+    public decimal CustomerRemaining { get; set; }
 
     [Required(ErrorMessage = "Commission type is required.")]
     [StringLength(10)]
@@ -38,13 +69,13 @@ public class AssignProviderVm
     [Range(0, double.MaxValue)]
     public decimal CommissionValue { get; set; }
 
-    [Display(Name = "Commission Amount")]
+    [Display(Name = "Company Commission")]
     [Range(0, double.MaxValue)]
-    public decimal? CommissionAmount { get; set; }
+    public decimal CommissionAmount { get; set; }
 
     [Display(Name = "Provider Earning")]
     [Range(0, double.MaxValue)]
-    public decimal? ProviderEarning { get; set; }
+    public decimal ProviderEarning { get; set; }
 
     public List<SelectListItem> Providers { get; set; } = new();
     public List<SelectListItem> PaymentModeOptions { get; set; } = new();

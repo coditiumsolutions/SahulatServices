@@ -1,0 +1,160 @@
+@model HomeServicesPortal.Models.ViewModels.PersonLedgerStatementVm
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Person Ledger — " + Model.ProviderName;
+    var balanceClass = Model.Balance >= 0 ? "text-success" : "text-danger";
+}
+
+<div class="mb-4">
+    <a asp-action="PersonLedger" class="text-decoration-none text-muted"><i class="fa-solid fa-arrow-left me-1"></i>Back to Person Ledger</a>
+    @if (TempData["SuccessMessage"] is string success)
+    {
+        <div class="alert alert-success mt-2 mb-0">@success</div>
+    }
+    @if (TempData["ErrorMessage"] is string err)
+    {
+        <div class="alert alert-danger mt-2 mb-0">@err</div>
+    }
+    <div class="d-flex flex-wrap align-items-start justify-content-between gap-2 mt-2">
+        <div>
+            <h2 class="mb-1"><i class="fa-solid fa-user-tag me-2 text-primary"></i>@Model.ProviderName</h2>
+            <p class="text-muted mb-0">@Model.CategoryName · Provider ledger with +/− and running balance</p>
+        </div>
+        <div class="text-end">
+            <div class="small text-muted">Current Balance</div>
+            <div class="fs-3 fw-semibold @balanceClass">@Model.Balance.ToString("N2")</div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card hs-card h-100">
+            <div class="card-body">
+                <div class="text-muted small">Total Plus (+)</div>
+                <div class="fs-4 fw-semibold text-success">+@Model.TotalPlus.ToString("N2")</div>
+                <div class="small text-muted">Credits (earnings, cash collected, adjustments)</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card hs-card h-100">
+            <div class="card-body">
+                <div class="text-muted small">Total Minus (−)</div>
+                <div class="fs-4 fw-semibold text-danger">−@Model.TotalMinus.ToString("N2")</div>
+                <div class="small text-muted">Debits (payouts, remits, adjustments)</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card hs-card h-100">
+            <div class="card-body">
+                <div class="text-muted small">Net Balance</div>
+                <div class="fs-4 fw-semibold @balanceClass">@Model.Balance.ToString("N2")</div>
+                <div class="small text-muted">Plus − Minus</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card hs-card mb-4">
+    <div class="card-body">
+        <h5 class="mb-3"><i class="fa-solid fa-plus-minus me-1"></i>Add ledger entry</h5>
+        <form asp-action="PersonLedgerAdd" asp-route-providerUid="@Model.ProviderUid" method="post" class="row g-3 align-items-end">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="AddEntry.ProviderUid" />
+            <div class="col-md-3">
+                <label asp-for="AddEntry.EntryType" class="form-label"></label>
+                <select asp-for="AddEntry.EntryType" class="form-select">
+                    <option value="Credit">Credit (+ Plus)</option>
+                    <option value="Debit">Debit (− Minus)</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label asp-for="AddEntry.Amount" class="form-label"></label>
+                <input asp-for="AddEntry.Amount" class="form-control" type="number" step="0.01" min="0.01" />
+            </div>
+            <div class="col-md-3">
+                <label asp-for="AddEntry.Reason" class="form-label"></label>
+                <input asp-for="AddEntry.Reason" class="form-control" maxlength="30" placeholder="e.g. Adjustment" />
+            </div>
+            <div class="col-md-2">
+                <label asp-for="AddEntry.BookingUid" class="form-label">Booking (opt.)</label>
+                <input asp-for="AddEntry.BookingUid" class="form-control" type="number" min="1" />
+            </div>
+            <div class="col-md-1">
+                <button type="submit" class="btn btn-primary w-100" title="Add">
+                    <i class="fa-solid fa-plus"></i>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card hs-card">
+    <div class="card-body">
+        <h5 class="mb-3">Transactions</h5>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Date</th>
+                        <th>Booking</th>
+                        <th>Reason</th>
+                        <th>Type</th>
+                        <th class="text-end">+/−</th>
+                        <th class="text-end">Running Balance</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.Transactions.Any())
+                    {
+                        <tr><td colspan="6" class="text-center text-muted py-4">No transactions yet. Add an entry above or complete a booking.</td></tr>
+                    }
+                    @foreach (var txn in Model.Transactions)
+                    {
+                        var isPlus = txn.SignedAmount >= 0;
+                        <tr>
+                            <td>@txn.CreatedOn.ToString("dd MMM yyyy HH:mm")</td>
+                            <td>
+                                @if (txn.BookingUid.HasValue)
+                                {
+                                    <a href="/Admin/Bookings/Details/@txn.BookingUid.Value">#@txn.BookingUid.Value</a>
+                                }
+                                else
+                                {
+                                    <text>—</text>
+                                }
+                            </td>
+                            <td>@txn.Reason</td>
+                            <td>
+                                @if (isPlus)
+                                {
+                                    <span class="badge bg-success">+ Credit</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-danger">− Debit</span>
+                                }
+                            </td>
+                            <td class="text-end fw-semibold @(isPlus ? "text-success" : "text-danger")">
+                                @(isPlus ? "+" : "−")@Math.Abs(txn.SignedAmount).ToString("N2")
+                            </td>
+                            <td class="text-end fw-semibold">@txn.RunningBalance.ToString("N2")</td>
+                        </tr>
+                    }
+                </tbody>
+                @if (Model.Transactions.Any())
+                {
+                    <tfoot class="table-light">
+                        <tr>
+                            <td colspan="4" class="text-end fw-semibold">Closing Balance</td>
+                            <td></td>
+                            <td class="text-end fw-semibold @balanceClass">@Model.Balance.ToString("N2")</td>
+                        </tr>
+                    </tfoot>
+                }
+            </table>
+        </div>
+    </div>
+</div>

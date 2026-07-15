@@ -15,7 +15,16 @@
             <div class="card-body p-4">
                 <dl class="row mb-0">
                     <dt class="col-sm-4 text-muted">Booking UID</dt>
-                    <dd class="col-sm-8">@(Model.BookingUid?.ToString() ?? "—")</dd>
+                    <dd class="col-sm-8">
+                        @if (Model.BookingUid.HasValue)
+                        {
+                            <a href="/Admin/Bookings/Details/@Model.BookingUid.Value">#@Model.BookingUid.Value</a>
+                        }
+                        else
+                        {
+                            <text>—</text>
+                        }
+                    </dd>
                     <dt class="col-sm-4 text-muted">Provider</dt>
                     <dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.ProviderName) ? "—" : Model.ProviderName)</dd>
                     <dt class="col-sm-4 text-muted">Account Type</dt>

@@ -212,8 +212,15 @@ public class AppDbContext : DbContext
             entity.Property(e => e.RequestUid).HasColumnName("RequestUID");
             entity.Property(e => e.ClientUid).HasColumnName("ClientUID");
             entity.Property(e => e.ProviderUid).HasColumnName("ProviderUID");
+            entity.Property(e => e.ServiceDetail).HasMaxLength(1000);
+            entity.Property(e => e.EstimatedAmount).HasColumnType("decimal(12,2)");
+            entity.Property(e => e.VisitCharges).HasColumnType("decimal(12,2)");
+            entity.Property(e => e.AdditionalCharges).HasColumnType("decimal(12,2)");
+            entity.Property(e => e.Deductions).HasColumnType("decimal(12,2)");
             entity.Property(e => e.FinalAmount).HasColumnType("decimal(12,2)");
+            entity.Property(e => e.CustomerPaid).HasColumnType("decimal(12,2)");
             entity.Property(e => e.PaymentMode).HasMaxLength(30).IsRequired();
+            entity.Property(e => e.CustomerRemaining).HasColumnType("decimal(12,2)");
             entity.Property(e => e.CommissionType).HasMaxLength(10).IsRequired();
             entity.Property(e => e.CommissionValue).HasColumnType("decimal(10,2)");
             entity.Property(e => e.CommissionAmount).HasColumnType("decimal(12,2)");

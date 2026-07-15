@@ -126,7 +126,7 @@ public class ServiceRequestService : IServiceRequestService
 
     public async Task<ServiceRequestDetailsVm?> GetDetailsAsync(int id, CancellationToken cancellationToken = default)
     {
-        return await _db.CustomerServiceRequests
+        var details = await _db.CustomerServiceRequests
             .AsNoTracking()
             .Where(r => r.Uid == id)
             .Select(r => new ServiceRequestDetailsVm
@@ -152,6 +152,16 @@ public class ServiceRequestService : IServiceRequestService
                 Remarks = r.Remarks
             })
             .FirstOrDefaultAsync(cancellationToken);
+
+        if (details == null) return null;
+
+        details.BookingUid = await _db.ServiceBookings
+            .AsNoTracking()
+            .Where(b => b.RequestUid == id)
+            .Select(b => (int?)b.Uid)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        return details;
     }
 
     public async Task<ServiceRequestFormVm?> GetForEditAsync(int id, CancellationToken cancellationToken = default)

@@ -67,6 +67,7 @@ public class BookingsController : Controller
     public async Task<IActionResult> Edit(int id, BookingFormVm model, CancellationToken cancellationToken)
     {
         if (id != model.Uid) return BadRequest();
+        model.LockRequestFields = true;
         await _service.PopulateFormAsync(model, cancellationToken);
         if (!ModelState.IsValid) return View(model);
 

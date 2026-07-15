@@ -1,62 +1,203 @@
 @model HomeServicesPortal.Models.ViewModels.BookingFormVm
 
-<div class="row">
-    <div class="col-md-6 mb-3">
-        <label asp-for="RequestUid" class="form-label"></label>
-        <select asp-for="RequestUid" class="form-select" asp-items="Model.Requests">
-            <option value="">-- Select S-Request --</option>
-        </select>
-        <span asp-validation-for="RequestUid" class="text-danger small"></span>
-        <div class="form-text">Client is taken from the selected request.</div>
+<style>
+    .bk-form-grid .bk-title {
+        font-weight: normal;
+        color: #000;
+        display: flex;
+        align-items: center;
+        margin-bottom: 0;
+    }
+    .bk-form-grid .bk-field,
+    .bk-form-grid .bk-field .form-control,
+    .bk-form-grid .bk-field .form-select {
+        color: #0d6efd;
+        font-weight: 500;
+    }
+    .bk-form-grid .bk-field .form-control:focus,
+    .bk-form-grid .bk-field .form-select:focus {
+        color: #0d6efd;
+    }
+    .bk-form-grid .bk-field .form-control[readonly] {
+        background-color: #f8f9fa;
+        color: #0d6efd;
+    }
+</style>
+
+<div class="bk-form-grid" id="bookingTotalsFields">
+    <input type="hidden" asp-for="LockRequestFields" />
+
+    @if (Model.LockRequestFields)
+    {
+        <input type="hidden" asp-for="RequestUid" />
+        <div class="row g-3 mb-3 align-items-center">
+            <label class="col-md-3 bk-title">Service Request</label>
+            <div class="col-md-3 bk-field">
+                <input asp-for="ServiceTitle" class="form-control" readonly tabindex="-1" />
+            </div>
+            <label asp-for="ClientName" class="col-md-3 bk-title"></label>
+            <div class="col-md-3 bk-field">
+                <input asp-for="ClientName" class="form-control" readonly tabindex="-1" />
+            </div>
+        </div>
+        <div class="row g-3 mb-3 align-items-center">
+            <label asp-for="ServiceType" class="col-md-3 bk-title"></label>
+            <div class="col-md-3 bk-field">
+                <input asp-for="ServiceType" class="form-control" readonly tabindex="-1" />
+            </div>
+            <label asp-for="ProviderUid" class="col-md-3 bk-title"></label>
+            <div class="col-md-3 bk-field">
+                <select asp-for="ProviderUid" class="form-select" asp-items="Model.Providers">
+                    <option value="">-- Select Provider --</option>
+                </select>
+                <span asp-validation-for="ProviderUid" class="text-danger small"></span>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="row g-3 mb-3 align-items-start">
+            <label asp-for="RequestUid" class="col-md-3 bk-title"></label>
+            <div class="col-md-3 bk-field">
+                <select asp-for="RequestUid" class="form-select" asp-items="Model.Requests">
+                    <option value="">-- Select S-Request --</option>
+                </select>
+                <span asp-validation-for="RequestUid" class="text-danger small"></span>
+                <div class="form-text">Client is taken from the selected request.</div>
+            </div>
+            <label asp-for="ProviderUid" class="col-md-3 bk-title"></label>
+            <div class="col-md-3 bk-field">
+                <select asp-for="ProviderUid" class="form-select" asp-items="Model.Providers">
+                    <option value="">-- Select Provider --</option>
+                </select>
+                <span asp-validation-for="ProviderUid" class="text-danger small"></span>
+            </div>
+        </div>
+    }
+
+    <div class="row g-3 mb-3 align-items-start">
+        <label asp-for="ServiceDetail" class="col-md-3 bk-title"></label>
+        <div class="col-md-9 bk-field">
+            <textarea asp-for="ServiceDetail" class="form-control" rows="3" maxlength="1000"></textarea>
+            <span asp-validation-for="ServiceDetail" class="text-danger small"></span>
+        </div>
     </div>
-    <div class="col-md-6 mb-3">
-        <label asp-for="ProviderUid" class="form-label"></label>
-        <select asp-for="ProviderUid" class="form-select" asp-items="Model.Providers">
-            <option value="">-- Select Provider --</option>
-        </select>
-        <span asp-validation-for="ProviderUid" class="text-danger small"></span>
+
+    <div class="row g-3 mb-3 align-items-center">
+        <label asp-for="EstimatedAmount" class="col-md-3 bk-title"></label>
+        <div class="col-md-3 bk-field">
+            <input asp-for="EstimatedAmount" class="form-control calc-input" type="number" step="0.01" min="0" />
+            <span asp-validation-for="EstimatedAmount" class="text-danger small"></span>
+        </div>
+        <label asp-for="VisitCharges" class="col-md-3 bk-title"></label>
+        <div class="col-md-3 bk-field">
+            <input asp-for="VisitCharges" class="form-control calc-input" type="number" step="0.01" min="0" />
+            <span asp-validation-for="VisitCharges" class="text-danger small"></span>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-3 align-items-center">
+        <label asp-for="AdditionalCharges" class="col-md-3 bk-title"></label>
+        <div class="col-md-3 bk-field">
+            <input asp-for="AdditionalCharges" class="form-control calc-input" type="number" step="0.01" min="0" />
+            <span asp-validation-for="AdditionalCharges" class="text-danger small"></span>
+        </div>
+        <label asp-for="Deductions" class="col-md-3 bk-title"></label>
+        <div class="col-md-3 bk-field">
+            <input asp-for="Deductions" class="form-control calc-input" type="number" step="0.01" min="0" />
+            <span asp-validation-for="Deductions" class="text-danger small"></span>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-3 align-items-center">
+        <label asp-for="FinalAmount" class="col-md-3 bk-title"></label>
+        <div class="col-md-3 bk-field">
+            <input asp-for="FinalAmount" class="form-control" type="number" step="0.01" readonly tabindex="-1" />
+            <span asp-validation-for="FinalAmount" class="text-danger small"></span>
+        </div>
+        <label asp-for="CustomerPaid" class="col-md-3 bk-title"></label>
+        <div class="col-md-3 bk-field">
+            <input asp-for="CustomerPaid" class="form-control calc-input" type="number" step="0.01" min="0" />
+            <span asp-validation-for="CustomerPaid" class="text-danger small"></span>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-3 align-items-center">
+        <label asp-for="PaymentMode" class="col-md-3 bk-title"></label>
+        <div class="col-md-3 bk-field">
+            <select asp-for="PaymentMode" class="form-select" asp-items="Model.PaymentModeOptions"></select>
+            <span asp-validation-for="PaymentMode" class="text-danger small"></span>
+        </div>
+        <label asp-for="CustomerRemaining" class="col-md-3 bk-title"></label>
+        <div class="col-md-3 bk-field">
+            <input asp-for="CustomerRemaining" class="form-control" type="number" step="0.01" readonly tabindex="-1" />
+        </div>
+    </div>
+
+    <div class="row g-3 mb-3 align-items-center">
+        <label asp-for="CommissionType" class="col-md-3 bk-title"></label>
+        <div class="col-md-3 bk-field">
+            <select asp-for="CommissionType" class="form-select calc-input" asp-items="Model.CommissionTypeOptions"></select>
+            <span asp-validation-for="CommissionType" class="text-danger small"></span>
+        </div>
+        <label asp-for="CommissionValue" class="col-md-3 bk-title"></label>
+        <div class="col-md-3 bk-field">
+            <input asp-for="CommissionValue" class="form-control calc-input" type="number" step="0.01" min="0" />
+            <span asp-validation-for="CommissionValue" class="text-danger small"></span>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-3 align-items-center">
+        <label asp-for="CommissionAmount" class="col-md-3 bk-title"></label>
+        <div class="col-md-3 bk-field">
+            <input asp-for="CommissionAmount" class="form-control" type="number" step="0.01" readonly tabindex="-1" />
+        </div>
+        <label asp-for="ProviderEarning" class="col-md-3 bk-title"></label>
+        <div class="col-md-3 bk-field">
+            <input asp-for="ProviderEarning" class="form-control" type="number" step="0.01" readonly tabindex="-1" />
+        </div>
+    </div>
+
+    <div class="row g-3 align-items-center">
+        <label asp-for="Status" class="col-md-3 bk-title"></label>
+        <div class="col-md-3 bk-field">
+            <select asp-for="Status" class="form-select" asp-items="Model.StatusOptions"></select>
+            <span asp-validation-for="Status" class="text-danger small"></span>
+        </div>
     </div>
 </div>
 
-<div class="row">
-    <div class="col-md-4 mb-3">
-        <label asp-for="FinalAmount" class="form-label"></label>
-        <input asp-for="FinalAmount" class="form-control" type="number" step="0.01" min="0" />
-        <span asp-validation-for="FinalAmount" class="text-danger small"></span>
-    </div>
-    <div class="col-md-4 mb-3">
-        <label asp-for="PaymentMode" class="form-label"></label>
-        <select asp-for="PaymentMode" class="form-select" asp-items="Model.PaymentModeOptions"></select>
-        <span asp-validation-for="PaymentMode" class="text-danger small"></span>
-    </div>
-    <div class="col-md-4 mb-3">
-        <label asp-for="Status" class="form-label"></label>
-        <select asp-for="Status" class="form-select" asp-items="Model.StatusOptions"></select>
-        <span asp-validation-for="Status" class="text-danger small"></span>
-    </div>
-</div>
-
-<div class="row">
-    <div class="col-md-3 mb-3">
-        <label asp-for="CommissionType" class="form-label"></label>
-        <select asp-for="CommissionType" class="form-select" asp-items="Model.CommissionTypeOptions"></select>
-        <span asp-validation-for="CommissionType" class="text-danger small"></span>
-    </div>
-    <div class="col-md-3 mb-3">
-        <label asp-for="CommissionValue" class="form-label"></label>
-        <input asp-for="CommissionValue" class="form-control" type="number" step="0.01" min="0" />
-        <span asp-validation-for="CommissionValue" class="text-danger small"></span>
-    </div>
-    <div class="col-md-3 mb-3">
-        <label asp-for="CommissionAmount" class="form-label"></label>
-        <input asp-for="CommissionAmount" class="form-control" type="number" step="0.01" min="0" />
-        <div class="form-text">Leave blank to auto-calculate.</div>
-        <span asp-validation-for="CommissionAmount" class="text-danger small"></span>
-    </div>
-    <div class="col-md-3 mb-3">
-        <label asp-for="ProviderEarning" class="form-label"></label>
-        <input asp-for="ProviderEarning" class="form-control" type="number" step="0.01" min="0" />
-        <div class="form-text">Leave blank to auto-calculate.</div>
-        <span asp-validation-for="ProviderEarning" class="text-danger small"></span>
-    </div>
-</div>
+<script>
+    (function () {
+        const root = document.getElementById('bookingTotalsFields');
+        if (!root) return;
+        const form = root.closest('form') || document;
+        const num = (name) => {
+            const el = form.querySelector('[name="' + name + '"]');
+            if (!el) return 0;
+            const v = parseFloat(el.value);
+            return Number.isFinite(v) ? v : 0;
+        };
+        const set = (name, value) => {
+            const el = form.querySelector('[name="' + name + '"]');
+            if (el) el.value = (Math.round(value * 100) / 100).toFixed(2);
+        };
+        function recalc() {
+            const finalBill = num('EstimatedAmount') + num('VisitCharges') + num('AdditionalCharges') - num('Deductions');
+            const typeEl = form.querySelector('[name="CommissionType"]');
+            const type = typeEl ? typeEl.value : 'Percent';
+            const rate = num('CommissionValue');
+            let commission = type === 'Fixed' ? rate : finalBill * rate / 100;
+            commission = Math.round(commission * 100) / 100;
+            set('FinalAmount', finalBill);
+            set('CustomerRemaining', finalBill - num('CustomerPaid'));
+            set('CommissionAmount', commission);
+            set('ProviderEarning', finalBill - commission);
+        }
+        form.querySelectorAll('.calc-input').forEach(el => {
+            el.addEventListener('input', recalc);
+            el.addEventListener('change', recalc);
+        });
+        recalc();
+    })();
+</script>

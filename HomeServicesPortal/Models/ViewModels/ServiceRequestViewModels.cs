@@ -109,6 +109,7 @@ public class ServiceRequestDetailsVm
     public DateTime? RequestDate { get; set; }
     public string? Status { get; set; }
     public string? Remarks { get; set; }
+    public int? BookingUid { get; set; }
 }
 
 public class ServiceRequestDeleteVm

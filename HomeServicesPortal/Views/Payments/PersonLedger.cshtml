@@ -1,0 +1,74 @@
+@model HomeServicesPortal.Models.ViewModels.PersonLedgerIndexVm
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Person Ledger";
+}
+
+<div class="d-flex flex-wrap align-items-center justify-content-between mb-4 gap-2">
+    <div>
+        <h2 class="mb-1"><i class="fa-solid fa-user-tag me-2 text-primary"></i>Person Ledger</h2>
+        <p class="text-muted mb-0">Open one provider’s ledger, see +/− transactions and balance</p>
+    </div>
+    <div class="btn-group">
+        <a asp-action="Ledger" class="btn btn-outline-primary">Payment Ledger</a>
+        <a asp-action="PersonLedger" class="btn btn-primary">Person Ledger</a>
+        <a asp-action="Payouts" class="btn btn-outline-primary">Provider Payouts</a>
+    </div>
+</div>
+
+<div class="card hs-card">
+    <div class="card-body">
+        <form method="get" asp-action="PersonLedger" class="row g-2 mb-3">
+            <div class="col-md-6 col-lg-4">
+                <div class="input-group">
+                    <span class="input-group-text"><i class="fa-solid fa-search"></i></span>
+                    <input type="text" name="search" value="@Model.Search" class="form-control" placeholder="Search provider..." />
+                    <button type="submit" class="btn btn-outline-primary">Search</button>
+                </div>
+            </div>
+            @if (!string.IsNullOrWhiteSpace(Model.Search))
+            {
+                <div class="col-auto"><a asp-action="PersonLedger" class="btn btn-outline-secondary">Clear</a></div>
+            }
+        </form>
+
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Provider</th>
+                        <th>Service Type</th>
+                        <th>Txns</th>
+                        <th class="text-success">Plus (+)</th>
+                        <th class="text-danger">Minus (−)</th>
+                        <th>Balance</th>
+                        <th class="text-end">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.People.Any())
+                    {
+                        <tr><td colspan="7" class="text-center text-muted py-4">No providers found.</td></tr>
+                    }
+                    @foreach (var person in Model.People)
+                    {
+                        var balanceClass = person.Balance >= 0 ? "text-success" : "text-danger";
+                        <tr>
+                            <td class="fw-semibold">@person.ProviderName</td>
+                            <td>@person.CategoryName</td>
+                            <td>@person.TransactionCount</td>
+                            <td class="text-success">+@person.TotalPlus.ToString("N2")</td>
+                            <td class="text-danger">−@person.TotalMinus.ToString("N2")</td>
+                            <td class="fw-semibold @balanceClass">@person.Balance.ToString("N2")</td>
+                            <td class="text-end">
+                                <a asp-action="PersonLedgerStatement" asp-route-providerUid="@person.ProviderUid" class="btn btn-sm btn-primary">
+                                    <i class="fa-solid fa-book-open me-1"></i>Open Ledger
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

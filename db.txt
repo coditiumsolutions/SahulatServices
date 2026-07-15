@@ -1,4 +1,4 @@
-# Version: 2.0 | UpdatedAt: 14/07/2026
+# Version: 2.3 | UpdatedAt: 15/07/2026
 # Database: SahulatAppDB
 # Server: 34.131.132.158,1433
 
@@ -105,14 +105,25 @@ Table: ServiceBookings
   RequestUID           int              NOT NULL  FK -> CustomerServiceRequests.UID
   ClientUID            int              NOT NULL  FK -> Clients.UID
   ProviderUID          int              NOT NULL  FK -> Providers.UID
-  FinalAmount          decimal(12,2)    NOT NULL
+  ServiceDetail        nvarchar(1000)   NULL
+  EstimatedAmount      decimal(12,2)    NOT NULL  DEFAULT (0)
+  VisitCharges         decimal(12,2)    NOT NULL  DEFAULT (0)
+  AdditionalCharges    decimal(12,2)    NOT NULL  DEFAULT (0)
+  Deductions           decimal(12,2)    NOT NULL  DEFAULT (0)
+  FinalAmount          decimal(12,2)    NOT NULL  Final Bill = Estimated + Visit + Additional - Deductions
+  CustomerPaid         decimal(12,2)    NOT NULL  DEFAULT (0)
   PaymentMode          nvarchar(30)     NOT NULL  CHECK (CashToProvider | OnlineToCompany)
+  CustomerRemaining    decimal(12,2)    NOT NULL  DEFAULT (0)  Final Bill - Customer Paid
   CommissionType       nvarchar(10)     NOT NULL
   CommissionValue      decimal(10,2)    NOT NULL
-  CommissionAmount     decimal(12,2)    NOT NULL
+  CommissionAmount     decimal(12,2)    NOT NULL  Company Commission
   ProviderEarning      decimal(12,2)    NOT NULL
   Status               nvarchar(20)     NOT NULL  DEFAULT ('Completed')
   CreatedOn            datetime         NOT NULL  DEFAULT (getdate())
+  -- Finance post (auto when Status=Completed):
+  --   PaymentLedger: Company/Credit/Commission, Provider/Credit/JobEarning,
+  --                  CustPayment (OnlineToCompany) or CashCollect (CashToProvider)
+  --   ProviderPayouts: Pending Online payout when PaymentMode=OnlineToCompany
 
 --------------------------------------------------------------------------------
 Table: CommissionRules

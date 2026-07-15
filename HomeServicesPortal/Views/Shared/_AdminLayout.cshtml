@@ -24,7 +24,7 @@
         activeSection = "dashboard";
     else if (TabClass("/admin/servicecategories", "/admin/serviceproviders", "/admin/providerlocations", "/admin/provideravailability", "/admin/providerdocuments", "/admin/customers", "/admin/clients") == "active")
         activeSection = "masters";
-    else if (TabClass("/admin/servicerequests", "/admin/providerquotes") == "active" || IsBookingsPath())
+    else if (TabClass("/admin/servicerequests") == "active" || IsBookingsPath())
         activeSection = "operations";
     else if (TabClass("/admin/bookingtracking") == "active")
         activeSection = "tracking";
@@ -452,7 +452,7 @@
                            href="#" data-hs-section="masters">Masters</a>
                     </li>
                     <li>
-                        <a class="hs-tab-link @(TabClass("/admin/servicerequests", "/admin/providerquotes") == "active" || IsBookingsPath() ? "active" : "")"
+                        <a class="hs-tab-link @(TabClass("/admin/servicerequests") == "active" || IsBookingsPath() ? "active" : "")"
                            href="#" data-hs-section="operations">Operations</a>
                     </li>
                     <li>
@@ -515,9 +515,6 @@
                         <a class="hs-nav-link hs-nav-sublink @NavClass("/admin/servicerequests")" href="/Admin/ServiceRequests">
                             <i class="fa-solid fa-list-check"></i> S-Requeste
                         </a>
-                        <a class="hs-nav-link hs-nav-sublink @NavClass("/admin/providerquotes")" href="/Admin/ProviderQuotes">
-                            <i class="fa-solid fa-tags"></i> P-Quote
-                        </a>
                         <a class="hs-nav-link hs-nav-sublink @(IsBookingsPath() ? "active" : "")" href="/Admin/Bookings">
                             <i class="fa-solid fa-clipboard-list"></i> Booking
                         </a>
@@ -534,6 +531,9 @@
                         <div class="hs-nav-parent"><i class="fa-solid fa-money-bill-wave"></i> Finance</div>
                         <a class="hs-nav-link hs-nav-sublink @NavClass("/admin/payments/ledger")" href="/Admin/Payments/Ledger">
                             <i class="fa-solid fa-book"></i> Payment Ledger
+                        </a>
+                        <a class="hs-nav-link hs-nav-sublink @NavClass("/admin/payments/personledger")" href="/Admin/Payments/PersonLedger">
+                            <i class="fa-solid fa-user-tag"></i> Person Ledger
                         </a>
                         <a class="hs-nav-link hs-nav-sublink @NavClass("/admin/payments/payouts")" href="/Admin/Payments/Payouts">
                             <i class="fa-solid fa-hand-holding-dollar"></i> Provider Payouts

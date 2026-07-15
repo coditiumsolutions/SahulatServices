@@ -7,7 +7,7 @@
 <div class="d-flex flex-wrap align-items-center justify-content-between mb-4 gap-2">
     <div>
         <h2 class="mb-1"><i class="fa-solid fa-book me-2 text-primary"></i>Payment Ledger</h2>
-        <p class="text-muted mb-0">Read-only view of PaymentLedger entries</p>
+        <p class="text-muted mb-0">Entries auto-post when a booking status becomes Completed</p>
     </div>
     <div class="btn-group">
         <a asp-action="Ledger" class="btn btn-primary">Ledger</a>
@@ -55,7 +55,16 @@
                     {
                         <tr>
                             <td>@item.Uid</td>
-                            <td>@(item.BookingUid?.ToString() ?? "—")</td>
+                            <td>
+                                @if (item.BookingUid.HasValue)
+                                {
+                                    <a href="/Admin/Bookings/Details/@item.BookingUid.Value">#@item.BookingUid.Value</a>
+                                }
+                                else
+                                {
+                                    <text>—</text>
+                                }
+                            </td>
                             <td>@(string.IsNullOrWhiteSpace(item.ProviderName) ? "—" : item.ProviderName)</td>
                             <td>@item.AccountType</td>
                             <td>@item.EntryType</td>

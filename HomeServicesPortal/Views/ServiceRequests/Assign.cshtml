@@ -7,11 +7,11 @@
 <div class="mb-4">
     <a asp-action="Index" class="text-decoration-none text-muted"><i class="fa-solid fa-arrow-left me-1"></i>Back to S-Requests</a>
     <h2 class="mt-2 mb-0"><i class="fa-solid fa-user-check me-2 text-primary"></i>Assign Provider</h2>
-    <p class="text-muted mb-0">Create a ServiceBookings record for this pending request</p>
+    <p class="text-muted mb-0">Create a ServiceBookings record with bill and commission totals</p>
 </div>
 
 <div class="row justify-content-center">
-    <div class="col-lg-8">
+    <div class="col-lg-10">
         <div class="card hs-card mb-3">
             <div class="card-body p-4">
                 <dl class="row mb-0">
@@ -34,11 +34,11 @@
         <div class="card hs-card">
             <div class="card-body p-4">
                 <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
-                <form asp-action="Assign" asp-route-id="@Model.RequestUid" method="post">
+                <form asp-action="Assign" asp-route-id="@Model.RequestUid" method="post" id="assignProviderForm">
                     @Html.AntiForgeryToken()
                     <input type="hidden" asp-for="RequestUid" />
 
-                    <div class="mb-3">
+                    <div class="mb-4">
                         <label asp-for="ProviderUid" class="form-label"></label>
                         <select asp-for="ProviderUid" class="form-select" asp-items="Model.Providers">
                             <option value="">-- Select Provider --</option>
@@ -46,43 +46,83 @@
                         <span asp-validation-for="ProviderUid" class="text-danger small"></span>
                     </div>
 
+                    <div class="mb-4">
+                        <label asp-for="ServiceDetail" class="form-label"></label>
+                        <textarea asp-for="ServiceDetail" class="form-control" rows="3" maxlength="1000"></textarea>
+                        <span asp-validation-for="ServiceDetail" class="text-danger small"></span>
+                    </div>
+
+                    <h5 class="mb-3">Bill Breakdown</h5>
                     <div class="row">
-                        <div class="col-md-6 mb-3">
+                        <div class="col-md-3 mb-3">
+                            <label asp-for="EstimatedAmount" class="form-label"></label>
+                            <input asp-for="EstimatedAmount" class="form-control calc-input" type="number" step="0.01" min="0" />
+                            <span asp-validation-for="EstimatedAmount" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label asp-for="VisitCharges" class="form-label"></label>
+                            <input asp-for="VisitCharges" class="form-control calc-input" type="number" step="0.01" min="0" />
+                            <span asp-validation-for="VisitCharges" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label asp-for="AdditionalCharges" class="form-label"></label>
+                            <input asp-for="AdditionalCharges" class="form-control calc-input" type="number" step="0.01" min="0" />
+                            <span asp-validation-for="AdditionalCharges" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label asp-for="Deductions" class="form-label"></label>
+                            <input asp-for="Deductions" class="form-control calc-input" type="number" step="0.01" min="0" />
+                            <span asp-validation-for="Deductions" class="text-danger small"></span>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
                             <label asp-for="FinalAmount" class="form-label"></label>
-                            <input asp-for="FinalAmount" class="form-control" type="number" step="0.01" min="0" />
+                            <input asp-for="FinalAmount" class="form-control fw-semibold" type="number" step="0.01" readonly tabindex="-1" />
+                            <div class="form-text">Estimated + Visit + Additional − Deductions</div>
                             <span asp-validation-for="FinalAmount" class="text-danger small"></span>
                         </div>
-                        <div class="col-md-6 mb-3">
+                        <div class="col-md-4 mb-3">
+                            <label asp-for="CustomerPaid" class="form-label"></label>
+                            <input asp-for="CustomerPaid" class="form-control calc-input" type="number" step="0.01" min="0" />
+                            <span asp-validation-for="CustomerPaid" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-4 mb-3">
                             <label asp-for="PaymentMode" class="form-label"></label>
                             <select asp-for="PaymentMode" class="form-select" asp-items="Model.PaymentModeOptions"></select>
                             <span asp-validation-for="PaymentMode" class="text-danger small"></span>
                         </div>
                     </div>
 
-                    <div class="row">
-                        <div class="col-md-4 mb-3">
-                            <label asp-for="CommissionType" class="form-label"></label>
-                            <select asp-for="CommissionType" class="form-select" asp-items="Model.CommissionTypeOptions"></select>
-                            <span asp-validation-for="CommissionType" class="text-danger small"></span>
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <label asp-for="CommissionValue" class="form-label"></label>
-                            <input asp-for="CommissionValue" class="form-control" type="number" step="0.01" min="0" />
-                            <span asp-validation-for="CommissionValue" class="text-danger small"></span>
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <label asp-for="CommissionAmount" class="form-label"></label>
-                            <input asp-for="CommissionAmount" class="form-control" type="number" step="0.01" min="0" />
-                            <div class="form-text">Optional — auto-calculated if blank</div>
-                            <span asp-validation-for="CommissionAmount" class="text-danger small"></span>
-                        </div>
+                    <div class="mb-4">
+                        <label asp-for="CustomerRemaining" class="form-label"></label>
+                        <input asp-for="CustomerRemaining" class="form-control" type="number" step="0.01" readonly tabindex="-1" />
+                        <div class="form-text">Final Bill − Customer Paid</div>
                     </div>
 
-                    <div class="mb-4">
-                        <label asp-for="ProviderEarning" class="form-label"></label>
-                        <input asp-for="ProviderEarning" class="form-control" type="number" step="0.01" min="0" />
-                        <div class="form-text">Optional — auto-calculated as total − commission</div>
-                        <span asp-validation-for="ProviderEarning" class="text-danger small"></span>
+                    <h5 class="mb-3">Commission</h5>
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <label asp-for="CommissionType" class="form-label"></label>
+                            <select asp-for="CommissionType" class="form-select calc-input" asp-items="Model.CommissionTypeOptions"></select>
+                            <span asp-validation-for="CommissionType" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label asp-for="CommissionValue" class="form-label"></label>
+                            <input asp-for="CommissionValue" class="form-control calc-input" type="number" step="0.01" min="0" />
+                            <span asp-validation-for="CommissionValue" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label asp-for="CommissionAmount" class="form-label"></label>
+                            <input asp-for="CommissionAmount" class="form-control" type="number" step="0.01" readonly tabindex="-1" />
+                            <div class="form-text">Auto from type + rate on Final Bill</div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label asp-for="ProviderEarning" class="form-label"></label>
+                            <input asp-for="ProviderEarning" class="form-control" type="number" step="0.01" readonly tabindex="-1" />
+                            <div class="form-text">Final Bill − Company Commission</div>
+                        </div>
                     </div>
 
                     <div class="d-flex gap-2">
@@ -99,4 +139,53 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        (function () {
+            const form = document.getElementById('assignProviderForm');
+            if (!form) return;
+
+            const num = (id) => {
+                const el = form.querySelector('#' + id);
+                if (!el) return 0;
+                const v = parseFloat(el.value);
+                return Number.isFinite(v) ? v : 0;
+            };
+
+            const set = (id, value) => {
+                const el = form.querySelector('#' + id);
+                if (el) el.value = (Math.round(value * 100) / 100).toFixed(2);
+            };
+
+            function recalc() {
+                const estimated = num('EstimatedAmount');
+                const visit = num('VisitCharges');
+                const additional = num('AdditionalCharges');
+                const deductions = num('Deductions');
+                const paid = num('CustomerPaid');
+                const rate = num('CommissionValue');
+                const typeEl = form.querySelector('#CommissionType');
+                const type = typeEl ? typeEl.value : 'Percent';
+
+                const finalBill = estimated + visit + additional - deductions;
+                const remaining = finalBill - paid;
+                let commission = type === 'Fixed'
+                    ? rate
+                    : finalBill * rate / 100;
+                commission = Math.round(commission * 100) / 100;
+                const earning = Math.round((finalBill - commission) * 100) / 100;
+
+                set('FinalAmount', finalBill);
+                set('CustomerRemaining', remaining);
+                set('CommissionAmount', commission);
+                set('ProviderEarning', earning);
+            }
+
+            form.querySelectorAll('.calc-input').forEach(el => {
+                el.addEventListener('input', recalc);
+                el.addEventListener('change', recalc);
+            });
+
+            recalc();
+        })();
+    </script>
 }

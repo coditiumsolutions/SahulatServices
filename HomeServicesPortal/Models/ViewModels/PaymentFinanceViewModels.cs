@@ -67,3 +67,66 @@ public class ProviderPayoutDetailsVm
     public DateTime CreatedOn { get; set; }
     public DateTime? PaidOn { get; set; }
 }
+
+public class PersonLedgerIndexVm
+{
+    public string? Search { get; set; }
+    public List<PersonLedgerPersonVm> People { get; set; } = new();
+}
+
+public class PersonLedgerPersonVm
+{
+    public int ProviderUid { get; set; }
+    public string ProviderName { get; set; } = string.Empty;
+    public string CategoryName { get; set; } = string.Empty;
+    public int TransactionCount { get; set; }
+    public decimal TotalPlus { get; set; }
+    public decimal TotalMinus { get; set; }
+    public decimal Balance { get; set; }
+}
+
+public class PersonLedgerStatementVm
+{
+    public int ProviderUid { get; set; }
+    public string ProviderName { get; set; } = string.Empty;
+    public string CategoryName { get; set; } = string.Empty;
+    public decimal TotalPlus { get; set; }
+    public decimal TotalMinus { get; set; }
+    public decimal Balance { get; set; }
+    public List<PersonLedgerTxnVm> Transactions { get; set; } = new();
+    public PersonLedgerAddEntryVm AddEntry { get; set; } = new();
+}
+
+public class PersonLedgerTxnVm
+{
+    public int Uid { get; set; }
+    public DateTime CreatedOn { get; set; }
+    public int? BookingUid { get; set; }
+    public string Reason { get; set; } = string.Empty;
+    public string EntryType { get; set; } = string.Empty;
+    public decimal Amount { get; set; }
+    /// <summary>Signed amount: Credit = +, Debit = −</summary>
+    public decimal SignedAmount { get; set; }
+    public decimal RunningBalance { get; set; }
+}
+
+public class PersonLedgerAddEntryVm
+{
+    public int ProviderUid { get; set; }
+
+    [System.ComponentModel.DataAnnotations.Required]
+    [System.ComponentModel.DataAnnotations.Display(Name = "Entry Type")]
+    public string EntryType { get; set; } = "Credit";
+
+    [System.ComponentModel.DataAnnotations.Required]
+    [System.ComponentModel.DataAnnotations.Range(0.01, double.MaxValue)]
+    [System.ComponentModel.DataAnnotations.Display(Name = "Amount")]
+    public decimal Amount { get; set; }
+
+    [System.ComponentModel.DataAnnotations.Required]
+    [System.ComponentModel.DataAnnotations.StringLength(30)]
+    [System.ComponentModel.DataAnnotations.Display(Name = "Reason")]
+    public string Reason { get; set; } = string.Empty;
+
+    public int? BookingUid { get; set; }
+}
