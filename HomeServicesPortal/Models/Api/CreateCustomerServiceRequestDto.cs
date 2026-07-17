@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace HomeServicesPortal.Models.Api;
 
@@ -20,12 +21,15 @@ public class CreateCustomerServiceRequestDto
     [StringLength(150)]
     public string ServiceTitle { get; set; } = string.Empty;
 
-    [Required(ErrorMessage = "Service description is required.")]
+    /// <summary>Optional. Omit, null, or empty string when no description is provided.</summary>
     [StringLength(4000)]
-    public string ServiceDescription { get; set; } = string.Empty;
+    public string? ServiceDescription { get; set; }
 
+    /// <summary>Optional. Omit, null, or empty string when the client has no preferred date.</summary>
+    [JsonConverter(typeof(NullableDateOnlyJsonConverter))]
     public DateOnly? PreferredServiceDate { get; set; }
 
+    /// <summary>Optional. Omit, null, or empty string when the client has no preferred time.</summary>
     [StringLength(50)]
     public string? PreferredServiceTime { get; set; }
 

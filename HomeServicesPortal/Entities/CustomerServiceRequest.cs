@@ -12,7 +12,7 @@ public class CustomerServiceRequest
 
     public string ServiceTitle { get; set; } = string.Empty;
 
-    public string ServiceDescription { get; set; } = string.Empty;
+    public string? ServiceDescription { get; set; }
 
     public DateOnly? PreferredServiceDate { get; set; }
 

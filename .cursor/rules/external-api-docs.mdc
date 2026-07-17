@@ -1,0 +1,37 @@
+---
+description: Keep both api.txt docs in sync whenever external REST APIs change
+globs: HomeServicesPortal/Controllers/Api/**/*.cs,HomeServicesPortal/Controllers/AuthController.cs,HomeServicesPortal/Models/Api/**/*.cs,HomeServicesPortal/DTOs/**/*.cs,api.txt
+alwaysApply: false
+---
+
+# External API documentation (both api.txt files)
+
+Whenever an **external** `/api/` REST endpoint is **added, changed, or removed**, update **both** documentation files in the same change:
+
+1. `D:\Dotnet\CoreCursor\SahulatGharTak\api.txt`
+2. `D:\Flutter Installation\SahulatGharTak\api.txt`
+
+Keep the two files identical in content (line endings may differ).
+
+## What counts as external API
+
+- Controllers under `HomeServicesPortal/Controllers/Api/`
+- `HomeServicesPortal/Controllers/AuthController.cs` (`/api/auth/*`)
+- Related request/response DTOs that change the public JSON contract
+
+Do **not** treat Admin MVC (`/Admin/...`) as external API docs work.
+
+## Required updates in each api.txt
+
+- Bump `# Version` and `# UpdatedAt` (use today's date)
+- Document Local + Deployed base URLs for every endpoint
+- Include request body and success/fail response examples matching live DTOs
+- Remove docs for deleted endpoints; add docs for new ones
+- Only list active/in-use external APIs
+
+## Checklist before finishing API work
+
+- [ ] Code change is reflected in Dotnet `api.txt`
+- [ ] Same content copied to Flutter `api.txt`
+- [ ] Version/UpdatedAt bumped in both
+- [ ] No stale endpoints left after removals

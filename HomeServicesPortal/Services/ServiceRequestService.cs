@@ -72,7 +72,7 @@ public class ServiceRequestService : IServiceRequestService
                 r.Client.FullName.Contains(term) ||
                 r.Category.CategoryName.Contains(term) ||
                 r.ServiceTitle.Contains(term) ||
-                r.ServiceDescription.Contains(term) ||
+                (r.ServiceDescription != null && r.ServiceDescription.Contains(term)) ||
                 r.ContactNo.Contains(term) ||
                 r.Status.Contains(term) ||
                 r.ClientAddress.FullAddress.Contains(term));
@@ -230,7 +230,7 @@ public class ServiceRequestService : IServiceRequestService
             CategoryUid = model.CategoryUid,
             ClientAddressUid = model.ClientAddressUid,
             ServiceTitle = model.ServiceTitle.Trim(),
-            ServiceDescription = model.ServiceDescription.Trim(),
+            ServiceDescription = NormalizeOptionalText(model.ServiceDescription),
             PreferredServiceDate = model.PreferredServiceDate,
             PreferredServiceTime = model.PreferredServiceTime?.Trim(),
             IsUrgent = model.IsUrgent,
@@ -273,7 +273,7 @@ public class ServiceRequestService : IServiceRequestService
         entity.CategoryUid = model.CategoryUid;
         entity.ClientAddressUid = model.ClientAddressUid;
         entity.ServiceTitle = model.ServiceTitle.Trim();
-        entity.ServiceDescription = model.ServiceDescription.Trim();
+        entity.ServiceDescription = NormalizeOptionalText(model.ServiceDescription);
         entity.PreferredServiceDate = model.PreferredServiceDate;
         entity.PreferredServiceTime = model.PreferredServiceTime?.Trim();
         entity.IsUrgent = model.IsUrgent;
@@ -330,6 +330,16 @@ public class ServiceRequestService : IServiceRequestService
                 Text = a.AddressTitle + " - " + a.FullAddress
             })
             .ToListAsync(cancellationToken);
+    }
+
+    private static string? NormalizeOptionalText(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return null;
+        }
+
+        return value.Trim();
     }
 
     private async Task<string?> ValidateForeignKeysAsync(

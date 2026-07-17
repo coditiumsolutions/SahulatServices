@@ -1,4 +1,4 @@
-# Version: 2.3 | UpdatedAt: 15/07/2026
+# Version: 2.4 | UpdatedAt: 17/07/2026
 # Database: SahulatAppDB
 # Server: 34.131.132.158,1433
 
@@ -87,7 +87,7 @@ Table: CustomerServiceRequests
   CategoryUID          int              NOT NULL  FK -> ServiceCategories.UID
   ClientAddressUID     int              NOT NULL  FK -> ClientAddresses.UID
   ServiceTitle         nvarchar(150)    NOT NULL
-  ServiceDescription   nvarchar(MAX)    NOT NULL
+  ServiceDescription   nvarchar(MAX)    NULL
   PreferredServiceDate date             NULL
   PreferredServiceTime nvarchar(50)     NULL
   IsUrgent             bit              NOT NULL  DEFAULT (0)

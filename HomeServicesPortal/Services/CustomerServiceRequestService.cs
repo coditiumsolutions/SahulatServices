@@ -71,9 +71,9 @@ public class CustomerServiceRequestService : ICustomerServiceRequestService
             CategoryUid = request.CategoryUid,
             ClientAddressUid = request.ClientAddressUid,
             ServiceTitle = request.ServiceTitle.Trim(),
-            ServiceDescription = request.ServiceDescription.Trim(),
+            ServiceDescription = NormalizeOptionalText(request.ServiceDescription),
             PreferredServiceDate = request.PreferredServiceDate,
-            PreferredServiceTime = request.PreferredServiceTime?.Trim(),
+            PreferredServiceTime = NormalizeOptionalText(request.PreferredServiceTime),
             IsUrgent = request.IsUrgent,
             ContactPerson = request.ContactPerson?.Trim(),
             ContactNo = request.ContactNo.Trim(),
@@ -115,9 +115,9 @@ public class CustomerServiceRequestService : ICustomerServiceRequestService
         entity.CategoryUid = request.CategoryUid;
         entity.ClientAddressUid = request.ClientAddressUid;
         entity.ServiceTitle = request.ServiceTitle.Trim();
-        entity.ServiceDescription = request.ServiceDescription.Trim();
+        entity.ServiceDescription = NormalizeOptionalText(request.ServiceDescription);
         entity.PreferredServiceDate = request.PreferredServiceDate;
-        entity.PreferredServiceTime = request.PreferredServiceTime?.Trim();
+        entity.PreferredServiceTime = NormalizeOptionalText(request.PreferredServiceTime);
         entity.IsUrgent = request.IsUrgent;
         entity.ContactPerson = request.ContactPerson?.Trim();
         entity.ContactNo = request.ContactNo.Trim();
@@ -146,6 +146,16 @@ public class CustomerServiceRequestService : ICustomerServiceRequestService
         await _db.SaveChangesAsync(cancellationToken);
 
         return (true, null);
+    }
+
+    private static string? NormalizeOptionalText(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return null;
+        }
+
+        return value.Trim();
     }
 
     private async Task<string?> ValidateReferencesAsync(

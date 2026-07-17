@@ -1,4 +1,4 @@
-# Version: 1.5 | UpdatedAt: 08/07/2026
+# Version: 1.7 | UpdatedAt: 17/07/2026
 # Database: SahulatAppDB
 # Local Base URL:  https://localhost:7265/api/
 # Deployed Base URL: https://sahulatghartak.com/api/
@@ -742,6 +742,8 @@ Request Body:
 Notes:
 - status defaults to "Pending" on create
 - clientAddressUid must belong to the same clientUid
+- serviceDescription is OPTIONAL (omit, null, or "" when not provided)
+- preferredServiceDate and preferredServiceTime are OPTIONAL (omit, null, or "" when not provided)
 
 Success (201):
 {
@@ -805,6 +807,8 @@ Request Body:
 Notes:
 - requestUid in URL and body must match
 - clientUid cannot be changed on update
+- serviceDescription is OPTIONAL (omit, null, or "" when not provided)
+- preferredServiceDate and preferredServiceTime are OPTIONAL (omit, null, or "" when not provided)
 
 Success (200):
 {

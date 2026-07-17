@@ -48,9 +48,8 @@ public class ServiceRequestFormVm
     [Display(Name = "Service Title")]
     public string ServiceTitle { get; set; } = string.Empty;
 
-    [Required(ErrorMessage = "Service description is required.")]
     [Display(Name = "Service Description")]
-    public string ServiceDescription { get; set; } = string.Empty;
+    public string? ServiceDescription { get; set; }
 
     [Display(Name = "Preferred Date")]
     [DataType(DataType.Date)]
@@ -99,7 +98,7 @@ public class ServiceRequestDetailsVm
     public int ClientAddressUid { get; set; }
     public string? ServiceAddress { get; set; }
     public string ServiceTitle { get; set; } = string.Empty;
-    public string ServiceDescription { get; set; } = string.Empty;
+    public string? ServiceDescription { get; set; }
     public DateOnly? PreferredServiceDate { get; set; }
     public string? PreferredServiceTime { get; set; }
     public bool IsUrgent { get; set; }

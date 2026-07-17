@@ -172,7 +172,7 @@ public class AppDbContext : DbContext
             entity.Property(e => e.CategoryUid).HasColumnName("CategoryUID");
             entity.Property(e => e.ClientAddressUid).HasColumnName("ClientAddressUID");
             entity.Property(e => e.ServiceTitle).HasMaxLength(150).IsRequired();
-            entity.Property(e => e.ServiceDescription).HasColumnType("nvarchar(max)").IsRequired();
+            entity.Property(e => e.ServiceDescription).HasColumnType("nvarchar(max)");
             entity.Property(e => e.PreferredServiceDate).HasColumnType("date");
             entity.Property(e => e.PreferredServiceTime).HasMaxLength(50);
             entity.Property(e => e.IsUrgent).HasDefaultValue(false);
