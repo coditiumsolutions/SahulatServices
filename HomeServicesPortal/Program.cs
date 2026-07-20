@@ -54,6 +54,7 @@ builder.Services.AddScoped<IProviderAvailabilityService, ProviderAvailabilitySer
 builder.Services.AddScoped<IProviderDetailService, ProviderDetailService>();
 builder.Services.AddScoped<IClientAddressService, ClientAddressService>();
 builder.Services.AddScoped<ICustomerServiceRequestService, CustomerServiceRequestService>();
+builder.Services.AddScoped<IServiceBookingApiService, ServiceBookingApiService>();
 builder.Services.AddScoped<IProviderDocumentService, ProviderDocumentService>();
 builder.Services.AddScoped<ICustomerService, CustomerService>();
 builder.Services.AddScoped<IServiceRequestService, ServiceRequestService>();

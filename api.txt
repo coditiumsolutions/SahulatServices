@@ -1,4 +1,4 @@
-# Version: 1.7 | UpdatedAt: 17/07/2026
+# Version: 1.8 | UpdatedAt: 20/07/2026
 # Database: SahulatAppDB
 # Local Base URL:  https://localhost:7265/api/
 # Deployed Base URL: https://sahulatghartak.com/api/
@@ -867,6 +867,290 @@ Fail (404):
 {
   "success": false,
   "message": "Service request not found.",
+  "data": null
+}
+
+================================================================================
+SERVICE BOOKINGS APIs
+================================================================================
+
+--------------------------------------------------------------------------------
+GET All Service Bookings (filter by provider)
+--------------------------------------------------------------------------------
+Local:     https://localhost:7265/api/service-bookings?providerUid={providerUid}
+Deployed:  https://sahulatghartak.com/api/service-bookings?providerUid={providerUid}
+
+Example:
+GET https://localhost:7265/api/service-bookings?providerUid=4
+
+Request Body: none
+
+Notes:
+- providerUid query param is OPTIONAL; omit to fetch all bookings
+- use providerUid to fetch bookings for a specific provider
+
+Success (200):
+{
+  "success": true,
+  "message": "Bookings fetched successfully.",
+  "data": [
+    {
+      "uid": 1,
+      "requestUid": 5,
+      "requestTitle": "AC Repair",
+      "clientUid": 1,
+      "clientName": "Shahid",
+      "providerUid": 4,
+      "providerName": "Ali Electrician",
+      "serviceDetail": "AC not cooling properly",
+      "estimatedAmount": 2500.00,
+      "visitCharges": 500.00,
+      "additionalCharges": 0.00,
+      "deductions": 0.00,
+      "finalAmount": 3000.00,
+      "customerPaid": 1500.00,
+      "paymentMode": "CashToProvider",
+      "customerRemaining": 1500.00,
+      "commissionType": "Percent",
+      "commissionValue": 10.00,
+      "commissionAmount": 300.00,
+      "providerEarning": 2700.00,
+      "status": "Accepted",
+      "createdOn": "2026-07-20T00:00:00"
+    }
+  ]
+}
+
+Fail (200 with empty list):
+{
+  "success": true,
+  "message": "No bookings found.",
+  "data": []
+}
+
+--------------------------------------------------------------------------------
+GET Service Booking By Id
+--------------------------------------------------------------------------------
+Local:     https://localhost:7265/api/service-bookings/{bookingUid}
+Deployed:  https://sahulatghartak.com/api/service-bookings/{bookingUid}
+
+Example:
+GET https://localhost:7265/api/service-bookings/1
+GET https://localhost:7265/api/service-bookings/1?providerUid=4
+
+Request Body: none
+
+Notes:
+- optional providerUid query param scopes lookup to that provider
+
+Success (200):
+{
+  "success": true,
+  "message": "Booking fetched successfully.",
+  "data": {
+    "uid": 1,
+    "requestUid": 5,
+    "requestTitle": "AC Repair",
+    "clientUid": 1,
+    "clientName": "Shahid",
+    "providerUid": 4,
+    "providerName": "Ali Electrician",
+    "serviceDetail": "AC not cooling properly",
+    "estimatedAmount": 2500.00,
+    "visitCharges": 500.00,
+    "additionalCharges": 0.00,
+    "deductions": 0.00,
+    "finalAmount": 3000.00,
+    "customerPaid": 1500.00,
+    "paymentMode": "CashToProvider",
+    "customerRemaining": 1500.00,
+    "commissionType": "Percent",
+    "commissionValue": 10.00,
+    "commissionAmount": 300.00,
+    "providerEarning": 2700.00,
+    "status": "Accepted",
+    "createdOn": "2026-07-20T00:00:00"
+  }
+}
+
+Fail (404):
+{
+  "success": false,
+  "message": "Booking not found.",
+  "data": null
+}
+
+--------------------------------------------------------------------------------
+POST Service Booking (Create)
+--------------------------------------------------------------------------------
+Local:     https://localhost:7265/api/service-bookings
+Deployed:  https://sahulatghartak.com/api/service-bookings
+
+Request Body:
+{
+  "requestUid": 5,
+  "providerUid": 4,
+  "serviceDetail": "AC not cooling properly",
+  "estimatedAmount": 2500,
+  "visitCharges": 500,
+  "additionalCharges": 0,
+  "deductions": 0,
+  "customerPaid": 1500,
+  "paymentMode": "CashToProvider",
+  "commissionType": "Percent",
+  "commissionValue": 10,
+  "status": "Accepted"
+}
+
+Notes:
+- requestUid must reference an existing customer service request
+- only one booking is allowed per service request
+- clientUid is auto-set from the linked service request
+- finalAmount, customerRemaining, commissionAmount, and providerEarning are computed server-side
+- paymentMode: CashToProvider | OnlineToCompany
+- commissionType: Percent | Fixed
+- status: Pending | Accepted | In Progress | Completed | Cancelled
+
+Success (201):
+{
+  "success": true,
+  "message": "Booking created successfully.",
+  "data": {
+    "uid": 1,
+    "requestUid": 5,
+    "requestTitle": "AC Repair",
+    "clientUid": 1,
+    "clientName": "Shahid",
+    "providerUid": 4,
+    "providerName": "Ali Electrician",
+    "serviceDetail": "AC not cooling properly",
+    "estimatedAmount": 2500.00,
+    "visitCharges": 500.00,
+    "additionalCharges": 0.00,
+    "deductions": 0.00,
+    "finalAmount": 3000.00,
+    "customerPaid": 1500.00,
+    "paymentMode": "CashToProvider",
+    "customerRemaining": 1500.00,
+    "commissionType": "Percent",
+    "commissionValue": 10.00,
+    "commissionAmount": 300.00,
+    "providerEarning": 2700.00,
+    "status": "Accepted",
+    "createdOn": "2026-07-20T00:00:00"
+  }
+}
+
+Fail (400):
+{
+  "success": false,
+  "message": "This service request already has a booking.",
+  "data": null
+}
+
+--------------------------------------------------------------------------------
+PUT Service Booking (Update)
+--------------------------------------------------------------------------------
+Local:     https://localhost:7265/api/service-bookings/{bookingUid}
+Deployed:  https://sahulatghartak.com/api/service-bookings/{bookingUid}
+
+Example:
+PUT https://localhost:7265/api/service-bookings/1
+
+Request Body:
+{
+  "bookingUid": 1,
+  "providerUid": 4,
+  "serviceDetail": "Updated service detail",
+  "estimatedAmount": 2800,
+  "visitCharges": 500,
+  "additionalCharges": 200,
+  "deductions": 0,
+  "customerPaid": 2000,
+  "paymentMode": "CashToProvider",
+  "commissionType": "Percent",
+  "commissionValue": 10,
+  "status": "In Progress"
+}
+
+Notes:
+- bookingUid in URL and body must match
+- requestUid cannot be changed on update
+- totals are recomputed server-side
+
+Success (200):
+{
+  "success": true,
+  "message": "Booking updated successfully.",
+  "data": {
+    "uid": 1,
+    "requestUid": 5,
+    "requestTitle": "AC Repair",
+    "clientUid": 1,
+    "clientName": "Shahid",
+    "providerUid": 4,
+    "providerName": "Ali Electrician",
+    "serviceDetail": "Updated service detail",
+    "estimatedAmount": 2800.00,
+    "visitCharges": 500.00,
+    "additionalCharges": 200.00,
+    "deductions": 0.00,
+    "finalAmount": 3500.00,
+    "customerPaid": 2000.00,
+    "paymentMode": "CashToProvider",
+    "customerRemaining": 1500.00,
+    "commissionType": "Percent",
+    "commissionValue": 10.00,
+    "commissionAmount": 350.00,
+    "providerEarning": 3150.00,
+    "status": "In Progress",
+    "createdOn": "2026-07-20T00:00:00"
+  }
+}
+
+Fail (404):
+{
+  "success": false,
+  "message": "Booking not found.",
+  "data": null
+}
+
+--------------------------------------------------------------------------------
+DELETE Service Booking
+--------------------------------------------------------------------------------
+Local:     https://localhost:7265/api/service-bookings/{bookingUid}
+Deployed:  https://sahulatghartak.com/api/service-bookings/{bookingUid}
+
+Example:
+DELETE https://localhost:7265/api/service-bookings/1
+DELETE https://localhost:7265/api/service-bookings/1?providerUid=4
+
+Request Body: none
+
+Notes:
+- optional providerUid query param scopes delete to that provider
+- delete is blocked if payment ledger entries exist for the booking
+
+Success (200):
+{
+  "success": true,
+  "message": "Booking deleted successfully.",
+  "data": {
+    "bookingUid": 1
+  }
+}
+
+Fail (400):
+{
+  "success": false,
+  "message": "Cannot delete this booking because it has payment ledger entries.",
+  "data": null
+}
+
+Fail (404):
+{
+  "success": false,
+  "message": "Booking not found.",
   "data": null
 }
 
