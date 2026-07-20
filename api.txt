@@ -1,4 +1,4 @@
-# Version: 1.8 | UpdatedAt: 20/07/2026
+# Version: 1.9 | UpdatedAt: 20/07/2026
 # Database: SahulatAppDB
 # Local Base URL:  https://localhost:7265/api/
 # Deployed Base URL: https://sahulatghartak.com/api/
@@ -1009,7 +1009,7 @@ Notes:
 - finalAmount, customerRemaining, commissionAmount, and providerEarning are computed server-side
 - paymentMode: CashToProvider | OnlineToCompany
 - commissionType: Percent | Fixed
-- status: Pending | Accepted | In Progress | Completed | Cancelled
+- status: Pending | Accepted | In Progress | Completed | Closed | Cancelled
 
 Success (201):
 {

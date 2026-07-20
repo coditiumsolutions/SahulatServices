@@ -1,4 +1,5 @@
 # Starts the SSH SQL tunnel in the background if localhost:11433 is not already listening.
+# DISABLED: Hostinger VPS (93.127.199.220) is no longer used. Keep for reference only.
 # Safe to run repeatedly (Visual Studio F5, dotnet run, dev-run.ps1).
 # Usage: .\scripts\ensure-sql-tunnel.ps1 [-ForceRestart]
 
@@ -10,6 +11,10 @@ param(
     [int]$WaitSeconds = 25,
     [switch]$ForceRestart
 )
+
+# Tunnel disabled — app connects directly to SQL Server.
+Write-Host "SQL tunnel is disabled (Hostinger VPS no longer in use). Exiting."
+exit 0
 
 function Test-PortListening {
     param([int]$Port)

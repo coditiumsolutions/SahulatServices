@@ -5,7 +5,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.Security.Claims;
 using System.Text;
 using HomeServicesPortal.Data;
-using HomeServicesPortal.Infrastructure;
+// using HomeServicesPortal.Infrastructure; // DevSqlTunnelBootstrap disabled
 using HomeServicesPortal.Interfaces;
 using HomeServicesPortal.Mappings;
 using HomeServicesPortal.Middleware;
@@ -15,13 +15,15 @@ using HomeServicesPortal.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-if (builder.Environment.IsDevelopment())
-{
-    DevSqlTunnelBootstrap.EnsureStarted(
-        builder.Configuration,
-        builder.Environment,
-        LoggerFactory.Create(b => b.AddConsole()).CreateLogger("DevSqlTunnel"));
-}
+// Hostinger SSH SQL tunnel (localhost:11433 -> root@93.127.199.220:1433) is no longer used.
+// App now connects directly to the live SQL Server (see ConnectionStrings:DefaultConnection).
+// if (builder.Environment.IsDevelopment())
+// {
+//     DevSqlTunnelBootstrap.EnsureStarted(
+//         builder.Configuration,
+//         builder.Environment,
+//         LoggerFactory.Create(b => b.AddConsole()).CreateLogger("DevSqlTunnel"));
+// }
 
 // Add services to the container.
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");

@@ -8,7 +8,7 @@ namespace HomeServicesPortal.Services;
 
 public class BookingService : IBookingService
 {
-    private static readonly string[] ValidStatuses = ["Pending", "Accepted", "In Progress", "Completed", "Cancelled"];
+    private static readonly string[] ValidStatuses = ["Pending", "Accepted", "In Progress", "Completed", "Closed", "Cancelled"];
     private static readonly string[] ValidPaymentModes = ["CashToProvider", "OnlineToCompany"];
     private static readonly string[] ValidCommissionTypes = ["Percent", "Fixed"];
 
