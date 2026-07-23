@@ -26,11 +26,14 @@
                     }
                     <div>
                         <h4 class="mb-1">@Model.FullName</h4>
+                        <div class="text-muted small mb-1">Provider ID: #@Model.Uid</div>
                         <span class="badge bg-primary">@Model.CategoryName</span>
                     </div>
                 </div>
 
                 <dl class="row mb-0">
+                    <dt class="col-sm-4 text-muted">Provider ID</dt>
+                    <dd class="col-sm-8 fw-semibold">@Model.Uid</dd>
                     <dt class="col-sm-4 text-muted">Mobile No</dt>
                     <dd class="col-sm-8">@(Model.MobileNo ?? "—")</dd>
                     <dt class="col-sm-4 text-muted">CNIC</dt>

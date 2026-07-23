@@ -1,50 +1,48 @@
-using HomeServicesPortal.Models.Entities;
+using HomeServicesPortal.Data;
+using HomeServicesPortal.Entities;
 using HomeServicesPortal.Models.ViewModels;
-using HomeServicesPortal.Repositories;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 
-using HomeServicesPortal.Helpers;
-
 namespace HomeServicesPortal.Services;
 
+/// <summary>
+/// Admin MVC service for ProviderDocuments (live schema: profile + CNIC paths).
+/// Uses AppDbContext / Providers ? not the removed ProviderProfiles table.
+/// </summary>
 public class ProviderDocumentService : IProviderDocumentService
 {
-    private static readonly string[] ValidDocumentTypes =
-        ["CNIC", "License", "Certificate", "Insurance", "Profile Picture", "Other"];
-
-    private static readonly string[] AllowedExtensions = [".pdf", ".jpg", ".jpeg", ".png", ".webp"];
-
-    private readonly IRepository<ProviderDocument> _documentRepo;
-    private readonly IRepository<ProviderProfile> _providerRepo;
-    private readonly IWebHostEnvironment _env;
+    private readonly AppDbContext _db;
+    private readonly IFileStorageService _fileStorage;
+    private readonly ILogger<ProviderDocumentService> _logger;
 
     public ProviderDocumentService(
-        IRepository<ProviderDocument> documentRepo,
-        IRepository<ProviderProfile> providerRepo,
-        IWebHostEnvironment env)
+        AppDbContext db,
+        IFileStorageService fileStorage,
+        ILogger<ProviderDocumentService> logger)
     {
-        _documentRepo = documentRepo;
-        _providerRepo = providerRepo;
-        _env = env;
+        _db = db;
+        _fileStorage = fileStorage;
+        _logger = logger;
     }
 
-    public async Task<List<SelectListItem>> GetProviderOptionsAsync(CancellationToken cancellationToken = default)
+    public async Task<List<SelectListItem>> GetProviderOptionsAsync(
+        int? includeProviderUid = null,
+        CancellationToken cancellationToken = default)
     {
-        return await _providerRepo.Query()
-            .Where(p => p.UserU.IsActive != false && p.UserU.UserType == UserTypeConstants.Provider)
-            .OrderBy(p => p.UserU.FullName)
+        var providersWithDocs = _db.ProviderDocuments.AsNoTracking().Select(d => d.ProviderUid);
+
+        return await _db.Providers
+            .AsNoTracking()
+            .Where(p => includeProviderUid.HasValue && p.Uid == includeProviderUid.Value
+                        || !providersWithDocs.Contains(p.Uid))
+            .OrderBy(p => p.FullName)
             .Select(p => new SelectListItem
             {
                 Value = p.Uid.ToString(),
-                Text = p.UserU.FullName ?? "ù"
+                Text = p.FullName + " (#" + p.Uid + ")"
             })
             .ToListAsync(cancellationToken);
-    }
-
-    public List<SelectListItem> GetDocumentTypeOptions()
-    {
-        return ValidDocumentTypes.Select(t => new SelectListItem { Value = t, Text = t }).ToList();
     }
 
     public async Task<ProviderDocumentListVm> GetListAsync(
@@ -59,31 +57,31 @@ public class ProviderDocumentService : IProviderDocumentService
         sort = string.IsNullOrWhiteSpace(sort) ? "provider" : sort.ToLowerInvariant();
         sortDir = string.Equals(sortDir, "desc", StringComparison.OrdinalIgnoreCase) ? "desc" : "asc";
 
-        var query = _documentRepo.Query();
+        var query =
+            from d in _db.ProviderDocuments.AsNoTracking()
+            join p in _db.Providers.AsNoTracking() on d.ProviderUid equals p.Uid
+            select new { Document = d, Provider = p };
 
         if (!string.IsNullOrWhiteSpace(search))
         {
             var term = search.Trim();
-            query = query.Where(d =>
-                d.ProviderU.UserU.FullName.Contains(term) ||
-                (d.DocumentType != null && d.DocumentType.Contains(term)) ||
-                (d.DocumentNo != null && d.DocumentNo.Contains(term)));
+            query = query.Where(x =>
+                x.Provider.FullName.Contains(term)
+                || x.Provider.Cnic.Contains(term)
+                || x.Document.ProviderUid.ToString() == term);
         }
 
         query = sort switch
         {
-            "type" => sortDir == "desc"
-                ? query.OrderByDescending(d => d.DocumentType)
-                : query.OrderBy(d => d.DocumentType),
-            "number" => sortDir == "desc"
-                ? query.OrderByDescending(d => d.DocumentNo)
-                : query.OrderBy(d => d.DocumentNo),
-            "expiry" => sortDir == "desc"
-                ? query.OrderByDescending(d => d.ExpiryDate)
-                : query.OrderBy(d => d.ExpiryDate),
+            "verified" => sortDir == "desc"
+                ? query.OrderByDescending(x => x.Document.IsVerified).ThenBy(x => x.Provider.FullName)
+                : query.OrderBy(x => x.Document.IsVerified).ThenBy(x => x.Provider.FullName),
+            "created" => sortDir == "desc"
+                ? query.OrderByDescending(x => x.Document.CreatedOn)
+                : query.OrderBy(x => x.Document.CreatedOn),
             _ => sortDir == "desc"
-                ? query.OrderByDescending(d => d.ProviderU.UserU.FullName)
-                : query.OrderBy(d => d.ProviderU.UserU.FullName)
+                ? query.OrderByDescending(x => x.Provider.FullName)
+                : query.OrderBy(x => x.Provider.FullName)
         };
 
         var totalCount = await query.CountAsync(cancellationToken);
@@ -91,14 +89,17 @@ public class ProviderDocumentService : IProviderDocumentService
         var items = await query
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .Select(d => new ProviderDocumentItemVm
+            .Select(x => new ProviderDocumentItemVm
             {
-                Uid = d.Uid,
-                ProviderName = d.ProviderU.UserU.FullName,
-                DocumentType = d.DocumentType,
-                DocumentNo = d.DocumentNo,
-                FilePath = d.FilePath,
-                ExpiryDate = d.ExpiryDate
+                Uid = x.Document.Uid,
+                ProviderUid = x.Document.ProviderUid,
+                ProviderName = x.Provider.FullName,
+                ProfilePhotoPath = x.Document.ProfilePhotoPath,
+                CnicFrontImagePath = x.Document.CnicFrontImagePath,
+                CnicBackImagePath = x.Document.CnicBackImagePath,
+                IsVerified = x.Document.IsVerified,
+                CreatedOn = x.Document.CreatedOn,
+                UpdatedOn = x.Document.UpdatedOn
             })
             .ToListAsync(cancellationToken);
 
@@ -116,115 +117,190 @@ public class ProviderDocumentService : IProviderDocumentService
 
     public async Task<ProviderDocumentDetailsVm?> GetDetailsAsync(int id, CancellationToken cancellationToken = default)
     {
-        return await _documentRepo.Query()
-            .Where(d => d.Uid == id)
-            .Select(d => new ProviderDocumentDetailsVm
+        return await (
+            from d in _db.ProviderDocuments.AsNoTracking()
+            join p in _db.Providers.AsNoTracking() on d.ProviderUid equals p.Uid
+            where d.Uid == id
+            select new ProviderDocumentDetailsVm
             {
                 Uid = d.Uid,
                 ProviderUid = d.ProviderUid,
-                ProviderName = d.ProviderU.UserU.FullName,
-                DocumentType = d.DocumentType,
-                DocumentNo = d.DocumentNo,
-                FilePath = d.FilePath,
-                ExpiryDate = d.ExpiryDate
-            })
-            .FirstOrDefaultAsync(cancellationToken);
+                ProviderName = p.FullName,
+                ProfilePhotoPath = d.ProfilePhotoPath,
+                CnicFrontImagePath = d.CnicFrontImagePath,
+                CnicBackImagePath = d.CnicBackImagePath,
+                IsVerified = d.IsVerified,
+                VerifiedOn = d.VerifiedOn,
+                VerifiedBy = d.VerifiedBy,
+                VerificationRemarks = d.VerificationRemarks,
+                CreatedOn = d.CreatedOn,
+                UpdatedOn = d.UpdatedOn
+            }).FirstOrDefaultAsync(cancellationToken);
     }
 
     public async Task<ProviderDocumentFormVm?> GetForEditAsync(int id, CancellationToken cancellationToken = default)
     {
-        var entity = await _documentRepo.GetByIdAsync(id, cancellationToken);
+        var entity = await _db.ProviderDocuments.AsNoTracking()
+            .FirstOrDefaultAsync(d => d.Uid == id, cancellationToken);
         if (entity == null) return null;
 
         return await PopulateFormAsync(new ProviderDocumentFormVm
         {
             Uid = entity.Uid,
             ProviderUid = entity.ProviderUid,
-            DocumentType = entity.DocumentType,
-            DocumentNo = entity.DocumentNo,
-            ExpiryDate = entity.ExpiryDate,
-            ExistingFilePath = entity.FilePath
+            ExistingProfilePhotoPath = entity.ProfilePhotoPath,
+            ExistingCnicFrontPath = entity.CnicFrontImagePath,
+            ExistingCnicBackPath = entity.CnicBackImagePath,
+            IsVerified = entity.IsVerified,
+            VerificationRemarks = entity.VerificationRemarks
         }, cancellationToken);
     }
 
     public async Task<ProviderDocumentDeleteVm?> GetForDeleteAsync(int id, CancellationToken cancellationToken = default)
     {
-        return await _documentRepo.Query()
-            .Where(d => d.Uid == id)
-            .Select(d => new ProviderDocumentDeleteVm
+        return await (
+            from d in _db.ProviderDocuments.AsNoTracking()
+            join p in _db.Providers.AsNoTracking() on d.ProviderUid equals p.Uid
+            where d.Uid == id
+            select new ProviderDocumentDeleteVm
             {
                 Uid = d.Uid,
-                ProviderName = d.ProviderU.UserU.FullName,
-                DocumentType = d.DocumentType,
-                DocumentNo = d.DocumentNo,
-                FilePath = d.FilePath,
-                ExpiryDate = d.ExpiryDate
-            })
-            .FirstOrDefaultAsync(cancellationToken);
+                ProviderUid = d.ProviderUid,
+                ProviderName = p.FullName,
+                ProfilePhotoPath = d.ProfilePhotoPath,
+                CnicFrontImagePath = d.CnicFrontImagePath,
+                CnicBackImagePath = d.CnicBackImagePath,
+                IsVerified = d.IsVerified
+            }).FirstOrDefaultAsync(cancellationToken);
     }
 
     public async Task<(bool Success, string? Error)> CreateAsync(
         ProviderDocumentFormVm model,
         CancellationToken cancellationToken = default)
     {
-        var validationError = await ValidateAsync(model, requireFile: true, cancellationToken);
-        if (validationError != null) return (false, validationError);
+        if (!await _db.Providers.AnyAsync(p => p.Uid == model.ProviderUid, cancellationToken))
+        {
+            return (false, "Selected provider does not exist.");
+        }
 
-        var (fileSuccess, filePath, fileError) = await SaveFileAsync(model.ProviderUid, model.DocumentFile!, cancellationToken);
-        if (!fileSuccess) return (false, fileError);
+        if (await _db.ProviderDocuments.AnyAsync(d => d.ProviderUid == model.ProviderUid, cancellationToken))
+        {
+            return (false, "This provider already has a documents record. Edit the existing one instead.");
+        }
+
+        if (model.ProfilePhoto == null || model.ProfilePhoto.Length == 0
+            || model.CnicFront == null || model.CnicFront.Length == 0
+            || model.CnicBack == null || model.CnicBack.Length == 0)
+        {
+            return (false, "Profile photo, CNIC front, and CNIC back images are all required.");
+        }
+
+        var profile = await _fileStorage.SaveProviderImageAsync(
+            model.ProviderUid, model.ProfilePhoto, "profile.jpg", cancellationToken);
+        if (!profile.Success) return (false, profile.Error);
+
+        var front = await _fileStorage.SaveProviderImageAsync(
+            model.ProviderUid, model.CnicFront, "cnic_front.jpg", cancellationToken);
+        if (!front.Success) return (false, front.Error);
+
+        var back = await _fileStorage.SaveProviderImageAsync(
+            model.ProviderUid, model.CnicBack, "cnic_back.jpg", cancellationToken);
+        if (!back.Success) return (false, back.Error);
 
         var entity = new ProviderDocument
         {
             ProviderUid = model.ProviderUid,
-            DocumentType = model.DocumentType?.Trim(),
-            DocumentNo = model.DocumentNo?.Trim(),
-            FilePath = filePath,
-            ExpiryDate = model.ExpiryDate
+            ProfilePhotoPath = profile.RelativePath,
+            CnicFrontImagePath = front.RelativePath,
+            CnicBackImagePath = back.RelativePath,
+            IsVerified = false,
+            CreatedOn = DateTime.Now
         };
 
-        await _documentRepo.AddAsync(entity, cancellationToken);
+        _db.ProviderDocuments.Add(entity);
+        await _db.SaveChangesAsync(cancellationToken);
+        _logger.LogInformation("Admin created ProviderDocuments for provider {ProviderUid}", model.ProviderUid);
         return (true, null);
     }
 
     public async Task<(bool Success, string? Error)> UpdateAsync(
         ProviderDocumentFormVm model,
+        int? verifiedByUserId,
         CancellationToken cancellationToken = default)
     {
-        var entity = await _documentRepo.GetByIdAsync(model.Uid, cancellationToken);
-        if (entity == null) return (false, "Document not found.");
+        var entity = await _db.ProviderDocuments
+            .FirstOrDefaultAsync(d => d.Uid == model.Uid, cancellationToken);
+        if (entity == null) return (false, "Document record not found.");
 
-        var validationError = await ValidateAsync(model, requireFile: false, cancellationToken);
-        if (validationError != null) return (false, validationError);
-
-        if (model.DocumentFile != null && model.DocumentFile.Length > 0)
+        if (entity.ProviderUid != model.ProviderUid)
         {
-            DeletePhysicalFile(entity.FilePath);
-            var (fileSuccess, filePath, fileError) = await SaveFileAsync(model.ProviderUid, model.DocumentFile, cancellationToken);
-            if (!fileSuccess) return (false, fileError);
-            entity.FilePath = filePath;
-        }
-        else if (string.IsNullOrWhiteSpace(entity.FilePath) && string.IsNullOrWhiteSpace(model.ExistingFilePath))
-        {
-            return (false, "Document file is required.");
+            return (false, "Provider cannot be changed for an existing document record.");
         }
 
-        entity.ProviderUid = model.ProviderUid;
-        entity.DocumentType = model.DocumentType?.Trim();
-        entity.DocumentNo = model.DocumentNo?.Trim();
-        entity.ExpiryDate = model.ExpiryDate;
+        if (model.ProfilePhoto is { Length: > 0 })
+        {
+            var result = await _fileStorage.SaveProviderImageAsync(
+                entity.ProviderUid, model.ProfilePhoto, "profile.jpg", cancellationToken);
+            if (!result.Success) return (false, result.Error);
+            entity.ProfilePhotoPath = result.RelativePath;
+        }
 
-        await _documentRepo.UpdateAsync(entity, cancellationToken);
+        if (model.CnicFront is { Length: > 0 })
+        {
+            var result = await _fileStorage.SaveProviderImageAsync(
+                entity.ProviderUid, model.CnicFront, "cnic_front.jpg", cancellationToken);
+            if (!result.Success) return (false, result.Error);
+            entity.CnicFrontImagePath = result.RelativePath;
+        }
+
+        if (model.CnicBack is { Length: > 0 })
+        {
+            var result = await _fileStorage.SaveProviderImageAsync(
+                entity.ProviderUid, model.CnicBack, "cnic_back.jpg", cancellationToken);
+            if (!result.Success) return (false, result.Error);
+            entity.CnicBackImagePath = result.RelativePath;
+        }
+
+        if (string.IsNullOrWhiteSpace(entity.ProfilePhotoPath)
+            || string.IsNullOrWhiteSpace(entity.CnicFrontImagePath)
+            || string.IsNullOrWhiteSpace(entity.CnicBackImagePath))
+        {
+            return (false, "All three images (profile, CNIC front, CNIC back) must be present.");
+        }
+
+        var wasVerified = entity.IsVerified;
+        entity.IsVerified = model.IsVerified;
+        entity.VerificationRemarks = string.IsNullOrWhiteSpace(model.VerificationRemarks)
+            ? null
+            : model.VerificationRemarks.Trim();
+
+        if (model.IsVerified)
+        {
+            entity.VerifiedOn = DateTime.Now;
+            entity.VerifiedBy = verifiedByUserId;
+        }
+        else if (wasVerified)
+        {
+            entity.VerifiedOn = DateTime.Now;
+            entity.VerifiedBy = verifiedByUserId;
+        }
+
+        entity.UpdatedOn = DateTime.Now;
+        await _db.SaveChangesAsync(cancellationToken);
+        _logger.LogInformation("Admin updated ProviderDocuments UID {Uid}", entity.Uid);
         return (true, null);
     }
 
     public async Task<(bool Success, string? Error)> DeleteAsync(int id, CancellationToken cancellationToken = default)
     {
-        var entity = await _documentRepo.GetByIdAsync(id, cancellationToken);
-        if (entity == null) return (false, "Document not found.");
+        var entity = await _db.ProviderDocuments.FirstOrDefaultAsync(d => d.Uid == id, cancellationToken);
+        if (entity == null) return (false, "Document record not found.");
 
-        var filePath = entity.FilePath;
-        await _documentRepo.DeleteAsync(entity, cancellationToken);
-        DeletePhysicalFile(filePath);
+        var providerUid = entity.ProviderUid;
+        _db.ProviderDocuments.Remove(entity);
+        await _db.SaveChangesAsync(cancellationToken);
+        _fileStorage.DeleteProviderDocumentFiles(providerUid);
+        _logger.LogInformation("Admin deleted ProviderDocuments for provider {ProviderUid}", providerUid);
         return (true, null);
     }
 
@@ -232,77 +308,9 @@ public class ProviderDocumentService : IProviderDocumentService
         ProviderDocumentFormVm model,
         CancellationToken cancellationToken = default)
     {
-        model.Providers = await GetProviderOptionsAsync(cancellationToken);
-        model.DocumentTypes = GetDocumentTypeOptions();
+        model.Providers = await GetProviderOptionsAsync(
+            model.Uid > 0 ? model.ProviderUid : null,
+            cancellationToken);
         return model;
-    }
-
-    private async Task<string?> ValidateAsync(
-        ProviderDocumentFormVm model,
-        bool requireFile,
-        CancellationToken cancellationToken)
-    {
-        var providerExists = await _providerRepo.Query()
-            .AnyAsync(p => p.Uid == model.ProviderUid, cancellationToken);
-        if (!providerExists) return "Selected provider does not exist.";
-
-        if (!string.IsNullOrWhiteSpace(model.DocumentType) &&
-            !ValidDocumentTypes.Contains(model.DocumentType))
-        {
-            return "Invalid document type.";
-        }
-
-        if (requireFile && (model.DocumentFile == null || model.DocumentFile.Length == 0))
-        {
-            return "Document file is required.";
-        }
-
-        if (model.DocumentFile != null && model.DocumentFile.Length > 0)
-        {
-            var ext = Path.GetExtension(model.DocumentFile.FileName).ToLowerInvariant();
-            if (!AllowedExtensions.Contains(ext))
-            {
-                return "File must be PDF, JPG, PNG, or WEBP.";
-            }
-
-            if (model.DocumentFile.Length > 5 * 1024 * 1024)
-            {
-                return "File must be under 5 MB.";
-            }
-        }
-
-        return null;
-    }
-
-    private async Task<(bool Success, string? FilePath, string? Error)> SaveFileAsync(
-        int providerUid,
-        IFormFile file,
-        CancellationToken cancellationToken)
-    {
-        var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
-        var uploadDir = Path.Combine(_env.WebRootPath, "uploads", "documents");
-        Directory.CreateDirectory(uploadDir);
-
-        var fileName = $"doc_{providerUid}_{DateTime.UtcNow:yyyyMMddHHmmssfff}{ext}";
-        var physicalPath = Path.Combine(uploadDir, fileName);
-        var relativePath = $"/uploads/documents/{fileName}";
-
-        await using (var stream = new FileStream(physicalPath, FileMode.Create))
-        {
-            await file.CopyToAsync(stream, cancellationToken);
-        }
-
-        return (true, relativePath, null);
-    }
-
-    private void DeletePhysicalFile(string? relativePath)
-    {
-        if (string.IsNullOrWhiteSpace(relativePath)) return;
-
-        var physicalPath = Path.Combine(_env.WebRootPath, relativePath.TrimStart('/').Replace('/', Path.DirectorySeparatorChar));
-        if (File.Exists(physicalPath))
-        {
-            File.Delete(physicalPath);
-        }
     }
 }

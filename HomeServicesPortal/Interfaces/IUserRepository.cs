@@ -21,6 +21,8 @@ public interface IUserRepository
 
     Task<bool> ProviderExistsForUserAsync(int userId, CancellationToken cancellationToken = default);
 
+    Task<bool> ProviderCnicExistsAsync(string cnic, CancellationToken cancellationToken = default);
+
     Task UpdateUserTypeAsync(int userId, string userType, CancellationToken cancellationToken = default);
 
     Task<Client?> GetClientByUserIdAsync(int userId, CancellationToken cancellationToken = default);

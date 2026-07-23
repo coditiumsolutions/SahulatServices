@@ -62,7 +62,10 @@
                     @foreach (var item in Model.Items)
                     {
                         <tr>
-                            <td class="fw-semibold">@item.FullName</td>
+                            <td class="fw-semibold">
+                                <div>@item.FullName</div>
+                                <div class="small text-muted">ID #@item.Uid</div>
+                            </td>
                             <td>@(string.IsNullOrWhiteSpace(item.MobileNo) ? "—" : item.MobileNo)</td>
                             <td>@(string.IsNullOrWhiteSpace(item.Cnic) ? "—" : item.Cnic)</td>
                             <td>@(string.IsNullOrWhiteSpace(item.Gender) ? "—" : item.Gender)</td>

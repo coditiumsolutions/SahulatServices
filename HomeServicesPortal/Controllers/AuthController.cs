@@ -12,10 +12,12 @@ namespace HomeServicesPortal.Controllers;
 public class AuthController : ControllerBase
 {
     private readonly IAuthService _authService;
+    private readonly IOtpService _otpService;
 
-    public AuthController(IAuthService authService)
+    public AuthController(IAuthService authService, IOtpService otpService)
     {
         _authService = authService;
+        _otpService = otpService;
     }
 
     [HttpPost("register-client")]
@@ -37,7 +39,7 @@ public class AuthController : ControllerBase
         }
 
         return StatusCode(StatusCodes.Status201Created,
-            ApiResponse<RegistrationResponse>.Ok(data, "Client registered successfully."));
+            ApiResponse<RegistrationResponse>.Ok(data, "Client registered successfully. Verify OTP to activate your account."));
     }
 
     /// <summary>Upgrade an existing client to provider (mobile + password).</summary>
@@ -107,6 +109,77 @@ public class AuthController : ControllerBase
         }
 
         return Ok(ApiResponse<LoginResponse>.Ok(data, "Login successful."));
+    }
+
+    /// <summary>Send a 6-digit OTP (Development returns OTP in data; Production never does).</summary>
+    [HttpPost("send-otp")]
+    [ProducesResponseType(typeof(ApiResponse<SendOtpResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<SendOtpResponse>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<SendOtpResponse>), StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<ApiResponse<SendOtpResponse>>> SendOtp(
+        [FromBody] SendOtpRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ApiResponse<SendOtpResponse>.Fail(GetValidationMessage()));
+        }
+
+        var (success, error, data, statusCode) = await _otpService.SendOtpAsync(request, cancellationToken);
+        if (!success || data == null)
+        {
+            return StatusCode(statusCode, ApiResponse<SendOtpResponse>.Fail(error ?? "Failed to send OTP."));
+        }
+
+        return Ok(ApiResponse<SendOtpResponse>.Ok(data, "OTP sent successfully."));
+    }
+
+    /// <summary>Verify the latest unverified OTP for a mobile number.</summary>
+    [HttpPost("verify-otp")]
+    [ProducesResponseType(typeof(ApiResponse<VerifyOtpResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<VerifyOtpResponse>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<VerifyOtpResponse>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<VerifyOtpResponse>), StatusCodes.Status429TooManyRequests)]
+    public async Task<ActionResult<ApiResponse<VerifyOtpResponse>>> VerifyOtp(
+        [FromBody] VerifyOtpRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ApiResponse<VerifyOtpResponse>.Fail(GetValidationMessage()));
+        }
+
+        var (success, error, data, statusCode) = await _otpService.VerifyOtpAsync(request, cancellationToken);
+        if (!success || data == null)
+        {
+            return StatusCode(statusCode, ApiResponse<VerifyOtpResponse>.Fail(error ?? "OTP verification failed."));
+        }
+
+        return Ok(ApiResponse<VerifyOtpResponse>.Ok(data, "OTP verified successfully."));
+    }
+
+    /// <summary>Resend OTP — generates a new code, resets attempts, refreshes expiry.</summary>
+    [HttpPost("resend-otp")]
+    [ProducesResponseType(typeof(ApiResponse<SendOtpResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<SendOtpResponse>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<SendOtpResponse>), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ApiResponse<SendOtpResponse>), StatusCodes.Status429TooManyRequests)]
+    public async Task<ActionResult<ApiResponse<SendOtpResponse>>> ResendOtp(
+        [FromBody] ResendOtpRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ApiResponse<SendOtpResponse>.Fail(GetValidationMessage()));
+        }
+
+        var (success, error, data, statusCode) = await _otpService.ResendOtpAsync(request, cancellationToken);
+        if (!success || data == null)
+        {
+            return StatusCode(statusCode, ApiResponse<SendOtpResponse>.Fail(error ?? "Failed to resend OTP."));
+        }
+
+        return Ok(ApiResponse<SendOtpResponse>.Ok(data, "OTP resent successfully."));
     }
 
     private string GetValidationMessage() =>

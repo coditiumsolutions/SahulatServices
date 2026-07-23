@@ -32,11 +32,22 @@ public class ExceptionHandlingMiddleware
                 throw;
             }
 
-            context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
             context.Response.ContentType = "application/json";
 
-            var payload = ApiResponse<object>.Fail("An unexpected error occurred.");
-            await context.Response.WriteAsync(JsonSerializer.Serialize(payload));
+            var (statusCode, message) = ex switch
+            {
+                ArgumentException argEx => (HttpStatusCode.BadRequest, argEx.Message),
+                InvalidOperationException opEx => (HttpStatusCode.BadRequest, opEx.Message),
+                UnauthorizedAccessException => (HttpStatusCode.Unauthorized, "Unauthorized."),
+                _ => (HttpStatusCode.InternalServerError, "An unexpected error occurred.")
+            };
+
+            context.Response.StatusCode = (int)statusCode;
+            var payload = ApiResponse<object>.Fail(message);
+            await context.Response.WriteAsync(JsonSerializer.Serialize(payload, new JsonSerializerOptions
+            {
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+            }));
         }
     }
 }

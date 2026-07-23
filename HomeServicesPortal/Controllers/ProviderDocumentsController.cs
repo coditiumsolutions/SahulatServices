@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using HomeServicesPortal.Models.ViewModels;
 using HomeServicesPortal.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -41,7 +42,7 @@ public class ProviderDocumentsController : Controller
             return View(model);
         }
 
-        TempData["SuccessMessage"] = "P-Document created successfully.";
+        TempData["SuccessMessage"] = "Provider documents created successfully.";
         return RedirectToAction(nameof(Index));
     }
 
@@ -69,14 +70,21 @@ public class ProviderDocumentsController : Controller
         await _service.PopulateFormAsync(model, cancellationToken);
         if (!ModelState.IsValid) return View(model);
 
-        var (success, error) = await _service.UpdateAsync(model, cancellationToken);
+        int? verifiedBy = null;
+        var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (int.TryParse(userIdClaim, out var userId))
+        {
+            verifiedBy = userId;
+        }
+
+        var (success, error) = await _service.UpdateAsync(model, verifiedBy, cancellationToken);
         if (!success)
         {
             ModelState.AddModelError(string.Empty, error ?? "Failed to update document.");
             return View(model);
         }
 
-        TempData["SuccessMessage"] = "P-Document updated successfully.";
+        TempData["SuccessMessage"] = "Provider documents updated successfully.";
         return RedirectToAction(nameof(Index));
     }
 
@@ -102,7 +110,7 @@ public class ProviderDocumentsController : Controller
             return View("Delete", vm);
         }
 
-        TempData["SuccessMessage"] = "P-Document deleted successfully.";
+        TempData["SuccessMessage"] = "Provider documents deleted successfully.";
         return RedirectToAction(nameof(Index));
     }
 }

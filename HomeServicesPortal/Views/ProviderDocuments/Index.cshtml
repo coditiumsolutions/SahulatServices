@@ -2,12 +2,13 @@
 @{
     Layout = "_AdminLayout";
     ViewData["Title"] = "P-Documents";
+    string UrlPath(string? path) => string.IsNullOrWhiteSpace(path) ? "" : "/" + path.TrimStart('/');
 }
 
 <div class="d-flex flex-wrap align-items-center justify-content-between mb-4 gap-2">
     <div>
         <h2 class="mb-1"><i class="fa-solid fa-file-signature me-2 text-primary"></i>P-Documents</h2>
-        <p class="text-muted mb-0">Manage provider verification documents</p>
+        <p class="text-muted mb-0">Manage provider profile photo and CNIC documents</p>
     </div>
     <a asp-action="Create" class="btn btn-primary"><i class="fa-solid fa-plus me-1"></i>Add P-Document</a>
 </div>
@@ -26,7 +27,7 @@
             <div class="col-md-6 col-lg-4">
                 <div class="input-group">
                     <span class="input-group-text"><i class="fa-solid fa-search"></i></span>
-                    <input type="text" name="search" value="@Model.Search" class="form-control" placeholder="Search provider, type, number..." />
+                    <input type="text" name="search" value="@Model.Search" class="form-control" placeholder="Search provider name, CNIC, or ID..." />
                     <button type="submit" class="btn btn-outline-primary">Search</button>
                 </div>
             </div>
@@ -41,39 +42,55 @@
                 <thead class="table-light">
                     <tr>
                         <th><a class="text-decoration-none text-dark" asp-action="Index" asp-route-search="@Model.Search" asp-route-sort="provider" asp-route-sortDir="@(Model.Sort == "provider" && Model.SortDir == "asc" ? "desc" : "asc")">Provider</a></th>
-                        <th><a class="text-decoration-none text-dark" asp-action="Index" asp-route-search="@Model.Search" asp-route-sort="type" asp-route-sortDir="@(Model.Sort == "type" && Model.SortDir == "asc" ? "desc" : "asc")">Document Type</a></th>
-                        <th><a class="text-decoration-none text-dark" asp-action="Index" asp-route-search="@Model.Search" asp-route-sort="number" asp-route-sortDir="@(Model.Sort == "number" && Model.SortDir == "asc" ? "desc" : "asc")">Document No</a></th>
-                        <th>File</th>
-                        <th><a class="text-decoration-none text-dark" asp-action="Index" asp-route-search="@Model.Search" asp-route-sort="expiry" asp-route-sortDir="@(Model.Sort == "expiry" && Model.SortDir == "asc" ? "desc" : "asc")">Expiry Date</a></th>
+                        <th>Images</th>
+                        <th><a class="text-decoration-none text-dark" asp-action="Index" asp-route-search="@Model.Search" asp-route-sort="verified" asp-route-sortDir="@(Model.Sort == "verified" && Model.SortDir == "asc" ? "desc" : "asc")">Status</a></th>
+                        <th><a class="text-decoration-none text-dark" asp-action="Index" asp-route-search="@Model.Search" asp-route-sort="created" asp-route-sortDir="@(Model.Sort == "created" && Model.SortDir == "asc" ? "desc" : "asc")">Created</a></th>
                         <th class="text-end">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     @if (!Model.Items.Any())
                     {
-                        <tr><td colspan="6" class="text-center text-muted py-4">No provider documents found.</td></tr>
+                        <tr><td colspan="5" class="text-center text-muted py-4">No provider documents found.</td></tr>
                     }
                     @foreach (var item in Model.Items)
                     {
                         <tr>
-                            <td class="fw-semibold">@item.ProviderName</td>
-                            <td>@(string.IsNullOrWhiteSpace(item.DocumentType) ? "—" : item.DocumentType)</td>
-                            <td>@(string.IsNullOrWhiteSpace(item.DocumentNo) ? "—" : item.DocumentNo)</td>
                             <td>
-                                @if (!string.IsNullOrWhiteSpace(item.FilePath))
-                                {
-                                    <a href="@item.FilePath" target="_blank" rel="noopener" class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-file-arrow-down"></i></a>
-                                }
-                                else { <text>—</text> }
+                                <div class="fw-semibold">@item.ProviderName</div>
+                                <div class="small text-muted">UID #@item.ProviderUid</div>
                             </td>
                             <td>
-                                @if (item.ExpiryDate.HasValue)
-                                {
-                                    <span class="@(item.IsExpired ? "text-danger fw-semibold" : "")">@item.ExpiryDate.Value.ToString("dd MMM yyyy")</span>
-                                    @if (item.IsExpired) { <span class="badge bg-danger ms-1">Expired</span> }
-                                }
-                                else { <text>—</text> }
+                                <div class="d-flex gap-1">
+                                    @if (!string.IsNullOrWhiteSpace(item.ProfilePhotoPath))
+                                    {
+                                        <img src="@UrlPath(item.ProfilePhotoPath)" alt="Profile" class="rounded border" style="width:40px;height:40px;object-fit:cover" />
+                                    }
+                                    @if (!string.IsNullOrWhiteSpace(item.CnicFrontImagePath))
+                                    {
+                                        <img src="@UrlPath(item.CnicFrontImagePath)" alt="CNIC Front" class="rounded border" style="width:40px;height:40px;object-fit:cover" />
+                                    }
+                                    @if (!string.IsNullOrWhiteSpace(item.CnicBackImagePath))
+                                    {
+                                        <img src="@UrlPath(item.CnicBackImagePath)" alt="CNIC Back" class="rounded border" style="width:40px;height:40px;object-fit:cover" />
+                                    }
+                                    @if (!item.HasAllImages)
+                                    {
+                                        <span class="badge bg-warning text-dark align-self-center">Incomplete</span>
+                                    }
+                                </div>
                             </td>
+                            <td>
+                                @if (item.IsVerified)
+                                {
+                                    <span class="badge bg-success">Verified</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">Pending</span>
+                                }
+                            </td>
+                            <td>@item.CreatedOn.ToString("dd MMM yyyy")</td>
                             <td class="text-end">
                                 <div class="btn-group btn-group-sm">
                                     <a asp-action="Details" asp-route-id="@item.Uid" class="btn btn-outline-secondary" title="Details"><i class="fa-solid fa-eye"></i></a>

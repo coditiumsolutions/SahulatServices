@@ -13,6 +13,8 @@ public class AppDbContext : DbContext
 
     public DbSet<UsersLogin> UsersLogins => Set<UsersLogin>();
 
+    public DbSet<UserOTP> UserOTPs => Set<UserOTP>();
+
     public DbSet<Client> Clients => Set<Client>();
 
     public DbSet<Provider> Providers => Set<Provider>();
@@ -33,6 +35,8 @@ public class AppDbContext : DbContext
 
     public DbSet<CommissionRule> CommissionRules => Set<CommissionRule>();
 
+    public DbSet<ProviderDocument> ProviderDocuments => Set<ProviderDocument>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<UsersLogin>(entity =>
@@ -50,6 +54,26 @@ public class AppDbContext : DbContext
                 .HasDefaultValueSql("(getdate())");
             entity.Property(e => e.LastLogin).HasColumnType("datetime");
             entity.HasIndex(e => e.MobileNo).IsUnique();
+        });
+
+        modelBuilder.Entity<UserOTP>(entity =>
+        {
+            entity.ToTable("UserOTP");
+            entity.HasKey(e => e.Uid);
+            entity.Property(e => e.Uid).HasColumnName("UID");
+            entity.Property(e => e.MobileNo).HasMaxLength(20).IsRequired();
+            entity.Property(e => e.OTPCode).HasMaxLength(10).IsRequired();
+            entity.Property(e => e.OTPType).HasMaxLength(20).IsRequired();
+            entity.Property(e => e.ExpiryTime).HasColumnType("datetime");
+            entity.Property(e => e.IsVerified).HasDefaultValue(false);
+            entity.Property(e => e.AttemptCount).HasDefaultValue(0);
+            entity.Property(e => e.SentCount).HasDefaultValue(0);
+            entity.Property(e => e.CreatedOn)
+                .HasColumnType("datetime")
+                .HasDefaultValueSql("(getdate())");
+            entity.Property(e => e.VerifiedOn).HasColumnType("datetime");
+            entity.HasIndex(e => e.MobileNo);
+            entity.HasIndex(e => e.IsVerified);
         });
 
         modelBuilder.Entity<Client>(entity =>
@@ -326,6 +350,35 @@ public class AppDbContext : DbContext
                 .HasForeignKey(e => e.ProviderUid)
                 .HasConstraintName("FK_CommissionRules_Providers")
                 .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<ProviderDocument>(entity =>
+        {
+            entity.ToTable("ProviderDocuments");
+            entity.HasKey(e => e.Uid);
+            entity.Property(e => e.Uid).HasColumnName("UID");
+            entity.Property(e => e.ProviderUid).HasColumnName("ProviderUID");
+            entity.Property(e => e.ProfilePhotoPath).HasMaxLength(500);
+            entity.Property(e => e.CnicFrontImagePath).HasColumnName("CNICFrontImagePath").HasMaxLength(500);
+            entity.Property(e => e.CnicBackImagePath).HasColumnName("CNICBackImagePath").HasMaxLength(500);
+            entity.Property(e => e.IsVerified).HasDefaultValue(false);
+            entity.Property(e => e.VerifiedOn).HasColumnType("datetime");
+            entity.Property(e => e.VerifiedBy);
+            entity.Property(e => e.VerificationRemarks).HasMaxLength(500);
+            entity.Property(e => e.CreatedOn)
+                .HasColumnType("datetime")
+                .HasDefaultValueSql("(getdate())");
+            entity.Property(e => e.UpdatedOn).HasColumnType("datetime");
+
+            entity.HasIndex(e => e.ProviderUid)
+                .IsUnique()
+                .HasDatabaseName("UQ_ProviderDocuments_ProviderUID");
+
+            entity.HasOne(e => e.Provider)
+                .WithMany()
+                .HasForeignKey(e => e.ProviderUid)
+                .HasConstraintName("FK_ProviderDocuments_Providers")
+                .OnDelete(DeleteBehavior.Cascade);
         });
     }
 }

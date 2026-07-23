@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Security.Claims;
@@ -10,6 +11,7 @@ using HomeServicesPortal.Interfaces;
 using HomeServicesPortal.Mappings;
 using HomeServicesPortal.Middleware;
 using HomeServicesPortal.Models.Api;
+using HomeServicesPortal.Options;
 using HomeServicesPortal.Repositories;
 using HomeServicesPortal.Services;
 
@@ -69,6 +71,14 @@ builder.Services.AddScoped<IReviewService, ReviewService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.Configure<OtpOptions>(builder.Configuration.GetSection(OtpOptions.SectionName));
+builder.Services.Configure<FileStorageOptions>(builder.Configuration.GetSection(FileStorageOptions.SectionName));
+builder.Services.AddScoped<IOtpService, OtpService>();
+builder.Services.AddScoped<ISmsService, DummySmsService>();
+builder.Services.AddScoped<IImageService, ImageService>();
+builder.Services.AddScoped<IFileStorageService, FileStorageService>();
+builder.Services.AddScoped<IProviderDocumentRepository, ProviderDocumentRepository>();
+builder.Services.AddScoped<IProviderDocumentsApiService, ProviderDocumentsApiService>();
 
 var jwtKey = builder.Configuration["Jwt:Key"]
              ?? throw new InvalidOperationException("Jwt:Key is not configured in appsettings.");
@@ -163,6 +173,20 @@ builder.Services.AddAuthentication(options =>
     });
 
 builder.Services.AddControllersWithViews();
+
+builder.Services.Configure<ApiBehaviorOptions>(options =>
+{
+    options.InvalidModelStateResponseFactory = context =>
+    {
+        var message = context.ModelState.Values
+            .SelectMany(v => v.Errors)
+            .Select(e => e.ErrorMessage)
+            .FirstOrDefault(m => !string.IsNullOrWhiteSpace(m))
+            ?? "Invalid request.";
+
+        return new BadRequestObjectResult(ApiResponse<object>.Fail(message));
+    };
+});
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>

@@ -16,11 +16,18 @@ bin/
 obj/
 publish/
 publish-*/
+publish_old/
+publish_old2/
 publish.zip
 *.user
 *.suo
 .vs/
 *.db
+
+# Uploaded media (keep folder placeholders only)
+HomeServicesPortal/wwwroot/uploads/providers/**
+!HomeServicesPortal/wwwroot/uploads/providers/.gitkeep
+scripts/test-pngs/
 
 # OS / editor
 .DS_Store

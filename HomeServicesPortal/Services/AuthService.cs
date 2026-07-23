@@ -28,11 +28,54 @@ public class AuthService : IAuthService
         RegisterClientRequest request,
         CancellationToken cancellationToken = default)
     {
-        var mobileNo = request.MobileNo.Trim();
-
-        if (await _userRepository.MobileExistsAsync(mobileNo, cancellationToken))
+        var (mobileOk, mobileNo, mobileError) = MobileNumberHelper.ValidateAndNormalize(request.MobileNo);
+        if (!mobileOk)
         {
-            return (false, "Mobile number is already registered.", null);
+            return (false, mobileError, null);
+        }
+
+        var existing = await _userRepository.GetUserByMobileAsync(mobileNo, cancellationToken);
+        if (existing is { IsVerified: true })
+        {
+            return (false, "Mobile number already registered.", null);
+        }
+
+        if (existing != null)
+        {
+            // Incomplete signup: refresh credentials/profile, keep IsVerified = false until OTP verify
+            return await ExecuteInTransactionAsync<(bool Success, string? Error, RegistrationResponse? Data)>(async () =>
+            {
+                existing.PasswordHash = PasswordHasher.Hash(request.Password);
+                existing.UserType = UserTypeConstants.Client;
+                existing.IsActive = true;
+                existing.IsVerified = false;
+                await _userRepository.SaveChangesAsync(cancellationToken);
+
+                var client = await _userRepository.GetClientByUserIdAsync(existing.Uid, cancellationToken);
+                if (client == null)
+                {
+                    client = new Client
+                    {
+                        UserUid = existing.Uid,
+                        FullName = request.FullName.Trim(),
+                        Cnic = request.CNIC?.Trim(),
+                        Gender = request.Gender?.Trim(),
+                        CreatedOn = DateTime.Now
+                    };
+                    await _userRepository.CreateClientAsync(client, cancellationToken);
+                }
+                else
+                {
+                    var tracked = await _db.Clients.FirstAsync(c => c.Uid == client.Uid, cancellationToken);
+                    tracked.FullName = request.FullName.Trim();
+                    tracked.Cnic = request.CNIC?.Trim();
+                    tracked.Gender = request.Gender?.Trim();
+                    await _db.SaveChangesAsync(cancellationToken);
+                    client = tracked;
+                }
+
+                return (true, null, _mapper.Map<RegistrationResponse>((existing, client)));
+            }, cancellationToken);
         }
 
         return await ExecuteInTransactionAsync<(bool Success, string? Error, RegistrationResponse? Data)>(async () =>
@@ -67,12 +110,22 @@ public class AuthService : IAuthService
         RegisterProviderRequest request,
         CancellationToken cancellationToken = default)
     {
-        var mobileNo = request.MobileNo.Trim();
+        var (mobileOk, mobileNo, mobileError) = MobileNumberHelper.ValidateAndNormalize(request.MobileNo);
+        if (!mobileOk)
+        {
+            return (false, mobileError, null, StatusCodes.Status400BadRequest);
+        }
+
         var user = await _userRepository.GetUserByMobileAsync(mobileNo, cancellationToken);
 
         if (user == null || !PasswordHasher.Verify(request.Password, user.PasswordHash))
         {
             return (false, "Invalid mobile number or password.", null, StatusCodes.Status401Unauthorized);
+        }
+
+        if (!user.IsVerified)
+        {
+            return (false, "Mobile number is not verified. Please verify OTP first.", null, StatusCodes.Status403Forbidden);
         }
 
         var userId = user.Uid;
@@ -95,6 +148,12 @@ public class AuthService : IAuthService
         if (await _userRepository.ProviderExistsForUserAsync(userId, cancellationToken))
         {
             return (false, "Provider profile already exists for this account.", null, StatusCodes.Status409Conflict);
+        }
+
+        var cnic = request.CNIC.Trim();
+        if (await _userRepository.ProviderCnicExistsAsync(cnic, cancellationToken))
+        {
+            return (false, "CNIC is already registered to another provider.", null, StatusCodes.Status409Conflict);
         }
 
         var client = await _userRepository.GetClientByUserIdAsync(userId, cancellationToken);
@@ -130,7 +189,7 @@ public class AuthService : IAuthService
             {
                 UserUid = userId,
                 FullName = fullName,
-                Cnic = request.CNIC.Trim(),
+                Cnic = cnic,
                 Gender = request.Gender?.Trim() ?? client.Gender,
                 ExperienceYears = request.ExperienceYears ?? 0,
                 Description = request.Description?.Trim(),
@@ -148,6 +207,7 @@ public class AuthService : IAuthService
             {
                 UserId = userId,
                 ProfileId = provider.Uid,
+                ProviderUid = provider.Uid,
                 UserType = UserTypeConstants.Provider,
                 FullName = fullName,
                 MobileNo = user.MobileNo,
@@ -202,11 +262,15 @@ public class AuthService : IAuthService
         RegisterStaffRequest request,
         CancellationToken cancellationToken = default)
     {
-        var mobileNo = request.MobileNo.Trim();
+        var (mobileOk, mobileNo, mobileError) = MobileNumberHelper.ValidateAndNormalize(request.MobileNo);
+        if (!mobileOk)
+        {
+            return (false, mobileError, null);
+        }
 
         if (await _userRepository.MobileExistsAsync(mobileNo, cancellationToken))
         {
-            return (false, "Mobile number is already registered.", null);
+            return (false, "Mobile number already registered.", null);
         }
 
         return await ExecuteInTransactionAsync<(bool Success, string? Error, RegistrationResponse? Data)>(async () =>
@@ -217,7 +281,7 @@ public class AuthService : IAuthService
                 PasswordHash = PasswordHasher.Hash(request.Password),
                 UserType = UserTypeConstants.Staff,
                 IsActive = true,
-                IsVerified = false,
+                IsVerified = true, // Staff accounts are portal-managed; OTP not required
                 CreatedOn = DateTime.Now
             };
 
@@ -242,7 +306,12 @@ public class AuthService : IAuthService
         LoginRequest request,
         CancellationToken cancellationToken = default)
     {
-        var mobileNo = request.MobileNo.Trim();
+        var (mobileOk, mobileNo, mobileError) = MobileNumberHelper.ValidateAndNormalize(request.MobileNo);
+        if (!mobileOk)
+        {
+            return (false, mobileError, null, StatusCodes.Status400BadRequest);
+        }
+
         var user = await _userRepository.GetUserByMobileAsync(mobileNo, cancellationToken);
 
         if (user == null || !PasswordHasher.Verify(request.Password, user.PasswordHash))
@@ -253,6 +322,13 @@ public class AuthService : IAuthService
         if (!user.IsActive)
         {
             return (false, "Account is inactive. Contact support.", null, StatusCodes.Status403Forbidden);
+        }
+
+        // Clients and Providers must verify OTP before login. Staff accounts are portal-managed.
+        if (!user.IsVerified
+            && !user.UserType.Equals(UserTypeConstants.Staff, StringComparison.OrdinalIgnoreCase))
+        {
+            return (false, "Mobile number is not verified. Please verify OTP first.", null, StatusCodes.Status403Forbidden);
         }
 
         if (!UserTypeConstants.IsValid(user.UserType))

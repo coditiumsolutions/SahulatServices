@@ -1,46 +1,91 @@
 @model HomeServicesPortal.Models.ViewModels.ProviderDocumentFormVm
+@{
+    string UrlPath(string? path) => string.IsNullOrWhiteSpace(path) ? "" : "/" + path.TrimStart('/');
+    var isEdit = Model.Uid > 0;
+}
 
 <div class="mb-3">
     <label asp-for="ProviderUid" class="form-label"></label>
-    <select asp-for="ProviderUid" class="form-select" asp-items="Model.Providers"><option value="">-- Select S-Provider --</option></select>
-    <span asp-validation-for="ProviderUid" class="text-danger small"></span>
+    @if (isEdit)
+    {
+        <input type="hidden" asp-for="ProviderUid" />
+        <select class="form-select" asp-items="Model.Providers" disabled></select>
+        <div class="form-text">Provider cannot be changed after documents are created.</div>
+    }
+    else
+    {
+        <select asp-for="ProviderUid" class="form-select" asp-items="Model.Providers">
+            <option value="">-- Select Provider --</option>
+        </select>
+        <span asp-validation-for="ProviderUid" class="text-danger small"></span>
+    }
 </div>
 
 <div class="row">
-    <div class="col-md-6 mb-3">
-        <label asp-for="DocumentType" class="form-label"></label>
-        <select asp-for="DocumentType" class="form-select" asp-items="Model.DocumentTypes"><option value="">-- Select Type --</option></select>
-        <span asp-validation-for="DocumentType" class="text-danger small"></span>
-    </div>
-    <div class="col-md-6 mb-3">
-        <label asp-for="DocumentNo" class="form-label"></label>
-        <input asp-for="DocumentNo" class="form-control" placeholder="e.g. CNIC or license number" />
-        <span asp-validation-for="DocumentNo" class="text-danger small"></span>
-    </div>
-</div>
-
-<div class="row">
-    <div class="col-md-6 mb-3">
-        <label asp-for="DocumentFile" class="form-label"></label>
-        <input asp-for="DocumentFile" class="form-control" type="file" accept=".pdf,.jpg,.jpeg,.png,.webp" />
-        @if (!string.IsNullOrWhiteSpace(Model.ExistingFilePath))
+    <div class="col-md-4 mb-3">
+        <label asp-for="ProfilePhoto" class="form-label"></label>
+        <input asp-for="ProfilePhoto" class="form-control" type="file" accept=".jpg,.jpeg,.png" />
+        @if (!string.IsNullOrWhiteSpace(Model.ExistingProfilePhotoPath))
         {
             <div class="mt-2">
-                <a href="@Model.ExistingFilePath" target="_blank" rel="noopener" class="btn btn-outline-secondary btn-sm">
-                    <i class="fa-solid fa-file me-1"></i>View current file
-                </a>
-                <div class="form-text">Upload a new file only if you want to replace the current one.</div>
+                <img src="@UrlPath(Model.ExistingProfilePhotoPath)" alt="Profile" class="img-thumbnail" style="max-height:120px" />
+                <div class="form-text">Leave empty to keep current photo.</div>
             </div>
         }
         else
         {
-            <div class="form-text">PDF, JPG, PNG, or WEBP — max 5 MB.</div>
+            <div class="form-text">JPG/PNG — max 5 MB. Required.</div>
         }
-        <span asp-validation-for="DocumentFile" class="text-danger small"></span>
+        <span asp-validation-for="ProfilePhoto" class="text-danger small"></span>
     </div>
-    <div class="col-md-6 mb-3">
-        <label asp-for="ExpiryDate" class="form-label"></label>
-        <input asp-for="ExpiryDate" class="form-control" type="date" />
-        <span asp-validation-for="ExpiryDate" class="text-danger small"></span>
+    <div class="col-md-4 mb-3">
+        <label asp-for="CnicFront" class="form-label"></label>
+        <input asp-for="CnicFront" class="form-control" type="file" accept=".jpg,.jpeg,.png" />
+        @if (!string.IsNullOrWhiteSpace(Model.ExistingCnicFrontPath))
+        {
+            <div class="mt-2">
+                <img src="@UrlPath(Model.ExistingCnicFrontPath)" alt="CNIC Front" class="img-thumbnail" style="max-height:120px" />
+                <div class="form-text">Leave empty to keep current image.</div>
+            </div>
+        }
+        else
+        {
+            <div class="form-text">JPG/PNG — max 5 MB. Required.</div>
+        }
+        <span asp-validation-for="CnicFront" class="text-danger small"></span>
+    </div>
+    <div class="col-md-4 mb-3">
+        <label asp-for="CnicBack" class="form-label"></label>
+        <input asp-for="CnicBack" class="form-control" type="file" accept=".jpg,.jpeg,.png" />
+        @if (!string.IsNullOrWhiteSpace(Model.ExistingCnicBackPath))
+        {
+            <div class="mt-2">
+                <img src="@UrlPath(Model.ExistingCnicBackPath)" alt="CNIC Back" class="img-thumbnail" style="max-height:120px" />
+                <div class="form-text">Leave empty to keep current image.</div>
+            </div>
+        }
+        else
+        {
+            <div class="form-text">JPG/PNG — max 5 MB. Required.</div>
+        }
+        <span asp-validation-for="CnicBack" class="text-danger small"></span>
     </div>
 </div>
+
+@if (isEdit)
+{
+    <hr />
+    <div class="row">
+        <div class="col-md-4 mb-3">
+            <div class="form-check form-switch mt-4">
+                <input asp-for="IsVerified" class="form-check-input" type="checkbox" />
+                <label asp-for="IsVerified" class="form-check-label"></label>
+            </div>
+        </div>
+        <div class="col-md-8 mb-3">
+            <label asp-for="VerificationRemarks" class="form-label"></label>
+            <input asp-for="VerificationRemarks" class="form-control" maxlength="500" placeholder="Optional remarks" />
+            <span asp-validation-for="VerificationRemarks" class="text-danger small"></span>
+        </div>
+    </div>
+}

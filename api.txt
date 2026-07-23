@@ -1,4 +1,4 @@
-# Version: 1.9 | UpdatedAt: 20/07/2026
+# Version: 2.3 | UpdatedAt: 23/07/2026
 # Database: SahulatAppDB
 # Local Base URL:  https://localhost:7265/api/
 # Deployed Base URL: https://sahulatghartak.com/api/
@@ -42,7 +42,7 @@ Request Body:
 Success (201):
 {
   "success": true,
-  "message": "Client registered successfully.",
+  "message": "Client registered successfully. Verify OTP to activate your account.",
   "data": {
     "userId": 1,
     "profileId": 1,
@@ -54,10 +54,15 @@ Success (201):
   }
 }
 
+Notes:
+- Mobile format: 03XXXXXXXXX
+- Account is created with IsVerified=false until OTP is verified
+- Recommended flow: register-client -> send-otp (Registration) -> verify-otp -> login
+
 Fail (400):
 {
   "success": false,
-  "message": "Mobile number is already registered.",
+  "message": "Mobile number already registered.",
   "data": null
 }
 
@@ -72,7 +77,7 @@ Request Body:
   "mobileNo": "03335191392",
   "password": "ghauri",
   "fullName": "Shahid",
-  "cnic": "1-1-1",
+  "cnic": "37405-1234567-1",
   "gender": "Male",
   "experienceYears": 2,
   "description": "Experienced provider",
@@ -82,6 +87,8 @@ Request Body:
 Notes:
 - categoryId OR categoryName is required
 - verifies existing client using mobileNo + password
+- client must be OTP-verified (UsersLogin.IsVerified=true) before upgrade
+- CNIC must be unique across Providers (DB unique constraint)
 
 Success (200):
 {
@@ -90,6 +97,7 @@ Success (200):
   "data": {
     "userId": 1,
     "profileId": 4,
+    "providerUid": 4,
     "userType": "Provider",
     "fullName": "Shahid",
     "mobileNo": "03335191392",
@@ -98,6 +106,10 @@ Success (200):
   }
 }
 
+Notes (register-provider):
+- profileId and providerUid are the same value (Providers.UID)
+- Document upload is a separate API: POST /api/provider/upload-documents
+
 Fail (401):
 {
   "success": false,
@@ -105,10 +117,24 @@ Fail (401):
   "data": null
 }
 
+Fail (403):
+{
+  "success": false,
+  "message": "Mobile number is not verified. Please verify OTP first.",
+  "data": null
+}
+
 Fail (409):
 {
   "success": false,
   "message": "Account is already registered as a provider.",
+  "data": null
+}
+
+Fail (409 — duplicate CNIC):
+{
+  "success": false,
+  "message": "CNIC is already registered to another provider.",
   "data": null
 }
 
@@ -147,7 +173,7 @@ Success (201):
 Fail (400):
 {
   "success": false,
-  "message": "Mobile number is already registered.",
+  "message": "Mobile number already registered.",
   "data": null
 }
 
@@ -183,10 +209,334 @@ Fail (401):
   "data": null
 }
 
-Fail (403):
+Fail (403 inactive):
 {
   "success": false,
   "message": "Account is inactive. Contact support.",
+  "data": null
+}
+
+Fail (403 unverified):
+{
+  "success": false,
+  "message": "Mobile number is not verified. Please verify OTP first.",
+  "data": null
+}
+
+Notes:
+- Client and Provider accounts must have UsersLogin.IsVerified=true to login
+- Staff accounts are auto-verified on register-staff
+
+--------------------------------------------------------------------------------
+POST Send OTP
+--------------------------------------------------------------------------------
+Local:     https://localhost:7265/api/auth/send-otp
+Deployed:  https://sahulatghartak.com/api/auth/send-otp
+
+Request Body:
+{
+  "mobileNo": "03001234567",
+  "otpType": "Registration"
+}
+
+Notes:
+- otpType: Registration | Login | PasswordReset
+- Mobile format: 03XXXXXXXXX (optional +92 prefix normalized)
+- OTP is 6 digits; ExpiryTime = now + 5 minutes
+- Unverified OTP for same mobile+type is updated (not duplicated)
+- Registration: if mobile already exists and IsVerified=true -> 409
+- data.otp is controlled by config Otp:IncludeInResponse (true = include code; false = null)
+- TEMPORARY: IncludeInResponse=true on deployed API until a real SMS gateway is wired; then set false
+
+Success (200 when Otp:IncludeInResponse=true):
+{
+  "success": true,
+  "message": "OTP sent successfully.",
+  "data": {
+    "mobileNo": "03001234567",
+    "otpType": "Registration",
+    "expiryTime": "2026-07-20T16:40:00",
+    "otp": "458963"
+  }
+}
+
+Success (200 when Otp:IncludeInResponse=false):
+{
+  "success": true,
+  "message": "OTP sent successfully.",
+  "data": {
+    "mobileNo": "03001234567",
+    "otpType": "Registration",
+    "expiryTime": "2026-07-20T16:40:00",
+    "otp": null
+  }
+}
+
+Fail (400):
+{
+  "success": false,
+  "message": "Invalid mobile number format. Use 03XXXXXXXXX.",
+  "data": null
+}
+
+Fail (409):
+{
+  "success": false,
+  "message": "Mobile number already registered.",
+  "data": null
+}
+
+--------------------------------------------------------------------------------
+POST Verify OTP
+--------------------------------------------------------------------------------
+Local:     https://localhost:7265/api/auth/verify-otp
+Deployed:  https://sahulatghartak.com/api/auth/verify-otp
+
+Request Body:
+{
+  "mobileNo": "03001234567",
+  "otp": "458963"
+}
+
+Notes:
+- Uses latest unverified OTP for the mobile number
+- Max 3 invalid attempts (AttemptCount)
+- On success: UserOTP.IsVerified=true, VerifiedOn set
+- If UsersLogin row exists: UsersLogin.IsVerified=true
+
+Success (200):
+{
+  "success": true,
+  "message": "OTP verified successfully.",
+  "data": {
+    "mobileNo": "03001234567",
+    "isVerified": true,
+    "userVerified": true
+  }
+}
+
+Fail (404):
+{
+  "success": false,
+  "message": "OTP not found.",
+  "data": null
+}
+
+Fail (400 expired):
+{
+  "success": false,
+  "message": "OTP expired.",
+  "data": null
+}
+
+Fail (400 invalid):
+{
+  "success": false,
+  "message": "Invalid OTP.",
+  "data": null
+}
+
+Fail (429):
+{
+  "success": false,
+  "message": "Maximum attempts exceeded.",
+  "data": null
+}
+
+--------------------------------------------------------------------------------
+POST Resend OTP
+--------------------------------------------------------------------------------
+Local:     https://localhost:7265/api/auth/resend-otp
+Deployed:  https://sahulatghartak.com/api/auth/resend-otp
+
+Request Body:
+{
+  "mobileNo": "03001234567",
+  "otpType": "Registration"
+}
+
+Notes:
+- Generates a new 6-digit OTP
+- Resets AttemptCount to 0
+- Refreshes ExpiryTime (+5 minutes)
+- Increments SentCount (max 5)
+- Sends via ISmsService (DummySmsService logs to console)
+- data.otp follows Otp:IncludeInResponse (same as send-otp)
+
+Success (200 when Otp:IncludeInResponse=true):
+{
+  "success": true,
+  "message": "OTP resent successfully.",
+  "data": {
+    "mobileNo": "03001234567",
+    "otpType": "Registration",
+    "expiryTime": "2026-07-20T16:45:00",
+    "otp": "781204"
+  }
+}
+
+Fail (429):
+{
+  "success": false,
+  "message": "Maximum OTP resend limit reached. Try again later.",
+  "data": null
+}
+
+================================================================================
+PROVIDER DOCUMENT APIs
+================================================================================
+Files are stored under wwwroot/uploads/providers/{ProviderUID}/
+Database stores relative paths only (e.g. uploads/providers/25/profile.jpg)
+Allowed: jpg, jpeg, png | Max 5 MB per image | Fixed names: profile.jpg, cnic_front.jpg, cnic_back.jpg
+
+--------------------------------------------------------------------------------
+POST Upload Provider Documents
+--------------------------------------------------------------------------------
+Local:     https://localhost:7265/api/provider/upload-documents
+Deployed:  https://sahulatghartak.com/api/provider/upload-documents
+
+Content-Type: multipart/form-data
+
+Form Fields:
+- ProviderUID (int, required)
+- ProfilePhoto (file, required)
+- CNICFront (file, required)
+- CNICBack (file, required)
+
+Success (200):
+{
+  "success": true,
+  "message": "Provider documents uploaded successfully.",
+  "data": {
+    "providerUid": 25,
+    "profilePhotoPath": "uploads/providers/25/profile.jpg",
+    "cnicFrontImagePath": "uploads/providers/25/cnic_front.jpg",
+    "cnicBackImagePath": "uploads/providers/25/cnic_back.jpg",
+    "isVerified": false,
+    "verifiedOn": null,
+    "verifiedBy": null,
+    "verificationRemarks": null,
+    "createdOn": "2026-07-23T11:00:00",
+    "updatedOn": null
+  }
+}
+
+Fail (404):
+{
+  "success": false,
+  "message": "Provider not found.",
+  "data": null
+}
+
+Fail (415):
+{
+  "success": false,
+  "message": "Only jpg, jpeg, and png images are allowed.",
+  "data": null
+}
+
+Fail (400):
+{
+  "success": false,
+  "message": "File exceeds the maximum size of 5 MB.",
+  "data": null
+}
+
+--------------------------------------------------------------------------------
+GET Provider Documents
+--------------------------------------------------------------------------------
+Local:     https://localhost:7265/api/provider/{providerUID}/documents
+Deployed:  https://sahulatghartak.com/api/provider/{providerUID}/documents
+
+Example:
+GET https://localhost:7265/api/provider/25/documents
+
+Success (200):
+{
+  "success": true,
+  "message": "Provider documents fetched successfully.",
+  "data": {
+    "providerUid": 25,
+    "profilePhotoPath": "uploads/providers/25/profile.jpg",
+    "cnicFrontImagePath": "uploads/providers/25/cnic_front.jpg",
+    "cnicBackImagePath": "uploads/providers/25/cnic_back.jpg",
+    "isVerified": false,
+    "verifiedOn": null,
+    "verifiedBy": null,
+    "verificationRemarks": null,
+    "createdOn": "2026-07-23T11:00:00",
+    "updatedOn": null
+  }
+}
+
+Fail (404):
+{
+  "success": false,
+  "message": "Provider documents not found.",
+  "data": null
+}
+
+--------------------------------------------------------------------------------
+DELETE Provider Documents
+--------------------------------------------------------------------------------
+Local:     https://localhost:7265/api/provider/{providerUID}/documents
+Deployed:  https://sahulatghartak.com/api/provider/{providerUID}/documents
+
+Example:
+DELETE https://localhost:7265/api/provider/25/documents
+
+Success (200):
+{
+  "success": true,
+  "message": "Provider documents deleted successfully.",
+  "data": {
+    "providerUid": 25
+  }
+}
+
+Fail (404):
+{
+  "success": false,
+  "message": "Provider documents not found.",
+  "data": null
+}
+
+--------------------------------------------------------------------------------
+POST Verify Provider Documents (Admin)
+--------------------------------------------------------------------------------
+Local:     https://localhost:7265/api/provider/verify-documents
+Deployed:  https://sahulatghartak.com/api/provider/verify-documents
+
+Request Body:
+{
+  "providerUid": 25,
+  "isVerified": true,
+  "verifiedBy": 1,
+  "verificationRemarks": "CNIC clear and matched"
+}
+
+Success (200):
+{
+  "success": true,
+  "message": "Provider documents verification updated successfully.",
+  "data": {
+    "providerUid": 25,
+    "profilePhotoPath": "uploads/providers/25/profile.jpg",
+    "cnicFrontImagePath": "uploads/providers/25/cnic_front.jpg",
+    "cnicBackImagePath": "uploads/providers/25/cnic_back.jpg",
+    "isVerified": true,
+    "verifiedOn": "2026-07-23T12:00:00",
+    "verifiedBy": 1,
+    "verificationRemarks": "CNIC clear and matched",
+    "createdOn": "2026-07-23T11:00:00",
+    "updatedOn": "2026-07-23T12:00:00"
+  }
+}
+
+Fail (404):
+{
+  "success": false,
+  "message": "Provider documents not found.",
   "data": null
 }
 

@@ -6,12 +6,14 @@
 </div>
 <div class="row justify-content-center"><div class="col-lg-6"><div class="card hs-card border-danger"><div class="card-body p-4">
     <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
-    <p>Are you sure you want to delete this document? The uploaded file will also be removed.</p>
+    <p>Are you sure you want to delete this provider's documents? Profile and CNIC image files will also be removed from disk.</p>
     <dl class="row mb-4">
-        <dt class="col-sm-4 text-muted">Provider</dt><dd class="col-sm-8 fw-semibold">@Model.ProviderName</dd>
-        <dt class="col-sm-4 text-muted">Document Type</dt><dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.DocumentType) ? "—" : Model.DocumentType)</dd>
-        <dt class="col-sm-4 text-muted">Document No</dt><dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.DocumentNo) ? "—" : Model.DocumentNo)</dd>
-        <dt class="col-sm-4 text-muted">Expiry Date</dt><dd class="col-sm-8">@(Model.ExpiryDate?.ToString("dd MMM yyyy") ?? "—")</dd>
+        <dt class="col-sm-4 text-muted">Provider</dt><dd class="col-sm-8 fw-semibold">@Model.ProviderName (#@Model.ProviderUid)</dd>
+        <dt class="col-sm-4 text-muted">Status</dt>
+        <dd class="col-sm-8">@(Model.IsVerified ? "Verified" : "Pending")</dd>
+        <dt class="col-sm-4 text-muted">Profile</dt><dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.ProfilePhotoPath) ? "—" : Model.ProfilePhotoPath)</dd>
+        <dt class="col-sm-4 text-muted">CNIC Front</dt><dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.CnicFrontImagePath) ? "—" : Model.CnicFrontImagePath)</dd>
+        <dt class="col-sm-4 text-muted">CNIC Back</dt><dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.CnicBackImagePath) ? "—" : Model.CnicBackImagePath)</dd>
     </dl>
     <form asp-action="DeleteConfirmed" asp-route-id="@Model.Uid" method="post">@Html.AntiForgeryToken()
         <div class="d-flex gap-2"><button type="submit" class="btn btn-danger"><i class="fa-solid fa-trash me-1"></i>Yes, Delete</button><a asp-action="Index" class="btn btn-outline-secondary">Cancel</a></div>

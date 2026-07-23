@@ -89,7 +89,10 @@
                                     </div>
                                 }
                             </td>
-                            <td class="fw-semibold">@item.FullName</td>
+                            <td class="fw-semibold">
+                                <div>@item.FullName</div>
+                                <div class="small text-muted">ID #@item.Uid</div>
+                            </td>
                             <td>@(item.MobileNo ?? "—")</td>
                             <td>@item.CategoryName</td>
                             <td>@(item.ExperienceYears?.ToString() ?? "0")</td>

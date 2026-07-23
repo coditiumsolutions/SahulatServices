@@ -1,40 +1,76 @@
 @model HomeServicesPortal.Models.ViewModels.ProviderDocumentDetailsVm
-@{ Layout = "_AdminLayout"; ViewData["Title"] = "P-Document Details"; }
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "P-Document Details";
+    string UrlPath(string? path) => string.IsNullOrWhiteSpace(path) ? "" : "/" + path.TrimStart('/');
+}
 <div class="mb-4">
     <a asp-action="Index" class="text-decoration-none text-muted"><i class="fa-solid fa-arrow-left me-1"></i>Back to P-Documents</a>
     <h2 class="mt-2 mb-0"><i class="fa-solid fa-eye me-2 text-primary"></i>P-Document Details</h2>
 </div>
-<div class="row justify-content-center"><div class="col-lg-8"><div class="card hs-card"><div class="card-body p-4">
-    <dl class="row mb-0">
-        <dt class="col-sm-4 text-muted">Provider</dt><dd class="col-sm-8 fw-semibold">@Model.ProviderName</dd>
-        <dt class="col-sm-4 text-muted">Document Type</dt><dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.DocumentType) ? "—" : Model.DocumentType)</dd>
-        <dt class="col-sm-4 text-muted">Document No</dt><dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.DocumentNo) ? "—" : Model.DocumentNo)</dd>
-        <dt class="col-sm-4 text-muted">Expiry Date</dt>
-        <dd class="col-sm-8">
-            @if (Model.ExpiryDate.HasValue)
+<div class="row justify-content-center"><div class="col-lg-10"><div class="card hs-card"><div class="card-body p-4">
+    <dl class="row mb-4">
+        <dt class="col-sm-3 text-muted">Provider</dt>
+        <dd class="col-sm-9 fw-semibold">@Model.ProviderName <span class="text-muted fw-normal">(#@Model.ProviderUid)</span></dd>
+        <dt class="col-sm-3 text-muted">Status</dt>
+        <dd class="col-sm-9">
+            @if (Model.IsVerified)
             {
-                @Model.ExpiryDate.Value.ToString("dd MMM yyyy")
-                @if (Model.IsExpired) { <span class="badge bg-danger ms-1">Expired</span> }
+                <span class="badge bg-success">Verified</span>
             }
-            else { <text>—</text> }
-        </dd>
-        <dt class="col-sm-4 text-muted">File</dt>
-        <dd class="col-sm-8">
-            @if (!string.IsNullOrWhiteSpace(Model.FilePath))
+            else
             {
-                var isImage = Model.FilePath.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase)
-                    || Model.FilePath.EndsWith(".jpeg", StringComparison.OrdinalIgnoreCase)
-                    || Model.FilePath.EndsWith(".png", StringComparison.OrdinalIgnoreCase)
-                    || Model.FilePath.EndsWith(".webp", StringComparison.OrdinalIgnoreCase);
-                if (isImage)
-                {
-                    <img src="@Model.FilePath" alt="Document" class="img-fluid rounded border mb-2" style="max-height:200px" />
-                }
-                <div><a href="@Model.FilePath" target="_blank" rel="noopener" class="btn btn-outline-primary btn-sm"><i class="fa-solid fa-file-arrow-down me-1"></i>Download / View</a></div>
+                <span class="badge bg-secondary">Pending</span>
             }
-            else { <text>—</text> }
         </dd>
+        <dt class="col-sm-3 text-muted">Verified On</dt>
+        <dd class="col-sm-9">@(Model.VerifiedOn?.ToString("dd MMM yyyy HH:mm") ?? "—")</dd>
+        <dt class="col-sm-3 text-muted">Verified By</dt>
+        <dd class="col-sm-9">@(Model.VerifiedBy?.ToString() ?? "—")</dd>
+        <dt class="col-sm-3 text-muted">Remarks</dt>
+        <dd class="col-sm-9">@(string.IsNullOrWhiteSpace(Model.VerificationRemarks) ? "—" : Model.VerificationRemarks)</dd>
+        <dt class="col-sm-3 text-muted">Created</dt>
+        <dd class="col-sm-9">@Model.CreatedOn.ToString("dd MMM yyyy HH:mm")</dd>
+        <dt class="col-sm-3 text-muted">Updated</dt>
+        <dd class="col-sm-9">@(Model.UpdatedOn?.ToString("dd MMM yyyy HH:mm") ?? "—")</dd>
     </dl>
+
+    <div class="row g-3">
+        <div class="col-md-4">
+            <div class="border rounded p-2 h-100">
+                <div class="small text-muted mb-2">Profile Photo</div>
+                @if (!string.IsNullOrWhiteSpace(Model.ProfilePhotoPath))
+                {
+                    <img src="@UrlPath(Model.ProfilePhotoPath)" alt="Profile" class="img-fluid rounded" />
+                    <div class="mt-2"><a href="@UrlPath(Model.ProfilePhotoPath)" target="_blank" rel="noopener" class="small">Open</a></div>
+                }
+                else { <span class="text-muted">—</span> }
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="border rounded p-2 h-100">
+                <div class="small text-muted mb-2">CNIC Front</div>
+                @if (!string.IsNullOrWhiteSpace(Model.CnicFrontImagePath))
+                {
+                    <img src="@UrlPath(Model.CnicFrontImagePath)" alt="CNIC Front" class="img-fluid rounded" />
+                    <div class="mt-2"><a href="@UrlPath(Model.CnicFrontImagePath)" target="_blank" rel="noopener" class="small">Open</a></div>
+                }
+                else { <span class="text-muted">—</span> }
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="border rounded p-2 h-100">
+                <div class="small text-muted mb-2">CNIC Back</div>
+                @if (!string.IsNullOrWhiteSpace(Model.CnicBackImagePath))
+                {
+                    <img src="@UrlPath(Model.CnicBackImagePath)" alt="CNIC Back" class="img-fluid rounded" />
+                    <div class="mt-2"><a href="@UrlPath(Model.CnicBackImagePath)" target="_blank" rel="noopener" class="small">Open</a></div>
+                }
+                else { <span class="text-muted">—</span> }
+            </div>
+        </div>
+    </div>
+
     <hr /><div class="d-flex gap-2">
         <a asp-action="Edit" asp-route-id="@Model.Uid" class="btn btn-primary"><i class="fa-solid fa-pen me-1"></i>Edit</a>
         <a asp-action="Delete" asp-route-id="@Model.Uid" class="btn btn-outline-danger"><i class="fa-solid fa-trash me-1"></i>Delete</a>

@@ -1,4 +1,4 @@
-# Version: 2.6 | UpdatedAt: 20/07/2026
+# Version: 3.0 | UpdatedAt: 23/07/2026
 # Database: SahulatAppDB
 # Server: 34.131.132.158,1433
 
@@ -17,6 +17,22 @@ Table: UsersLogin
   IsVerified       bit              NOT NULL  DEFAULT (0)
   CreatedOn        datetime         NOT NULL  DEFAULT (getdate())
   LastLogin        datetime         NULL
+
+--------------------------------------------------------------------------------
+Table: UserOTP
+--------------------------------------------------------------------------------
+  UID              int              NOT NULL  PK
+  MobileNo         nvarchar(20)     NOT NULL  INDEX IX_UserOTP_MobileNo
+  OTPCode          nvarchar(10)     NOT NULL
+  OTPType          nvarchar(20)     NOT NULL  CHECK (Registration | Login | PasswordReset)
+  ExpiryTime       datetime         NOT NULL
+  IsVerified       bit              NOT NULL  DEFAULT (0)  INDEX IX_UserOTP_IsVerified
+  AttemptCount     int              NOT NULL  DEFAULT (0)
+  SentCount        int              NOT NULL  DEFAULT (0)
+  CreatedOn        datetime         NOT NULL  DEFAULT (getdate())
+  VerifiedOn       datetime         NULL
+  -- No FK to UsersLogin: Registration OTP is issued before a UsersLogin row exists.
+  -- MobileNo is the natural lookup key for all OTP flows (API owns generation/expiry/limits).
 
 --------------------------------------------------------------------------------
 Table: Clients
@@ -41,9 +57,9 @@ Table: ServiceCategories
 Table: Providers
 --------------------------------------------------------------------------------
   UID              int              NOT NULL  PK
-  UserUID          int              NOT NULL  FK -> UsersLogin.UID
+  UserUID          int              NOT NULL  FK -> UsersLogin.UID  UNIQUE
   FullName         nvarchar(150)    NOT NULL
-  CNIC             nvarchar(15)     NOT NULL
+  CNIC             nvarchar(15)     NOT NULL  UNIQUE
   Gender           nvarchar(20)     NULL
   ExperienceYears  int              NULL      DEFAULT (0)
   Description      nvarchar(MAX)    NULL
@@ -55,6 +71,24 @@ Table: Providers
   CreatedOn        datetime         NOT NULL  DEFAULT (getdate())
   CategoryUID      int              NOT NULL  FK -> ServiceCategories.UID
   AvailableTiming  nvarchar(100)    NULL
+
+--------------------------------------------------------------------------------
+Table: ProviderDocuments
+--------------------------------------------------------------------------------
+  UID                  int              NOT NULL  PK
+  ProviderUID          int              NOT NULL  FK -> Providers.UID  UNIQUE
+  ProfilePhotoPath     nvarchar(500)    NULL
+  CNICFrontImagePath   nvarchar(500)    NULL
+  CNICBackImagePath    nvarchar(500)    NULL
+  IsVerified           bit              NOT NULL  DEFAULT (0)
+  VerifiedOn           datetime         NULL
+  VerifiedBy           int              NULL
+  VerificationRemarks  nvarchar(500)    NULL
+  CreatedOn            datetime         NOT NULL  DEFAULT (getdate())
+  UpdatedOn            datetime         NULL
+  -- Relative paths only (e.g. uploads/providers/125/profile.jpg). One row per provider.
+  -- Indexes: IX_ProviderDocuments_CreatedOn, IX_ProviderDocuments_MissingProfilePhoto (filtered),
+  --          IX_ProviderDocuments_CNICImagesPresent (filtered)
 
 --------------------------------------------------------------------------------
 Table: Staff
@@ -440,11 +474,12 @@ FOREIGN KEY RELATIONSHIPS
   PaymentLedger.BookingUID                 -> ServiceBookings.UID
   PaymentLedger.ProviderUID                -> Providers.UID
   ProviderPayouts.ProviderUID              -> Providers.UID
+  ProviderDocuments.ProviderUID            -> Providers.UID
 
   ServiceProviders.CategoryUID       -> ServiceCategories.UID          [REMOVED]
   ProviderLocations.ProviderUID      -> ServiceProviders.UID           [REMOVED]
   ProviderAvailability.ProviderUID   -> ServiceProviders.UID           [REMOVED]
-  ProviderDocuments.ProviderUID      -> ServiceProviders.UID           [REMOVED]
+  ProviderDocuments.ProviderUID      -> ServiceProviders.UID           [REMOVED]  (legacy schema)
   ServiceRequests.CustomerUID        -> Customers.UID                  [REMOVED]
   ServiceRequests.CategoryUID        -> ServiceCategories.UID          [REMOVED]
   ProviderQuotes.RequestUID          -> ServiceRequests.UID            [REMOVED]

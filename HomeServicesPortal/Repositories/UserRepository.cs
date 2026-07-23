@@ -54,6 +54,9 @@ public class UserRepository : IUserRepository
     public Task<bool> ProviderExistsForUserAsync(int userId, CancellationToken cancellationToken = default) =>
         _db.Providers.AnyAsync(p => p.UserUid == userId, cancellationToken);
 
+    public Task<bool> ProviderCnicExistsAsync(string cnic, CancellationToken cancellationToken = default) =>
+        _db.Providers.AnyAsync(p => p.Cnic == cnic, cancellationToken);
+
     public async Task UpdateUserTypeAsync(int userId, string userType, CancellationToken cancellationToken = default)
     {
         var user = await _db.UsersLogins.FirstOrDefaultAsync(u => u.Uid == userId, cancellationToken);

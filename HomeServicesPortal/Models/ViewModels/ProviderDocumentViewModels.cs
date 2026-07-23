@@ -19,12 +19,19 @@ public class ProviderDocumentListVm
 public class ProviderDocumentItemVm
 {
     public int Uid { get; set; }
+    public int ProviderUid { get; set; }
     public string ProviderName { get; set; } = string.Empty;
-    public string? DocumentType { get; set; }
-    public string? DocumentNo { get; set; }
-    public string? FilePath { get; set; }
-    public DateOnly? ExpiryDate { get; set; }
-    public bool IsExpired => ExpiryDate.HasValue && ExpiryDate.Value < DateOnly.FromDateTime(DateTime.Today);
+    public string? ProfilePhotoPath { get; set; }
+    public string? CnicFrontImagePath { get; set; }
+    public string? CnicBackImagePath { get; set; }
+    public bool IsVerified { get; set; }
+    public DateTime CreatedOn { get; set; }
+    public DateTime? UpdatedOn { get; set; }
+
+    public bool HasAllImages =>
+        !string.IsNullOrWhiteSpace(ProfilePhotoPath)
+        && !string.IsNullOrWhiteSpace(CnicFrontImagePath)
+        && !string.IsNullOrWhiteSpace(CnicBackImagePath);
 }
 
 public class ProviderDocumentFormVm
@@ -35,25 +42,27 @@ public class ProviderDocumentFormVm
     [Display(Name = "Provider")]
     public int ProviderUid { get; set; }
 
-    [StringLength(100)]
-    [Display(Name = "Document Type")]
-    public string? DocumentType { get; set; }
+    [Display(Name = "Profile Photo")]
+    public IFormFile? ProfilePhoto { get; set; }
 
-    [StringLength(100)]
-    [Display(Name = "Document No")]
-    public string? DocumentNo { get; set; }
+    [Display(Name = "CNIC Front")]
+    public IFormFile? CnicFront { get; set; }
 
-    [Display(Name = "Document File")]
-    public IFormFile? DocumentFile { get; set; }
+    [Display(Name = "CNIC Back")]
+    public IFormFile? CnicBack { get; set; }
 
-    [DataType(DataType.Date)]
-    [Display(Name = "Expiry Date")]
-    public DateOnly? ExpiryDate { get; set; }
+    public string? ExistingProfilePhotoPath { get; set; }
+    public string? ExistingCnicFrontPath { get; set; }
+    public string? ExistingCnicBackPath { get; set; }
 
-    public string? ExistingFilePath { get; set; }
+    [Display(Name = "Verified")]
+    public bool IsVerified { get; set; }
+
+    [StringLength(500)]
+    [Display(Name = "Verification Remarks")]
+    public string? VerificationRemarks { get; set; }
 
     public List<SelectListItem> Providers { get; set; } = new();
-    public List<SelectListItem> DocumentTypes { get; set; } = new();
 }
 
 public class ProviderDocumentDetailsVm
@@ -61,19 +70,24 @@ public class ProviderDocumentDetailsVm
     public int Uid { get; set; }
     public int ProviderUid { get; set; }
     public string ProviderName { get; set; } = string.Empty;
-    public string? DocumentType { get; set; }
-    public string? DocumentNo { get; set; }
-    public string? FilePath { get; set; }
-    public DateOnly? ExpiryDate { get; set; }
-    public bool IsExpired => ExpiryDate.HasValue && ExpiryDate.Value < DateOnly.FromDateTime(DateTime.Today);
+    public string? ProfilePhotoPath { get; set; }
+    public string? CnicFrontImagePath { get; set; }
+    public string? CnicBackImagePath { get; set; }
+    public bool IsVerified { get; set; }
+    public DateTime? VerifiedOn { get; set; }
+    public int? VerifiedBy { get; set; }
+    public string? VerificationRemarks { get; set; }
+    public DateTime CreatedOn { get; set; }
+    public DateTime? UpdatedOn { get; set; }
 }
 
 public class ProviderDocumentDeleteVm
 {
     public int Uid { get; set; }
+    public int ProviderUid { get; set; }
     public string ProviderName { get; set; } = string.Empty;
-    public string? DocumentType { get; set; }
-    public string? DocumentNo { get; set; }
-    public string? FilePath { get; set; }
-    public DateOnly? ExpiryDate { get; set; }
+    public string? ProfilePhotoPath { get; set; }
+    public string? CnicFrontImagePath { get; set; }
+    public string? CnicBackImagePath { get; set; }
+    public bool IsVerified { get; set; }
 }
