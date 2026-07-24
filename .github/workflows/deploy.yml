@@ -23,7 +23,16 @@ jobs:
 
     - name: Build and Publish
       run: |
-        dotnet publish -c Release -o ./publish
+        dotnet publish -c Release -r linux-x64 --no-self-contained -o ./publish
+
+    - name: Stop systemctl Service
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.GCP_VM_HOST }}
+        username: ${{ secrets.GCP_VM_USER }}
+        key: ${{ secrets.GCP_VM_SSH_KEY }}
+        script: |
+          sudo systemctl stop sahulatghartak
 
     - name: Deploy to GCP VM via SSH
       uses: appleboy/scp-action@v0.1.7
@@ -34,12 +43,14 @@ jobs:
         source: "./publish/*"
         target: "${{ secrets.GCP_APP_PATH }}"
         strip_components: 1
+        tar_exec: true
+        tar_args: "--no-same-owner --no-same-permissions"
 
-    - name: Restart systemctl Service
+    - name: Start systemctl Service
       uses: appleboy/ssh-action@v1.0.3
       with:
         host: ${{ secrets.GCP_VM_HOST }}
         username: ${{ secrets.GCP_VM_USER }}
         key: ${{ secrets.GCP_VM_SSH_KEY }}
         script: |
-          sudo systemctl restart sahulatghartak
+          sudo systemctl start sahulatghartak
