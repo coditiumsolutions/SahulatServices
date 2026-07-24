@@ -1,0 +1,45 @@
+name: Build and Deploy SahulatGharTak to GCP
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Setup .NET SDK
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.0.x'
+
+    - name: Restore Dependencies
+      run: dotnet restore
+
+    - name: Build and Publish
+      run: |
+        dotnet publish -c Release -o ./publish
+
+    - name: Deploy to GCP VM via SSH
+      uses: appleboy/scp-action@v0.1.7
+      with:
+        host: ${{ secrets.GCP_VM_HOST }}
+        username: ${{ secrets.GCP_VM_USER }}
+        key: ${{ secrets.GCP_VM_SSH_KEY }}
+        source: "./publish/*"
+        target: "${{ secrets.GCP_APP_PATH }}"
+        strip_components: 1
+
+    - name: Restart systemctl Service
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.GCP_VM_HOST }}
+        username: ${{ secrets.GCP_VM_USER }}
+        key: ${{ secrets.GCP_VM_SSH_KEY }}
+        script: |
+          sudo systemctl restart sahulatghartak
