@@ -4,6 +4,14 @@ on:
   push:
     branches:
       - main
+    paths-ignore:
+      - '**.md'
+      - '**.txt'
+      - 'docs/**'
+      - 'scripts/**'
+      - 'deploy/**'
+      - '.gitignore'
+      - 'LICENSE'
 
 jobs:
   build-and-deploy:
