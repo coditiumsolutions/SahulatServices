@@ -1,4 +1,5 @@
 name: Build and Deploy SahulatGharTak to GCP
+# trigger: redeploy to verify new GCP VM SSH key (2026-07-24)
 
 on:
   push:
