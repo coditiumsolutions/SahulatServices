@@ -23,7 +23,7 @@ jobs:
 
     - name: Build and Publish
       run: |
-        dotnet publish -c Release -r linux-x64 --no-self-contained -o ./publish
+        dotnet publish -c Release -o ./publish
 
     - name: Stop systemctl Service
       uses: appleboy/ssh-action@v1.0.3
