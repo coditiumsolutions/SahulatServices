@@ -1,7 +1,8 @@
+@model HomeServicesPortal.Interfaces.ApkFileInfo?
 @{
     Layout = "_PublicLayout";
     ViewData["Title"] = "Download App";
-    var apkFileName = "sahulatghartak-31-07-2026.apk";
+    var apkAvailable = Model != null;
 }
 
 <section class="public-hero download-hero">
@@ -17,9 +18,18 @@
                     right from your phone.
                 </p>
                 <div class="public-hero-actions">
-                    <a href="~/downloads/@apkFileName" download="@apkFileName" class="public-btn-light">
-                        <i class="fa-solid fa-download me-2"></i>Download for Android
-                    </a>
+                    @if (apkAvailable)
+                    {
+                        <a asp-controller="Home" asp-action="DownloadApkFile" class="public-btn-light">
+                            <i class="fa-solid fa-download me-2"></i>Download for Android
+                        </a>
+                    }
+                    else
+                    {
+                        <span class="public-btn-light disabled" style="opacity: 0.6; cursor: not-allowed;">
+                            <i class="fa-solid fa-download me-2"></i>Download Coming Soon
+                        </span>
+                    }
                     <a href="#install-help" class="public-btn-outline">Installation Help</a>
                 </div>
             </div>
@@ -83,9 +93,18 @@
         </div>
 
         <div class="text-center mt-5">
-            <a href="~/downloads/@apkFileName" download="@apkFileName" class="btn btn-lg download-cta-btn">
-                <i class="fa-solid fa-download me-2"></i>Download Sahulat Ghar Tak APK
-            </a>
+            @if (apkAvailable)
+            {
+                <a asp-controller="Home" asp-action="DownloadApkFile" class="btn btn-lg download-cta-btn">
+                    <i class="fa-solid fa-download me-2"></i>Download Sahulat Ghar Tak APK
+                </a>
+            }
+            else
+            {
+                <span class="btn btn-lg download-cta-btn disabled" style="opacity: 0.6; cursor: not-allowed;">
+                    <i class="fa-solid fa-download me-2"></i>Download Coming Soon
+                </span>
+            }
         </div>
     </div>
 </section>

@@ -32,7 +32,7 @@
         activeSection = "finance";
     else if (TabClass("/admin/reports") == "active")
         activeSection = "reports";
-    else if (TabClass("/admin/administration") == "active")
+    else if (TabClass("/admin/administration", "/admin/apkmanagement") == "active")
         activeSection = "administration";
 }
 
@@ -569,6 +569,9 @@
                         <div class="hs-nav-parent"><i class="fa-solid fa-user-shield"></i> Administration</div>
                         <a class="hs-nav-link hs-nav-sublink @NavClass("/admin/administration/users", "/admin/administration/roles")" href="/Admin/Administration/Users">
                             <i class="fa-solid fa-user-shield"></i> Users &amp; Roles
+                        </a>
+                        <a class="hs-nav-link hs-nav-sublink @NavClass("/admin/apkmanagement")" href="/Admin/ApkManagement">
+                            <i class="fa-solid fa-mobile-screen-button"></i> APK Management
                         </a>
                     </div>
 

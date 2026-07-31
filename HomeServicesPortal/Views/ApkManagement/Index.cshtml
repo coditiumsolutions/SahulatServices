@@ -1,0 +1,101 @@
+@model HomeServicesPortal.Interfaces.ApkFileInfo?
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "APK Management";
+}
+
+<div class="mb-4">
+    <h2 class="mb-1"><i class="fa-solid fa-mobile-screen-button me-2 text-primary"></i>APK Management</h2>
+    <p class="text-muted mb-0">Upload, download, or remove the Android APK served from the public Download App page.</p>
+</div>
+
+@if (TempData["SuccessMessage"] is string success)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="fa-solid fa-circle-check me-2"></i>@success
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+@if (TempData["ErrorMessage"] is string error)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="fa-solid fa-triangle-exclamation me-2"></i>@error
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<div class="row g-4">
+    <div class="col-lg-6">
+        <div class="card hs-card h-100">
+            <div class="card-body">
+                <h5 class="card-title mb-3"><i class="fa-solid fa-file-arrow-down me-2"></i>Current APK</h5>
+                @if (Model == null)
+                {
+                    <p class="text-muted mb-0">No APK is currently uploaded. The public Download App page will not have a working download link until one is uploaded.</p>
+                }
+                else
+                {
+                    <dl class="row mb-3">
+                        <dt class="col-sm-4 text-muted">File name</dt>
+                        <dd class="col-sm-8 fw-semibold">@Model.FileName</dd>
+                        <dt class="col-sm-4 text-muted">Size</dt>
+                        <dd class="col-sm-8">@((Model.SizeBytes / (1024d * 1024d)).ToString("0.0")) MB</dd>
+                        <dt class="col-sm-4 text-muted">Last updated</dt>
+                        <dd class="col-sm-8">@Model.LastModifiedUtc.ToLocalTime().ToString("dd MMM yyyy, hh:mm tt")</dd>
+                    </dl>
+                    <div class="d-flex gap-2">
+                        <a asp-action="Download" class="btn btn-outline-primary">
+                            <i class="fa-solid fa-download me-1"></i>Download
+                        </a>
+                        <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteApkModal">
+                            <i class="fa-solid fa-trash me-1"></i>Delete
+                        </button>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card hs-card h-100">
+            <div class="card-body">
+                <h5 class="card-title mb-3"><i class="fa-solid fa-upload me-2"></i>Upload New APK</h5>
+                <p class="text-muted">Uploading a new file replaces the current APK. The public download link always points to this file.</p>
+                <form asp-action="Upload" method="post" enctype="multipart/form-data">
+                    @Html.AntiForgeryToken()
+                    <div class="mb-3">
+                        <input type="file" name="apkFile" class="form-control" accept=".apk" required />
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fa-solid fa-upload me-1"></i>Upload
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (Model != null)
+{
+    <div class="modal fade" id="deleteApkModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Delete APK</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to delete <strong>@Model.FileName</strong>? The public Download App page will no longer offer a working download until a new APK is uploaded.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <form asp-action="Delete" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="fileName" value="@Model.FileName" />
+                        <button type="submit" class="btn btn-danger"><i class="fa-solid fa-trash me-1"></i>Yes, Delete</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+}

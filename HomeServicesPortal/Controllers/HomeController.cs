@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
+using HomeServicesPortal.Interfaces;
 using HomeServicesPortal.Models;
 
 namespace HomeServicesPortal.Controllers;
@@ -7,10 +8,12 @@ namespace HomeServicesPortal.Controllers;
 public class HomeController : Controller
 {
     private readonly ILogger<HomeController> _logger;
+    private readonly IApkManagementService _apkManagementService;
 
-    public HomeController(ILogger<HomeController> logger)
+    public HomeController(ILogger<HomeController> logger, IApkManagementService apkManagementService)
     {
         _logger = logger;
+        _apkManagementService = apkManagementService;
     }
 
     public IActionResult Index()
@@ -30,7 +33,24 @@ public class HomeController : Controller
 
     public IActionResult DownloadApp()
     {
-        return View();
+        return View(_apkManagementService.GetCurrentApk());
+    }
+
+    public IActionResult DownloadApkFile()
+    {
+        var current = _apkManagementService.GetCurrentApk();
+        if (current == null)
+        {
+            return NotFound();
+        }
+
+        var path = _apkManagementService.GetPhysicalPath(current.FileName);
+        if (path == null)
+        {
+            return NotFound();
+        }
+
+        return PhysicalFile(path, "application/vnd.android.package-archive", current.FileName);
     }
 
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]

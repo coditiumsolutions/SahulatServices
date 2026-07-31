@@ -26,6 +26,10 @@ HomeServicesPortal/wwwroot/uploads/providers/**
 !HomeServicesPortal/wwwroot/uploads/providers/.gitkeep
 scripts/test-pngs/
 
+# APK managed via Admin Portal > APK Management, uploaded directly to the server (not committed)
+HomeServicesPortal/wwwroot/downloads/**
+!HomeServicesPortal/wwwroot/downloads/.gitkeep
+
 # OS / editor
 .DS_Store
 Thumbs.db

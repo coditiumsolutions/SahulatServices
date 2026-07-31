@@ -13,6 +13,12 @@ public class FileStorageOptions
     /// </summary>
     public string ProviderDocuments { get; set; } = "wwwroot/uploads/providers";
 
+    /// <summary>
+    /// Folder where the distributable Android APK is stored, relative to content root.
+    /// Example: wwwroot/downloads
+    /// </summary>
+    public string ApkDownloads { get; set; } = "wwwroot/downloads";
+
     /// <summary>Maximum allowed size per uploaded image in bytes (default 5 MB).</summary>
     public long MaxFileSizeBytes { get; set; } = 5 * 1024 * 1024;
 
