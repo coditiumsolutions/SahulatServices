@@ -1,14 +1,25 @@
-# Version: 2.3 | UpdatedAt: 23/07/2026
-# Database: SahulatAppDB
-# Local Base URL:  https://localhost:7265/api/
-# Deployed Base URL: https://sahulatghartak.com/api/
-# Server: 34.131.132.158,1433
+================================================================================
+SahulatGharTak API Reference
+Version: 2.3 | Last Updated: 2026-07-23
+Database: SahulatAppDB
+Local Base URL:    https://localhost:7265/api/
+Deployed Base URL:  https://sahulatghartak.com/api/
+DB Server: 34.131.132.158,1433
+Format: REST over HTTPS, JSON request/response bodies
+Auth: None currently — no Authorization header/token required; identity is passed via userId/mobileNo/profileId fields in request bodies
 
-RULES:
-- ALSO UPDATE: D:\Flutter Installation\SahulatGharTak\api.txt
-- Only active/in-use APIs are listed below
-- Mention APIs with both local and deployed base URLs
-- Each API includes Request Body and Success/Fail response bodies
+Purpose: Authoritative source of truth for this project's backend API contract.
+Read this file before implementing, modifying, or debugging any API integration
+in the Flutter app (HTTP calls, request/response models, API service classes).
+
+MAINTENANCE RULES:
+1. Mirror every change to: D:\Flutter Installation\SahulatGharTak\api.txt
+2. List only active/in-use APIs — remove entries for deprecated/unused endpoints
+3. Every endpoint must show both Local and Deployed base URLs
+4. Every endpoint must document: Request Body, Success response, and all Fail responses
+5. Bump Version and Last Updated above whenever this file changes
+================================================================================
+
 
 ================================================================================
 COMMON RESPONSE WRAPPER (most APIs)

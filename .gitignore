@@ -14,10 +14,7 @@ deploy/gcp/appsettings.Production.json
 # .NET
 bin/
 obj/
-publish/
-publish-*/
-publish_old/
-publish_old2/
+publish*/
 publish.zip
 *.user
 *.suo
