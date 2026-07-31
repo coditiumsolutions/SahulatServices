@@ -23,15 +23,16 @@ public class ServiceCategoriesController : Controller
     }
 
     [HttpGet("/Admin/ServiceCategories/Create")]
-    public IActionResult Create()
+    public async Task<IActionResult> Create(CancellationToken cancellationToken)
     {
-        return View(new ServiceCategoryFormVm());
+        return View(await _service.PopulateFormAsync(new ServiceCategoryFormVm(), cancellationToken));
     }
 
     [HttpPost("/Admin/ServiceCategories/Create")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(ServiceCategoryFormVm model, CancellationToken cancellationToken)
     {
+        await _service.PopulateFormAsync(model, cancellationToken);
         if (!ModelState.IsValid) return View(model);
 
         var (success, error) = await _service.CreateAsync(model, cancellationToken);
@@ -66,6 +67,7 @@ public class ServiceCategoriesController : Controller
     public async Task<IActionResult> Edit(int id, ServiceCategoryFormVm model, CancellationToken cancellationToken)
     {
         if (id != model.Uid) return BadRequest();
+        await _service.PopulateFormAsync(model, cancellationToken);
         if (!ModelState.IsValid) return View(model);
 
         var (success, error) = await _service.UpdateAsync(model, cancellationToken);

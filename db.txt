@@ -1,4 +1,4 @@
-# Version: 3.0 | UpdatedAt: 23/07/2026
+# Version: 3.1 | UpdatedAt: 31/07/2026
 # Database: SahulatAppDB
 # Server: 34.131.132.158,1433
 
@@ -45,13 +45,24 @@ Table: Clients
   CreatedOn        datetime         NOT NULL  DEFAULT (getdate())
 
 --------------------------------------------------------------------------------
+Table: Services
+--------------------------------------------------------------------------------
+  UID              int              NOT NULL  PK
+  ServiceName      nvarchar(150)    NOT NULL
+  Description      nvarchar(500)    NULL
+  DisplayOrder     int              NOT NULL  DEFAULT (0)
+  IsActive         bit              NOT NULL  DEFAULT (1)
+  CreatedOn        datetime         NOT NULL  DEFAULT (getdate())
+
+--------------------------------------------------------------------------------
 Table: ServiceCategories
 --------------------------------------------------------------------------------
   UID              int              NOT NULL  PK
-  CategoryName     varchar(100)     NOT NULL
-  Description      varchar(500)     NULL
-  IsActive         bit              NULL      DEFAULT (1)
-  CreatedOn        datetime         NULL      DEFAULT (getdate())
+  ServiceUID       int              NOT NULL  FK -> Services.UID
+  CategoryName     nvarchar(100)    NOT NULL
+  Description      nvarchar(500)    NULL
+  IsActive         bit              NOT NULL  DEFAULT (1)
+  CreatedOn        datetime         NOT NULL  DEFAULT (getdate())
 
 --------------------------------------------------------------------------------
 Table: Providers
@@ -69,7 +80,7 @@ Table: Providers
   TotalJobsCompleted int            NOT NULL  DEFAULT (0)
   IsAvailable      bit              NOT NULL  DEFAULT (1)
   CreatedOn        datetime         NOT NULL  DEFAULT (getdate())
-  CategoryUID      int              NOT NULL  FK -> ServiceCategories.UID
+  CategoryUID      int              NOT NULL
   AvailableTiming  nvarchar(100)    NULL
 
 --------------------------------------------------------------------------------
@@ -118,7 +129,7 @@ Table: CustomerServiceRequests
 --------------------------------------------------------------------------------
   UID                  int              NOT NULL  PK
   ClientUID            int              NOT NULL  FK -> Clients.UID
-  CategoryUID          int              NOT NULL  FK -> ServiceCategories.UID
+  CategoryUID          int              NOT NULL
   ClientAddressUID     int              NOT NULL  FK -> ClientAddresses.UID
   ServiceTitle         nvarchar(150)    NOT NULL
   ServiceDescription   nvarchar(MAX)    NULL
@@ -165,7 +176,7 @@ Table: CommissionRules
 --------------------------------------------------------------------------------
   UID                  int              NOT NULL  PK
   Scope                nvarchar(20)     NOT NULL
-  CategoryUID          int              NULL      FK -> ServiceCategories.UID
+  CategoryUID          int              NULL
   ProviderUID          int              NULL      FK -> Providers.UID
   RuleType             nvarchar(10)     NOT NULL  CHECK (Percentage | Fixed)
   Value                decimal(10,2)    NOT NULL
@@ -460,21 +471,22 @@ FOREIGN KEY RELATIONSHIPS
 
   Clients.UserUID                    -> UsersLogin.UID
   Providers.UserUID                  -> UsersLogin.UID
-  Providers.CategoryUID              -> ServiceCategories.UID
+  Providers.CategoryUID              -> ServiceCategories.UID          [REMOVED — FK not present in live DB]
   Staff.UserUID                      -> UsersLogin.UID
   ClientAddresses.ClientUID          -> Clients.UID
   CustomerServiceRequests.ClientUID        -> Clients.UID
-  CustomerServiceRequests.CategoryUID      -> ServiceCategories.UID
+  CustomerServiceRequests.CategoryUID      -> ServiceCategories.UID    [REMOVED — FK not present in live DB]
   CustomerServiceRequests.ClientAddressUID -> ClientAddresses.UID
   ServiceBookings.RequestUID               -> CustomerServiceRequests.UID
   ServiceBookings.ClientUID                -> Clients.UID
   ServiceBookings.ProviderUID              -> Providers.UID
-  CommissionRules.CategoryUID              -> ServiceCategories.UID
+  CommissionRules.CategoryUID              -> ServiceCategories.UID    [REMOVED — FK not present in live DB]
   CommissionRules.ProviderUID              -> Providers.UID
   PaymentLedger.BookingUID                 -> ServiceBookings.UID
   PaymentLedger.ProviderUID                -> Providers.UID
   ProviderPayouts.ProviderUID              -> Providers.UID
   ProviderDocuments.ProviderUID            -> Providers.UID
+  ServiceCategories.ServiceUID             -> Services.UID
 
   ServiceProviders.CategoryUID       -> ServiceCategories.UID          [REMOVED]
   ProviderLocations.ProviderUID      -> ServiceProviders.UID           [REMOVED]

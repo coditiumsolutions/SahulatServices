@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace HomeServicesPortal.Models.ViewModels;
 
@@ -17,6 +18,8 @@ public class ServiceCategoryListVm
 public class ServiceCategoryItemVm
 {
     public int Uid { get; set; }
+    public int ServiceUid { get; set; }
+    public string ServiceName { get; set; } = string.Empty;
     public string CategoryName { get; set; } = string.Empty;
     public string? Description { get; set; }
     public bool IsActive { get; set; }
@@ -26,6 +29,11 @@ public class ServiceCategoryItemVm
 public class ServiceCategoryFormVm
 {
     public int Uid { get; set; }
+
+    [Required(ErrorMessage = "Parent service is required.")]
+    [Range(1, int.MaxValue, ErrorMessage = "Parent service is required.")]
+    [Display(Name = "Service")]
+    public int ServiceUid { get; set; }
 
     [Required(ErrorMessage = "Category name is required.")]
     [StringLength(100)]
@@ -38,11 +46,15 @@ public class ServiceCategoryFormVm
 
     [Display(Name = "Is Active")]
     public bool IsActive { get; set; } = true;
+
+    public List<SelectListItem> Services { get; set; } = new();
 }
 
 public class ServiceCategoryDetailsVm
 {
     public int Uid { get; set; }
+    public int ServiceUid { get; set; }
+    public string ServiceName { get; set; } = string.Empty;
     public string CategoryName { get; set; } = string.Empty;
     public string? Description { get; set; }
     public bool IsActive { get; set; }
@@ -52,6 +64,8 @@ public class ServiceCategoryDetailsVm
 public class ServiceCategoryDeleteVm
 {
     public int Uid { get; set; }
+    public int ServiceUid { get; set; }
+    public string ServiceName { get; set; } = string.Empty;
     public string CategoryName { get; set; } = string.Empty;
     public string? Description { get; set; }
 }

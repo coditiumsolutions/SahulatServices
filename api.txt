@@ -1,6 +1,6 @@
 ================================================================================
 SahulatGharTak API Reference
-Version: 2.3 | Last Updated: 2026-07-23
+Version: 2.4 | Last Updated: 2026-07-31
 Database: SahulatAppDB
 Local Base URL:    https://localhost:7265/api/
 Deployed Base URL:  https://sahulatghartak.com/api/
@@ -1516,6 +1516,58 @@ Fail (404):
 }
 
 ================================================================================
+SERVICES APIs (parent catalog)
+================================================================================
+Hierarchy: Services -> ServiceCategories
+Flutter flow: GET /api/services then GET /api/service-categories?serviceUid={id}
+
+--------------------------------------------------------------------------------
+GET All Services
+--------------------------------------------------------------------------------
+Local:     https://localhost:7265/api/services
+Deployed:  https://sahulatghartak.com/api/services
+
+Request Body: none
+
+Success (200):
+[
+  {
+    "id": 1,
+    "name": "Home Repair",
+    "description": "General home repair services",
+    "displayOrder": 1,
+    "createdOn": "2026-07-01T00:00:00"
+  }
+]
+
+Fail: returns empty array [] when no active services found
+
+--------------------------------------------------------------------------------
+GET Service By Id
+--------------------------------------------------------------------------------
+Local:     https://localhost:7265/api/services/{id}
+Deployed:  https://sahulatghartak.com/api/services/{id}
+
+Example:
+GET https://localhost:7265/api/services/1
+
+Request Body: none
+
+Success (200):
+{
+  "id": 1,
+  "name": "Home Repair",
+  "description": "General home repair services",
+  "displayOrder": 1,
+  "createdOn": "2026-07-01T00:00:00"
+}
+
+Fail (404):
+{
+  "message": "Service not found."
+}
+
+================================================================================
 SERVICE CATEGORIES APIs
 ================================================================================
 
@@ -1525,12 +1577,21 @@ GET All Service Categories
 Local:     https://localhost:7265/api/service-categories
 Deployed:  https://sahulatghartak.com/api/service-categories
 
+Optional Query:
+- serviceUid (int) — filter categories under a parent service
+
+Examples:
+GET https://localhost:7265/api/service-categories
+GET https://localhost:7265/api/service-categories?serviceUid=1
+
 Request Body: none
 
 Success (200):
 [
   {
     "id": 1,
+    "serviceId": 1,
+    "serviceName": "Home Repair",
     "name": "Plumber",
     "description": "Plumbing services",
     "createdOn": "2026-07-01T00:00:00"
@@ -1553,6 +1614,8 @@ Request Body: none
 Success (200):
 {
   "id": 1,
+  "serviceId": 1,
+  "serviceName": "Home Repair",
   "name": "Plumber",
   "description": "Plumbing services",
   "createdOn": "2026-07-01T00:00:00"

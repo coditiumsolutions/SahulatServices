@@ -1,6 +1,14 @@
 @model HomeServicesPortal.Models.ViewModels.ServiceCategoryFormVm
 
 <div class="mb-3">
+    <label asp-for="ServiceUid" class="form-label"></label>
+    <select asp-for="ServiceUid" class="form-select" asp-items="Model.Services">
+        <option value="">-- Select Service --</option>
+    </select>
+    <span asp-validation-for="ServiceUid" class="text-danger small"></span>
+</div>
+
+<div class="mb-3">
     <label asp-for="CategoryName" class="form-label"></label>
     <input asp-for="CategoryName" class="form-control" placeholder="Enter category name" />
     <span asp-validation-for="CategoryName" class="text-danger small"></span>

@@ -46,6 +46,13 @@
                     <tr>
                         <th>
                             <a class="text-decoration-none text-dark" asp-action="Index"
+                               asp-route-search="@Model.Search" asp-route-sort="service"
+                               asp-route-sortDir="@(Model.Sort == "service" && Model.SortDir == "asc" ? "desc" : "asc")">
+                                Service
+                            </a>
+                        </th>
+                        <th>
+                            <a class="text-decoration-none text-dark" asp-action="Index"
                                asp-route-search="@Model.Search" asp-route-sort="name"
                                asp-route-sortDir="@(Model.Sort == "name" && Model.SortDir == "asc" ? "desc" : "asc")">
                                 Category Name
@@ -77,13 +84,20 @@
                     @if (!Model.Items.Any())
                     {
                         <tr>
-                            <td colspan="5" class="text-center text-muted py-4">No categories found.</td>
+                            <td colspan="6" class="text-center text-muted py-4">No categories found.</td>
                         </tr>
                     }
                     @foreach (var item in Model.Items)
                     {
                         <tr>
-                            <td class="fw-semibold">@item.CategoryName</td>
+                            <td>
+                                <div>@item.ServiceName</div>
+                                <div class="small text-muted">ID #@item.ServiceUid</div>
+                            </td>
+                            <td class="fw-semibold">
+                                <div>@item.CategoryName</div>
+                                <div class="small text-muted">ID #@item.Uid</div>
+                            </td>
                             <td>@(string.IsNullOrWhiteSpace(item.Description) ? "—" : item.Description)</td>
                             <td>
                                 @if (item.IsActive)

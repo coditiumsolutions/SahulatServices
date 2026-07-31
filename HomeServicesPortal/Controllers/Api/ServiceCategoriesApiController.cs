@@ -17,13 +17,17 @@ public class ServiceCategoriesApiController : ControllerBase
         _service = service;
     }
 
-    /// <summary>Get all active service categories.</summary>
+    /// <summary>
+    /// Get active service categories.
+    /// Optional query: serviceUid — filter categories under a parent service.
+    /// </summary>
     [HttpGet]
     [ProducesResponseType(typeof(IReadOnlyList<ServiceCategoryApiDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyList<ServiceCategoryApiDto>>> GetAll(
+        [FromQuery] int? serviceUid,
         CancellationToken cancellationToken)
     {
-        var categories = await _service.GetActiveCategoriesForApiAsync(cancellationToken);
+        var categories = await _service.GetActiveCategoriesForApiAsync(serviceUid, cancellationToken);
         return Ok(categories);
     }
 

@@ -21,6 +21,8 @@ public class AppDbContext : DbContext
 
     public DbSet<Staff> Staff => Set<Staff>();
 
+    public DbSet<Service> Services => Set<Service>();
+
     public DbSet<ServiceCategory> ServiceCategories => Set<ServiceCategory>();
 
     public DbSet<ClientAddress> ClientAddresses => Set<ClientAddress>();
@@ -133,17 +135,38 @@ public class AppDbContext : DbContext
                 .OnDelete(DeleteBehavior.Restrict);
         });
 
+        modelBuilder.Entity<Service>(entity =>
+        {
+            entity.ToTable("Services");
+            entity.HasKey(e => e.Uid);
+            entity.Property(e => e.Uid).HasColumnName("UID");
+            entity.Property(e => e.ServiceName).HasMaxLength(150).IsRequired();
+            entity.Property(e => e.Description).HasMaxLength(500);
+            entity.Property(e => e.DisplayOrder).HasDefaultValue(0);
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.CreatedOn)
+                .HasColumnType("datetime")
+                .HasDefaultValueSql("(getdate())");
+        });
+
         modelBuilder.Entity<ServiceCategory>(entity =>
         {
             entity.ToTable("ServiceCategories");
             entity.HasKey(e => e.Uid);
             entity.Property(e => e.Uid).HasColumnName("UID");
-            entity.Property(e => e.CategoryName).HasMaxLength(100).IsUnicode(false).IsRequired();
-            entity.Property(e => e.Description).HasMaxLength(500).IsUnicode(false);
+            entity.Property(e => e.ServiceUid).HasColumnName("ServiceUID");
+            entity.Property(e => e.CategoryName).HasMaxLength(100).IsRequired();
+            entity.Property(e => e.Description).HasMaxLength(500);
             entity.Property(e => e.IsActive).HasDefaultValue(true);
             entity.Property(e => e.CreatedOn)
                 .HasColumnType("datetime")
                 .HasDefaultValueSql("(getdate())");
+
+            entity.HasOne(e => e.Service)
+                .WithMany(s => s.Categories)
+                .HasForeignKey(e => e.ServiceUid)
+                .HasConstraintName("FK_ServiceCategories_Services")
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<Staff>(entity =>

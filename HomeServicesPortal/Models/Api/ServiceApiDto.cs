@@ -1,16 +1,14 @@
 namespace HomeServicesPortal.Models.Api;
 
-public class ServiceCategoryApiDto
+public class ServiceApiDto
 {
     public int Id { get; set; }
-
-    public int ServiceId { get; set; }
-
-    public string ServiceName { get; set; } = string.Empty;
 
     public string Name { get; set; } = string.Empty;
 
     public string? Description { get; set; }
+
+    public int DisplayOrder { get; set; }
 
     public DateTime? CreatedOn { get; set; }
 }
