@@ -7,6 +7,14 @@
     --topbar-secondary-height: 38px;
 }
 
+html {
+    scroll-behavior: smooth;
+}
+
+section[id] {
+    scroll-margin-top: calc(var(--topbar-primary-height) + var(--topbar-secondary-height) + 12px);
+}
+
 .hs-topbar-primary {
     background: var(--hs-navy);
     color: #fff;
@@ -131,6 +139,11 @@
     border-left: 1px solid #b5b5b5;
 }
 
+.hs-tab-link-spacer {
+    margin-left: auto;
+    border-right: none !important;
+}
+
 .hs-tab-link {
     display: inline-flex;
     align-items: center;
@@ -193,6 +206,10 @@
 
     .hs-tab-nav > li:first-child {
         border-left: none;
+    }
+
+    .hs-tab-link-spacer {
+        margin-left: 0;
     }
 
     .hs-tab-link {

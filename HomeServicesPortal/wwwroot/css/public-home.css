@@ -202,3 +202,48 @@
 .public-bg-soft {
     background: #f5f7fb;
 }
+
+.download-notice-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.25rem;
+}
+
+.download-notice-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    background: #fff;
+    border: 1px solid #e4eaf2;
+    border-radius: 14px;
+    padding: 1.5rem;
+    box-shadow: 0 8px 24px rgba(18, 38, 63, 0.06);
+}
+
+.download-notice-icon {
+    flex: none;
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: rgba(0, 51, 102, 0.08);
+    color: var(--hs-navy);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+}
+
+.download-cta-btn {
+    background: var(--hs-maroon);
+    color: #fff;
+    font-weight: 700;
+    padding: 0.85rem 2.25rem;
+    border-radius: 10px;
+    border: none;
+    box-shadow: 0 10px 24px rgba(139, 26, 26, 0.25);
+}
+
+.download-cta-btn:hover {
+    background: #6f1414;
+    color: #fff;
+}

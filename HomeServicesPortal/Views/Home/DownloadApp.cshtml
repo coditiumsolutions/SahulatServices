@@ -1,0 +1,91 @@
+@{
+    Layout = "_PublicLayout";
+    ViewData["Title"] = "Download App";
+    var apkFileName = "sahulatghartak-31-07-2026.apk";
+}
+
+<section class="public-hero download-hero">
+    <div class="container public-hero-content">
+        <div class="row align-items-center g-4">
+            <div class="col-lg-7">
+                <p class="text-uppercase fw-semibold mb-2 opacity-75" style="letter-spacing: 0.12em; font-size: 0.8rem;">
+                    Sahulat Ghar Tak &middot; Mobile App
+                </p>
+                <h1>Take Sahulat Ghar Tak Wherever You Go</h1>
+                <p class="lead mb-0">
+                    Book verified home service professionals, track your requests, and manage everything
+                    right from your phone.
+                </p>
+                <div class="public-hero-actions">
+                    <a href="~/downloads/@apkFileName" download="@apkFileName" class="public-btn-light">
+                        <i class="fa-solid fa-download me-2"></i>Download for Android
+                    </a>
+                    <a href="#install-help" class="public-btn-outline">Installation Help</a>
+                </div>
+            </div>
+            <div class="col-lg-5 d-none d-lg-block text-center">
+                <i class="fa-solid fa-mobile-screen-button" style="font-size: 9rem; opacity: 0.25;"></i>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="public-section">
+    <div class="container">
+        <div class="download-notice-grid">
+            <div class="download-notice-card">
+                <div class="download-notice-icon"><i class="fa-brands fa-google-play"></i></div>
+                <div>
+                    <h3 class="h6 mb-1">Coming Soon to Google Play</h3>
+                    <p class="text-muted mb-0">
+                        We're finalizing our Play Store listing. Until then, download the APK directly
+                        from this page.
+                    </p>
+                </div>
+            </div>
+            <div class="download-notice-card">
+                <div class="download-notice-icon"><i class="fa-brands fa-apple"></i></div>
+                <div>
+                    <h3 class="h6 mb-1">iOS Build In Development</h3>
+                    <p class="text-muted mb-0">
+                        An iPhone/iPad version of Sahulat Ghar Tak is currently in development. Stay tuned!
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="install-help" class="public-section public-bg-soft">
+    <div class="container">
+        <h2 class="public-section-title">Installing the APK on Android</h2>
+        <p class="public-section-subtitle">
+            Since the app isn't listed on the Play Store yet, Android may show a security prompt the
+            first time you install it. Here's how to get past it in two quick steps.
+        </p>
+        <div class="public-steps">
+            <div class="public-step">
+                <div class="public-step-num">1</div>
+                <h3 class="h5">Allow Unknown Sources</h3>
+                <p class="text-muted mb-0">
+                    When you open the downloaded file, tap <strong>Settings</strong> on the warning prompt
+                    and enable <strong>&quot;Allow from this source&quot;</strong>.
+                </p>
+            </div>
+            <div class="public-step">
+                <div class="public-step-num">2</div>
+                <h3 class="h5">Install &amp; Open</h3>
+                <p class="text-muted mb-0">
+                    Go back to the installer, tap <strong>Install</strong>, and open Sahulat Ghar Tak once
+                    it's done.
+                </p>
+            </div>
+        </div>
+
+        <div class="text-center mt-5">
+            <a href="~/downloads/@apkFileName" download="@apkFileName" class="btn btn-lg download-cta-btn">
+                <i class="fa-solid fa-download me-2"></i>Download Sahulat Ghar Tak APK
+            </a>
+        </div>
+    </div>
+</section>
