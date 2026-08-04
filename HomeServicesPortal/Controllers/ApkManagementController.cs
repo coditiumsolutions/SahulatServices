@@ -22,6 +22,8 @@ public class ApkManagementController : Controller
 
     [HttpPost("/Admin/ApkManagement/Upload")]
     [ValidateAntiForgeryToken]
+    [RequestSizeLimit(200 * 1024 * 1024)]
+    [RequestFormLimits(MultipartBodyLengthLimit = 200 * 1024 * 1024)]
     public async Task<IActionResult> Upload(IFormFile apkFile, CancellationToken cancellationToken)
     {
         var (success, error) = await _service.UploadAsync(apkFile, cancellationToken);
