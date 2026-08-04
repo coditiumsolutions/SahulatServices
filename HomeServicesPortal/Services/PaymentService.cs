@@ -245,12 +245,16 @@ public class PaymentService : IPaymentService
             }
             else
             {
+                // Provider already holds this cash in hand — it offsets what the company owes
+                // him for the job (JobEarning credit above), so it posts as a Debit, not a
+                // second Credit. Without this, cash-to-provider jobs double-count the same
+                // money as both "earned" and "collected" credits.
                 entries.Add(new PaymentLedger
                 {
                     BookingUid = booking.Uid,
                     AccountType = "Provider",
                     ProviderUid = booking.ProviderUid,
-                    EntryType = "Credit",
+                    EntryType = "Debit",
                     Amount = booking.CustomerPaid,
                     Reason = "CashCollect",
                     CreatedOn = now
@@ -447,6 +451,127 @@ public class PaymentService : IPaymentService
         };
     }
 
+    public async Task<(bool Success, string? Message, decimal AmountPaid)> PayProviderAsync(
+        int providerUid,
+        string? method,
+        CancellationToken cancellationToken = default)
+    {
+        await SyncCompletedBookingsAsync(cancellationToken);
+
+        var providerExists = await _db.Providers.AnyAsync(p => p.Uid == providerUid, cancellationToken);
+        if (!providerExists)
+        {
+            return (false, "Provider not found.", 0);
+        }
+
+        var balance = await _db.PaymentLedgers
+            .AsNoTracking()
+            .Where(l => l.ProviderUid == providerUid && l.AccountType == "Provider")
+            .SumAsync(l => l.EntryType == "Debit" ? -l.Amount : l.Amount, cancellationToken);
+
+        var pendingPayouts = await _db.ProviderPayouts
+            .Where(p => p.ProviderUid == providerUid && p.Status == "Pending")
+            .ToListAsync(cancellationToken);
+
+        if (pendingPayouts.Count == 0 && balance <= 0)
+        {
+            return (false, "No pending payout and no positive balance to pay out.", 0);
+        }
+
+        // Amount actually disbursed is capped by what's owed overall (balance can be lower
+        // than the sum of pending payouts if the provider also owes cash-job commission).
+        var amountToPay = Math.Max(0, balance);
+
+        var now = DateTime.Now;
+
+        foreach (var payout in pendingPayouts)
+        {
+            payout.Status = "Paid";
+            payout.PaidOn = now;
+            payout.Method = string.IsNullOrWhiteSpace(method) ? payout.Method : method;
+        }
+
+        if (amountToPay > 0)
+        {
+            _db.PaymentLedgers.Add(new PaymentLedger
+            {
+                BookingUid = null,
+                AccountType = "Provider",
+                ProviderUid = providerUid,
+                EntryType = "Debit",
+                Amount = amountToPay,
+                Reason = "Payout",
+                CreatedOn = now
+            });
+        }
+
+        await _db.SaveChangesAsync(cancellationToken);
+
+        var message = amountToPay > 0
+            ? $"Paid out {amountToPay:N2} to provider."
+            : "Pending payouts cleared; no cash amount owed (offset by outstanding commission).";
+
+        return (true, message, amountToPay);
+    }
+
+    public async Task<ProviderWalletVm?> GetProviderWalletAsync(
+        int providerUid,
+        CancellationToken cancellationToken = default)
+    {
+        await SyncCompletedBookingsAsync(cancellationToken);
+
+        var provider = await _db.Providers
+            .AsNoTracking()
+            .Where(p => p.Uid == providerUid)
+            .Select(p => new { p.Uid, p.FullName, CategoryName = p.Category.CategoryName })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (provider == null) return null;
+
+        var rows = await _db.PaymentLedgers
+            .AsNoTracking()
+            .Where(l => l.ProviderUid == providerUid && l.AccountType == "Provider")
+            .OrderBy(l => l.CreatedOn)
+            .ThenBy(l => l.Uid)
+            .Select(l => new { l.Uid, l.CreatedOn, l.BookingUid, l.Reason, l.EntryType, l.Amount })
+            .ToListAsync(cancellationToken);
+
+        decimal running = 0;
+        var txns = new List<PersonLedgerTxnVm>();
+        foreach (var row in rows)
+        {
+            var signed = string.Equals(row.EntryType, "Debit", StringComparison.OrdinalIgnoreCase) ? -row.Amount : row.Amount;
+            running += signed;
+            txns.Add(new PersonLedgerTxnVm
+            {
+                Uid = row.Uid,
+                CreatedOn = row.CreatedOn,
+                BookingUid = row.BookingUid,
+                Reason = row.Reason,
+                EntryType = row.EntryType,
+                Amount = row.Amount,
+                SignedAmount = signed,
+                RunningBalance = running
+            });
+        }
+        txns.Reverse();
+
+        var pendingPayoutTotal = await _db.ProviderPayouts
+            .AsNoTracking()
+            .Where(p => p.ProviderUid == providerUid && p.Status == "Pending")
+            .SumAsync(p => p.Amount, cancellationToken);
+
+        return new ProviderWalletVm
+        {
+            ProviderUid = provider.Uid,
+            ProviderName = provider.FullName,
+            CategoryName = provider.CategoryName,
+            Balance = running,
+            PendingPayoutTotal = pendingPayoutTotal,
+            Transactions = txns
+        };
+    }
+
     public async Task<(bool Success, string? Error)> AddPersonLedgerEntryAsync(
         PersonLedgerAddEntryVm model,
         CancellationToken cancellationToken = default)
@@ -493,5 +618,71 @@ public class PaymentService : IPaymentService
 
         await _db.SaveChangesAsync(cancellationToken);
         return (true, null);
+    }
+
+    public async Task<CompanyLedgerVm> GetCompanyLedgerAsync(
+        string? search,
+        CancellationToken cancellationToken = default)
+    {
+        await SyncCompletedBookingsAsync(cancellationToken);
+
+        var query = _db.PaymentLedgers.AsNoTracking().Where(l => l.AccountType == "Company");
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var term = search.Trim();
+            query = query.Where(l =>
+                l.Reason.Contains(term) ||
+                (l.BookingUid != null && l.BookingUid.Value.ToString().Contains(term)));
+        }
+
+        var rows = await query
+            .OrderBy(l => l.CreatedOn)
+            .ThenBy(l => l.Uid)
+            .Select(l => new
+            {
+                l.Uid,
+                l.CreatedOn,
+                l.BookingUid,
+                l.Reason,
+                l.EntryType,
+                l.Amount
+            })
+            .ToListAsync(cancellationToken);
+
+        decimal running = 0;
+        var txns = new List<PersonLedgerTxnVm>();
+        foreach (var row in rows)
+        {
+            var signed = string.Equals(row.EntryType, "Debit", StringComparison.OrdinalIgnoreCase)
+                ? -row.Amount
+                : row.Amount;
+            running += signed;
+            txns.Add(new PersonLedgerTxnVm
+            {
+                Uid = row.Uid,
+                CreatedOn = row.CreatedOn,
+                BookingUid = row.BookingUid,
+                Reason = row.Reason,
+                EntryType = row.EntryType,
+                Amount = row.Amount,
+                SignedAmount = signed,
+                RunningBalance = running
+            });
+        }
+
+        txns.Reverse();
+
+        var totalPlus = txns.Where(t => t.SignedAmount > 0).Sum(t => t.SignedAmount);
+        var totalMinus = txns.Where(t => t.SignedAmount < 0).Sum(t => -t.SignedAmount);
+
+        return new CompanyLedgerVm
+        {
+            Search = search,
+            TotalPlus = totalPlus,
+            TotalMinus = totalMinus,
+            Balance = running,
+            Transactions = txns
+        };
     }
 }

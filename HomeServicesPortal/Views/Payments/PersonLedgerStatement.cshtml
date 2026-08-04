@@ -23,6 +23,16 @@
         <div class="text-end">
             <div class="small text-muted">Current Balance</div>
             <div class="fs-3 fw-semibold @balanceClass">@Model.Balance.ToString("N2")</div>
+            @if (Model.Balance > 0)
+            {
+                <form asp-action="PayProvider" asp-route-providerUid="@Model.ProviderUid" method="post" class="mt-2" onsubmit="return confirm('Pay out @Model.Balance.ToString("N2")+ to @Model.ProviderName now?');">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="method" value="Manual" />
+                    <button type="submit" class="btn btn-sm btn-success">
+                        <i class="fa-solid fa-hand-holding-dollar me-1"></i>Pay Now (@Model.Balance.ToString("N2"))
+                    </button>
+                </form>
+            }
         </div>
     </div>
 </div>

@@ -691,8 +691,23 @@ public class BookingService : IBookingService
             booking.PaymentMode = paymentMode;
         }
 
+        // The amount actually collected on-site is the real final bill — assignment-time
+        // estimates (FinalAmount/CommissionAmount/ProviderEarning) must be recomputed off
+        // it, otherwise the commission split desyncs from the cash that actually moved
+        // (e.g. price changed on-site, or only a partial amount was collected).
         booking.CustomerPaid = actualAmountPaid;
+        booking.FinalAmount = actualAmountPaid;
         booking.CustomerRemaining = ComputeCustomerRemaining(booking.FinalAmount, actualAmountPaid);
+
+        var (commissionAmount, providerEarning) = ResolveCommissionAmounts(
+            booking.FinalAmount,
+            booking.CommissionType,
+            booking.CommissionValue,
+            null,
+            null);
+        booking.CommissionAmount = commissionAmount;
+        booking.ProviderEarning = providerEarning;
+
         booking.Status = "Completed";
         booking.CompletedOn = DateTime.Now;
 

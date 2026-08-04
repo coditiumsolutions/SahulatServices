@@ -23,4 +23,16 @@ public interface IPaymentService
     Task<PersonLedgerStatementVm?> GetPersonLedgerAsync(int providerUid, CancellationToken cancellationToken = default);
 
     Task<(bool Success, string? Error)> AddPersonLedgerEntryAsync(PersonLedgerAddEntryVm model, CancellationToken cancellationToken = default);
+
+    Task<CompanyLedgerVm> GetCompanyLedgerAsync(string? search, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Pays out a provider's pending online earnings, netted against any commission they
+    /// owe the company from cash jobs (i.e. their current ledger balance). Marks Pending
+    /// ProviderPayout rows Paid and posts an offsetting Payout ledger entry for the amount
+    /// actually disbursed.
+    /// </summary>
+    Task<(bool Success, string? Message, decimal AmountPaid)> PayProviderAsync(int providerUid, string? method, CancellationToken cancellationToken = default);
+
+    Task<ProviderWalletVm?> GetProviderWalletAsync(int providerUid, CancellationToken cancellationToken = default);
 }

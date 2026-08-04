@@ -1,0 +1,126 @@
+@model HomeServicesPortal.Models.ViewModels.CompanyLedgerVm
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Company Ledger";
+    var balanceClass = Model.Balance >= 0 ? "text-success" : "text-danger";
+}
+
+<div class="d-flex flex-wrap align-items-start justify-content-between gap-2 mb-4">
+    <div>
+        <h2 class="mb-1"><i class="fa-solid fa-building-columns me-2 text-primary"></i>Company Ledger</h2>
+        <p class="text-muted mb-0">All company-side transactions (commission, online collections) with running balance</p>
+    </div>
+    <div class="d-flex flex-column align-items-end gap-2">
+        <div class="btn-group">
+            <a asp-action="Ledger" class="btn btn-outline-primary">Payment Ledger</a>
+            <a asp-action="PersonLedger" class="btn btn-outline-primary">Person Ledger</a>
+            <a asp-action="CompanyLedger" class="btn btn-primary">Company Ledger</a>
+            <a asp-action="Payouts" class="btn btn-outline-primary">Provider Payouts</a>
+        </div>
+        <div class="text-end">
+            <div class="small text-muted">Current Balance</div>
+            <div class="fs-3 fw-semibold @balanceClass">@Model.Balance.ToString("N2")</div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card hs-card h-100">
+            <div class="card-body">
+                <div class="text-muted small">Total Plus (+)</div>
+                <div class="fs-4 fw-semibold text-success">+@Model.TotalPlus.ToString("N2")</div>
+                <div class="small text-muted">Credits (commission, online payments)</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card hs-card h-100">
+            <div class="card-body">
+                <div class="text-muted small">Total Minus (−)</div>
+                <div class="fs-4 fw-semibold text-danger">−@Model.TotalMinus.ToString("N2")</div>
+                <div class="small text-muted">Debits (payouts, adjustments)</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card hs-card h-100">
+            <div class="card-body">
+                <div class="text-muted small">Net Balance</div>
+                <div class="fs-4 fw-semibold @balanceClass">@Model.Balance.ToString("N2")</div>
+                <div class="small text-muted">Plus − Minus</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card hs-card">
+    <div class="card-body">
+        <form method="get" asp-action="CompanyLedger" class="row g-2 mb-3">
+            <div class="col-md-6 col-lg-4">
+                <div class="input-group">
+                    <span class="input-group-text"><i class="fa-solid fa-search"></i></span>
+                    <input type="text" name="search" value="@Model.Search" class="form-control" placeholder="Search reason or booking #..." />
+                    <button type="submit" class="btn btn-outline-primary">Search</button>
+                </div>
+            </div>
+            @if (!string.IsNullOrWhiteSpace(Model.Search))
+            {
+                <div class="col-auto"><a asp-action="CompanyLedger" class="btn btn-outline-secondary">Clear</a></div>
+            }
+        </form>
+
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Date</th>
+                        <th>Booking</th>
+                        <th>Reason</th>
+                        <th>Type</th>
+                        <th class="text-end">+/−</th>
+                        <th class="text-end">Running Balance</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.Transactions.Any())
+                    {
+                        <tr><td colspan="6" class="text-center text-muted py-4">No company transactions yet.</td></tr>
+                    }
+                    @foreach (var txn in Model.Transactions)
+                    {
+                        var isPlus = txn.SignedAmount >= 0;
+                        <tr>
+                            <td>@txn.CreatedOn.ToString("dd MMM yyyy HH:mm")</td>
+                            <td>
+                                @if (txn.BookingUid.HasValue)
+                                {
+                                    <a href="/Admin/Bookings/Details/@txn.BookingUid.Value">#@txn.BookingUid.Value</a>
+                                }
+                                else
+                                {
+                                    <text>—</text>
+                                }
+                            </td>
+                            <td>@txn.Reason</td>
+                            <td>
+                                @if (isPlus)
+                                {
+                                    <span class="badge bg-success">+ Credit</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-danger">− Debit</span>
+                                }
+                            </td>
+                            <td class="text-end fw-semibold @(isPlus ? "text-success" : "text-danger")">
+                                @(isPlus ? "+" : "−")@Math.Abs(txn.SignedAmount).ToString("N2")
+                            </td>
+                            <td class="text-end fw-semibold">@txn.RunningBalance.ToString("N2")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

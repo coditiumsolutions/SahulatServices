@@ -48,6 +48,23 @@ public class PaymentsController : Controller
         return View(vm);
     }
 
+    [HttpPost("/Admin/Payments/PersonLedger/{providerUid:int}/Pay")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> PayProvider(int providerUid, string? method, CancellationToken cancellationToken = default)
+    {
+        var (success, message, amountPaid) = await _service.PayProviderAsync(providerUid, method, cancellationToken);
+        if (!success)
+        {
+            TempData["ErrorMessage"] = message ?? "Failed to pay provider.";
+        }
+        else
+        {
+            TempData["SuccessMessage"] = message;
+        }
+
+        return RedirectToAction(nameof(PersonLedgerStatement), new { providerUid });
+    }
+
     [HttpGet("/Admin/Payments/CommissionRules")]
     public async Task<IActionResult> CommissionRules(string? search, int page = 1, CancellationToken cancellationToken = default)
     {
@@ -137,6 +154,12 @@ public class PaymentsController : Controller
 
         TempData["SuccessMessage"] = "Commission rule deleted successfully.";
         return RedirectToAction(nameof(CommissionRules));
+    }
+
+    [HttpGet("/Admin/Payments/CompanyLedger")]
+    public async Task<IActionResult> CompanyLedger(string? search, CancellationToken cancellationToken = default)
+    {
+        return View(await _service.GetCompanyLedgerAsync(search, cancellationToken));
     }
 
     [HttpGet("/Admin/Payments/PersonLedger")]

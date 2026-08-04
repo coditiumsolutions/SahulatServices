@@ -110,6 +110,26 @@ public class PersonLedgerTxnVm
     public decimal RunningBalance { get; set; }
 }
 
+public class CompanyLedgerVm
+{
+    public string? Search { get; set; }
+    public decimal TotalPlus { get; set; }
+    public decimal TotalMinus { get; set; }
+    public decimal Balance { get; set; }
+    public List<PersonLedgerTxnVm> Transactions { get; set; } = new();
+}
+
+public class ProviderWalletVm
+{
+    public int ProviderUid { get; set; }
+    public string ProviderName { get; set; } = string.Empty;
+    public string CategoryName { get; set; } = string.Empty;
+    /// <summary>Current net balance: positive = company owes provider, negative = provider owes company (unremitted cash commission).</summary>
+    public decimal Balance { get; set; }
+    public decimal PendingPayoutTotal { get; set; }
+    public List<PersonLedgerTxnVm> Transactions { get; set; } = new();
+}
+
 public class PersonLedgerAddEntryVm
 {
     public int ProviderUid { get; set; }

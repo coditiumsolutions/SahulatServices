@@ -1,6 +1,6 @@
 ================================================================================
 SahulatGharTak API Reference
-Version: 2.6 | Last Updated: 2026-08-04
+Version: 2.7 | Last Updated: 2026-08-04
 Database: SahulatAppDB
 Local Base URL:    https://localhost:7265/api/
 Deployed Base URL:  https://sahulatghartak.com/api/
@@ -686,6 +686,71 @@ Fail (400):
 {
   "success": false,
   "message": "ProviderUid in URL and body must match.",
+  "data": null
+}
+
+================================================================================
+PROVIDER WALLET API
+================================================================================
+
+--------------------------------------------------------------------------------
+GET Provider Wallet (balance + transaction history)
+--------------------------------------------------------------------------------
+Local:     https://localhost:7265/api/providers-wallet/{providerUid}
+Deployed:  https://sahulatghartak.com/api/providers-wallet/{providerUid}
+
+Example:
+GET https://localhost:7265/api/providers-wallet/4
+
+Request Body: none
+
+Notes:
+- Balance reflects the provider's running PaymentLedger balance: positive means the
+  company owes the provider (unpaid online-job earnings); negative means the provider
+  owes the company (commission on cash-to-provider jobs collected but not yet remitted).
+- A cash job immediately posts a "JobEarning" credit (provider's share after commission)
+  and a "CashCollect" debit (full cash amount collected), netting to -commission owed.
+- pendingPayoutTotal is the sum of admin-payable ProviderPayout rows (Status=Pending),
+  created for OnlineToCompany jobs where the company holds the money and owes the provider.
+- Admin triggers actual payouts manually from the admin portal (Person Ledger > Pay Now),
+  which nets the payout against any outstanding negative balance automatically.
+- transactions are most-recent-first; signedAmount: Credit = +, Debit = −.
+
+Success (200):
+{
+  "success": true,
+  "message": "Provider wallet fetched successfully.",
+  "data": {
+    "providerUid": 4,
+    "providerName": "Ryyan",
+    "categoryName": "Carpenter Services",
+    "balance": -100.00,
+    "pendingPayoutTotal": 0.00,
+    "transactions": [
+      {
+        "uid": 6,
+        "createdOn": "2026-07-15T12:21:30.78",
+        "bookingUid": 5,
+        "reason": "CashCollect",
+        "signedAmount": -1000.00,
+        "runningBalance": -100.00
+      },
+      {
+        "uid": 5,
+        "createdOn": "2026-07-15T12:21:30.78",
+        "bookingUid": 5,
+        "reason": "JobEarning",
+        "signedAmount": 900.00,
+        "runningBalance": 900.00
+      }
+    ]
+  }
+}
+
+Fail (404):
+{
+  "success": false,
+  "message": "Provider not found.",
   "data": null
 }
 
