@@ -8,7 +8,7 @@ public interface IServiceRequestService
     Task<List<SelectListItem>> GetCustomerOptionsAsync(CancellationToken cancellationToken = default);
     Task<List<SelectListItem>> GetCategoryOptionsAsync(CancellationToken cancellationToken = default);
     List<SelectListItem> GetStatusOptions();
-    Task<ServiceRequestListVm> GetListAsync(string? search, string? sort, string? sortDir, int page, CancellationToken cancellationToken = default);
+    Task<ServiceRequestListVm> GetListAsync(string? search, string? sort, string? sortDir, string? status, int page, CancellationToken cancellationToken = default);
     Task<ServiceRequestDetailsVm?> GetDetailsAsync(int id, CancellationToken cancellationToken = default);
     Task<ServiceRequestFormVm?> GetForEditAsync(int id, CancellationToken cancellationToken = default);
     Task<ServiceRequestDeleteVm?> GetForDeleteAsync(int id, CancellationToken cancellationToken = default);

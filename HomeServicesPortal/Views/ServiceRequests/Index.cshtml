@@ -40,6 +40,7 @@
 <div class="card hs-card">
     <div class="card-body">
         <form method="get" asp-action="Index" class="row g-2 mb-3">
+            <input type="hidden" name="status" value="@Model.Status" />
             <div class="col-md-6 col-lg-4">
                 <div class="input-group">
                     <span class="input-group-text"><i class="fa-solid fa-search"></i></span>
@@ -50,10 +51,24 @@
             @if (!string.IsNullOrWhiteSpace(Model.Search))
             {
                 <div class="col-auto">
-                    <a asp-action="Index" class="btn btn-outline-secondary">Clear</a>
+                    <a asp-action="Index" asp-route-status="@Model.Status" class="btn btn-outline-secondary">Clear</a>
                 </div>
             }
         </form>
+
+        <div class="d-flex flex-wrap gap-2 mb-3">
+            <a asp-action="Index" asp-route-status="" asp-route-search="@Model.Search"
+               class="btn btn-sm @(string.IsNullOrWhiteSpace(Model.Status) ? "btn-primary" : "btn-outline-secondary")">
+                All <span class="badge bg-light text-dark ms-1">@Model.StatusCounts.Values.Sum()</span>
+            </a>
+            @foreach (var s in Model.StatusOptions)
+            {
+                <a asp-action="Index" asp-route-status="@s" asp-route-search="@Model.Search"
+                   class="btn btn-sm @(string.Equals(Model.Status, s, StringComparison.OrdinalIgnoreCase) ? "btn-primary" : "btn-outline-secondary")">
+                    @s <span class="badge bg-light text-dark ms-1">@(Model.StatusCounts.TryGetValue(s, out var c) ? c : 0)</span>
+                </a>
+            }
+        </div>
 
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0">
@@ -114,18 +129,18 @@
                 <ul class="pagination pagination-sm justify-content-center mb-0">
                     <li class="page-item @(Model.Page <= 1 ? "disabled" : "")">
                         <a class="page-link" asp-action="Index" asp-route-page="@(Model.Page - 1)"
-                           asp-route-search="@Model.Search" asp-route-sort="@Model.Sort" asp-route-sortDir="@Model.SortDir">Previous</a>
+                           asp-route-search="@Model.Search" asp-route-sort="@Model.Sort" asp-route-sortDir="@Model.SortDir" asp-route-status="@Model.Status">Previous</a>
                     </li>
                     @for (var p = 1; p <= Model.TotalPages; p++)
                     {
                         <li class="page-item @(p == Model.Page ? "active" : "")">
                             <a class="page-link" asp-action="Index" asp-route-page="@p"
-                               asp-route-search="@Model.Search" asp-route-sort="@Model.Sort" asp-route-sortDir="@Model.SortDir">@p</a>
+                               asp-route-search="@Model.Search" asp-route-sort="@Model.Sort" asp-route-sortDir="@Model.SortDir" asp-route-status="@Model.Status">@p</a>
                         </li>
                     }
                     <li class="page-item @(Model.Page >= Model.TotalPages ? "disabled" : "")">
                         <a class="page-link" asp-action="Index" asp-route-page="@(Model.Page + 1)"
-                           asp-route-search="@Model.Search" asp-route-sort="@Model.Sort" asp-route-sortDir="@Model.SortDir">Next</a>
+                           asp-route-search="@Model.Search" asp-route-sort="@Model.Sort" asp-route-sortDir="@Model.SortDir" asp-route-status="@Model.Status">Next</a>
                     </li>
                 </ul>
             </nav>

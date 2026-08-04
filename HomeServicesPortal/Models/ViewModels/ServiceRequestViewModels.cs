@@ -9,6 +9,9 @@ public class ServiceRequestListVm
     public string? Search { get; set; }
     public string Sort { get; set; } = "date";
     public string SortDir { get; set; } = "desc";
+    public string? Status { get; set; }
+    public string[] StatusOptions { get; set; } = Array.Empty<string>();
+    public Dictionary<string, int> StatusCounts { get; set; } = new();
     public int Page { get; set; } = 1;
     public int PageSize { get; set; } = 10;
     public int TotalCount { get; set; }

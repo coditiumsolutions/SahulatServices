@@ -16,9 +16,9 @@ public class BookingsController : Controller
     }
 
     [HttpGet("/Admin/Bookings")]
-    public async Task<IActionResult> Index(string? search, string? sort, string? sortDir, int page = 1, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> Index(string? search, string? sort, string? sortDir, string? status, int page = 1, CancellationToken cancellationToken = default)
     {
-        var vm = await _service.GetListAsync(search, sort, sortDir, page, cancellationToken);
+        var vm = await _service.GetListAsync(search, sort, sortDir, status, page, cancellationToken);
         return View(vm);
     }
 

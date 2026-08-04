@@ -55,15 +55,21 @@ public class ServiceRequestService : IServiceRequestService
         string? search,
         string? sort,
         string? sortDir,
+        string? status,
         int page,
         CancellationToken cancellationToken = default)
     {
         const int pageSize = 10;
         page = page < 1 ? 1 : page;
         sort = string.IsNullOrWhiteSpace(sort) ? "date" : sort.ToLowerInvariant();
-        sortDir = string.Equals(sortDir, "desc", StringComparison.OrdinalIgnoreCase) ? "desc" : "asc";
+        sortDir = string.Equals(sortDir, "asc", StringComparison.OrdinalIgnoreCase) ? "asc" : "desc";
 
         var query = _db.CustomerServiceRequests.AsNoTracking();
+
+        if (!string.IsNullOrWhiteSpace(status))
+        {
+            query = query.Where(r => r.Status == status);
+        }
 
         if (!string.IsNullOrWhiteSpace(search))
         {
@@ -87,14 +93,20 @@ public class ServiceRequestService : IServiceRequestService
                 ? query.OrderByDescending(r => r.Category.CategoryName)
                 : query.OrderBy(r => r.Category.CategoryName),
             "status" => sortDir == "desc"
-                ? query.OrderByDescending(r => r.Status)
-                : query.OrderBy(r => r.Status),
+                ? query.OrderByDescending(r => r.Status).ThenByDescending(r => r.Uid)
+                : query.OrderBy(r => r.Status).ThenByDescending(r => r.Uid),
             _ => sortDir == "desc"
-                ? query.OrderByDescending(r => r.CreatedOn)
-                : query.OrderBy(r => r.CreatedOn)
+                ? query.OrderByDescending(r => r.CreatedOn).ThenByDescending(r => r.Uid)
+                : query.OrderBy(r => r.CreatedOn).ThenByDescending(r => r.Uid)
         };
 
         var totalCount = await query.CountAsync(cancellationToken);
+
+        var statusCounts = await _db.CustomerServiceRequests
+            .AsNoTracking()
+            .GroupBy(r => r.Status)
+            .Select(g => new { Status = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(g => g.Status, g => g.Count, cancellationToken);
 
         var items = await query
             .Skip((page - 1) * pageSize)
@@ -118,6 +130,9 @@ public class ServiceRequestService : IServiceRequestService
             Search = search,
             Sort = sort,
             SortDir = sortDir,
+            Status = status,
+            StatusOptions = ValidStatuses,
+            StatusCounts = statusCounts,
             Page = page,
             PageSize = pageSize,
             TotalCount = totalCount
