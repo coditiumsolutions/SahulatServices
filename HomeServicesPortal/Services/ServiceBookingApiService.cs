@@ -21,7 +21,7 @@ public class ServiceBookingApiService : IServiceBookingApiService
         int? providerUid,
         CancellationToken cancellationToken = default)
     {
-        var query = _db.ServiceBookings.AsNoTracking();
+        var query = _db.ServiceBookings.AsNoTracking().Where(b => b.Status != "Rejected");
 
         if (providerUid.HasValue)
         {
@@ -42,7 +42,7 @@ public class ServiceBookingApiService : IServiceBookingApiService
     {
         var query = _db.ServiceBookings
             .AsNoTracking()
-            .Where(b => b.Uid == bookingUid);
+            .Where(b => b.Uid == bookingUid && b.Status != "Rejected");
 
         if (providerUid.HasValue)
         {
@@ -167,7 +167,55 @@ public class ServiceBookingApiService : IServiceBookingApiService
         return await _bookingService.DeleteAsync(bookingUid, cancellationToken);
     }
 
-    private static System.Linq.Expressions.Expression<Func<ServiceBooking, ServiceBookingApiDto>> MapToDtoExpression() =>
+    public async Task<(bool Success, string? Error, ServiceBookingApiDto? Data)> RespondToBookingAsync(
+        int bookingUid,
+        int providerUid,
+        bool accept,
+        CancellationToken cancellationToken = default)
+    {
+        var (success, error) = await _bookingService.RespondToAssignmentAsync(bookingUid, providerUid, accept, cancellationToken);
+        if (!success)
+        {
+            return (false, error, null);
+        }
+
+        // Rejected bookings are filtered out of the normal client/provider-facing lookups,
+        // but the provider who just rejected this one still needs their own result back.
+        var booking = await _db.ServiceBookings
+            .AsNoTracking()
+            .Where(b => b.Uid == bookingUid && b.ProviderUid == providerUid)
+            .Select(MapToDtoExpression())
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (booking == null)
+        {
+            return (false, "Booking was updated but could not be loaded.", null);
+        }
+
+        return (true, null, booking);
+    }
+
+    public async Task<(bool Success, string? Error, ServiceBookingApiDto? Data)> VerifyCompletionAsync(
+        int bookingUid,
+        int providerUid,
+        string passcode,
+        decimal actualAmountPaid,
+        string? paymentMode,
+        CancellationToken cancellationToken = default)
+    {
+        var (success, error) = await _bookingService.VerifyCompletionPasscodeAsync(
+            bookingUid, providerUid, passcode, actualAmountPaid, paymentMode, cancellationToken);
+        if (!success)
+        {
+            return (false, error, null);
+        }
+
+        return await GetBookingByIdAsync(bookingUid, providerUid, cancellationToken);
+    }
+
+    private static readonly string[] ContactVisibleStatuses = ["Accepted", "In Progress", "Completed"];
+
+    private System.Linq.Expressions.Expression<Func<ServiceBooking, ServiceBookingApiDto>> MapToDtoExpression() =>
         b => new ServiceBookingApiDto
         {
             Uid = b.Uid,
@@ -191,6 +239,19 @@ public class ServiceBookingApiService : IServiceBookingApiService
             CommissionAmount = b.CommissionAmount,
             ProviderEarning = b.ProviderEarning,
             Status = b.Status,
-            CreatedOn = b.CreatedOn
+            Passcode = b.Passcode,
+            AcceptedOn = b.AcceptedOn,
+            CompletedOn = b.CompletedOn,
+            CreatedOn = b.CreatedOn,
+            ProviderMobileNo = ContactVisibleStatuses.Contains(b.Status) ? b.Provider.User.MobileNo : null,
+            ProviderProfilePhotoPath = ContactVisibleStatuses.Contains(b.Status)
+                ? _db.ProviderDocuments.Where(d => d.ProviderUid == b.ProviderUid).Select(d => d.ProfilePhotoPath).FirstOrDefault()
+                : null,
+            ProviderCnic = ContactVisibleStatuses.Contains(b.Status) ? b.Provider.Cnic : null,
+            ClientMobileNo = ContactVisibleStatuses.Contains(b.Status) ? b.Client.User.MobileNo : null,
+            ClientAddressTitle = ContactVisibleStatuses.Contains(b.Status) ? b.Request.ClientAddress.AddressTitle : null,
+            ClientFullAddress = ContactVisibleStatuses.Contains(b.Status) ? b.Request.ClientAddress.FullAddress : null,
+            ClientArea = ContactVisibleStatuses.Contains(b.Status) ? b.Request.ClientAddress.Area : null,
+            ClientCity = ContactVisibleStatuses.Contains(b.Status) ? b.Request.ClientAddress.City : null
         };
 }

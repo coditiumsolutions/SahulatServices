@@ -8,7 +8,7 @@ namespace HomeServicesPortal.Services;
 
 public class BookingService : IBookingService
 {
-    private static readonly string[] ValidStatuses = ["Pending", "Accepted", "In Progress", "Completed", "Closed", "Cancelled"];
+    private static readonly string[] ValidStatuses = ["Pending", "Accepted", "In Progress", "Completed", "Closed", "Cancelled", "Rejected"];
     private static readonly string[] ValidPaymentModes = ["CashToProvider", "OnlineToCompany"];
     private static readonly string[] ValidCommissionTypes = ["Percent", "Fixed"];
 
@@ -55,15 +55,21 @@ public class BookingService : IBookingService
         string? search,
         string? sort,
         string? sortDir,
+        string? status,
         int page,
         CancellationToken cancellationToken = default)
     {
         const int pageSize = 10;
         page = page < 1 ? 1 : page;
         sort = string.IsNullOrWhiteSpace(sort) ? "date" : sort.ToLowerInvariant();
-        sortDir = string.Equals(sortDir, "desc", StringComparison.OrdinalIgnoreCase) ? "desc" : "asc";
+        sortDir = string.Equals(sortDir, "asc", StringComparison.OrdinalIgnoreCase) ? "asc" : "desc";
 
         var query = _db.ServiceBookings.AsNoTracking();
+
+        if (!string.IsNullOrWhiteSpace(status))
+        {
+            query = query.Where(b => b.Status == status);
+        }
 
         if (!string.IsNullOrWhiteSpace(search))
         {
@@ -94,11 +100,17 @@ public class BookingService : IBookingService
                 ? query.OrderByDescending(b => b.FinalAmount)
                 : query.OrderBy(b => b.FinalAmount),
             _ => sortDir == "desc"
-                ? query.OrderByDescending(b => b.CreatedOn)
-                : query.OrderBy(b => b.CreatedOn)
+                ? query.OrderByDescending(b => b.CreatedOn).ThenByDescending(b => b.Uid)
+                : query.OrderBy(b => b.CreatedOn).ThenByDescending(b => b.Uid)
         };
 
         var totalCount = await query.CountAsync(cancellationToken);
+
+        var statusCounts = await _db.ServiceBookings
+            .AsNoTracking()
+            .GroupBy(b => b.Status)
+            .Select(g => new { Status = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(g => g.Status, g => g.Count, cancellationToken);
 
         var items = await query
             .Skip((page - 1) * pageSize)
@@ -122,6 +134,9 @@ public class BookingService : IBookingService
             Search = search,
             Sort = sort,
             SortDir = sortDir,
+            Status = status,
+            StatusOptions = ValidStatuses,
+            StatusCounts = statusCounts,
             Page = page,
             PageSize = pageSize,
             TotalCount = totalCount
@@ -311,18 +326,23 @@ public class BookingService : IBookingService
 
         if (string.Equals(entity.Status, "Completed", StringComparison.OrdinalIgnoreCase))
         {
-            var request = await _db.CustomerServiceRequests
-                .FirstOrDefaultAsync(r => r.Uid == entity.RequestUid, cancellationToken);
-            if (request != null && !string.Equals(request.Status, "Completed", StringComparison.OrdinalIgnoreCase))
-            {
-                request.Status = "Completed";
-                await _db.SaveChangesAsync(cancellationToken);
-            }
-
-            await _payments.RecordBookingCompletionAsync(entity, cancellationToken);
+            await CompleteBookingSideEffectsAsync(entity, cancellationToken);
         }
 
         return (true, null);
+    }
+
+    private async Task CompleteBookingSideEffectsAsync(ServiceBooking entity, CancellationToken cancellationToken)
+    {
+        var request = await _db.CustomerServiceRequests
+            .FirstOrDefaultAsync(r => r.Uid == entity.RequestUid, cancellationToken);
+        if (request != null && !string.Equals(request.Status, "Completed", StringComparison.OrdinalIgnoreCase))
+        {
+            request.Status = "Completed";
+            await _db.SaveChangesAsync(cancellationToken);
+        }
+
+        await _payments.RecordBookingCompletionAsync(entity, cancellationToken);
     }
 
     public async Task<(bool Success, string? Error)> DeleteAsync(int id, CancellationToken cancellationToken = default)
@@ -427,7 +447,7 @@ public class BookingService : IBookingService
         }
 
         var alreadyBooked = await _db.ServiceBookings
-            .AnyAsync(b => b.RequestUid == requestUid, cancellationToken);
+            .AnyAsync(b => b.RequestUid == requestUid && b.Status != "Rejected", cancellationToken);
         if (alreadyBooked) return null;
 
         var providers = await _db.Providers
@@ -514,7 +534,7 @@ public class BookingService : IBookingService
         }
 
         var alreadyBooked = await _db.ServiceBookings
-            .AnyAsync(b => b.RequestUid == model.RequestUid, cancellationToken);
+            .AnyAsync(b => b.RequestUid == model.RequestUid && b.Status != "Rejected", cancellationToken);
         if (alreadyBooked)
         {
             return (false, "This request already has a booking.");
@@ -572,12 +592,114 @@ public class BookingService : IBookingService
             CommissionValue = model.CommissionValue,
             CommissionAmount = model.CommissionAmount,
             ProviderEarning = model.ProviderEarning,
-            Status = "Accepted",
+            Status = "Pending",
             CreatedOn = DateTime.Now
         });
 
         request.Status = "Assigned";
         await _db.SaveChangesAsync(cancellationToken);
+        return (true, null);
+    }
+
+    public async Task<(bool Success, string? Error)> RespondToAssignmentAsync(
+        int bookingUid,
+        int providerUid,
+        bool accept,
+        CancellationToken cancellationToken = default)
+    {
+        var booking = await _db.ServiceBookings
+            .FirstOrDefaultAsync(b => b.Uid == bookingUid, cancellationToken);
+
+        if (booking == null)
+        {
+            return (false, "Booking not found.");
+        }
+
+        if (booking.ProviderUid != providerUid)
+        {
+            return (false, "Booking not found.");
+        }
+
+        if (!string.Equals(booking.Status, "Pending", StringComparison.OrdinalIgnoreCase))
+        {
+            return (false, "This booking is no longer awaiting a response.");
+        }
+
+        if (accept)
+        {
+            booking.Status = "Accepted";
+            booking.AcceptedOn = DateTime.Now;
+            booking.Passcode = Random.Shared.Next(1000, 10000).ToString();
+        }
+        else
+        {
+            booking.Status = "Rejected";
+
+            var request = await _db.CustomerServiceRequests
+                .FirstOrDefaultAsync(r => r.Uid == booking.RequestUid, cancellationToken);
+            if (request != null)
+            {
+                request.Status = "Pending";
+            }
+        }
+
+        // Single SaveChanges covers booking status + request status update atomically
+        // (avoids SqlServerRetryingExecutionStrategy transaction restrictions).
+        await _db.SaveChangesAsync(cancellationToken);
+        return (true, null);
+    }
+
+    public async Task<(bool Success, string? Error)> VerifyCompletionPasscodeAsync(
+        int bookingUid,
+        int providerUid,
+        string passcode,
+        decimal actualAmountPaid,
+        string? paymentMode,
+        CancellationToken cancellationToken = default)
+    {
+        var booking = await _db.ServiceBookings
+            .FirstOrDefaultAsync(b => b.Uid == bookingUid, cancellationToken);
+
+        if (booking == null || booking.ProviderUid != providerUid)
+        {
+            return (false, "Booking not found.");
+        }
+
+        if (!string.Equals(booking.Status, "Accepted", StringComparison.OrdinalIgnoreCase)
+            && !string.Equals(booking.Status, "In Progress", StringComparison.OrdinalIgnoreCase))
+        {
+            return (false, "This booking is not awaiting completion.");
+        }
+
+        if (string.IsNullOrWhiteSpace(booking.Passcode)
+            || !string.Equals(booking.Passcode, passcode?.Trim(), StringComparison.Ordinal))
+        {
+            return (false, "Incorrect passcode.");
+        }
+
+        if (actualAmountPaid < 0)
+        {
+            return (false, "Amount paid cannot be negative.");
+        }
+
+        if (paymentMode != null)
+        {
+            if (!ValidPaymentModes.Contains(paymentMode))
+            {
+                return (false, "Invalid payment mode.");
+            }
+            booking.PaymentMode = paymentMode;
+        }
+
+        booking.CustomerPaid = actualAmountPaid;
+        booking.CustomerRemaining = ComputeCustomerRemaining(booking.FinalAmount, actualAmountPaid);
+        booking.Status = "Completed";
+        booking.CompletedOn = DateTime.Now;
+
+        await _db.SaveChangesAsync(cancellationToken);
+
+        await CompleteBookingSideEffectsAsync(booking, cancellationToken);
+
         return (true, null);
     }
 

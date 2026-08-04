@@ -25,4 +25,18 @@ public interface IServiceBookingApiService
         int bookingUid,
         int? providerUid,
         CancellationToken cancellationToken = default);
+
+    Task<(bool Success, string? Error, ServiceBookingApiDto? Data)> RespondToBookingAsync(
+        int bookingUid,
+        int providerUid,
+        bool accept,
+        CancellationToken cancellationToken = default);
+
+    Task<(bool Success, string? Error, ServiceBookingApiDto? Data)> VerifyCompletionAsync(
+        int bookingUid,
+        int providerUid,
+        string passcode,
+        decimal actualAmountPaid,
+        string? paymentMode,
+        CancellationToken cancellationToken = default);
 }

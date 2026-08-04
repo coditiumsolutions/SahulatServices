@@ -273,6 +273,9 @@ public class AppDbContext : DbContext
             entity.Property(e => e.CommissionAmount).HasColumnType("decimal(12,2)");
             entity.Property(e => e.ProviderEarning).HasColumnType("decimal(12,2)");
             entity.Property(e => e.Status).HasMaxLength(20).IsRequired().HasDefaultValue("Completed");
+            entity.Property(e => e.Passcode).HasMaxLength(10);
+            entity.Property(e => e.AcceptedOn).HasColumnType("datetime");
+            entity.Property(e => e.CompletedOn).HasColumnType("datetime");
             entity.Property(e => e.CreatedOn)
                 .HasColumnType("datetime")
                 .HasDefaultValueSql("(getdate())");

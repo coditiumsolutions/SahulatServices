@@ -38,6 +38,12 @@ public class ServiceBooking
 
     public string Status { get; set; } = "Completed";
 
+    public string? Passcode { get; set; }
+
+    public DateTime? AcceptedOn { get; set; }
+
+    public DateTime? CompletedOn { get; set; }
+
     public DateTime CreatedOn { get; set; }
 
     public CustomerServiceRequest Request { get; set; } = null!;

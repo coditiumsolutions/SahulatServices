@@ -138,4 +138,58 @@ public class ServiceBookingsApiController : ControllerBase
 
         return Ok(ApiResponse<object>.Ok(new { bookingUid }, "Booking deleted successfully."));
     }
+
+    /// <summary>Provider accepts or rejects an assigned booking.</summary>
+    [HttpPost("{bookingUid:int}/respond")]
+    [ProducesResponseType(typeof(ApiResponse<ServiceBookingApiDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<ServiceBookingApiDto>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<ServiceBookingApiDto>), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ApiResponse<ServiceBookingApiDto>>> Respond(
+        int bookingUid,
+        [FromBody] RespondToBookingDto request,
+        CancellationToken cancellationToken)
+    {
+        var (success, error, data) = await _service.RespondToBookingAsync(
+            bookingUid, request.ProviderUid, request.Accept, cancellationToken);
+
+        if (!success || data == null)
+        {
+            if (error?.Contains("not found", StringComparison.OrdinalIgnoreCase) == true)
+            {
+                return NotFound(ApiResponse<ServiceBookingApiDto>.Fail(error));
+            }
+
+            return BadRequest(ApiResponse<ServiceBookingApiDto>.Fail(error ?? "Failed to respond to booking."));
+        }
+
+        return Ok(ApiResponse<ServiceBookingApiDto>.Ok(
+            data,
+            request.Accept ? "Booking accepted successfully." : "Booking rejected successfully."));
+    }
+
+    /// <summary>Provider verifies the client's completion passcode and records the payment collected.</summary>
+    [HttpPost("{bookingUid:int}/verify-completion")]
+    [ProducesResponseType(typeof(ApiResponse<ServiceBookingApiDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<ServiceBookingApiDto>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<ServiceBookingApiDto>), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ApiResponse<ServiceBookingApiDto>>> VerifyCompletion(
+        int bookingUid,
+        [FromBody] VerifyCompletionPasscodeDto request,
+        CancellationToken cancellationToken)
+    {
+        var (success, error, data) = await _service.VerifyCompletionAsync(
+            bookingUid, request.ProviderUid, request.Passcode, request.ActualAmountPaid, request.PaymentMode, cancellationToken);
+
+        if (!success || data == null)
+        {
+            if (error?.Contains("not found", StringComparison.OrdinalIgnoreCase) == true)
+            {
+                return NotFound(ApiResponse<ServiceBookingApiDto>.Fail(error));
+            }
+
+            return BadRequest(ApiResponse<ServiceBookingApiDto>.Fail(error ?? "Failed to verify completion."));
+        }
+
+        return Ok(ApiResponse<ServiceBookingApiDto>.Ok(data, "Booking marked as completed successfully."));
+    }
 }

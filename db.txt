@@ -1,4 +1,4 @@
-# Version: 3.1 | UpdatedAt: 31/07/2026
+# Version: 3.3 | UpdatedAt: 04/08/2026
 # Database: SahulatAppDB
 # Server: 34.131.132.158,1433
 
@@ -164,12 +164,18 @@ Table: ServiceBookings
   CommissionAmount     decimal(12,2)    NOT NULL  Company Commission
   ProviderEarning      decimal(12,2)    NOT NULL
   Status               nvarchar(20)     NOT NULL  DEFAULT ('Completed')
-  -- Status CHECK: Pending | Accepted | In Progress | Completed | Closed | Cancelled
+  -- Status CHECK: Pending | Accepted | In Progress | Completed | Closed | Cancelled | Rejected
+  -- Pending = assigned by staff, awaiting provider response
+  -- Rejected = provider declined; staff-only, hidden from client/provider-facing API
+  Passcode             nvarchar(10)     NULL      -- 4-digit completion passcode, set when provider accepts
+  AcceptedOn           datetime         NULL      -- set when provider accepts the assignment
+  CompletedOn          datetime         NULL      -- set when provider verifies the passcode
   CreatedOn            datetime         NOT NULL  DEFAULT (getdate())
   -- Finance post (auto when Status=Completed):
   --   PaymentLedger: Company/Credit/Commission, Provider/Credit/JobEarning,
   --                  CustPayment (OnlineToCompany) or CashCollect (CashToProvider)
   --   ProviderPayouts: Pending Online payout when PaymentMode=OnlineToCompany
+  --   CustomerPaid/PaymentMode are finalized at passcode-verification time (actual amount collected)
 
 --------------------------------------------------------------------------------
 Table: CommissionRules

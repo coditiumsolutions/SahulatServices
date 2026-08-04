@@ -1,6 +1,6 @@
 ================================================================================
 SahulatGharTak API Reference
-Version: 2.4 | Last Updated: 2026-07-31
+Version: 2.6 | Last Updated: 2026-08-04
 Database: SahulatAppDB
 Local Base URL:    https://localhost:7265/api/
 Deployed Base URL:  https://sahulatghartak.com/api/
@@ -13,7 +13,7 @@ Read this file before implementing, modifying, or debugging any API integration
 in the Flutter app (HTTP calls, request/response models, API service classes).
 
 MAINTENANCE RULES:
-1. Mirror every change to: D:\Flutter Installation\SahulatGharTak\api.txt
+1. Mirror every change to: "D:\Flutter Installation\SahulatGharTak\api.txt" (if not found then to "D:\Ry Work [D]\Bahria Town\SahulatGharTak App\Flutter App\api.txt")
 2. List only active/in-use APIs — remove entries for deprecated/unused endpoints
 3. Every endpoint must show both Local and Deployed base URLs
 4. Every endpoint must document: Request Body, Success response, and all Fail responses
@@ -1249,6 +1249,10 @@ Request Body: none
 Notes:
 - providerUid query param is OPTIONAL; omit to fetch all bookings
 - use providerUid to fetch bookings for a specific provider
+- bookings with status "Rejected" are never returned by this API (staff-only, visible in admin portal only)
+- provider/client contact fields (providerMobileNo, providerProfilePhotoPath, providerCnic,
+  clientMobileNo, clientAddressTitle/FullAddress/Area/City) are only populated once status is
+  Accepted, In Progress, or Completed; null while Pending
 
 Success (200):
 {
@@ -1277,7 +1281,18 @@ Success (200):
       "commissionAmount": 300.00,
       "providerEarning": 2700.00,
       "status": "Accepted",
-      "createdOn": "2026-07-20T00:00:00"
+      "passcode": "4821",
+      "acceptedOn": "2026-07-20T09:05:00",
+      "completedOn": null,
+      "createdOn": "2026-07-20T00:00:00",
+      "providerMobileNo": "03335191392",
+      "providerProfilePhotoPath": "uploads/providers/4/profile.jpg",
+      "providerCnic": "1-1-1",
+      "clientMobileNo": "03001112222",
+      "clientAddressTitle": "Home",
+      "clientFullAddress": "House 12, Street 5",
+      "clientArea": "DHA Phase 2",
+      "clientCity": "Karachi"
     }
   ]
 }
@@ -1330,7 +1345,18 @@ Success (200):
     "commissionAmount": 300.00,
     "providerEarning": 2700.00,
     "status": "Accepted",
-    "createdOn": "2026-07-20T00:00:00"
+    "passcode": "4821",
+    "acceptedOn": "2026-07-20T09:05:00",
+    "completedOn": null,
+    "createdOn": "2026-07-20T00:00:00",
+    "providerMobileNo": "03335191392",
+    "providerProfilePhotoPath": "uploads/providers/4/profile.jpg",
+    "providerCnic": "1-1-1",
+    "clientMobileNo": "03001112222",
+    "clientAddressTitle": "Home",
+    "clientFullAddress": "House 12, Street 5",
+    "clientArea": "DHA Phase 2",
+    "clientCity": "Karachi"
   }
 }
 
@@ -1370,7 +1396,9 @@ Notes:
 - finalAmount, customerRemaining, commissionAmount, and providerEarning are computed server-side
 - paymentMode: CashToProvider | OnlineToCompany
 - commissionType: Percent | Fixed
-- status: Pending | Accepted | In Progress | Completed | Closed | Cancelled
+- status: Pending | Accepted | In Progress | Completed | Closed | Cancelled | Rejected
+- staff assignment normally creates bookings as "Pending" (awaiting provider response) —
+  see POST .../respond below for the provider accept/reject step
 
 Success (201):
 {
@@ -1398,7 +1426,18 @@ Success (201):
     "commissionAmount": 300.00,
     "providerEarning": 2700.00,
     "status": "Accepted",
-    "createdOn": "2026-07-20T00:00:00"
+    "passcode": "4821",
+    "acceptedOn": "2026-07-20T09:05:00",
+    "completedOn": null,
+    "createdOn": "2026-07-20T00:00:00",
+    "providerMobileNo": "03335191392",
+    "providerProfilePhotoPath": "uploads/providers/4/profile.jpg",
+    "providerCnic": "1-1-1",
+    "clientMobileNo": "03001112222",
+    "clientAddressTitle": "Home",
+    "clientFullAddress": "House 12, Street 5",
+    "clientArea": "DHA Phase 2",
+    "clientCity": "Karachi"
   }
 }
 
@@ -1465,7 +1504,18 @@ Success (200):
     "commissionAmount": 350.00,
     "providerEarning": 3150.00,
     "status": "In Progress",
-    "createdOn": "2026-07-20T00:00:00"
+    "passcode": "4821",
+    "acceptedOn": "2026-07-20T09:05:00",
+    "completedOn": null,
+    "createdOn": "2026-07-20T00:00:00",
+    "providerMobileNo": "03335191392",
+    "providerProfilePhotoPath": "uploads/providers/4/profile.jpg",
+    "providerCnic": "1-1-1",
+    "clientMobileNo": "03001112222",
+    "clientAddressTitle": "Home",
+    "clientFullAddress": "House 12, Street 5",
+    "clientArea": "DHA Phase 2",
+    "clientCity": "Karachi"
   }
 }
 
@@ -1505,6 +1555,137 @@ Fail (400):
 {
   "success": false,
   "message": "Cannot delete this booking because it has payment ledger entries.",
+  "data": null
+}
+
+Fail (404):
+{
+  "success": false,
+  "message": "Booking not found.",
+  "data": null
+}
+
+--------------------------------------------------------------------------------
+POST Respond To Booking (Provider Accept/Reject)
+--------------------------------------------------------------------------------
+Local:     https://localhost:7265/api/service-bookings/{bookingUid}/respond
+Deployed:  https://sahulatghartak.com/api/service-bookings/{bookingUid}/respond
+
+Example:
+POST https://localhost:7265/api/service-bookings/1/respond
+
+Request Body:
+{
+  "providerUid": 4,
+  "accept": true
+}
+
+Notes:
+- booking must belong to providerUid and currently be Status="Pending" (i.e. staff-assigned,
+  awaiting provider response)
+- accept:true -> Status="Accepted", AcceptedOn set, a 4-digit Passcode is generated and
+  returned to the client so the app can display it in booking details
+- accept:false -> Status="Rejected" (staff-only; hidden from all client/provider-facing
+  responses), and the parent CustomerServiceRequest reverts to Status="Pending" so staff
+  can reassign a different provider
+
+Success (200 - accepted):
+{
+  "success": true,
+  "message": "Booking accepted successfully.",
+  "data": {
+    "uid": 1,
+    "requestUid": 5,
+    "requestTitle": "AC Repair",
+    "clientUid": 1,
+    "clientName": "Shahid",
+    "providerUid": 4,
+    "providerName": "Ali Electrician",
+    "status": "Accepted",
+    "passcode": "4821",
+    "acceptedOn": "2026-07-20T09:05:00",
+    "completedOn": null,
+    "providerMobileNo": "03335191392",
+    "providerProfilePhotoPath": "uploads/providers/4/profile.jpg",
+    "providerCnic": "1-1-1",
+    "clientMobileNo": "03001112222",
+    "clientAddressTitle": "Home",
+    "clientFullAddress": "House 12, Street 5",
+    "clientArea": "DHA Phase 2",
+    "clientCity": "Karachi",
+    "...": "remaining fields same shape as GET Booking By Id"
+  }
+}
+
+Fail (400 - already responded):
+{
+  "success": false,
+  "message": "This booking is no longer awaiting a response.",
+  "data": null
+}
+
+Fail (404):
+{
+  "success": false,
+  "message": "Booking not found.",
+  "data": null
+}
+
+--------------------------------------------------------------------------------
+POST Verify Completion Passcode (Provider marks job Completed)
+--------------------------------------------------------------------------------
+Local:     https://localhost:7265/api/service-bookings/{bookingUid}/verify-completion
+Deployed:  https://sahulatghartak.com/api/service-bookings/{bookingUid}/verify-completion
+
+Example:
+POST https://localhost:7265/api/service-bookings/1/verify-completion
+
+Request Body:
+{
+  "providerUid": 4,
+  "passcode": "4821",
+  "actualAmountPaid": 3000,
+  "paymentMode": null
+}
+
+Notes:
+- booking must belong to providerUid and currently be Status="Accepted" or "In Progress"
+- passcode must match the client-visible Passcode generated at accept time
+- actualAmountPaid is the real amount collected at job completion; it overwrites
+  CustomerPaid and CustomerRemaining is recomputed (FinalAmount - actualAmountPaid) —
+  supports partial payment (CustomerRemaining stays > 0)
+- paymentMode is OPTIONAL; pass CashToProvider or OnlineToCompany only if it changed from
+  what staff set at assignment time, otherwise omit/null to keep the existing value
+- on success: Status="Completed", CompletedOn set, CustomerServiceRequests.Status synced to
+  "Completed", and PaymentLedger/ProviderPayouts entries are posted automatically based on
+  the final PaymentMode + CustomerPaid (handles cash-to-provider, online-to-company, and
+  partial payment cases)
+
+Success (200):
+{
+  "success": true,
+  "message": "Booking marked as completed successfully.",
+  "data": {
+    "uid": 1,
+    "status": "Completed",
+    "customerPaid": 3000.00,
+    "customerRemaining": 0.00,
+    "completedOn": "2026-07-20T14:30:00",
+    "...": "remaining fields same shape as GET Booking By Id"
+  }
+}
+
+Fail (400 - wrong passcode):
+{
+  "success": false,
+  "message": "Incorrect passcode.",
+  "data": null
+}
+
+Fail (400 - wrong state):
+{
+  "success": false,
+  "message": "This booking is not awaiting completion.",
   "data": null
 }
 

@@ -8,7 +8,7 @@ public interface IBookingService
     Task<List<SelectListItem>> GetRequestOptionsAsync(CancellationToken cancellationToken = default);
     Task<List<SelectListItem>> GetProviderOptionsAsync(CancellationToken cancellationToken = default);
     List<SelectListItem> GetStatusOptions();
-    Task<BookingListVm> GetListAsync(string? search, string? sort, string? sortDir, int page, CancellationToken cancellationToken = default);
+    Task<BookingListVm> GetListAsync(string? search, string? sort, string? sortDir, string? status, int page, CancellationToken cancellationToken = default);
     Task<BookingDetailsVm?> GetDetailsAsync(int id, CancellationToken cancellationToken = default);
     Task<BookingFormVm?> GetForEditAsync(int id, CancellationToken cancellationToken = default);
     Task<BookingDeleteVm?> GetForDeleteAsync(int id, CancellationToken cancellationToken = default);
@@ -18,4 +18,6 @@ public interface IBookingService
     Task<BookingFormVm> PopulateFormAsync(BookingFormVm model, CancellationToken cancellationToken = default);
     Task<AssignProviderVm?> GetAssignProviderFormAsync(int requestUid, CancellationToken cancellationToken = default);
     Task<(bool Success, string? Error)> AssignProviderAsync(AssignProviderVm model, CancellationToken cancellationToken = default);
+    Task<(bool Success, string? Error)> RespondToAssignmentAsync(int bookingUid, int providerUid, bool accept, CancellationToken cancellationToken = default);
+    Task<(bool Success, string? Error)> VerifyCompletionPasscodeAsync(int bookingUid, int providerUid, string passcode, decimal actualAmountPaid, string? paymentMode, CancellationToken cancellationToken = default);
 }
