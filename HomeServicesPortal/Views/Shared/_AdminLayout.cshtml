@@ -308,6 +308,19 @@
             font-size: 0.88rem;
         }
 
+        .hs-wip-badge {
+            margin-left: auto;
+            font-size: 0.6rem;
+            font-weight: 700;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+            background: rgba(255, 193, 7, 0.9);
+            color: #3a2e00;
+            border-radius: 999px;
+            padding: 0.12rem 0.5rem;
+            white-space: nowrap;
+        }
+
         .hs-sidebar-panel.d-none {
             display: none !important;
         }
@@ -497,10 +510,10 @@
                             <i class="fa-solid fa-user-tie"></i> S-Provider
                         </a>
                         <a class="hs-nav-link hs-nav-sublink @NavClass("/admin/providerlocations")" href="/Admin/ProviderLocations">
-                            <i class="fa-solid fa-location-dot"></i> P-Locations
+                            <i class="fa-solid fa-location-dot"></i> P-Locations <span class="hs-wip-badge">WIP</span>
                         </a>
                         <a class="hs-nav-link hs-nav-sublink @NavClass("/admin/provideravailability")" href="/Admin/ProviderAvailability">
-                            <i class="fa-solid fa-clock"></i> P-Availability
+                            <i class="fa-solid fa-clock"></i> P-Availability <span class="hs-wip-badge">WIP</span>
                         </a>
                         <a class="hs-nav-link hs-nav-sublink @NavClass("/admin/providerdocuments")" href="/Admin/ProviderDocuments">
                             <i class="fa-solid fa-file-signature"></i> P-Documents
@@ -523,7 +536,7 @@
                     <div class="hs-sidebar-panel @(activeSection == "tracking" ? "" : "d-none")" data-section="tracking">
                         <div class="hs-nav-parent"><i class="fa-solid fa-location-dot"></i> Tracking</div>
                         <a class="hs-nav-link hs-nav-sublink @NavClass("/admin/bookingtracking")" href="/Admin/BookingTracking">
-                            <i class="fa-solid fa-diagram-project"></i> BookingTracking
+                            <i class="fa-solid fa-diagram-project"></i> BookingTracking <span class="hs-wip-badge">WIP</span>
                         </a>
                     </div>
 
@@ -542,26 +555,26 @@
                             <i class="fa-solid fa-percent"></i> Commission Rules
                         </a>
                         <a class="hs-nav-link hs-nav-sublink @NavClass("/admin/reviews")" href="/Admin/Reviews">
-                            <i class="fa-solid fa-star"></i> Reviews
+                            <i class="fa-solid fa-star"></i> Reviews <span class="hs-wip-badge">WIP</span>
                         </a>
                     </div>
 
                     <div class="hs-sidebar-panel @(activeSection == "reports" ? "" : "d-none")" data-section="reports">
                         <div class="hs-nav-parent"><i class="fa-solid fa-chart-column"></i> Reports</div>
                         <a class="hs-nav-link hs-nav-sublink @NavClass("/admin/reports/provider")" href="/Admin/Reports/Provider">
-                            <i class="fa-solid fa-chart-column"></i> Provider Report
+                            <i class="fa-solid fa-chart-column"></i> Provider Report <span class="hs-wip-badge">WIP</span>
                         </a>
                         <a class="hs-nav-link hs-nav-sublink @NavClass("/admin/reports/customer")" href="/Admin/Reports/Customer">
-                            <i class="fa-solid fa-chart-pie"></i> Customer Report
+                            <i class="fa-solid fa-chart-pie"></i> Customer Report <span class="hs-wip-badge">WIP</span>
                         </a>
                         <a class="hs-nav-link hs-nav-sublink @NavClass("/admin/reports/bookings")" href="/Admin/Reports/Bookings">
-                            <i class="fa-solid fa-chart-line"></i> Booking Report
+                            <i class="fa-solid fa-chart-line"></i> Booking Report <span class="hs-wip-badge">WIP</span>
                         </a>
                         <a class="hs-nav-link hs-nav-sublink @NavClass("/admin/reports/payments")" href="/Admin/Reports/Payments">
-                            <i class="fa-solid fa-chart-bar"></i> Payment Report
+                            <i class="fa-solid fa-chart-bar"></i> Payment Report <span class="hs-wip-badge">WIP</span>
                         </a>
                         <a class="hs-nav-link hs-nav-sublink @NavClass("/admin/reports/servicerequests")" href="/Admin/Reports/ServiceRequests">
-                            <i class="fa-solid fa-chart-area"></i> Service Request Report
+                            <i class="fa-solid fa-chart-area"></i> Service Request Report <span class="hs-wip-badge">WIP</span>
                         </a>
                     </div>
 
