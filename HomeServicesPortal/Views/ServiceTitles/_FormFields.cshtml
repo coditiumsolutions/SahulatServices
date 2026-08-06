@@ -1,0 +1,32 @@
+@model HomeServicesPortal.Models.ViewModels.ServiceTitleFormVm
+
+<div class="mb-3">
+    <label asp-for="CategoryUid" class="form-label"></label>
+    <select asp-for="CategoryUid" class="form-select" asp-items="Model.Categories">
+        <option value="">-- Select Category --</option>
+    </select>
+    <span asp-validation-for="CategoryUid" class="text-danger small"></span>
+</div>
+
+<div class="mb-3">
+    <label asp-for="Title" class="form-label"></label>
+    <input asp-for="Title" class="form-control" placeholder="Enter title" />
+    <span asp-validation-for="Title" class="text-danger small"></span>
+</div>
+
+<div class="mb-3">
+    <label asp-for="Description" class="form-label"></label>
+    <textarea asp-for="Description" class="form-control" rows="3" placeholder="Optional description"></textarea>
+    <span asp-validation-for="Description" class="text-danger small"></span>
+</div>
+
+<div class="mb-3">
+    <label asp-for="DisplayOrder" class="form-label"></label>
+    <input asp-for="DisplayOrder" type="number" class="form-control" />
+    <span asp-validation-for="DisplayOrder" class="text-danger small"></span>
+</div>
+
+<div class="form-check mb-2">
+    <input asp-for="IsActive" class="form-check-input" />
+    <label asp-for="IsActive" class="form-check-label"></label>
+</div>

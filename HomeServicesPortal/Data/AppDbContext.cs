@@ -25,6 +25,8 @@ public class AppDbContext : DbContext
 
     public DbSet<ServiceCategory> ServiceCategories => Set<ServiceCategory>();
 
+    public DbSet<ServiceTitle> ServiceTitles => Set<ServiceTitle>();
+
     public DbSet<ClientAddress> ClientAddresses => Set<ClientAddress>();
 
     public DbSet<CustomerServiceRequest> CustomerServiceRequests => Set<CustomerServiceRequest>();
@@ -166,6 +168,27 @@ public class AppDbContext : DbContext
                 .WithMany(s => s.Categories)
                 .HasForeignKey(e => e.ServiceUid)
                 .HasConstraintName("FK_ServiceCategories_Services")
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<ServiceTitle>(entity =>
+        {
+            entity.ToTable("ServiceTitles");
+            entity.HasKey(e => e.Uid);
+            entity.Property(e => e.Uid).HasColumnName("UID");
+            entity.Property(e => e.CategoryUid).HasColumnName("CategoryUID");
+            entity.Property(e => e.Title).HasMaxLength(150).IsRequired();
+            entity.Property(e => e.Description).HasMaxLength(500);
+            entity.Property(e => e.DisplayOrder).HasDefaultValue(0);
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.CreatedOn)
+                .HasColumnType("datetime")
+                .HasDefaultValueSql("(getdate())");
+
+            entity.HasOne(e => e.Category)
+                .WithMany(c => c.Titles)
+                .HasForeignKey(e => e.CategoryUid)
+                .HasConstraintName("FK_ServiceTitles_ServiceCategories")
                 .OnDelete(DeleteBehavior.Restrict);
         });
 

@@ -1,4 +1,4 @@
-# Version: 3.3 | UpdatedAt: 04/08/2026
+# Version: 3.4 | UpdatedAt: 06/08/2026
 # Database: SahulatAppDB
 # Server: 34.131.132.158,1433
 
@@ -61,6 +61,17 @@ Table: ServiceCategories
   ServiceUID       int              NOT NULL  FK -> Services.UID
   CategoryName     nvarchar(100)    NOT NULL
   Description      nvarchar(500)    NULL
+  IsActive         bit              NOT NULL  DEFAULT (1)
+  CreatedOn        datetime         NOT NULL  DEFAULT (getdate())
+
+--------------------------------------------------------------------------------
+Table: ServiceTitles
+--------------------------------------------------------------------------------
+  UID              int              NOT NULL  PK
+  CategoryUID      int              NOT NULL  FK -> ServiceCategories.UID
+  Title            nvarchar(150)    NOT NULL
+  Description      nvarchar(500)    NULL
+  DisplayOrder     int              NOT NULL  DEFAULT (0)
   IsActive         bit              NOT NULL  DEFAULT (1)
   CreatedOn        datetime         NOT NULL  DEFAULT (getdate())
 
@@ -493,6 +504,7 @@ FOREIGN KEY RELATIONSHIPS
   ProviderPayouts.ProviderUID              -> Providers.UID
   ProviderDocuments.ProviderUID            -> Providers.UID
   ServiceCategories.ServiceUID             -> Services.UID
+  ServiceTitles.CategoryUID                -> ServiceCategories.UID
 
   ServiceProviders.CategoryUID       -> ServiceCategories.UID          [REMOVED]
   ProviderLocations.ProviderUID      -> ServiceProviders.UID           [REMOVED]

@@ -1,6 +1,6 @@
 ================================================================================
 SahulatGharTak API Reference
-Version: 2.7 | Last Updated: 2026-08-04
+Version: 2.8 | Last Updated: 2026-08-06
 Database: SahulatAppDB
 Local Base URL:    https://localhost:7265/api/
 Deployed Base URL:  https://sahulatghartak.com/api/
@@ -1870,4 +1870,66 @@ Success (200):
 Fail (404):
 {
   "message": "Service category not found."
+}
+
+================================================================================
+SERVICE TITLES APIs
+================================================================================
+Hierarchy: Services -> ServiceCategories -> ServiceTitles
+Flutter flow: GET /api/service-categories?serviceUid={id} then GET /api/service-titles?categoryUid={id}
+
+--------------------------------------------------------------------------------
+GET All Service Titles
+--------------------------------------------------------------------------------
+Local:     https://localhost:7265/api/service-titles?categoryUid={id}
+Deployed:  https://sahulatghartak.com/api/service-titles?categoryUid={id}
+
+Required Query:
+- categoryUid (int) — parent service category
+
+Example:
+GET https://localhost:7265/api/service-titles?categoryUid=1
+
+Request Body: none
+
+Success (200):
+[
+  {
+    "id": 1,
+    "categoryId": 1,
+    "categoryName": "Plumber",
+    "title": "Leak Repair",
+    "description": "Fixing pipe and faucet leaks",
+    "displayOrder": 1,
+    "createdOn": "2026-08-06T00:00:00"
+  }
+]
+
+Fail: returns empty array [] when no active titles found
+
+--------------------------------------------------------------------------------
+GET Service Title By Id
+--------------------------------------------------------------------------------
+Local:     https://localhost:7265/api/service-titles/{id}
+Deployed:  https://sahulatghartak.com/api/service-titles/{id}
+
+Example:
+GET https://localhost:7265/api/service-titles/1
+
+Request Body: none
+
+Success (200):
+{
+  "id": 1,
+  "categoryId": 1,
+  "categoryName": "Plumber",
+  "title": "Leak Repair",
+  "description": "Fixing pipe and faucet leaks",
+  "displayOrder": 1,
+  "createdOn": "2026-08-06T00:00:00"
+}
+
+Fail (404):
+{
+  "message": "Service title not found."
 }

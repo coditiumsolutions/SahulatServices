@@ -17,4 +17,6 @@ public class ServiceCategory
     public Service Service { get; set; } = null!;
 
     public ICollection<Provider> Providers { get; set; } = new List<Provider>();
+
+    public ICollection<ServiceTitle> Titles { get; set; } = new List<ServiceTitle>();
 }

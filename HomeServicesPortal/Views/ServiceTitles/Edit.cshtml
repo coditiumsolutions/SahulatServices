@@ -1,0 +1,33 @@
+@model HomeServicesPortal.Models.ViewModels.ServiceTitleFormVm
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Edit S-Title";
+}
+
+<div class="mb-4">
+    <a asp-action="Index" class="text-decoration-none text-muted"><i class="fa-solid fa-arrow-left me-1"></i>Back to S-Titles</a>
+    <h2 class="mt-2 mb-0"><i class="fa-solid fa-pen me-2 text-primary"></i>Edit S-Title</h2>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-7">
+        <div class="card hs-card">
+            <div class="card-body p-4">
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+                <form asp-action="Edit" asp-route-id="@Model.Uid" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" asp-for="Uid" />
+                    <partial name="_FormFields" model="Model" />
+                    <div class="d-flex gap-2 mt-4">
+                        <button type="submit" class="btn btn-primary"><i class="fa-solid fa-save me-1"></i>Update</button>
+                        <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
