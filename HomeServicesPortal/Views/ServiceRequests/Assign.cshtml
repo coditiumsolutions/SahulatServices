@@ -38,12 +38,32 @@
                     @Html.AntiForgeryToken()
                     <input type="hidden" asp-for="RequestUid" />
 
-                    <div class="mb-4">
+                    <div class="mb-3">
                         <label asp-for="ProviderUid" class="form-label"></label>
-                        <select asp-for="ProviderUid" class="form-select" asp-items="Model.Providers">
+
+                        @if (!Model.HasCategoryMatch)
+                        {
+                            <div class="alert alert-warning py-2 px-3 small mb-2">
+                                <i class="fa-solid fa-triangle-exclamation me-1"></i>
+                                No providers match this request's category (@Model.CategoryName). Showing all providers instead.
+                            </div>
+                        }
+
+                        <select id="ProviderUidMatching" class="form-select @(Model.ShowAllProviders ? "d-none" : "")"
+                                asp-items="Model.Providers">
                             <option value="">-- Select Provider --</option>
                         </select>
+                        <select id="ProviderUidAll" class="form-select @(Model.ShowAllProviders ? "" : "d-none")"
+                                asp-items="Model.AllProviders">
+                            <option value="">-- Select Provider --</option>
+                        </select>
+                        <input type="hidden" asp-for="ProviderUid" id="ProviderUid" />
                         <span asp-validation-for="ProviderUid" class="text-danger small"></span>
+
+                        <div class="form-check mt-2">
+                            <input asp-for="ShowAllProviders" class="form-check-input" id="showAllProvidersToggle" disabled="@(!Model.HasCategoryMatch)" />
+                            <label asp-for="ShowAllProviders" class="form-check-label small"></label>
+                        </div>
                     </div>
 
                     <div class="mb-4">
@@ -143,6 +163,41 @@
         (function () {
             const form = document.getElementById('assignProviderForm');
             if (!form) return;
+
+            (function providerToggle() {
+                const matchingSelect = document.getElementById('ProviderUidMatching');
+                const allSelect = document.getElementById('ProviderUidAll');
+                const hiddenInput = document.getElementById('ProviderUid');
+                const toggle = document.getElementById('showAllProvidersToggle');
+                if (!matchingSelect || !allSelect || !hiddenInput || !toggle) return;
+
+                const preselected = '@Model.ProviderUid';
+
+                function syncHidden() {
+                    const activeSelect = toggle.checked ? allSelect : matchingSelect;
+                    hiddenInput.value = activeSelect.value;
+                }
+
+                function applyToggleState() {
+                    matchingSelect.classList.toggle('d-none', toggle.checked);
+                    allSelect.classList.toggle('d-none', !toggle.checked);
+                    syncHidden();
+                }
+
+                if (preselected && preselected !== '0') {
+                    if ([...matchingSelect.options].some(o => o.value === preselected)) {
+                        matchingSelect.value = preselected;
+                    } else if ([...allSelect.options].some(o => o.value === preselected)) {
+                        allSelect.value = preselected;
+                    }
+                }
+
+                matchingSelect.addEventListener('change', syncHidden);
+                allSelect.addEventListener('change', syncHidden);
+                toggle.addEventListener('change', applyToggleState);
+
+                applyToggleState();
+            })();
 
             const num = (id) => {
                 const el = form.querySelector('#' + id);

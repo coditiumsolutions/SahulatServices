@@ -96,6 +96,8 @@ public class ServiceRequestsController : Controller
         model.Status = form.Status;
         model.EstimatedBudget = form.EstimatedBudget;
         model.Providers = form.Providers;
+        model.AllProviders = form.AllProviders;
+        model.HasCategoryMatch = form.HasCategoryMatch;
         model.PaymentModeOptions = form.PaymentModeOptions;
         model.CommissionTypeOptions = form.CommissionTypeOptions;
 

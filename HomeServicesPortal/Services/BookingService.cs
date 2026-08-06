@@ -450,7 +450,7 @@ public class BookingService : IBookingService
             .AnyAsync(b => b.RequestUid == requestUid && b.Status != "Rejected", cancellationToken);
         if (alreadyBooked) return null;
 
-        var providers = await _db.Providers
+        var matchingProviders = await _db.Providers
             .AsNoTracking()
             .Where(p => p.User.IsActive && p.CategoryUid == request.CategoryUid)
             .OrderBy(p => p.FullName)
@@ -461,10 +461,7 @@ public class BookingService : IBookingService
             })
             .ToListAsync(cancellationToken);
 
-        if (providers.Count == 0)
-        {
-            providers = await GetProviderOptionsAsync(cancellationToken);
-        }
+        var allProviders = await GetProviderOptionsAsync(cancellationToken);
 
         var estimated = request.EstimatedBudget ?? 0m;
         var vm = new AssignProviderVm
@@ -485,7 +482,10 @@ public class BookingService : IBookingService
             CommissionType = "Percent",
             CommissionValue = 10,
             PaymentMode = "CashToProvider",
-            Providers = providers,
+            HasCategoryMatch = matchingProviders.Count > 0,
+            ShowAllProviders = matchingProviders.Count == 0,
+            Providers = matchingProviders,
+            AllProviders = allProviders,
             PaymentModeOptions = ValidPaymentModes
                 .Select(m => new SelectListItem
                 {
@@ -540,11 +540,17 @@ public class BookingService : IBookingService
             return (false, "This request already has a booking.");
         }
 
-        var providerExists = await _db.Providers
-            .AnyAsync(p => p.Uid == model.ProviderUid, cancellationToken);
-        if (!providerExists)
+        var provider = await _db.Providers
+            .AsNoTracking()
+            .FirstOrDefaultAsync(p => p.Uid == model.ProviderUid, cancellationToken);
+        if (provider == null)
         {
             return (false, "Selected provider does not exist.");
+        }
+
+        if (!model.ShowAllProviders && provider.CategoryUid != request.CategoryUid)
+        {
+            return (false, "Selected provider does not match this request's service category. Enable \"Show all providers\" to override.");
         }
 
         if (!ValidPaymentModes.Contains(model.PaymentMode))

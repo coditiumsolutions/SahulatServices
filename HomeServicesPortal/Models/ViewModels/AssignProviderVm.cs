@@ -22,6 +22,11 @@ public class AssignProviderVm
     [Display(Name = "Provider")]
     public int ProviderUid { get; set; }
 
+    [Display(Name = "Show all providers (override category match)")]
+    public bool ShowAllProviders { get; set; }
+
+    public bool HasCategoryMatch { get; set; }
+
     [Required]
     [Display(Name = "Estimated Amount")]
     [Range(0, double.MaxValue)]
@@ -78,6 +83,7 @@ public class AssignProviderVm
     public decimal ProviderEarning { get; set; }
 
     public List<SelectListItem> Providers { get; set; } = new();
+    public List<SelectListItem> AllProviders { get; set; } = new();
     public List<SelectListItem> PaymentModeOptions { get; set; } = new();
     public List<SelectListItem> CommissionTypeOptions { get; set; } = new();
 }
