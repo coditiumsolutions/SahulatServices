@@ -97,3 +97,12 @@ Manual/alternative deployment scripts live under `deploy/gcp/` and `deploy/hosti
 - `api.txt` — active mobile/client API reference
 - `db.txt` — live database schema
 - `docs/api-audit-report.md` — audit of redundant/non-functional endpoints and the two-data-layer situation
+
+---
+
+## Credits
+
+**Developed By:**
+
+- [Rayder-23](https://github.com/Rayder-23)
+- Coditium Solutions
