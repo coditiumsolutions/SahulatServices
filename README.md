@@ -104,5 +104,5 @@ Manual/alternative deployment scripts live under `deploy/gcp/` and `deploy/hosti
 
 **Developed By:**
 
-- [Rayder-23](https://github.com/Rayder-23)
+- Rayder-23
 - Coditium Solutions
