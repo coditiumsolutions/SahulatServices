@@ -239,7 +239,6 @@ public class ServiceBookingApiService : IServiceBookingApiService
             CommissionAmount = b.CommissionAmount,
             ProviderEarning = b.ProviderEarning,
             Status = b.Status,
-            Passcode = b.Passcode,
             AcceptedOn = b.AcceptedOn,
             CompletedOn = b.CompletedOn,
             CreatedOn = b.CreatedOn,

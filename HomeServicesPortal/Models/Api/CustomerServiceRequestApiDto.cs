@@ -37,4 +37,16 @@ public class CustomerServiceRequestApiDto
     public string? Remarks { get; set; }
 
     public DateTime CreatedOn { get; set; }
+
+    public int? ProviderUid { get; set; }
+
+    public string? ProviderName { get; set; }
+
+    public string? ProviderMobileNo { get; set; }
+
+    public string? ProviderProfilePhotoPath { get; set; }
+
+    public string? ProviderCnic { get; set; }
+
+    public string? Passcode { get; set; }
 }

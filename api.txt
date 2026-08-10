@@ -1,6 +1,6 @@
 ================================================================================
 SahulatGharTak API Reference
-Version: 2.8 | Last Updated: 2026-08-06
+Version: 3.0 | Last Updated: 2026-08-10
 Database: SahulatAppDB
 Local Base URL:    https://localhost:7265/api/
 Deployed Base URL:  https://sahulatghartak.com/api/
@@ -1069,6 +1069,17 @@ Optional query: ?clientUid=1
 
 Request Body: none
 
+Notes:
+- providerUid, providerName, providerMobileNo, providerProfilePhotoPath, providerCnic are populated
+  once a ServiceBooking exists for this request AND that booking's status is Accepted, In Progress,
+  or Completed (same rule as GET /service-bookings). Otherwise (no booking yet, still Pending, or
+  Rejected) all five fields are null.
+- passcode is populated once the linked ServiceBooking has a non-null Passcode — i.e. the booking
+  has been Accepted (Passcode is generated at accept time, see POST .../respond in the Service
+  Bookings section). If no booking exists yet, or it hasn't been accepted yet, passcode is null.
+  This is the only place the completion passcode is exposed — it is deliberately omitted from all
+  /service-bookings responses so the provider app cannot read the customer's own verification code.
+
 Success (200):
 {
   "success": true,
@@ -1092,7 +1103,39 @@ Success (200):
       "estimatedBudget": 2500.00,
       "status": "Pending",
       "remarks": "Please call before arrival",
-      "createdOn": "2026-07-08T00:00:00"
+      "createdOn": "2026-07-08T00:00:00",
+      "providerUid": null,
+      "providerName": null,
+      "providerMobileNo": null,
+      "providerProfilePhotoPath": null,
+      "providerCnic": null,
+      "passcode": null
+    },
+    {
+      "uid": 2,
+      "clientUid": 1,
+      "clientName": "Shahid",
+      "categoryUid": 4,
+      "categoryName": "Electrician",
+      "clientAddressUid": 1,
+      "addressTitle": "Home",
+      "serviceTitle": "Fan Installation",
+      "serviceDescription": "Install 2 ceiling fans",
+      "preferredServiceDate": "2026-07-12",
+      "preferredServiceTime": "16:00",
+      "isUrgent": false,
+      "contactPerson": "Shahid",
+      "contactNo": "03335191392",
+      "estimatedBudget": 1500.00,
+      "status": "InProgress",
+      "remarks": null,
+      "createdOn": "2026-07-09T00:00:00",
+      "providerUid": 7,
+      "providerName": "Ali Raza",
+      "providerMobileNo": "03011234567",
+      "providerProfilePhotoPath": "/uploads/providers/7/profile.jpg",
+      "providerCnic": "35202-1234567-1",
+      "passcode": "4821"
     }
   ]
 }
@@ -1110,29 +1153,46 @@ GET https://localhost:7265/api/customer-service-requests/1
 
 Request Body: none
 
+Notes:
+- providerUid, providerName, providerMobileNo, providerProfilePhotoPath, providerCnic are populated
+  once a ServiceBooking exists for this request AND that booking's status is Accepted, In Progress,
+  or Completed (same rule as GET /service-bookings). Otherwise (no booking yet, still Pending, or
+  Rejected) all five fields are null.
+- passcode is populated once the linked ServiceBooking has a non-null Passcode — i.e. the booking
+  has been Accepted (Passcode is generated at accept time, see POST .../respond in the Service
+  Bookings section). If no booking exists yet, or it hasn't been accepted yet, passcode is null.
+  This is the only place the completion passcode is exposed — it is deliberately omitted from all
+  /service-bookings responses so the provider app cannot read the customer's own verification code.
+
 Success (200):
 {
   "success": true,
   "message": "Service request fetched successfully.",
   "data": {
-    "uid": 1,
+    "uid": 2,
     "clientUid": 1,
     "clientName": "Shahid",
     "categoryUid": 4,
     "categoryName": "Electrician",
     "clientAddressUid": 1,
     "addressTitle": "Home",
-    "serviceTitle": "AC Repair",
-    "serviceDescription": "AC not cooling properly",
-    "preferredServiceDate": "2026-07-10",
-    "preferredServiceTime": "10:00",
-    "isUrgent": true,
+    "serviceTitle": "Fan Installation",
+    "serviceDescription": "Install 2 ceiling fans",
+    "preferredServiceDate": "2026-07-12",
+    "preferredServiceTime": "16:00",
+    "isUrgent": false,
     "contactPerson": "Shahid",
     "contactNo": "03335191392",
-    "estimatedBudget": 2500.00,
-    "status": "Pending",
-    "remarks": "Please call before arrival",
-    "createdOn": "2026-07-08T00:00:00"
+    "estimatedBudget": 1500.00,
+    "status": "InProgress",
+    "remarks": null,
+    "createdOn": "2026-07-09T00:00:00",
+    "providerUid": 7,
+    "providerName": "Ali Raza",
+    "providerMobileNo": "03011234567",
+    "providerProfilePhotoPath": "/uploads/providers/7/profile.jpg",
+    "providerCnic": "35202-1234567-1",
+    "passcode": "4821"
   }
 }
 
@@ -1346,7 +1406,6 @@ Success (200):
       "commissionAmount": 300.00,
       "providerEarning": 2700.00,
       "status": "Accepted",
-      "passcode": "4821",
       "acceptedOn": "2026-07-20T09:05:00",
       "completedOn": null,
       "createdOn": "2026-07-20T00:00:00",
@@ -1410,7 +1469,6 @@ Success (200):
     "commissionAmount": 300.00,
     "providerEarning": 2700.00,
     "status": "Accepted",
-    "passcode": "4821",
     "acceptedOn": "2026-07-20T09:05:00",
     "completedOn": null,
     "createdOn": "2026-07-20T00:00:00",
@@ -1491,7 +1549,6 @@ Success (201):
     "commissionAmount": 300.00,
     "providerEarning": 2700.00,
     "status": "Accepted",
-    "passcode": "4821",
     "acceptedOn": "2026-07-20T09:05:00",
     "completedOn": null,
     "createdOn": "2026-07-20T00:00:00",
@@ -1569,7 +1626,6 @@ Success (200):
     "commissionAmount": 350.00,
     "providerEarning": 3150.00,
     "status": "In Progress",
-    "passcode": "4821",
     "acceptedOn": "2026-07-20T09:05:00",
     "completedOn": null,
     "createdOn": "2026-07-20T00:00:00",
@@ -1648,8 +1704,9 @@ Request Body:
 Notes:
 - booking must belong to providerUid and currently be Status="Pending" (i.e. staff-assigned,
   awaiting provider response)
-- accept:true -> Status="Accepted", AcceptedOn set, a 4-digit Passcode is generated and
-  returned to the client so the app can display it in booking details
+- accept:true -> Status="Accepted", AcceptedOn set, a 4-digit Passcode is generated
+  server-side. It is NOT returned in this (or any) /service-bookings response — see
+  GET /customer-service-requests below for the client-facing passcode field
 - accept:false -> Status="Rejected" (staff-only; hidden from all client/provider-facing
   responses), and the parent CustomerServiceRequest reverts to Status="Pending" so staff
   can reassign a different provider
@@ -1667,7 +1724,6 @@ Success (200 - accepted):
     "providerUid": 4,
     "providerName": "Ali Electrician",
     "status": "Accepted",
-    "passcode": "4821",
     "acceptedOn": "2026-07-20T09:05:00",
     "completedOn": null,
     "providerMobileNo": "03335191392",
@@ -1715,7 +1771,8 @@ Request Body:
 
 Notes:
 - booking must belong to providerUid and currently be Status="Accepted" or "In Progress"
-- passcode must match the client-visible Passcode generated at accept time
+- passcode must match the Passcode generated at accept time, surfaced to the client via
+  GET /customer-service-requests (list/by-id) — see that section for the field
 - actualAmountPaid is the real amount collected at job completion; it overwrites
   CustomerPaid and CustomerRemaining is recomputed (FinalAmount - actualAmountPaid) —
   supports partial payment (CustomerRemaining stays > 0)

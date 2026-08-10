@@ -44,8 +44,6 @@ public class ServiceBookingApiDto
 
     public string Status { get; set; } = string.Empty;
 
-    public string? Passcode { get; set; }
-
     public DateTime? AcceptedOn { get; set; }
 
     public DateTime? CompletedOn { get; set; }

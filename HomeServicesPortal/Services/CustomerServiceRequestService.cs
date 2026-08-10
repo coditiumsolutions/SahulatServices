@@ -194,7 +194,9 @@ public class CustomerServiceRequestService : ICustomerServiceRequestService
         return null;
     }
 
-    private static System.Linq.Expressions.Expression<Func<CustomerServiceRequest, CustomerServiceRequestApiDto>> MapToDtoExpression() =>
+    private static readonly string[] ProviderVisibleStatuses = ["Accepted", "In Progress", "Completed"];
+
+    private System.Linq.Expressions.Expression<Func<CustomerServiceRequest, CustomerServiceRequestApiDto>> MapToDtoExpression() =>
         r => new CustomerServiceRequestApiDto
         {
             Uid = r.Uid,
@@ -214,6 +216,33 @@ public class CustomerServiceRequestService : ICustomerServiceRequestService
             EstimatedBudget = r.EstimatedBudget,
             Status = r.Status,
             Remarks = r.Remarks,
-            CreatedOn = r.CreatedOn
+            CreatedOn = r.CreatedOn,
+            ProviderUid = _db.ServiceBookings
+                .Where(b => b.RequestUid == r.Uid && ProviderVisibleStatuses.Contains(b.Status))
+                .Select(b => (int?)b.ProviderUid)
+                .FirstOrDefault(),
+            ProviderName = _db.ServiceBookings
+                .Where(b => b.RequestUid == r.Uid && ProviderVisibleStatuses.Contains(b.Status))
+                .Select(b => b.Provider.FullName)
+                .FirstOrDefault(),
+            ProviderMobileNo = _db.ServiceBookings
+                .Where(b => b.RequestUid == r.Uid && ProviderVisibleStatuses.Contains(b.Status))
+                .Select(b => b.Provider.User.MobileNo)
+                .FirstOrDefault(),
+            ProviderProfilePhotoPath = _db.ServiceBookings
+                .Where(b => b.RequestUid == r.Uid && ProviderVisibleStatuses.Contains(b.Status))
+                .Select(b => _db.ProviderDocuments
+                    .Where(d => d.ProviderUid == b.ProviderUid)
+                    .Select(d => d.ProfilePhotoPath)
+                    .FirstOrDefault())
+                .FirstOrDefault(),
+            ProviderCnic = _db.ServiceBookings
+                .Where(b => b.RequestUid == r.Uid && ProviderVisibleStatuses.Contains(b.Status))
+                .Select(b => b.Provider.Cnic)
+                .FirstOrDefault(),
+            Passcode = _db.ServiceBookings
+                .Where(b => b.RequestUid == r.Uid && b.Passcode != null)
+                .Select(b => b.Passcode)
+                .FirstOrDefault()
         };
 }
