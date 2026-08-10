@@ -10,10 +10,10 @@ description: >-
   Do NOT use for pull requests, branch strategy, or code review without a
   commit request.
 author: Rayder
-version: 1.2.1
+version: 1.2.2
 ---
 
-<!-- Author: Rayder | Version: 1.2.1 -->
+<!-- Author: Rayder | Version: 1.2.2 -->
 
 # GitHub Commit
 
@@ -58,26 +58,26 @@ If the user asks to **commit only** (no "push" in the request), commit locally a
 
 **Example with body:**
 ```
-Fix: paid amount not updating after partial payment insert
+Fix: Paid amount not updating after partial payment insert
 
 Payment rows were inserted without syncing the invoice paid amount.
 Update paid amount on each insert so the running balance stays correct.
 ```
 
 **Subject-only examples:**
-- `Add: student fee allocation check during invoice generation`
-- `Update: rate limit config in API gateway`
-- `Refactor: split user service into auth and profile modules`
-- `Feat(Billing): late fee applied when past due date`
-- `Remove: unused logger middleware`
-- `Docs: add setup steps to README`
-- `Test: cover edge cases in discount calculation`
-- `Perf: cache repeated DB lookups in report generation`
-- `Style: apply linter rules across src/`
-- `Build: migrate bundler from Webpack to Vite`
-- `Ci: add lint and test steps to PR workflow`
-- `Chore: update .gitignore for local config files`
-- `Revert: undo rate limiter change from previous commit`
+- `Add: Student fee allocation check during invoice generation`
+- `Update: Rate limit config in API gateway`
+- `Refactor: Split user service into auth and profile modules`
+- `Feat(Billing): Late fee applied when past due date`
+- `Remove: Unused logger middleware`
+- `Docs: Add setup steps to README`
+- `Test: Cover edge cases in discount calculation`
+- `Perf: Cache repeated DB lookups in report generation`
+- `Style: Apply linter rules across src/`
+- `Build: Migrate bundler from Webpack to Vite`
+- `Ci: Add lint and test steps to PR workflow`
+- `Chore: Update .gitignore for local config files`
+- `Revert: Undo rate limiter change from previous commit`
 
 Pick the prefix that best matches the **primary intent** of the diff. Do not combine prefixes on the subject line.
 
@@ -175,7 +175,7 @@ When the message has a body, use a here-string (PowerShell) or `-m` twice (bash)
 
 ```bash
 # bash / zsh
-git commit -m "Fix: paid amount not updating after partial payment insert" \
+git commit -m "Fix: Paid amount not updating after partial payment insert" \
            -m "Payment rows were inserted without syncing the invoice paid amount. Update paid amount on each insert so the running balance stays correct."
 ```
 
@@ -183,7 +183,7 @@ git commit -m "Fix: paid amount not updating after partial payment insert" \
 # PowerShell — use a SINGLE-quoted here-string so $ and backticks stay literal.
 # The opener must end its line, and the closing '@ must be at column 0.
 git commit -m @'
-Fix: paid amount not updating after partial payment insert
+Fix: Paid amount not updating after partial payment insert
 
 Payment rows were inserted without syncing the invoice paid amount.
 Update paid amount on each insert so the running balance stays correct.
