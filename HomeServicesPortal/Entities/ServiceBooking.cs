@@ -40,6 +40,10 @@ public class ServiceBooking
 
     public string? Passcode { get; set; }
 
+    public string? RejectReason { get; set; }
+
+    public string? CancelReason { get; set; }
+
     public DateTime? AcceptedOn { get; set; }
 
     public DateTime? CompletedOn { get; set; }

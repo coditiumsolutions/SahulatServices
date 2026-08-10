@@ -51,4 +51,8 @@ public class UpdateCustomerServiceRequestDto
 
     [StringLength(500)]
     public string? Remarks { get; set; }
+
+    /// <summary>Required when Status is "Cancelled". Reason the customer is cancelling this request.</summary>
+    [StringLength(500)]
+    public string? CancelReason { get; set; }
 }

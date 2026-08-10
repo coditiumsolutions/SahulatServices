@@ -1,6 +1,6 @@
 ================================================================================
 SahulatGharTak API Reference
-Version: 3.0 | Last Updated: 2026-08-10
+Version: 3.1 | Last Updated: 2026-08-10
 Database: SahulatAppDB
 Local Base URL:    https://localhost:7265/api/
 Deployed Base URL:  https://sahulatghartak.com/api/
@@ -1079,6 +1079,8 @@ Notes:
   Bookings section). If no booking exists yet, or it hasn't been accepted yet, passcode is null.
   This is the only place the completion passcode is exposed — it is deliberately omitted from all
   /service-bookings responses so the provider app cannot read the customer's own verification code.
+- cancelReason is the reason the customer gave when they cancelled this request (Status="Cancelled"
+  via PUT .../{requestUid}, see below). Null unless the request has been cancelled by the customer.
 
 Success (200):
 {
@@ -1103,6 +1105,7 @@ Success (200):
       "estimatedBudget": 2500.00,
       "status": "Pending",
       "remarks": "Please call before arrival",
+      "cancelReason": null,
       "createdOn": "2026-07-08T00:00:00",
       "providerUid": null,
       "providerName": null,
@@ -1129,6 +1132,7 @@ Success (200):
       "estimatedBudget": 1500.00,
       "status": "InProgress",
       "remarks": null,
+      "cancelReason": null,
       "createdOn": "2026-07-09T00:00:00",
       "providerUid": 7,
       "providerName": "Ali Raza",
@@ -1163,6 +1167,8 @@ Notes:
   Bookings section). If no booking exists yet, or it hasn't been accepted yet, passcode is null.
   This is the only place the completion passcode is exposed — it is deliberately omitted from all
   /service-bookings responses so the provider app cannot read the customer's own verification code.
+- cancelReason is the reason the customer gave when they cancelled this request (Status="Cancelled"
+  via PUT .../{requestUid}, see below). Null unless the request has been cancelled by the customer.
 
 Success (200):
 {
@@ -1186,6 +1192,7 @@ Success (200):
     "estimatedBudget": 1500.00,
     "status": "InProgress",
     "remarks": null,
+    "cancelReason": null,
     "createdOn": "2026-07-09T00:00:00",
     "providerUid": 7,
     "providerName": "Ali Raza",
@@ -1287,7 +1294,8 @@ Request Body:
   "contactNo": "03335191392",
   "estimatedBudget": 3000,
   "status": "InProgress",
-  "remarks": "Technician assigned"
+  "remarks": "Technician assigned",
+  "cancelReason": null
 }
 
 Notes:
@@ -1295,6 +1303,23 @@ Notes:
 - clientUid cannot be changed on update
 - serviceDescription is OPTIONAL (omit, null, or "" when not provided)
 - preferredServiceDate and preferredServiceTime are OPTIONAL (omit, null, or "" when not provided)
+- cancelReason is REQUIRED (non-empty) whenever status is being set to "Cancelled" — the customer's
+  reason for cancelling. Fails with 400 if status="Cancelled" and cancelReason is missing/empty.
+  For any other status value, cancelReason is optional/ignored (existing stored value is preserved).
+
+Example (customer cancelling):
+{
+  "requestUid": 1,
+  "categoryUid": 4,
+  "clientAddressUid": 1,
+  "serviceTitle": "AC Repair",
+  "serviceDescription": "AC not cooling properly",
+  "contactPerson": "Shahid",
+  "contactNo": "03335191392",
+  "estimatedBudget": 2500,
+  "status": "Cancelled",
+  "cancelReason": "Found another technician"
+}
 
 Success (200):
 {
@@ -1318,8 +1343,16 @@ Success (200):
     "estimatedBudget": 3000.00,
     "status": "InProgress",
     "remarks": "Technician assigned",
+    "cancelReason": null,
     "createdOn": "2026-07-08T00:00:00"
   }
+}
+
+Fail (400 - cancelling without a reason):
+{
+  "success": false,
+  "message": "Cancel reason is required when cancelling a service request.",
+  "data": null
 }
 
 Fail (404):
@@ -1378,6 +1411,9 @@ Notes:
 - provider/client contact fields (providerMobileNo, providerProfilePhotoPath, providerCnic,
   clientMobileNo, clientAddressTitle/FullAddress/Area/City) are only populated once status is
   Accepted, In Progress, or Completed; null while Pending
+- rejectReason is set when a provider rejects a Pending booking (see POST .../respond below);
+  cancelReason is set when an Accepted/In Progress booking is cancelled (see PUT .../{bookingUid}
+  below). Both are null otherwise.
 
 Success (200):
 {
@@ -1406,6 +1442,8 @@ Success (200):
       "commissionAmount": 300.00,
       "providerEarning": 2700.00,
       "status": "Accepted",
+      "rejectReason": null,
+      "cancelReason": null,
       "acceptedOn": "2026-07-20T09:05:00",
       "completedOn": null,
       "createdOn": "2026-07-20T00:00:00",
@@ -1469,6 +1507,8 @@ Success (200):
     "commissionAmount": 300.00,
     "providerEarning": 2700.00,
     "status": "Accepted",
+    "rejectReason": null,
+    "cancelReason": null,
     "acceptedOn": "2026-07-20T09:05:00",
     "completedOn": null,
     "createdOn": "2026-07-20T00:00:00",
@@ -1549,6 +1589,8 @@ Success (201):
     "commissionAmount": 300.00,
     "providerEarning": 2700.00,
     "status": "Accepted",
+    "rejectReason": null,
+    "cancelReason": null,
     "acceptedOn": "2026-07-20T09:05:00",
     "completedOn": null,
     "createdOn": "2026-07-20T00:00:00",
@@ -1592,13 +1634,35 @@ Request Body:
   "paymentMode": "CashToProvider",
   "commissionType": "Percent",
   "commissionValue": 10,
-  "status": "In Progress"
+  "status": "In Progress",
+  "cancelReason": null
 }
 
 Notes:
 - bookingUid in URL and body must match
 - requestUid cannot be changed on update
 - totals are recomputed server-side
+- cancelReason is REQUIRED (non-empty) when status is being set to "Cancelled" AND the booking's
+  CURRENT status (before this update) is "Accepted" or "In Progress" — i.e. a post-acceptance
+  provider cancellation. Fails with 400 if that condition holds and cancelReason is missing/empty.
+  For any other status transition, cancelReason is optional/ignored (existing stored value is
+  preserved). To reject a still-Pending booking instead, use POST .../respond below.
+
+Example (provider cancelling an accepted booking):
+{
+  "bookingUid": 1,
+  "providerUid": 4,
+  "estimatedAmount": 2500,
+  "visitCharges": 500,
+  "additionalCharges": 0,
+  "deductions": 0,
+  "customerPaid": 0,
+  "paymentMode": "CashToProvider",
+  "commissionType": "Percent",
+  "commissionValue": 10,
+  "status": "Cancelled",
+  "cancelReason": "Provider unavailable due to emergency"
+}
 
 Success (200):
 {
@@ -1626,6 +1690,8 @@ Success (200):
     "commissionAmount": 350.00,
     "providerEarning": 3150.00,
     "status": "In Progress",
+    "rejectReason": null,
+    "cancelReason": null,
     "acceptedOn": "2026-07-20T09:05:00",
     "completedOn": null,
     "createdOn": "2026-07-20T00:00:00",
@@ -1638,6 +1704,13 @@ Success (200):
     "clientArea": "DHA Phase 2",
     "clientCity": "Karachi"
   }
+}
+
+Fail (400 - cancelling an accepted booking without a reason):
+{
+  "success": false,
+  "message": "Cancel reason is required when cancelling an accepted booking.",
+  "data": null
 }
 
 Fail (404):
@@ -1695,10 +1768,17 @@ Deployed:  https://sahulatghartak.com/api/service-bookings/{bookingUid}/respond
 Example:
 POST https://localhost:7265/api/service-bookings/1/respond
 
-Request Body:
+Request Body (accept):
 {
   "providerUid": 4,
   "accept": true
+}
+
+Request Body (reject):
+{
+  "providerUid": 4,
+  "accept": false,
+  "reason": "Too far from my service area"
 }
 
 Notes:
@@ -1707,9 +1787,10 @@ Notes:
 - accept:true -> Status="Accepted", AcceptedOn set, a 4-digit Passcode is generated
   server-side. It is NOT returned in this (or any) /service-bookings response — see
   GET /customer-service-requests below for the client-facing passcode field
-- accept:false -> Status="Rejected" (staff-only; hidden from all client/provider-facing
-  responses), and the parent CustomerServiceRequest reverts to Status="Pending" so staff
-  can reassign a different provider
+- accept:false -> reason is REQUIRED (non-empty), fails with 400 if missing/empty.
+  Status="Rejected" (staff-only; hidden from all client/provider-facing GET/list responses),
+  reason is persisted to RejectReason, and the parent CustomerServiceRequest reverts to
+  Status="Pending" so staff can reassign a different provider
 
 Success (200 - accepted):
 {
@@ -1724,6 +1805,8 @@ Success (200 - accepted):
     "providerUid": 4,
     "providerName": "Ali Electrician",
     "status": "Accepted",
+    "rejectReason": null,
+    "cancelReason": null,
     "acceptedOn": "2026-07-20T09:05:00",
     "completedOn": null,
     "providerMobileNo": "03335191392",
@@ -1736,6 +1819,30 @@ Success (200 - accepted):
     "clientCity": "Karachi",
     "...": "remaining fields same shape as GET Booking By Id"
   }
+}
+
+Success (200 - rejected):
+{
+  "success": true,
+  "message": "Booking rejected successfully.",
+  "data": {
+    "uid": 1,
+    "requestUid": 5,
+    "requestTitle": "AC Repair",
+    "providerUid": 4,
+    "providerName": "Ali Electrician",
+    "status": "Rejected",
+    "rejectReason": "Too far from my service area",
+    "cancelReason": null,
+    "...": "remaining fields same shape as GET Booking By Id"
+  }
+}
+
+Fail (400 - rejecting without a reason):
+{
+  "success": false,
+  "message": "Reject reason is required when rejecting a booking.",
+  "data": null
 }
 
 Fail (400 - already responded):

@@ -30,6 +30,7 @@ public interface IServiceBookingApiService
         int bookingUid,
         int providerUid,
         bool accept,
+        string? reason,
         CancellationToken cancellationToken = default);
 
     Task<(bool Success, string? Error, ServiceBookingApiDto? Data)> VerifyCompletionAsync(

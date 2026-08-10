@@ -119,6 +119,10 @@ public class BookingFormVm
     [Display(Name = "Status")]
     public string Status { get; set; } = "Completed";
 
+    [Display(Name = "Cancel Reason")]
+    [StringLength(500)]
+    public string? CancelReason { get; set; }
+
     public List<SelectListItem> Requests { get; set; } = new();
     public List<SelectListItem> Providers { get; set; } = new();
     public List<SelectListItem> StatusOptions { get; set; } = new();
@@ -152,6 +156,8 @@ public class BookingDetailsVm
     public decimal CommissionAmount { get; set; }
     public decimal ProviderEarning { get; set; }
     public string? Status { get; set; }
+    public string? RejectReason { get; set; }
+    public string? CancelReason { get; set; }
     public int LedgerCount { get; set; }
 }
 

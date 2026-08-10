@@ -251,6 +251,7 @@ public class AppDbContext : DbContext
             entity.Property(e => e.EstimatedBudget).HasColumnType("decimal(12,2)");
             entity.Property(e => e.Status).HasMaxLength(30).IsRequired().HasDefaultValue("Pending");
             entity.Property(e => e.Remarks).HasMaxLength(500);
+            entity.Property(e => e.CancelReason).HasMaxLength(500);
             entity.Property(e => e.CreatedOn)
                 .HasColumnType("datetime")
                 .HasDefaultValueSql("(getdate())");
@@ -297,6 +298,8 @@ public class AppDbContext : DbContext
             entity.Property(e => e.ProviderEarning).HasColumnType("decimal(12,2)");
             entity.Property(e => e.Status).HasMaxLength(20).IsRequired().HasDefaultValue("Completed");
             entity.Property(e => e.Passcode).HasMaxLength(10);
+            entity.Property(e => e.RejectReason).HasMaxLength(500);
+            entity.Property(e => e.CancelReason).HasMaxLength(500);
             entity.Property(e => e.AcceptedOn).HasColumnType("datetime");
             entity.Property(e => e.CompletedOn).HasColumnType("datetime");
             entity.Property(e => e.CreatedOn)

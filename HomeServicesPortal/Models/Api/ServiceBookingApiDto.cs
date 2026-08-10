@@ -44,6 +44,10 @@ public class ServiceBookingApiDto
 
     public string Status { get; set; } = string.Empty;
 
+    public string? RejectReason { get; set; }
+
+    public string? CancelReason { get; set; }
+
     public DateTime? AcceptedOn { get; set; }
 
     public DateTime? CompletedOn { get; set; }

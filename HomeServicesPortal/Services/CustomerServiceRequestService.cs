@@ -101,6 +101,12 @@ public class CustomerServiceRequestService : ICustomerServiceRequestService
             return (false, "Service request not found.", null);
         }
 
+        if (string.Equals(request.Status, "Cancelled", StringComparison.OrdinalIgnoreCase)
+            && string.IsNullOrWhiteSpace(request.CancelReason))
+        {
+            return (false, "Cancel reason is required when cancelling a service request.", null);
+        }
+
         var validationError = await ValidateReferencesAsync(
             entity.ClientUid,
             request.CategoryUid,
@@ -124,6 +130,9 @@ public class CustomerServiceRequestService : ICustomerServiceRequestService
         entity.EstimatedBudget = request.EstimatedBudget;
         entity.Status = request.Status.Trim();
         entity.Remarks = request.Remarks?.Trim();
+        entity.CancelReason = string.Equals(request.Status, "Cancelled", StringComparison.OrdinalIgnoreCase)
+            ? request.CancelReason?.Trim()
+            : entity.CancelReason;
 
         await _db.SaveChangesAsync(cancellationToken);
 
@@ -216,6 +225,7 @@ public class CustomerServiceRequestService : ICustomerServiceRequestService
             EstimatedBudget = r.EstimatedBudget,
             Status = r.Status,
             Remarks = r.Remarks,
+            CancelReason = r.CancelReason,
             CreatedOn = r.CreatedOn,
             ProviderUid = _db.ServiceBookings
                 .Where(b => b.RequestUid == r.Uid && ProviderVisibleStatuses.Contains(b.Status))

@@ -30,6 +30,8 @@ public class CustomerServiceRequest
 
     public string? Remarks { get; set; }
 
+    public string? CancelReason { get; set; }
+
     public DateTime CreatedOn { get; set; }
 
     public Client Client { get; set; } = null!;

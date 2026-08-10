@@ -164,7 +164,8 @@ public class ServiceRequestService : IServiceRequestService
                 EstimatedBudget = r.EstimatedBudget,
                 RequestDate = r.CreatedOn,
                 Status = r.Status,
-                Remarks = r.Remarks
+                Remarks = r.Remarks,
+                CancelReason = r.CancelReason
             })
             .FirstOrDefaultAsync(cancellationToken);
 

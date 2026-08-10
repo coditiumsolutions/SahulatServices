@@ -44,4 +44,8 @@ public class UpdateServiceBookingDto
     [Required(ErrorMessage = "Status is required.")]
     [StringLength(20)]
     public string Status { get; set; } = "Accepted";
+
+    /// <summary>Required when transitioning an Accepted/In Progress booking to Cancelled.</summary>
+    [StringLength(500)]
+    public string? CancelReason { get; set; }
 }

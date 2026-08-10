@@ -174,6 +174,8 @@ public class BookingService : IBookingService
                 CommissionAmount = b.CommissionAmount,
                 ProviderEarning = b.ProviderEarning,
                 Status = b.Status,
+                RejectReason = b.RejectReason,
+                CancelReason = b.CancelReason,
                 LedgerCount = _db.PaymentLedgers.Count(l => l.BookingUid == b.Uid)
             })
             .FirstOrDefaultAsync(cancellationToken);
@@ -301,6 +303,15 @@ public class BookingService : IBookingService
         var validationError = await ValidateAsync(model, cancellationToken);
         if (validationError != null) return (false, validationError);
 
+        var isPostAcceptanceCancel = string.Equals(model.Status, "Cancelled", StringComparison.OrdinalIgnoreCase)
+            && (string.Equals(entity.Status, "Accepted", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(entity.Status, "In Progress", StringComparison.OrdinalIgnoreCase));
+
+        if (isPostAcceptanceCancel && string.IsNullOrWhiteSpace(model.CancelReason))
+        {
+            return (false, "Cancel reason is required when cancelling an accepted booking.");
+        }
+
         ApplyBookingTotals(model);
         var validationErrorAfterCalc = ValidateBookingTotals(model.FinalAmount, model.CommissionAmount, model.CustomerPaid);
         if (validationErrorAfterCalc != null) return (false, validationErrorAfterCalc);
@@ -321,6 +332,10 @@ public class BookingService : IBookingService
         entity.CommissionAmount = model.CommissionAmount ?? 0;
         entity.ProviderEarning = model.ProviderEarning ?? 0;
         entity.Status = model.Status.Trim();
+        if (isPostAcceptanceCancel)
+        {
+            entity.CancelReason = model.CancelReason!.Trim();
+        }
 
         await _db.SaveChangesAsync(cancellationToken);
 
@@ -611,6 +626,7 @@ public class BookingService : IBookingService
         int bookingUid,
         int providerUid,
         bool accept,
+        string? reason,
         CancellationToken cancellationToken = default)
     {
         var booking = await _db.ServiceBookings
@@ -631,6 +647,11 @@ public class BookingService : IBookingService
             return (false, "This booking is no longer awaiting a response.");
         }
 
+        if (!accept && string.IsNullOrWhiteSpace(reason))
+        {
+            return (false, "Reject reason is required when rejecting a booking.");
+        }
+
         if (accept)
         {
             booking.Status = "Accepted";
@@ -640,6 +661,7 @@ public class BookingService : IBookingService
         else
         {
             booking.Status = "Rejected";
+            booking.RejectReason = reason!.Trim();
 
             var request = await _db.CustomerServiceRequests
                 .FirstOrDefaultAsync(r => r.Uid == booking.RequestUid, cancellationToken);

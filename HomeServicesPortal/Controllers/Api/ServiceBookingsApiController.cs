@@ -150,7 +150,7 @@ public class ServiceBookingsApiController : ControllerBase
         CancellationToken cancellationToken)
     {
         var (success, error, data) = await _service.RespondToBookingAsync(
-            bookingUid, request.ProviderUid, request.Accept, cancellationToken);
+            bookingUid, request.ProviderUid, request.Accept, request.Reason, cancellationToken);
 
         if (!success || data == null)
         {

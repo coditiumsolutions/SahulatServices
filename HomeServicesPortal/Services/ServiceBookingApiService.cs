@@ -136,7 +136,8 @@ public class ServiceBookingApiService : IServiceBookingApiService
             PaymentMode = request.PaymentMode,
             CommissionType = request.CommissionType,
             CommissionValue = request.CommissionValue,
-            Status = request.Status
+            Status = request.Status,
+            CancelReason = request.CancelReason
         };
 
         var (success, error) = await _bookingService.UpdateAsync(form, cancellationToken);
@@ -171,9 +172,10 @@ public class ServiceBookingApiService : IServiceBookingApiService
         int bookingUid,
         int providerUid,
         bool accept,
+        string? reason,
         CancellationToken cancellationToken = default)
     {
-        var (success, error) = await _bookingService.RespondToAssignmentAsync(bookingUid, providerUid, accept, cancellationToken);
+        var (success, error) = await _bookingService.RespondToAssignmentAsync(bookingUid, providerUid, accept, reason, cancellationToken);
         if (!success)
         {
             return (false, error, null);
@@ -239,6 +241,8 @@ public class ServiceBookingApiService : IServiceBookingApiService
             CommissionAmount = b.CommissionAmount,
             ProviderEarning = b.ProviderEarning,
             Status = b.Status,
+            RejectReason = b.RejectReason,
+            CancelReason = b.CancelReason,
             AcceptedOn = b.AcceptedOn,
             CompletedOn = b.CompletedOn,
             CreatedOn = b.CreatedOn,
