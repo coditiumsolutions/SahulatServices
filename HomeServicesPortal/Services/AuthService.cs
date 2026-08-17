@@ -13,15 +13,18 @@ public class AuthService : IAuthService
     private readonly AppDbContext _db;
     private readonly IUserRepository _userRepository;
     private readonly IMapper _mapper;
+    private readonly IFileStorageService _fileStorageService;
 
     public AuthService(
         AppDbContext db,
         IUserRepository userRepository,
-        IMapper mapper)
+        IMapper mapper,
+        IFileStorageService fileStorageService)
     {
         _db = db;
         _userRepository = userRepository;
         _mapper = mapper;
+        _fileStorageService = fileStorageService;
     }
 
     public async Task<(bool Success, string? Error, RegistrationResponse? Data)> RegisterClientAsync(
@@ -377,6 +380,109 @@ public class AuthService : IAuthService
         }
 
         return (0, string.Empty);
+    }
+
+    /// <summary>
+    /// Permanently deletes a Client's and/or Provider's account and personal data.
+    /// Rows with FK-restricted history (CustomerServiceRequests, ServiceBookings, PaymentLedger,
+    /// ProviderPayouts, CommissionRules) cannot be hard-deleted without breaking other users'
+    /// booking/financial history, so their PII columns are anonymized instead. Rows with no such
+    /// dependents (ClientAddresses with no requests, ProviderDocuments, UserOTP) are hard-deleted,
+    /// along with the provider's uploaded document files on disk.
+    /// </summary>
+    public async Task<(bool Success, string? Error, DeleteAccountResponse? Data, int StatusCode)> DeleteAccountAsync(
+        DeleteAccountRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var (mobileOk, mobileNo, mobileError) = MobileNumberHelper.ValidateAndNormalize(request.MobileNo);
+        if (!mobileOk)
+        {
+            return (false, mobileError, null, StatusCodes.Status400BadRequest);
+        }
+
+        var user = await _userRepository.GetUserByMobileAsync(mobileNo, cancellationToken);
+
+        if (user == null || !PasswordHasher.Verify(request.Password, user.PasswordHash))
+        {
+            return (false, "Invalid mobile number or password.", null, StatusCodes.Status401Unauthorized);
+        }
+
+        var userId = user.Uid;
+        var client = await _userRepository.GetClientByUserIdAsync(userId, cancellationToken);
+        var provider = await _userRepository.GetProviderByUserIdAsync(userId, cancellationToken);
+
+        if (client == null && provider == null)
+        {
+            return (false, "Account not found.", null, StatusCodes.Status404NotFound);
+        }
+
+        return await ExecuteInTransactionAsync<(bool Success, string? Error, DeleteAccountResponse? Data, int StatusCode)>(async () =>
+        {
+            var anonymizedName = $"Deleted User {userId}";
+            // MobileNo column is nvarchar(20) and unique. userId alone guarantees uniqueness
+            // (UsersLogin.Uid is the PK), so it is sufficient without a timestamp suffix.
+            var anonymizedMobile = $"deleted-{userId}";
+
+            if (client != null)
+            {
+                var addresses = await _db.ClientAddresses
+                    .Where(a => a.ClientUid == client.Uid)
+                    .ToListAsync(cancellationToken);
+
+                foreach (var address in addresses)
+                {
+                    var hasRequests = await _db.CustomerServiceRequests
+                        .AnyAsync(r => r.ClientAddressUid == address.Uid, cancellationToken);
+                    if (!hasRequests)
+                    {
+                        _db.ClientAddresses.Remove(address);
+                    }
+                }
+
+                var trackedClient = await _db.Clients.FirstAsync(c => c.Uid == client.Uid, cancellationToken);
+                trackedClient.FullName = anonymizedName;
+                trackedClient.Cnic = null;
+                trackedClient.Gender = null;
+            }
+
+            if (provider != null)
+            {
+                var document = await _db.ProviderDocuments
+                    .FirstOrDefaultAsync(d => d.ProviderUid == provider.Uid, cancellationToken);
+                if (document != null)
+                {
+                    _db.ProviderDocuments.Remove(document);
+                }
+
+                var trackedProvider = await _db.Providers.FirstAsync(p => p.Uid == provider.Uid, cancellationToken);
+                trackedProvider.FullName = anonymizedName;
+                // Cnic column is nvarchar(15) and required (not nullable) — keep this short.
+                trackedProvider.Cnic = $"DEL{provider.Uid}";
+                trackedProvider.Gender = null;
+                trackedProvider.Description = null;
+                trackedProvider.IsAvailable = false;
+            }
+
+            var otpRows = await _db.UserOTPs
+                .Where(o => o.MobileNo == mobileNo)
+                .ToListAsync(cancellationToken);
+            _db.UserOTPs.RemoveRange(otpRows);
+
+            var trackedUser = await _db.UsersLogins.FirstAsync(u => u.Uid == userId, cancellationToken);
+            trackedUser.MobileNo = anonymizedMobile;
+            trackedUser.PasswordHash = PasswordHasher.Hash(Guid.NewGuid().ToString("N"));
+            trackedUser.IsActive = false;
+            trackedUser.IsVerified = false;
+
+            await _db.SaveChangesAsync(cancellationToken);
+
+            if (provider != null)
+            {
+                _fileStorageService.DeleteProviderDocumentFiles(provider.Uid);
+            }
+
+            return (true, null, new DeleteAccountResponse { MobileNo = mobileNo }, StatusCodes.Status200OK);
+        }, cancellationToken);
     }
 
     private async Task<T> ExecuteInTransactionAsync<T>(

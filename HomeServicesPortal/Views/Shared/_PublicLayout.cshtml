@@ -14,6 +14,70 @@
 <body class="public-home">
     <partial name="_SiteHeaderPublic" />
     @RenderBody()
+    <footer class="hs-footer">
+        <div class="hs-footer-top">
+            <div class="container">
+                <div class="hs-footer-grid">
+                    <div class="hs-footer-brand">
+                        <a class="hs-brand hs-footer-logo" href="/">
+                            <span class="hs-brand-main">Sahulat</span>
+                            <span class="hs-brand-sub">Ghar Tak</span>
+                        </a>
+                        <p class="hs-footer-tagline">
+                            Trusted home service professionals, verified and dispatched to your doorstep
+                            across Bahria Town.
+                        </p>
+                        <div class="hs-footer-social">
+                            <a href="tel:+923001234567" aria-label="Call us"><i class="fa-solid fa-phone"></i></a>
+                            <a href="mailto:info@sahulatghartak.com" aria-label="Email us"><i class="fa-solid fa-envelope"></i></a>
+                        </div>
+                    </div>
+
+                    <div class="hs-footer-col">
+                        <h6 class="hs-footer-heading">Explore</h6>
+                        <ul class="hs-footer-links">
+                            <li><a href="/">Home</a></li>
+                            <li><a href="/#services">Services</a></li>
+                            <li><a href="/#providers">Providers</a></li>
+                            <li><a href="/#how-it-works">How It Works</a></li>
+                            <li><a href="/Home/DownloadApp">Download App</a></li>
+                        </ul>
+                    </div>
+
+                    <div class="hs-footer-col">
+                        <h6 class="hs-footer-heading">Legal &amp; Account</h6>
+                        <ul class="hs-footer-links">
+                            <li><a href="/privacy-policy">Privacy Policy</a></li>
+                            <li><a href="/delete-account">Delete Account</a></li>
+                            <li><a href="/#contact">Contact</a></li>
+                            <li><a href="/adminportal">Admin Portal</a></li>
+                        </ul>
+                    </div>
+
+                    <div class="hs-footer-col">
+                        <h6 class="hs-footer-heading">Reach Us</h6>
+                        <ul class="hs-footer-links hs-footer-contact">
+                            <li><i class="fa-solid fa-phone"></i><a href="tel:+923001234567">+92 300 1234567</a></li>
+                            <li><i class="fa-solid fa-envelope"></i><a href="mailto:info@sahulatghartak.com">info@sahulatghartak.com</a></li>
+                            <li><i class="fa-solid fa-location-dot"></i><span>Bahria Town, Pakistan</span></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="hs-footer-bottom">
+            <div class="container">
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+                    <span>&copy; @DateTime.Now.Year Sahulat Ghar Tak &middot; Coditum Solutions. All rights reserved.</span>
+                    <span class="hs-footer-bottom-links">
+                        <a href="/privacy-policy">Privacy</a>
+                        <span aria-hidden="true">&middot;</span>
+                        <a href="/delete-account">Delete Account</a>
+                    </span>
+                </div>
+            </div>
+        </div>
+    </footer>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>

@@ -1,6 +1,6 @@
 ================================================================================
 SahulatGharTak API Reference
-Version: 3.1 | Last Updated: 2026-08-10
+Version: 3.2 | Last Updated: 2026-08-17
 Database: SahulatAppDB
 Local Base URL:    https://localhost:7265/api/
 Deployed Base URL:  https://sahulatghartak.com/api/
@@ -237,6 +237,70 @@ Fail (403 unverified):
 Notes:
 - Client and Provider accounts must have UsersLogin.IsVerified=true to login
 - Staff accounts are auto-verified on register-staff
+
+--------------------------------------------------------------------------------
+POST Delete Account
+--------------------------------------------------------------------------------
+Local:     https://localhost:7265/api/auth/delete-account
+Deployed:  https://sahulatghartak.com/api/auth/delete-account
+
+Request Body:
+{
+  "mobileNo": "03335191392",
+  "password": "ghauri12"
+}
+
+Success (200):
+{
+  "success": true,
+  "message": "Account deleted successfully.",
+  "data": {
+    "mobileNo": "03335191392"
+  }
+}
+
+Fail (400):
+{
+  "success": false,
+  "message": "Mobile number is required.",
+  "data": null
+}
+
+Fail (401):
+{
+  "success": false,
+  "message": "Invalid mobile number or password.",
+  "data": null
+}
+
+Fail (404):
+{
+  "success": false,
+  "message": "Account not found.",
+  "data": null
+}
+
+Notes:
+- Permanently and irreversibly deletes the account (Client and/or Provider — a client
+  upgraded to provider has both rows deleted/anonymized together, since both are keyed
+  off the same UsersLogin). This is NOT a freeze/deactivation. Re-verifies password
+  the same way as Login before proceeding.
+- Hard-deleted (rows physically removed): ProviderDocuments row + the provider's uploaded
+  files under wwwroot/uploads/providers/{ProviderUID}/ (profile photo, CNIC front/back);
+  UserOTP rows for this mobile number; ClientAddresses rows that have no
+  CustomerServiceRequests referencing them.
+- Anonymized (PII scrubbed, row kept because FK-restricted history references it and
+  hard-deleting would break other users' booking/financial records): UsersLogin
+  (MobileNo -> "deleted-{userId}", PasswordHash randomized, IsActive=false,
+  IsVerified=false — mobile number becomes eligible for re-registration since it no
+  longer matches the original); Clients (FullName -> "Deleted User {id}", Cnic/Gender
+  cleared); Providers (FullName -> "Deleted User {id}", Cnic -> "DEL{id}", Gender/
+  Description cleared, IsAvailable=false); any ClientAddresses still referenced by a
+  CustomerServiceRequest are left in place (address text only, no direct PII beyond
+  what the request itself already retains).
+- Untouched (out of scope — belongs to the other party or to platform financial
+  records, not solely to this user): CustomerServiceRequests, ServiceBookings,
+  PaymentLedger, ProviderPayouts, CommissionRules rows.
 
 --------------------------------------------------------------------------------
 POST Send OTP

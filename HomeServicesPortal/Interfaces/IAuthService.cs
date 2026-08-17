@@ -19,4 +19,8 @@ public interface IAuthService
     Task<(bool Success, string? Error, LoginResponse? Data, int StatusCode)> LoginAsync(
         LoginRequest request,
         CancellationToken cancellationToken = default);
+
+    Task<(bool Success, string? Error, DeleteAccountResponse? Data, int StatusCode)> DeleteAccountAsync(
+        DeleteAccountRequest request,
+        CancellationToken cancellationToken = default);
 }

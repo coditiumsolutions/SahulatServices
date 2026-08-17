@@ -183,20 +183,160 @@
     margin-bottom: 0.75rem;
 }
 
-.public-footer {
-    background: #0b1f33;
-    color: rgba(255, 255, 255, 0.8);
-    padding: 2rem 0;
+.hs-footer {
+    background: #071a2c;
+    color: rgba(255, 255, 255, 0.65);
+    position: relative;
+    border-top: 3px solid var(--hs-maroon);
+}
+
+.hs-footer-top {
+    padding: 3.5rem 0 2.5rem;
+    background:
+        radial-gradient(circle at 12% 0%, rgba(0, 119, 200, 0.16), transparent 42%),
+        radial-gradient(circle at 92% 15%, rgba(139, 26, 26, 0.14), transparent 38%);
+}
+
+.hs-footer-grid {
+    display: grid;
+    grid-template-columns: 1.6fr 1fr 1fr 1.2fr;
+    gap: 2.5rem;
+}
+
+.hs-footer-brand .hs-footer-logo {
+    margin-bottom: 0.9rem;
+}
+
+.hs-footer-tagline {
+    max-width: 320px;
+    font-size: 0.9rem;
+    line-height: 1.65;
+    color: rgba(255, 255, 255, 0.55);
+    margin-bottom: 1.25rem;
+}
+
+.hs-footer-social {
+    display: flex;
+    gap: 0.6rem;
+}
+
+.hs-footer-social a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    color: rgba(255, 255, 255, 0.75);
+    text-decoration: none;
+    font-size: 0.85rem;
+    transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+
+.hs-footer-social a:hover {
+    color: #fff;
+    border-color: var(--hs-maroon);
+    background: rgba(139, 26, 26, 0.25);
+}
+
+.hs-footer-heading {
+    font-family: "Libre Baskerville", Georgia, serif;
+    font-weight: 700;
+    font-size: 0.82rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #fff;
+    margin-bottom: 1.1rem;
+    position: relative;
+    padding-bottom: 0.6rem;
+}
+
+.hs-footer-heading::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 26px;
+    height: 2px;
+    background: var(--hs-maroon);
+}
+
+.hs-footer-links {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
     font-size: 0.9rem;
 }
 
-.public-footer a {
-    color: #fff;
+.hs-footer-links a,
+.hs-footer-links span {
+    color: rgba(255, 255, 255, 0.65);
     text-decoration: none;
+    transition: color 0.15s ease, padding-left 0.15s ease;
 }
 
-.public-footer a:hover {
+.hs-footer-links a:hover {
+    color: #fff;
+    padding-left: 3px;
+}
+
+.hs-footer-contact li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+}
+
+.hs-footer-contact i {
+    color: var(--hs-maroon);
+    width: 16px;
+    text-align: center;
+    margin-top: 0.2rem;
+    font-size: 0.85rem;
+}
+
+.hs-footer-bottom {
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 1.1rem 0;
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.hs-footer-bottom-links a {
+    color: rgba(255, 255, 255, 0.6);
+    text-decoration: none;
+    margin: 0 0.35rem;
+}
+
+.hs-footer-bottom-links a:hover {
+    color: #fff;
     text-decoration: underline;
+}
+
+@media (max-width: 991.98px) {
+    .hs-footer-grid {
+        grid-template-columns: repeat(2, 1fr);
+        row-gap: 2.25rem;
+    }
+
+    .hs-footer-brand {
+        grid-column: 1 / -1;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .hs-footer-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .hs-footer-bottom .d-flex {
+        flex-direction: column;
+        align-items: flex-start !important;
+        gap: 0.5rem !important;
+    }
 }
 
 .public-bg-soft {
@@ -246,4 +386,90 @@
 .download-cta-btn:hover {
     background: #6f1414;
     color: #fff;
+}
+
+.legal-hero {
+    padding: 3rem 0 3.5rem;
+}
+
+.legal-content h2 {
+    font-family: "Libre Baskerville", Georgia, serif;
+    color: var(--hs-navy);
+    font-size: 1.4rem;
+    margin-top: 2rem;
+    margin-bottom: 0.75rem;
+}
+
+.legal-content h3 {
+    color: var(--hs-navy);
+    font-size: 1.1rem;
+    margin-top: 1.5rem;
+    margin-bottom: 0.6rem;
+}
+
+.legal-content p,
+.legal-content li {
+    color: #33455c;
+    line-height: 1.7;
+}
+
+.legal-content ul {
+    padding-left: 1.4rem;
+}
+
+.legal-content hr {
+    margin: 2rem 0;
+    border-top: 1px solid #e2e8f0;
+}
+
+.legal-content a {
+    color: #0077c8;
+}
+
+.delete-account-card {
+    max-width: 640px;
+    margin: 0 auto;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 2rem;
+    box-shadow: 0 10px 30px rgba(0, 51, 102, 0.06);
+}
+
+.delete-account-warning {
+    display: flex;
+    gap: 1rem;
+    background: #fff4f4;
+    border: 1px solid #f3c2c2;
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-bottom: 1.75rem;
+    color: #6b1414;
+}
+
+.delete-account-warning i {
+    font-size: 1.5rem;
+    color: var(--hs-maroon);
+    flex-shrink: 0;
+}
+
+.delete-account-warning ul {
+    padding-left: 1.2rem;
+    margin-bottom: 0;
+}
+
+.delete-account-confirm-check {
+    background: #f5f7fb;
+    border-radius: 10px;
+    padding: 0.9rem 1rem 0.9rem 2.4rem;
+}
+
+.delete-account-result {
+    text-align: center;
+    padding: 2rem 1rem;
+}
+
+.delete-account-success i {
+    font-size: 3.5rem;
+    color: #1e8e3e;
 }

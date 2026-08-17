@@ -111,6 +111,30 @@ public class AuthController : ControllerBase
         return Ok(ApiResponse<LoginResponse>.Ok(data, "Login successful."));
     }
 
+    /// <summary>Permanently deletes a Client's and/or Provider's account after re-verifying password.</summary>
+    [HttpPost("delete-account")]
+    [ProducesResponseType(typeof(ApiResponse<DeleteAccountResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<DeleteAccountResponse>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<DeleteAccountResponse>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse<DeleteAccountResponse>), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ApiResponse<DeleteAccountResponse>>> DeleteAccount(
+        [FromBody] DeleteAccountRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ApiResponse<DeleteAccountResponse>.Fail(GetValidationMessage()));
+        }
+
+        var (success, error, data, statusCode) = await _authService.DeleteAccountAsync(request, cancellationToken);
+        if (!success || data == null)
+        {
+            return StatusCode(statusCode, ApiResponse<DeleteAccountResponse>.Fail(error ?? "Account deletion failed."));
+        }
+
+        return Ok(ApiResponse<DeleteAccountResponse>.Ok(data, "Account deleted successfully."));
+    }
+
     /// <summary>Send a 6-digit OTP (Development returns OTP in data; Production never does).</summary>
     [HttpPost("send-otp")]
     [ProducesResponseType(typeof(ApiResponse<SendOtpResponse>), StatusCodes.Status200OK)]

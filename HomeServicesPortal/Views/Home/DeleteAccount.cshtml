@@ -1,0 +1,144 @@
+@model HomeServicesPortal.DTOs.DeleteAccountRequest
+@{
+    Layout = "_PublicLayout";
+    ViewData["Title"] = "Delete Account";
+    var succeeded = ViewBag.DeletionSucceeded == true;
+}
+
+<section class="public-hero legal-hero">
+    <div class="container public-hero-content">
+        <p class="text-uppercase fw-semibold mb-2 opacity-75" style="letter-spacing: 0.12em; font-size: 0.8rem;">
+            Sahulat Ghar Tak
+        </p>
+        <h1>Delete Your Account</h1>
+        <p class="lead mb-0">Permanently delete your Sahulat Ghar Tak account and associated personal data.</p>
+    </div>
+</section>
+
+<section class="public-section">
+    <div class="container">
+        <div class="delete-account-card">
+            @if (succeeded)
+            {
+                <div class="delete-account-result delete-account-success">
+                    <i class="fa-solid fa-circle-check"></i>
+                    <h2 class="h4 mt-3 mb-2">Your account has been permanently deleted.</h2>
+                    <p class="text-muted mb-0">
+                        The mobile number @ViewBag.DeletedMobileNo has been released and is now available
+                        for re-registration. There is nothing further you need to do.
+                    </p>
+                </div>
+            }
+            else
+            {
+                @if (!ViewData.ModelState.IsValid)
+                {
+                    <div class="alert alert-danger" role="alert">
+                        @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                        {
+                            <div>@error.ErrorMessage</div>
+                        }
+                    </div>
+                }
+
+                <div class="delete-account-warning">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    <div>
+                        <h2 class="h5 mb-2">This action is permanent and cannot be undone</h2>
+                        <p class="mb-2">Deleting your account is not a temporary freeze or deactivation. Once confirmed:</p>
+                        <ul class="mb-2">
+                            <li>Your profile information (full name, CNIC, gender, description) is permanently removed or anonymized.</li>
+                            <li>For Service Providers, your uploaded profile photo and CNIC verification images are permanently deleted from our servers.</li>
+                            <li>Your saved addresses are permanently deleted, except where an address is still referenced by a past service request.</li>
+                            <li>Your mobile number is released and becomes available for re-registration.</li>
+                            <li>Login credentials and OTP records tied to your account are permanently deleted.</li>
+                        </ul>
+                        <p class="mb-0">
+                            Records of past bookings and payment/commission ledger entries are retained in
+                            <strong>anonymized</strong> form for financial and dispute-resolution history — see our
+                            <a href="/privacy-policy#section-7" target="_blank" rel="noopener">Privacy Policy, Section 7</a>
+                            for full details.
+                        </p>
+                    </div>
+                </div>
+
+                <form asp-controller="Home" asp-action="DeleteAccount" method="post" id="deleteAccountForm" novalidate>
+                    @Html.AntiForgeryToken()
+
+                    <div class="mb-3">
+                        <label asp-for="MobileNo" class="form-label">Registered Mobile Number</label>
+                        <input asp-for="MobileNo" class="form-control form-control-lg" placeholder="03XXXXXXXXX" autocomplete="tel" />
+                        <span asp-validation-for="MobileNo" class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Password" class="form-label">Password</label>
+                        <div class="input-group input-group-lg">
+                            <input asp-for="Password" type="password" class="form-control" id="passwordInput" autocomplete="current-password" />
+                            <button class="btn btn-outline-secondary" type="button" id="togglePassword" aria-label="Show password">
+                                <i class="fa-solid fa-eye" id="togglePasswordIcon"></i>
+                            </button>
+                        </div>
+                        <span asp-validation-for="Password" class="text-danger small"></span>
+                    </div>
+
+                    <div class="form-check mb-4 delete-account-confirm-check">
+                        <input class="form-check-input" type="checkbox" id="confirmDelete" required>
+                        <label class="form-check-label" for="confirmDelete">
+                            I understand this is permanent and irreversible, and I want to delete my account and all associated personal data.
+                        </label>
+                    </div>
+
+                    <button type="submit" class="btn btn-danger btn-lg w-100" id="deleteAccountSubmit" disabled>
+                        <i class="fa-solid fa-trash-can me-2"></i>Delete My Account
+                    </button>
+                </form>
+            }
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (function () {
+            var pwInput = document.getElementById('passwordInput');
+            var toggleBtn = document.getElementById('togglePassword');
+            var toggleIcon = document.getElementById('togglePasswordIcon');
+            if (toggleBtn && pwInput) {
+                toggleBtn.addEventListener('click', function () {
+                    var isPassword = pwInput.type === 'password';
+                    pwInput.type = isPassword ? 'text' : 'password';
+                    toggleIcon.classList.toggle('fa-eye');
+                    toggleIcon.classList.toggle('fa-eye-slash');
+                    toggleBtn.setAttribute('aria-label', isPassword ? 'Hide password' : 'Show password');
+                });
+            }
+
+            var confirmCheck = document.getElementById('confirmDelete');
+            var submitBtn = document.getElementById('deleteAccountSubmit');
+            if (confirmCheck && submitBtn) {
+                confirmCheck.addEventListener('change', function () {
+                    submitBtn.disabled = !confirmCheck.checked;
+                });
+            }
+
+            var form = document.getElementById('deleteAccountForm');
+            if (form) {
+                form.addEventListener('submit', function (e) {
+                    if (!confirmCheck.checked) {
+                        e.preventDefault();
+                        return;
+                    }
+                    var confirmed = window.confirm('Are you absolutely sure? This will permanently delete your account and cannot be undone.');
+                    if (!confirmed) {
+                        e.preventDefault();
+                        return;
+                    }
+                    submitBtn.disabled = true;
+                    submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i>Deleting...';
+                });
+            }
+        })();
+    </script>
+}
