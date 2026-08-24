@@ -1,0 +1,194 @@
+<script>
+    (function () {
+        // ---------- Panel 1: Pin drop / reverse geocode ----------
+        const pinStatus = document.getElementById('pinStatus');
+        const geocodeResult = document.getElementById('geocodeResult');
+        const defaultLat = 31.5204;
+        const defaultLng = 74.3587;
+        let pinLat = defaultLat, pinLng = defaultLng;
+
+        const pinMap = L.map('pinMap').setView([pinLat, pinLng], 6);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(pinMap);
+        const pinMarker = L.marker([pinLat, pinLng], { draggable: true }).addTo(pinMap);
+
+        function setPinStatus(message, isError) {
+            pinStatus.textContent = message || '';
+            pinStatus.classList.toggle('text-danger', !!isError);
+            pinStatus.classList.toggle('text-muted', !isError);
+        }
+
+        function setPin(lat, lng, zoom) {
+            pinLat = lat; pinLng = lng;
+            pinMarker.setLatLng([lat, lng]);
+            if (zoom) pinMap.setView([lat, lng], zoom);
+            document.getElementById('nearbyLat').value = lat;
+            document.getElementById('nearbyLng').value = lng;
+            setPinStatus(`Pin: ${lat.toFixed(6)}, ${lng.toFixed(6)}`, false);
+        }
+
+        pinMap.on('click', e => setPin(e.latlng.lat, e.latlng.lng));
+        pinMarker.on('dragend', e => { const p = e.target.getLatLng(); setPin(p.lat, p.lng); });
+
+        document.getElementById('btnCurrentLocation').addEventListener('click', function () {
+            if (!navigator.geolocation) { setPinStatus('Geolocation not supported.', true); return; }
+            navigator.geolocation.getCurrentPosition(
+                pos => setPin(pos.coords.latitude, pos.coords.longitude, 16),
+                () => setPinStatus('Unable to get current location.', true),
+                { enableHighAccuracy: true, timeout: 15000 }
+            );
+        });
+
+        document.getElementById('btnReverseGeocode').addEventListener('click', async function () {
+            geocodeResult.classList.add('d-none');
+            setPinStatus('Resolving address...', false);
+            try {
+                const res = await fetch(`/api/geocoding/reverse?lat=${pinLat}&lng=${pinLng}`);
+                const body = await res.json();
+                if (!body.success) { setPinStatus(body.message || 'Failed to resolve address.', true); return; }
+                const d = body.data;
+                geocodeResult.innerHTML = `<strong>${d.displayName || ''}</strong><br/>
+                    Road: ${d.road || '-'} | Area: ${d.area || '-'} | City: ${d.city || '-'}<br/>
+                    State: ${d.state || '-'} | Postal: ${d.postalCode || '-'}`;
+                geocodeResult.classList.remove('d-none');
+                setPinStatus('Address resolved.', false);
+            } catch (err) {
+                setPinStatus('Request failed: ' + err.message, true);
+            }
+        });
+
+        setPin(pinLat, pinLng);
+
+        // ---------- Panel 2: Nearby providers ----------
+        const nearbyResultsBody = document.getElementById('nearbyResultsBody');
+        const nearbyStatus = document.getElementById('nearbyStatus');
+
+        document.getElementById('btnSearchNearby').addEventListener('click', async function () {
+            const lat = document.getElementById('nearbyLat').value;
+            const lng = document.getElementById('nearbyLng').value;
+            const categoryUid = document.getElementById('nearbyCategoryUid').value;
+            const radiusKm = document.getElementById('nearbyRadius').value;
+
+            if (!lat || !lng) { nearbyStatus.textContent = 'Set a lat/lng first (drop a pin above).'; return; }
+
+            const params = new URLSearchParams({ lat, lng, radiusKm: radiusKm || '25' });
+            if (categoryUid) params.set('categoryUid', categoryUid);
+
+            nearbyStatus.textContent = 'Searching...';
+            nearbyResultsBody.innerHTML = '';
+            try {
+                const res = await fetch(`/api/provider-locations/nearby?${params.toString()}`);
+                const body = await res.json();
+                if (!body.success) { nearbyStatus.textContent = body.message || 'Search failed.'; return; }
+                nearbyStatus.textContent = body.message;
+                (body.data || []).forEach(p => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `<td>${p.fullName}</td><td>${p.categoryName}</td><td>${p.distanceKm.toFixed(2)} km</td><td>${p.averageRating}</td>`;
+                    nearbyResultsBody.appendChild(tr);
+                });
+            } catch (err) {
+                nearbyStatus.textContent = 'Request failed: ' + err.message;
+            }
+        });
+
+        // ---------- Panel 3: Live tracking (subscribe) ----------
+        const subscribeStatus = document.getElementById('subscribeStatus');
+        const trackingMap = L.map('trackingMap').setView([defaultLat, defaultLng], 6);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(trackingMap);
+        let trackingMarker = null;
+        let clientConnection = null;
+
+        document.getElementById('btnSubscribeConnect').addEventListener('click', async function () {
+            const token = document.getElementById('clientToken').value.trim();
+            const bookingUid = document.getElementById('subscribeBookingUid').value;
+            if (!token || !bookingUid) { subscribeStatus.textContent = 'Provide a JWT and booking UID.'; return; }
+
+            try {
+                if (clientConnection) { await clientConnection.stop(); }
+
+                clientConnection = new signalR.HubConnectionBuilder()
+                    .withUrl('/hubs/location', { accessTokenFactory: () => token })
+                    .withAutomaticReconnect()
+                    .build();
+
+                clientConnection.on('LocationUpdated', function (data) {
+                    const lat = data.latitude, lng = data.longitude;
+                    if (!trackingMarker) {
+                        trackingMarker = L.marker([lat, lng]).addTo(trackingMap);
+                    } else {
+                        trackingMarker.setLatLng([lat, lng]);
+                    }
+                    trackingMap.setView([lat, lng], 15);
+                    subscribeStatus.textContent = `Updated: ${lat}, ${lng} at ${data.timestamp}`;
+                });
+
+                clientConnection.onreconnected(async function () {
+                    await clientConnection.invoke('JoinBookingGroup', parseInt(bookingUid, 10));
+                });
+
+                await clientConnection.start();
+                await clientConnection.invoke('JoinBookingGroup', parseInt(bookingUid, 10));
+                subscribeStatus.textContent = `Connected and joined booking-${bookingUid}. Waiting for updates...`;
+            } catch (err) {
+                subscribeStatus.textContent = 'Connection failed: ' + err.message;
+            }
+        });
+
+        // ---------- Panel 4: Simulate provider push ----------
+        const pushStatus = document.getElementById('pushStatus');
+        const pushLog = document.getElementById('pushLog');
+        let providerConnection = null;
+        let lastPushPayload = null;
+
+        function logPush(message) {
+            pushLog.textContent = `[${new Date().toLocaleTimeString()}] ${message}\n` + pushLog.textContent;
+        }
+
+        document.getElementById('btnProviderConnect').addEventListener('click', async function () {
+            const token = document.getElementById('providerToken').value.trim();
+            if (!token) { pushStatus.textContent = 'Provide a provider JWT.'; return; }
+
+            try {
+                if (providerConnection) { await providerConnection.stop(); }
+                providerConnection = new signalR.HubConnectionBuilder()
+                    .withUrl('/hubs/location', { accessTokenFactory: () => token })
+                    .withAutomaticReconnect()
+                    .build();
+                await providerConnection.start();
+                pushStatus.textContent = 'Connected as provider.';
+            } catch (err) {
+                pushStatus.textContent = 'Connection failed: ' + err.message;
+            }
+        });
+
+        async function sendPush(payload) {
+            if (!providerConnection) { pushStatus.textContent = 'Connect first.'; return; }
+            try {
+                await providerConnection.invoke('PushLocation', payload.bookingUid, payload.lat, payload.lng, payload.clientTimestampUtc);
+                logPush(`PushLocation sent: booking=${payload.bookingUid} lat=${payload.lat} lng=${payload.lng} ts=${payload.clientTimestampUtc}`);
+                pushStatus.textContent = 'Push sent.';
+            } catch (err) {
+                logPush('PushLocation error: ' + err.message);
+                pushStatus.textContent = 'Push failed: ' + err.message;
+            }
+        }
+
+        document.getElementById('btnPushLocation').addEventListener('click', function () {
+            const bookingUid = parseInt(document.getElementById('pushBookingUid').value, 10);
+            const lat = parseFloat(document.getElementById('pushLat').value);
+            const lng = parseFloat(document.getElementById('pushLng').value);
+            lastPushPayload = { bookingUid, lat, lng, clientTimestampUtc: new Date().toISOString() };
+            sendPush(lastPushPayload);
+        });
+
+        document.getElementById('btnResendLast').addEventListener('click', function () {
+            if (!lastPushPayload) { pushStatus.textContent = 'Nothing to resend yet.'; return; }
+            sendPush(lastPushPayload);
+        });
+    })();
+</script>

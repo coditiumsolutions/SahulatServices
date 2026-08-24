@@ -28,6 +28,12 @@ public class Provider
 
     public string? AvailableTiming { get; set; }
 
+    public decimal? Latitude { get; set; }
+
+    public decimal? Longitude { get; set; }
+
+    public DateTime? LocationUpdatedOn { get; set; }
+
     public DateTime CreatedOn { get; set; }
 
     public int CategoryUid { get; set; }

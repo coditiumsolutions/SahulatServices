@@ -119,6 +119,9 @@ public class AppDbContext : DbContext
             entity.Property(e => e.AvailableTiming)
                 .HasMaxLength(100)
                 .HasColumnName("AvailableTiming");
+            entity.Property(e => e.Latitude).HasColumnType("decimal(10,7)");
+            entity.Property(e => e.Longitude).HasColumnType("decimal(10,7)");
+            entity.Property(e => e.LocationUpdatedOn).HasColumnType("datetime");
             entity.Property(e => e.CreatedOn)
                 .HasColumnType("datetime")
                 .HasDefaultValueSql("(getdate())");

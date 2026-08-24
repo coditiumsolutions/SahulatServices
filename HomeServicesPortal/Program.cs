@@ -3,11 +3,13 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System.Security.Claims;
 using System.Text;
 using HomeServicesPortal.Data;
 // using HomeServicesPortal.Infrastructure; // DevSqlTunnelBootstrap disabled
+using HomeServicesPortal.Hubs;
 using HomeServicesPortal.Interfaces;
 using HomeServicesPortal.Mappings;
 using HomeServicesPortal.Middleware;
@@ -84,6 +86,18 @@ builder.Services.AddScoped<IFileStorageService, FileStorageService>();
 builder.Services.AddScoped<IApkManagementService, ApkManagementService>();
 builder.Services.AddScoped<IProviderDocumentRepository, ProviderDocumentRepository>();
 builder.Services.AddScoped<IProviderDocumentsApiService, ProviderDocumentsApiService>();
+builder.Services.AddScoped<IProviderLocationQueryService, ProviderLocationQueryService>();
+
+builder.Services.Configure<NominatimOptions>(builder.Configuration.GetSection(NominatimOptions.SectionName));
+builder.Services.AddHttpClient<INominatimService, NominatimService>((sp, client) =>
+{
+    var opts = sp.GetRequiredService<IOptions<NominatimOptions>>().Value;
+    client.BaseAddress = new Uri(opts.BaseUrl);
+    client.Timeout = TimeSpan.FromSeconds(opts.TimeoutSeconds);
+    client.DefaultRequestHeaders.UserAgent.ParseAdd(opts.UserAgent);
+});
+
+builder.Services.AddSignalR();
 
 var jwtKey = builder.Configuration["Jwt:Key"]
              ?? throw new InvalidOperationException("Jwt:Key is not configured in appsettings.");
@@ -153,6 +167,19 @@ builder.Services.AddAuthentication(options =>
 
         options.Events = new JwtBearerEvents
         {
+            OnMessageReceived = context =>
+            {
+                // SignalR WebSocket clients can't set the Authorization header on the handshake —
+                // accept the JWT via ?access_token= for the location-tracking hub route only.
+                var accessToken = context.Request.Query["access_token"];
+                var path = context.HttpContext.Request.Path;
+                if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs/location"))
+                {
+                    context.Token = accessToken;
+                }
+
+                return Task.CompletedTask;
+            },
             OnChallenge = async context =>
             {
                 if (context.Request.Path.StartsWithSegments("/api"))
@@ -269,5 +296,6 @@ app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
 app.MapControllers();
+app.MapHub<LocationTrackingHub>("/hubs/location");
 
 app.Run();

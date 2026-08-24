@@ -1,0 +1,155 @@
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Maps/GPS Test Harness";
+}
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+
+<div class="d-flex align-items-center justify-content-between mb-3">
+    <h2 class="mb-0">
+        <i class="fa-solid fa-map-location-dot me-2" style="color: #0D6EFD"></i>Maps/GPS Test Harness
+    </h2>
+    <span class="badge bg-warning text-dark">Internal Testing Only</span>
+</div>
+<p class="text-muted">
+    Validates reverse geocoding, nearby-provider search, and real-time SignalR location tracking
+    without needing the Flutter app. Not a customer-facing page.
+</p>
+
+<div class="row g-3">
+    <div class="col-12 col-xl-6">
+        <div class="card hs-card h-100">
+            <div class="card-body">
+                <h5 class="mb-2"><i class="fa-solid fa-location-crosshairs text-primary me-2"></i>1. Pin Drop / Reverse Geocode</h5>
+                <p class="text-muted small">Click the map (or use your current location) to drop a pin, then resolve it to an address via <code>GET /api/geocoding/reverse</code>.</p>
+                <div id="pinMap" style="height: 320px; border-radius: 8px;"></div>
+                <div class="d-flex gap-2 mt-2">
+                    <button type="button" id="btnCurrentLocation" class="btn btn-sm btn-outline-primary">
+                        <i class="fa-solid fa-crosshairs me-1"></i>Use My Location
+                    </button>
+                    <button type="button" id="btnReverseGeocode" class="btn btn-sm btn-primary">
+                        <i class="fa-solid fa-magnifying-glass-location me-1"></i>Resolve Address
+                    </button>
+                </div>
+                <div id="pinStatus" class="text-muted small mt-2">Click the map to drop a pin.</div>
+                <div id="geocodeResult" class="border rounded p-2 mt-2 small d-none bg-light"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-xl-6">
+        <div class="card hs-card h-100">
+            <div class="card-body">
+                <h5 class="mb-2"><i class="fa-solid fa-user-tie text-primary me-2"></i>2. Nearby Providers</h5>
+                <p class="text-muted small">Uses the pin above (or manual entry) against <code>GET /api/provider-locations/nearby</code>, sorted by Haversine distance.</p>
+                <div class="row g-2 mb-2">
+                    <div class="col-6">
+                        <label class="form-label small mb-0">Latitude</label>
+                        <input type="number" step="any" id="nearbyLat" class="form-control form-control-sm" />
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label small mb-0">Longitude</label>
+                        <input type="number" step="any" id="nearbyLng" class="form-control form-control-sm" />
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label small mb-0">Category UID (optional)</label>
+                        <input type="number" id="nearbyCategoryUid" class="form-control form-control-sm" />
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label small mb-0">Radius (km)</label>
+                        <input type="number" step="any" id="nearbyRadius" class="form-control form-control-sm" value="25" />
+                    </div>
+                </div>
+                <button type="button" id="btnSearchNearby" class="btn btn-sm btn-primary">
+                    <i class="fa-solid fa-magnifying-glass me-1"></i>Search
+                </button>
+                <div id="nearbyStatus" class="text-muted small mt-2"></div>
+                <div class="table-responsive mt-2" style="max-height: 220px; overflow-y: auto;">
+                    <table class="table table-sm align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Provider</th>
+                                <th>Category</th>
+                                <th>Distance</th>
+                                <th>Rating</th>
+                            </tr>
+                        </thead>
+                        <tbody id="nearbyResultsBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-xl-6">
+        <div class="card hs-card h-100">
+            <div class="card-body">
+                <h5 class="mb-2"><i class="fa-solid fa-satellite-dish text-primary me-2"></i>3. Live Tracking (Subscribe as Client)</h5>
+                <p class="text-muted small">Connects to <code>/hubs/location</code>, joins a booking group, and moves a marker live as location updates arrive.</p>
+                <div class="row g-2 mb-2">
+                    <div class="col-12">
+                        <label class="form-label small mb-0">Client JWT (from /api/auth/login via Swagger)</label>
+                        <input type="text" id="clientToken" class="form-control form-control-sm" placeholder="Paste JWT..." />
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label small mb-0">Booking UID</label>
+                        <input type="number" id="subscribeBookingUid" class="form-control form-control-sm" />
+                    </div>
+                    <div class="col-6 d-flex align-items-end">
+                        <button type="button" id="btnSubscribeConnect" class="btn btn-sm btn-primary w-100">
+                            <i class="fa-solid fa-plug me-1"></i>Connect &amp; Join
+                        </button>
+                    </div>
+                </div>
+                <div id="subscribeStatus" class="text-muted small mb-2">Not connected.</div>
+                <div id="trackingMap" style="height: 260px; border-radius: 8px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-xl-6">
+        <div class="card hs-card h-100">
+            <div class="card-body">
+                <h5 class="mb-2"><i class="fa-solid fa-truck-fast text-primary me-2"></i>4. Simulate Provider Push</h5>
+                <p class="text-muted small">Acts as a provider — invokes <code>PushLocation</code> on the hub. "Resend Last" replays the identical payload to verify idempotency (no marker jump, no re-broadcast).</p>
+                <div class="row g-2 mb-2">
+                    <div class="col-12">
+                        <label class="form-label small mb-0">Provider JWT</label>
+                        <input type="text" id="providerToken" class="form-control form-control-sm" placeholder="Paste JWT..." />
+                    </div>
+                    <div class="col-4">
+                        <label class="form-label small mb-0">Booking UID</label>
+                        <input type="number" id="pushBookingUid" class="form-control form-control-sm" />
+                    </div>
+                    <div class="col-4">
+                        <label class="form-label small mb-0">Latitude</label>
+                        <input type="number" step="any" id="pushLat" class="form-control form-control-sm" value="31.5204" />
+                    </div>
+                    <div class="col-4">
+                        <label class="form-label small mb-0">Longitude</label>
+                        <input type="number" step="any" id="pushLng" class="form-control form-control-sm" value="74.3587" />
+                    </div>
+                </div>
+                <div class="d-flex gap-2">
+                    <button type="button" id="btnProviderConnect" class="btn btn-sm btn-outline-primary">
+                        <i class="fa-solid fa-plug me-1"></i>Connect
+                    </button>
+                    <button type="button" id="btnPushLocation" class="btn btn-sm btn-primary">
+                        <i class="fa-solid fa-paper-plane me-1"></i>Send
+                    </button>
+                    <button type="button" id="btnResendLast" class="btn btn-sm btn-outline-secondary">
+                        <i class="fa-solid fa-rotate-left me-1"></i>Resend Last
+                    </button>
+                </div>
+                <div id="pushStatus" class="text-muted small mt-2">Not connected.</div>
+                <pre id="pushLog" class="border rounded p-2 mt-2 small bg-light" style="max-height: 160px; overflow-y: auto;"></pre>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script src="https://cdn.jsdelivr.net/npm/@@microsoft/signalr@8.0.7/dist/browser/signalr.min.js"></script>
+    <partial name="_MapsTestScripts" />
+}

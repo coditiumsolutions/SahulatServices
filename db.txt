@@ -1,4 +1,4 @@
-# Version: 3.4 | UpdatedAt: 06/08/2026
+# Version: 3.5 | UpdatedAt: 24/08/2026
 # Database: SahulatAppDB
 # Server: 34.131.132.158,1433
 
@@ -93,6 +93,13 @@ Table: Providers
   CreatedOn        datetime         NOT NULL  DEFAULT (getdate())
   CategoryUID      int              NOT NULL
   AvailableTiming  nvarchar(100)    NULL
+  Latitude         decimal(10,7)    NULL
+  Longitude        decimal(10,7)    NULL
+  LocationUpdatedOn datetime        NULL
+  -- Latitude/Longitude/LocationUpdatedOn: last-known provider location only (no history table).
+  -- Written by the SignalR LocationTrackingHub (PushLocation) and the REST PUT
+  -- /api/provider-locations/{providerUid} fallback, via an idempotent conditional UPDATE that only
+  -- applies when the caller-supplied ClientTimestampUtc is newer than the stored LocationUpdatedOn.
 
 --------------------------------------------------------------------------------
 Table: ProviderDocuments

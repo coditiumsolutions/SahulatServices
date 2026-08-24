@@ -2161,3 +2161,207 @@ Fail (404):
 {
   "message": "Service title not found."
 }
+
+================================================================================
+MAPS / GPS APIs (Reverse Geocoding, Nearby Providers, Live Tracking)
+================================================================================
+$0-cost strategy: reverse geocoding via OpenStreetMap Nominatim (free, no API key), distance
+calculated in C# via the Haversine formula (no paid Distance Matrix / spatial SQL), live provider
+location broadcast via a SignalR hub. Provider live location is last-known-position only
+(Providers.Latitude/Longitude/LocationUpdatedOn) — no location history table.
+
+--------------------------------------------------------------------------------
+GET Reverse Geocode
+--------------------------------------------------------------------------------
+Local:     https://localhost:7265/api/geocoding/reverse?lat={lat}&lng={lng}
+Deployed:  https://sahulatghartak.com/api/geocoding/reverse?lat={lat}&lng={lng}
+
+Example:
+GET https://localhost:7265/api/geocoding/reverse?lat=31.5204&lng=74.3587
+
+Request Body: none
+
+Success (200):
+{
+  "success": true,
+  "message": "Address resolved successfully.",
+  "data": {
+    "displayName": "Lahore, Punjab, Pakistan",
+    "road": "Mall Road",
+    "area": "Gulberg",
+    "city": "Lahore",
+    "state": "Punjab",
+    "postalCode": "54000",
+    "latitude": 31.5204,
+    "longitude": 74.3587
+  }
+}
+
+Fail (400):
+{
+  "success": false,
+  "message": "Unable to resolve address for the given coordinates.",
+  "data": null
+}
+
+--------------------------------------------------------------------------------
+GET Nearby Providers
+--------------------------------------------------------------------------------
+Local:     https://localhost:7265/api/provider-locations/nearby
+Deployed:  https://sahulatghartak.com/api/provider-locations/nearby
+
+Optional query:
+- lat, lng (required) — search origin
+- categoryUid (int) — filter by service category
+- radiusKm (double, default 25)
+- onlyAvailable (bool, default true)
+- onlyVerified (bool, default true)
+- maxResults (int, default 20)
+
+Example:
+GET https://localhost:7265/api/provider-locations/nearby?lat=31.5204&lng=74.3587&radiusKm=15
+
+Request Body: none
+
+Success (200):
+{
+  "success": true,
+  "message": "Nearby providers fetched successfully.",
+  "data": [
+    {
+      "uid": 5,
+      "fullName": "Shahid Ghauri",
+      "categoryUid": 1,
+      "categoryName": "Plumber",
+      "averageRating": 4.50,
+      "isAvailable": true,
+      "isVerified": true,
+      "latitude": 31.5210,
+      "longitude": 74.3590,
+      "distanceKm": 0.12
+    }
+  ]
+}
+
+Fail: returns empty data array [] when no nearby providers found
+
+--------------------------------------------------------------------------------
+GET Provider Distance (Client Address <-> Provider)
+--------------------------------------------------------------------------------
+Local:     https://localhost:7265/api/provider-locations/distance?clientAddressUid={id}&providerUid={id}
+Deployed:  https://sahulatghartak.com/api/provider-locations/distance?clientAddressUid={id}&providerUid={id}
+
+Example:
+GET https://localhost:7265/api/provider-locations/distance?clientAddressUid=1&providerUid=5
+
+Request Body: none
+
+Success (200):
+{
+  "success": true,
+  "message": "Distance computed successfully.",
+  "data": { "distanceKm": 4.32 }
+}
+
+Fail (400):
+{
+  "success": false,
+  "message": "Provider does not have a current location.",
+  "data": null
+}
+
+--------------------------------------------------------------------------------
+PUT Update Provider Location (REST fallback for live push)
+--------------------------------------------------------------------------------
+Local:     https://localhost:7265/api/provider-locations/{providerUid}
+Deployed:  https://sahulatghartak.com/api/provider-locations/{providerUid}
+
+Auth: Bearer JWT required — caller must be the provider identified by {providerUid}.
+
+Notes:
+- Primary real-time path is the SignalR hub's PushLocation method (see below). This REST endpoint
+  is a fallback for clients that cannot hold a persistent WebSocket connection.
+- Idempotent: ClientTimestampUtc (device GPS-fix time) drives an ordering guard — a request whose
+  timestamp is not strictly newer than the currently stored LocationUpdatedOn is silently ignored
+  (still returns 200, with "applied": false), so retries and out-of-order/delayed calls can never
+  regress the stored position. This guard is shared with the Hub's PushLocation, so pushing via
+  both transports for the same provider is safe.
+- If bookingUid is supplied and the update was applied, also broadcasts to that booking's SignalR
+  group ("booking-{bookingUid}"), same event shape as the Hub's LocationUpdated event.
+
+Example:
+PUT https://localhost:7265/api/provider-locations/5
+
+Request Body:
+{
+  "clientTimestampUtc": "2026-08-24T10:15:30Z",
+  "latitude": 31.5210,
+  "longitude": 74.3590,
+  "bookingUid": 42
+}
+
+Success (200):
+{
+  "success": true,
+  "message": "Location updated successfully.",
+  "data": {
+    "latitude": 31.5210,
+    "longitude": 74.3590,
+    "locationUpdatedOn": "2026-08-24T10:15:30Z",
+    "applied": true
+  }
+}
+
+Success — stale/duplicate update ignored (200):
+{
+  "success": true,
+  "message": "Update ignored: a newer location is already stored.",
+  "data": {
+    "latitude": 31.5210,
+    "longitude": 74.3590,
+    "locationUpdatedOn": null,
+    "applied": false
+  }
+}
+
+Fail (403): caller's JWT does not resolve to this providerUid
+Fail (400):
+{
+  "success": false,
+  "message": "clientTimestampUtc is too far from server time.",
+  "data": null
+}
+
+--------------------------------------------------------------------------------
+SignalR Hub: Live Location Tracking
+--------------------------------------------------------------------------------
+Local:     wss://localhost:7265/hubs/location
+Deployed:  wss://sahulatghartak.com/hubs/location
+
+Auth: JWT Bearer required. WebSocket clients cannot set the Authorization header on the handshake,
+so pass the token via query string instead: /hubs/location?access_token={jwt}
+(the JavaScript SignalR client's accessTokenFactory option does this automatically.)
+
+Hub methods (client invokes):
+- JoinBookingGroup(bookingUid: int) — subscribe to a booking's live location stream. Safe to call
+  repeatedly (idempotent — SignalR no-ops if already a member). Must be re-invoked after any
+  reconnect, since group membership does not survive a new ConnectionId.
+- LeaveBookingGroup(bookingUid: int) — unsubscribe.
+- PushLocation(bookingUid: int, latitude: decimal, longitude: decimal, clientTimestampUtc: DateTime)
+  — provider-only. Caller's JWT must resolve to the Provider that owns bookingUid, or the hub
+  throws. Writes through the same idempotent guard as the REST PUT fallback above — a duplicate or
+  out-of-order call is a safe no-op and does not re-broadcast.
+
+Server event (client listens for):
+- LocationUpdated — payload: { bookingUid, latitude, longitude, timestamp }, sent to the
+  "booking-{bookingUid}" group whenever a PushLocation (or REST PUT with bookingUid) call actually
+  applies a new position.
+
+Example (JS):
+const connection = new signalR.HubConnectionBuilder()
+  .withUrl("/hubs/location", { accessTokenFactory: () => jwtToken })
+  .withAutomaticReconnect()
+  .build();
+connection.on("LocationUpdated", data => { /* move marker */ });
+await connection.start();
+await connection.invoke("JoinBookingGroup", bookingUid);
