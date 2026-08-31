@@ -23,4 +23,8 @@ public interface IAuthService
     Task<(bool Success, string? Error, DeleteAccountResponse? Data, int StatusCode)> DeleteAccountAsync(
         DeleteAccountRequest request,
         CancellationToken cancellationToken = default);
+
+    Task<(bool Success, string? Error, ResetPasswordResponse? Data, int StatusCode)> ResetPasswordAsync(
+        ResetPasswordRequest request,
+        CancellationToken cancellationToken = default);
 }

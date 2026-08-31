@@ -485,6 +485,85 @@ public class AuthService : IAuthService
         }, cancellationToken);
     }
 
+    /// <summary>
+    /// Atomically verifies a PasswordReset OTP and sets the new password in the same call
+    /// (mirrors DeleteAccountAsync re-verifying identity in the same call as the sensitive
+    /// action, rather than trusting a "verified" flag set by an earlier call).
+    /// </summary>
+    public async Task<(bool Success, string? Error, ResetPasswordResponse? Data, int StatusCode)> ResetPasswordAsync(
+        ResetPasswordRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var (mobileOk, mobileNo, mobileError) = MobileNumberHelper.ValidateAndNormalize(request.MobileNo);
+        if (!mobileOk)
+        {
+            return (false, mobileError, null, StatusCodes.Status400BadRequest);
+        }
+
+        // Scoped to OTPType == PasswordReset explicitly (unlike VerifyOtpAsync, which matches
+        // the latest unverified OTP of any type) so a pending Login/Registration OTP can't be
+        // used to reset the password.
+        var otpRow = await _db.UserOTPs
+            .Where(o => o.MobileNo == mobileNo && o.OTPType == OtpTypeConstants.PasswordReset && !o.IsVerified)
+            .OrderByDescending(o => o.CreatedOn)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (otpRow == null)
+        {
+            return (false, "No password reset request found for this mobile number. Please request a new OTP.", null, StatusCodes.Status404NotFound);
+        }
+
+        if (otpRow.AttemptCount >= OtpService.MaxVerifyAttempts)
+        {
+            return (false, "Maximum attempts exceeded.", null, StatusCodes.Status429TooManyRequests);
+        }
+
+        if (otpRow.ExpiryTime < DateTime.Now)
+        {
+            return (false, "OTP expired.", null, StatusCodes.Status400BadRequest);
+        }
+
+        if (!string.Equals(otpRow.OTPCode, request.OTP.Trim(), StringComparison.Ordinal))
+        {
+            otpRow.AttemptCount += 1;
+            await _db.SaveChangesAsync(cancellationToken);
+
+            if (otpRow.AttemptCount >= OtpService.MaxVerifyAttempts)
+            {
+                return (false, "Maximum attempts exceeded.", null, StatusCodes.Status429TooManyRequests);
+            }
+
+            return (false, "Invalid OTP.", null, StatusCodes.Status400BadRequest);
+        }
+
+        var user = await _userRepository.GetUserByMobileAsync(mobileNo, cancellationToken);
+        if (user == null)
+        {
+            return (false, "Account not found.", null, StatusCodes.Status404NotFound);
+        }
+
+        otpRow.IsVerified = true;
+        otpRow.VerifiedOn = DateTime.Now;
+        otpRow.AttemptCount = 0;
+
+        // Invalidate any other pending PasswordReset OTPs for this mobile number so an old
+        // code can't be replayed after this one succeeds.
+        var otherPending = await _db.UserOTPs
+            .Where(o => o.MobileNo == mobileNo
+                        && o.OTPType == OtpTypeConstants.PasswordReset
+                        && !o.IsVerified
+                        && o.Uid != otpRow.Uid)
+            .ToListAsync(cancellationToken);
+        _db.UserOTPs.RemoveRange(otherPending);
+
+        var trackedUser = await _db.UsersLogins.FirstAsync(u => u.Uid == user.Uid, cancellationToken);
+        trackedUser.PasswordHash = PasswordHasher.Hash(request.NewPassword);
+
+        await _db.SaveChangesAsync(cancellationToken);
+
+        return (true, null, new ResetPasswordResponse { MobileNo = mobileNo }, StatusCodes.Status200OK);
+    }
+
     private async Task<T> ExecuteInTransactionAsync<T>(
         Func<Task<T>> operation,
         CancellationToken cancellationToken)

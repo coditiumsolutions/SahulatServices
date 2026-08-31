@@ -1,6 +1,6 @@
 ================================================================================
 SahulatGharTak API Reference
-Version: 3.2 | Last Updated: 2026-08-17
+Version: 3.3 | Last Updated: 2026-08-31
 Database: SahulatAppDB
 Local Base URL:    https://localhost:7265/api/
 Deployed Base URL:  https://sahulatghartak.com/api/
@@ -303,6 +303,87 @@ Notes:
   PaymentLedger, ProviderPayouts, CommissionRules rows.
 
 --------------------------------------------------------------------------------
+POST Reset Password
+--------------------------------------------------------------------------------
+Local:     https://localhost:7265/api/auth/reset-password
+Deployed:  https://sahulatghartak.com/api/auth/reset-password
+
+Request Body:
+{
+  "mobileNo": "03335191392",
+  "otp": "458963",
+  "newPassword": "newSecurePass1",
+  "confirmNewPassword": "newSecurePass1"
+}
+
+Notes:
+- Atomic verify-OTP + set-password in a single call (mirrors Delete Account
+  re-verifying identity in the same call as the sensitive action) — there is no
+  separate "verified" state from a prior call that could be replayed
+- Recommended flow: send-otp (otpType=PasswordReset) -> reset-password
+- Looks up the latest unverified UserOTP row scoped to this mobileNo AND
+  otpType=PasswordReset specifically (does not fall back to the newest
+  unverified OTP of any type, unlike generic Verify OTP)
+- Max 3 invalid attempts (AttemptCount), 5 minute expiry — same OTP
+  infrastructure/limits as Send OTP / Verify OTP
+- On success: UserOTP.IsVerified=true, VerifiedOn set; any other pending
+  PasswordReset OTPs for this mobile number are invalidated so an old code
+  can't be replayed
+- Only updates UsersLogin.PasswordHash — does not affect Clients/Providers
+  rows, IsVerified, IsActive, or anything else
+
+Success (200):
+{
+  "success": true,
+  "message": "Password reset successfully.",
+  "data": {
+    "mobileNo": "03335191392"
+  }
+}
+
+Fail (404 — no OTP request found):
+{
+  "success": false,
+  "message": "No password reset request found for this mobile number. Please request a new OTP.",
+  "data": null
+}
+
+Fail (400 — expired):
+{
+  "success": false,
+  "message": "OTP expired.",
+  "data": null
+}
+
+Fail (400 — invalid OTP):
+{
+  "success": false,
+  "message": "Invalid OTP.",
+  "data": null
+}
+
+Fail (429 — too many attempts):
+{
+  "success": false,
+  "message": "Maximum attempts exceeded.",
+  "data": null
+}
+
+Fail (400 — password mismatch):
+{
+  "success": false,
+  "message": "New password and confirm password do not match.",
+  "data": null
+}
+
+Fail (404 — account not found):
+{
+  "success": false,
+  "message": "Account not found.",
+  "data": null
+}
+
+--------------------------------------------------------------------------------
 POST Send OTP
 --------------------------------------------------------------------------------
 Local:     https://localhost:7265/api/auth/send-otp
@@ -320,6 +401,9 @@ Notes:
 - OTP is 6 digits; ExpiryTime = now + 5 minutes
 - Unverified OTP for same mobile+type is updated (not duplicated)
 - Registration: if mobile already exists and IsVerified=true -> 409
+- PasswordReset: opposite check — account must already exist and be a
+  verified Client/Provider/Staff (UsersLogin.IsVerified=true), otherwise
+  there's nothing to reset -> 404
 - data.otp is controlled by config Otp:IncludeInResponse (true = include code; false = null)
 - TEMPORARY: IncludeInResponse=true on deployed API until a real SMS gateway is wired; then set false
 
@@ -358,6 +442,13 @@ Fail (409):
 {
   "success": false,
   "message": "Mobile number already registered.",
+  "data": null
+}
+
+Fail (404 — PasswordReset, account not found):
+{
+  "success": false,
+  "message": "Account not found.",
   "data": null
 }
 
@@ -1145,6 +1236,12 @@ Notes:
   /service-bookings responses so the provider app cannot read the customer's own verification code.
 - cancelReason is the reason the customer gave when they cancelled this request (Status="Cancelled"
   via PUT .../{requestUid}, see below). Null unless the request has been cancelled by the customer.
+- IMPORTANT: contactPerson/contactNo are free-text fields captured from the request form at create/
+  update time (see POST/PUT below) — they represent who the requester wants contacted on-site for
+  THIS specific request, and are NOT guaranteed to match the account holder's own name/number
+  (clientName / the client's UsersLogin.MobileNo). A client can book on behalf of someone else, or
+  simply type a different contact number. Do not treat contactPerson/contactNo as "the logged-in
+  client's identity" in the UI — use clientName (and the client's own profile/account data) for that.
 
 Success (200):
 {
@@ -1233,6 +1330,12 @@ Notes:
   /service-bookings responses so the provider app cannot read the customer's own verification code.
 - cancelReason is the reason the customer gave when they cancelled this request (Status="Cancelled"
   via PUT .../{requestUid}, see below). Null unless the request has been cancelled by the customer.
+- IMPORTANT: contactPerson/contactNo are free-text fields captured from the request form at create/
+  update time (see POST/PUT below) — they represent who the requester wants contacted on-site for
+  THIS specific request, and are NOT guaranteed to match the account holder's own name/number
+  (clientName / the client's UsersLogin.MobileNo). A client can book on behalf of someone else, or
+  simply type a different contact number. Do not treat contactPerson/contactNo as "the logged-in
+  client's identity" in the UI — use clientName (and the client's own profile/account data) for that.
 
 Success (200):
 {
@@ -1301,6 +1404,10 @@ Notes:
 - clientAddressUid must belong to the same clientUid
 - serviceDescription is OPTIONAL (omit, null, or "" when not provided)
 - preferredServiceDate and preferredServiceTime are OPTIONAL (omit, null, or "" when not provided)
+- contactPerson/contactNo are stored verbatim as free text — the API does not validate or default
+  them against the client's own account (clientName/mobile). If the app intends "contact me at my
+  account number," it must populate these fields itself from the logged-in client's own profile
+  before submitting; the backend will not fill them in automatically.
 
 Success (201):
 {

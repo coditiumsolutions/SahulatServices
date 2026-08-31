@@ -135,6 +135,30 @@ public class AuthController : ControllerBase
         return Ok(ApiResponse<DeleteAccountResponse>.Ok(data, "Account deleted successfully."));
     }
 
+    /// <summary>Verify a PasswordReset OTP and set a new password in one atomic call.</summary>
+    [HttpPost("reset-password")]
+    [ProducesResponseType(typeof(ApiResponse<ResetPasswordResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<ResetPasswordResponse>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<ResetPasswordResponse>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse<ResetPasswordResponse>), StatusCodes.Status429TooManyRequests)]
+    public async Task<ActionResult<ApiResponse<ResetPasswordResponse>>> ResetPassword(
+        [FromBody] ResetPasswordRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ApiResponse<ResetPasswordResponse>.Fail(GetValidationMessage()));
+        }
+
+        var (success, error, data, statusCode) = await _authService.ResetPasswordAsync(request, cancellationToken);
+        if (!success || data == null)
+        {
+            return StatusCode(statusCode, ApiResponse<ResetPasswordResponse>.Fail(error ?? "Password reset failed."));
+        }
+
+        return Ok(ApiResponse<ResetPasswordResponse>.Ok(data, "Password reset successfully."));
+    }
+
     /// <summary>Send a 6-digit OTP (Development returns OTP in data; Production never does).</summary>
     [HttpPost("send-otp")]
     [ProducesResponseType(typeof(ApiResponse<SendOtpResponse>), StatusCodes.Status200OK)]

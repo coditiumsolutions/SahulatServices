@@ -56,6 +56,18 @@ public class OtpService : IOtpService
                 return (false, "Mobile number already registered.", null, StatusCodes.Status409Conflict);
             }
         }
+        else if (otpType == OtpTypeConstants.PasswordReset)
+        {
+            // Opposite of Registration's check: there must already be a verified account to reset.
+            var existingUser = await _db.UsersLogins
+                .AsNoTracking()
+                .FirstOrDefaultAsync(u => u.MobileNo == mobileNo, cancellationToken);
+
+            if (existingUser is not { IsVerified: true })
+            {
+                return (false, "Account not found.", null, StatusCodes.Status404NotFound);
+            }
+        }
 
         var otpCode = GenerateSixDigitOtp();
         var expiry = DateTime.Now.AddMinutes(OtpExpiryMinutes);
