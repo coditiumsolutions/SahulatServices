@@ -1,6 +1,6 @@
 ================================================================================
 SahulatGharTak API Reference
-Version: 3.3 | Last Updated: 2026-08-31
+Version: 3.5 | Last Updated: 2026-09-01
 Database: SahulatAppDB
 Local Base URL:    https://localhost:7265/api/
 Deployed Base URL:  https://sahulatghartak.com/api/
@@ -1018,6 +1018,93 @@ Fail (404):
 {
   "success": false,
   "message": "Provider not found.",
+  "data": null
+}
+
+================================================================================
+CLIENTS DETAIL APIs
+================================================================================
+
+--------------------------------------------------------------------------------
+GET Client Detail (Fetch)
+--------------------------------------------------------------------------------
+Local:     https://localhost:7265/api/clients-detail/{clientUid}
+Deployed:  https://sahulatghartak.com/api/clients-detail/{clientUid}
+
+Example:
+GET https://localhost:7265/api/clients-detail/1
+
+Request Body: none
+
+Success (200):
+{
+  "success": true,
+  "message": "Client detail fetched successfully.",
+  "data": {
+    "uid": 1,
+    "userUid": 1,
+    "mobileNo": "03335191392",
+    "fullName": "Shahid Ghauri",
+    "cnic": "1-1-1",
+    "gender": "Male"
+  }
+}
+
+Fail (404):
+{
+  "success": false,
+  "message": "Client not found.",
+  "data": null
+}
+
+--------------------------------------------------------------------------------
+PUT Client Detail (Edit)
+--------------------------------------------------------------------------------
+Local:     https://localhost:7265/api/clients-detail/{clientUid}
+Deployed:  https://sahulatghartak.com/api/clients-detail/{clientUid}
+
+Example:
+PUT https://localhost:7265/api/clients-detail/1
+
+Request Body:
+{
+  "clientUid": 1,
+  "fullName": "Shahid Ghauri",
+  "cnic": "1-1-1",
+  "gender": "Male"
+}
+
+Notes:
+- clientUid in URL and body must match
+- editable: fullName, cnic, gender only
+- mobileNo is NOT editable via this endpoint — changing it requires OTP re-verification (separate feature, not yet implemented)
+- read-only in response: mobileNo
+
+Success (200):
+{
+  "success": true,
+  "message": "Client detail updated successfully.",
+  "data": {
+    "uid": 1,
+    "userUid": 1,
+    "mobileNo": "03335191392",
+    "fullName": "Shahid Ghauri",
+    "cnic": "1-1-1",
+    "gender": "Male"
+  }
+}
+
+Fail (400):
+{
+  "success": false,
+  "message": "ClientUid in URL and body must match.",
+  "data": null
+}
+
+Fail (404):
+{
+  "success": false,
+  "message": "Client not found.",
   "data": null
 }
 
