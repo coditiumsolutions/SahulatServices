@@ -1314,7 +1314,7 @@ Request Body: none
 Notes:
 - providerUid, providerName, providerMobileNo, providerProfilePhotoPath, providerCnic are populated
   once a ServiceBooking exists for this request AND that booking's status is Accepted, In Progress,
-  or Completed (same rule as GET /service-bookings). Otherwise (no booking yet, still Pending, or
+  Completed, or Closed (same rule as GET /service-bookings). Otherwise (no booking yet, still Pending, or
   Rejected) all five fields are null.
 - passcode is populated once the linked ServiceBooking has a non-null Passcode — i.e. the booking
   has been Accepted (Passcode is generated at accept time, see POST .../respond in the Service
@@ -1329,6 +1329,15 @@ Notes:
   (clientName / the client's UsersLogin.MobileNo). A client can book on behalf of someone else, or
   simply type a different contact number. Do not treat contactPerson/contactNo as "the logged-in
   client's identity" in the UI — use clientName (and the client's own profile/account data) for that.
+- progressStatus is a COMPUTED, read-only field for the client progress bar — it is never
+  persisted and never equals the raw "status" column. Values: "Requested" (no booking yet),
+  "Assigned" (booking exists, provider hasn't started), "In Progress" (provider is actively on
+  the job — either they tapped Start, or the preferred service date/time has arrived while the
+  booking sits Accepted), "Completed" (job done, whether or not staff has since closed it out).
+  progressStatus is null whenever the request or its booking is Cancelled — render a plain
+  "Cancelled" label and hide the progress bar entirely rather than switching on this field.
+  Do not derive UI state from "status" directly for the progress bar; use progressStatus.
+  See docs/status-workflow.md for the full design and rationale.
 
 Success (200):
 {
@@ -1352,6 +1361,7 @@ Success (200):
       "contactNo": "03335191392",
       "estimatedBudget": 2500.00,
       "status": "Pending",
+      "progressStatus": "Requested",
       "remarks": "Please call before arrival",
       "cancelReason": null,
       "createdOn": "2026-07-08T00:00:00",
@@ -1378,7 +1388,8 @@ Success (200):
       "contactPerson": "Shahid",
       "contactNo": "03335191392",
       "estimatedBudget": 1500.00,
-      "status": "InProgress",
+      "status": "Assigned",
+      "progressStatus": "In Progress",
       "remarks": null,
       "cancelReason": null,
       "createdOn": "2026-07-09T00:00:00",
@@ -1408,7 +1419,7 @@ Request Body: none
 Notes:
 - providerUid, providerName, providerMobileNo, providerProfilePhotoPath, providerCnic are populated
   once a ServiceBooking exists for this request AND that booking's status is Accepted, In Progress,
-  or Completed (same rule as GET /service-bookings). Otherwise (no booking yet, still Pending, or
+  Completed, or Closed (same rule as GET /service-bookings). Otherwise (no booking yet, still Pending, or
   Rejected) all five fields are null.
 - passcode is populated once the linked ServiceBooking has a non-null Passcode — i.e. the booking
   has been Accepted (Passcode is generated at accept time, see POST .../respond in the Service
@@ -1423,6 +1434,8 @@ Notes:
   (clientName / the client's UsersLogin.MobileNo). A client can book on behalf of someone else, or
   simply type a different contact number. Do not treat contactPerson/contactNo as "the logged-in
   client's identity" in the UI — use clientName (and the client's own profile/account data) for that.
+- progressStatus is computed/read-only — see GET All Customer Service Requests above for the
+  full field spec (values, null-means-cancelled convention, and why it differs from "status").
 
 Success (200):
 {
@@ -1444,7 +1457,8 @@ Success (200):
     "contactPerson": "Shahid",
     "contactNo": "03335191392",
     "estimatedBudget": 1500.00,
-    "status": "InProgress",
+    "status": "Assigned",
+    "progressStatus": "In Progress",
     "remarks": null,
     "cancelReason": null,
     "createdOn": "2026-07-09T00:00:00",
@@ -1551,7 +1565,7 @@ Request Body:
   "contactPerson": "Shahid",
   "contactNo": "03335191392",
   "estimatedBudget": 3000,
-  "status": "InProgress",
+  "status": "Pending",
   "remarks": "Technician assigned",
   "cancelReason": null
 }
@@ -1561,9 +1575,13 @@ Notes:
 - clientUid cannot be changed on update
 - serviceDescription is OPTIONAL (omit, null, or "" when not provided)
 - preferredServiceDate and preferredServiceTime are OPTIONAL (omit, null, or "" when not provided)
+- status is WHITELISTED to "Pending" or "Cancelled" only — a client can edit request details
+  while it's still Pending, or cancel it. "Assigned"/"In Progress"/"Completed" are set by
+  staff/the provider flow, never by the client's own PUT; any other value fails with 400
+  ("Invalid status value."). See docs/status-workflow.md.
 - cancelReason is REQUIRED (non-empty) whenever status is being set to "Cancelled" — the customer's
   reason for cancelling. Fails with 400 if status="Cancelled" and cancelReason is missing/empty.
-  For any other status value, cancelReason is optional/ignored (existing stored value is preserved).
+  For status="Pending", cancelReason is optional/ignored (existing stored value is preserved).
 
 Example (customer cancelling):
 {
@@ -1599,7 +1617,8 @@ Success (200):
     "contactPerson": "Shahid",
     "contactNo": "03335191392",
     "estimatedBudget": 3000.00,
-    "status": "InProgress",
+    "status": "Pending",
+    "progressStatus": "Requested",
     "remarks": "Technician assigned",
     "cancelReason": null,
     "createdOn": "2026-07-08T00:00:00"
@@ -1610,6 +1629,13 @@ Fail (400 - cancelling without a reason):
 {
   "success": false,
   "message": "Cancel reason is required when cancelling a service request.",
+  "data": null
+}
+
+Fail (400 - invalid/disallowed status):
+{
+  "success": false,
+  "message": "Invalid status value.",
   "data": null
 }
 
@@ -1668,7 +1694,7 @@ Notes:
 - bookings with status "Rejected" are never returned by this API (staff-only, visible in admin portal only)
 - provider/client contact fields (providerMobileNo, providerProfilePhotoPath, providerCnic,
   clientMobileNo, clientAddressTitle/FullAddress/Area/City) are only populated once status is
-  Accepted, In Progress, or Completed; null while Pending
+  Accepted, In Progress, Completed, or Closed; null while Pending
 - rejectReason is set when a provider rejects a Pending booking (see POST .../respond below);
   cancelReason is set when an Accepted/In Progress booking is cancelled (see PUT .../{bookingUid}
   below). Both are null otherwise.
@@ -1905,6 +1931,10 @@ Notes:
   provider cancellation. Fails with 400 if that condition holds and cancelReason is missing/empty.
   For any other status transition, cancelReason is optional/ignored (existing stored value is
   preserved). To reject a still-Pending booking instead, use POST .../respond below.
+- this same post-acceptance cancel ALSO sets the parent CustomerServiceRequest's Status to
+  "Cancelled" (with the same cancelReason), in the same save — see GET /customer-service-requests
+  above and docs/status-workflow.md. Before this, a post-acceptance cancel only touched
+  ServiceBookings, leaving the request stuck at "Assigned" indefinitely.
 
 Example (provider cancelling an accepted booking):
 {
@@ -2107,6 +2137,55 @@ Fail (400 - already responded):
 {
   "success": false,
   "message": "This booking is no longer awaiting a response.",
+  "data": null
+}
+
+Fail (404):
+{
+  "success": false,
+  "message": "Booking not found.",
+  "data": null
+}
+
+--------------------------------------------------------------------------------
+POST Start Job (Provider marks an accepted booking as In Progress)
+--------------------------------------------------------------------------------
+Local:     https://localhost:7265/api/service-bookings/{bookingUid}/start
+Deployed:  https://sahulatghartak.com/api/service-bookings/{bookingUid}/start
+
+Example:
+POST https://localhost:7265/api/service-bookings/1/start
+
+Request Body:
+{
+  "providerUid": 4
+}
+
+Notes:
+- booking must belong to providerUid and currently be Status="Accepted"
+- on success: Status="In Progress". This does NOT sync anything onto the parent
+  CustomerServiceRequest — the client's progressStatus (see GET /customer-service-requests)
+  already reflects "In Progress" once the booking reaches this state, computed at read time.
+  See docs/status-workflow.md.
+- this is the provider app's explicit "start job" action — the alternative trigger for the
+  client seeing progressStatus="In Progress" is the preferred service date/time arriving while
+  the booking is still Accepted (no provider action required for that path)
+
+Success (200):
+{
+  "success": true,
+  "message": "Booking marked as in progress.",
+  "data": {
+    "uid": 1,
+    "status": "In Progress",
+    "...": "remaining fields same shape as GET Booking By Id"
+  }
+}
+
+Fail (400 - not awaiting start):
+{
+  "success": false,
+  "message": "This booking is not awaiting start.",
   "data": null
 }
 

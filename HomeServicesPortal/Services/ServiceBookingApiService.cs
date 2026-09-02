@@ -197,6 +197,20 @@ public class ServiceBookingApiService : IServiceBookingApiService
         return (true, null, booking);
     }
 
+    public async Task<(bool Success, string? Error, ServiceBookingApiDto? Data)> StartJobAsync(
+        int bookingUid,
+        int providerUid,
+        CancellationToken cancellationToken = default)
+    {
+        var (success, error) = await _bookingService.StartJobAsync(bookingUid, providerUid, cancellationToken);
+        if (!success)
+        {
+            return (false, error, null);
+        }
+
+        return await GetBookingByIdAsync(bookingUid, providerUid, cancellationToken);
+    }
+
     public async Task<(bool Success, string? Error, ServiceBookingApiDto? Data)> VerifyCompletionAsync(
         int bookingUid,
         int providerUid,
@@ -215,7 +229,7 @@ public class ServiceBookingApiService : IServiceBookingApiService
         return await GetBookingByIdAsync(bookingUid, providerUid, cancellationToken);
     }
 
-    private static readonly string[] ContactVisibleStatuses = ["Accepted", "In Progress", "Completed"];
+    private static readonly string[] ContactVisibleStatuses = ["Accepted", "In Progress", "Completed", "Closed"];
 
     private System.Linq.Expressions.Expression<Func<ServiceBooking, ServiceBookingApiDto>> MapToDtoExpression() =>
         b => new ServiceBookingApiDto

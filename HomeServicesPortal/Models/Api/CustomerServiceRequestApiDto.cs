@@ -34,6 +34,16 @@ public class CustomerServiceRequestApiDto
 
     public string Status { get; set; } = "Pending";
 
+    /// <summary>
+    /// Computed, read-only client progress-bar stage: Requested / Assigned / In Progress /
+    /// Completed. Never persisted — derived from the linked booking's status (and, for the
+    /// Accepted->In Progress transition, whether the preferred service date/time has arrived).
+    /// Null whenever the request or its booking is cancelled — the client app should hide the
+    /// progress bar and show a plain "Cancelled" label instead of switching on this field.
+    /// See docs/status-workflow.md.
+    /// </summary>
+    public string? ProgressStatus { get; set; }
+
     public string? Remarks { get; set; }
 
     public string? CancelReason { get; set; }

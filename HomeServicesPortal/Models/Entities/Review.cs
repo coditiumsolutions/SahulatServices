@@ -19,8 +19,6 @@ public partial class Review
 
     public DateTime? ReviewDate { get; set; }
 
-    public virtual Booking Bookin { get; set; } = null!;
-
     public virtual Customer CustomerU { get; set; } = null!;
 
     public virtual ProviderProfile ProviderU { get; set; } = null!;

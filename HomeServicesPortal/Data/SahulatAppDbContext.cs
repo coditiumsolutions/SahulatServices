@@ -12,10 +12,6 @@ public partial class SahulatAppDbContext : DbContext
     {
     }
 
-    public virtual DbSet<Booking> Bookings { get; set; }
-
-    public virtual DbSet<BookingTracking> BookingTrackings { get; set; }
-
     public virtual DbSet<Customer> Customers { get; set; }
 
     public virtual DbSet<Payment> Payments { get; set; }
@@ -36,57 +32,6 @@ public partial class SahulatAppDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<Booking>(entity =>
-        {
-            entity.HasKey(e => e.Uid).HasName("PK__Bookings__C5B19602CF234D92");
-
-            entity.Property(e => e.Uid).HasColumnName("UID");
-            entity.Property(e => e.BookingDate)
-                .HasDefaultValueSql("(getdate())")
-                .HasColumnType("datetime");
-            entity.Property(e => e.FinalAmount).HasColumnType("decimal(18, 2)");
-            entity.Property(e => e.ProviderUid).HasColumnName("ProviderUID");
-            entity.Property(e => e.RequestUid).HasColumnName("RequestUID");
-            entity.Property(e => e.Status)
-                .HasMaxLength(50)
-                .IsUnicode(false)
-                .HasDefaultValue("Accepted");
-
-            entity.HasOne(d => d.ProviderU).WithMany(p => p.Bookings)
-                .HasForeignKey(d => d.ProviderUid)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Bookings__Provid__5DCAEF64");
-
-            entity.HasOne(d => d.RequestU).WithMany(p => p.Bookings)
-                .HasForeignKey(d => d.RequestUid)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Bookings__Reques__5CD6CB2B");
-        });
-
-        modelBuilder.Entity<BookingTracking>(entity =>
-        {
-            entity.HasKey(e => e.Uid).HasName("PK__BookingT__C5B1960239D41D3C");
-
-            entity.ToTable("BookingTracking");
-
-            entity.Property(e => e.Uid).HasColumnName("UID");
-            entity.Property(e => e.BookingUid).HasColumnName("BookingUID");
-            entity.Property(e => e.Remarks)
-                .HasMaxLength(500)
-                .IsUnicode(false);
-            entity.Property(e => e.Status)
-                .HasMaxLength(50)
-                .IsUnicode(false);
-            entity.Property(e => e.StatusDate)
-                .HasDefaultValueSql("(getdate())")
-                .HasColumnType("datetime");
-
-            entity.HasOne(d => d.Bookin).WithMany(p => p.BookingTrackings)
-                .HasForeignKey(d => d.BookingUid)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__BookingTr__Booki__619B8048");
-        });
-
         modelBuilder.Entity<Customer>(entity =>
         {
             entity.HasKey(e => e.Uid).HasName("PK__Customer__C5B196027989B8CD");
@@ -125,11 +70,6 @@ public partial class SahulatAppDbContext : DbContext
             entity.Property(e => e.TransactionNo)
                 .HasMaxLength(100)
                 .IsUnicode(false);
-
-            entity.HasOne(d => d.Bookin).WithMany(p => p.Payments)
-                .HasForeignKey(d => d.BookingUid)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Payments__Bookin__656C112C");
         });
 
         modelBuilder.Entity<ProviderAvailability>(entity =>
@@ -231,11 +171,6 @@ public partial class SahulatAppDbContext : DbContext
             entity.Property(e => e.ReviewText)
                 .HasMaxLength(1000)
                 .IsUnicode(false);
-
-            entity.HasOne(d => d.Bookin).WithMany(p => p.Reviews)
-                .HasForeignKey(d => d.BookingUid)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Reviews__Booking__693CA210");
 
             entity.HasOne(d => d.CustomerU).WithMany(p => p.Reviews)
                 .HasForeignKey(d => d.CustomerUid)

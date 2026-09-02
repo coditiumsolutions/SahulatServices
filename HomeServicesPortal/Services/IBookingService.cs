@@ -19,5 +19,6 @@ public interface IBookingService
     Task<AssignProviderVm?> GetAssignProviderFormAsync(int requestUid, CancellationToken cancellationToken = default);
     Task<(bool Success, string? Error)> AssignProviderAsync(AssignProviderVm model, CancellationToken cancellationToken = default);
     Task<(bool Success, string? Error)> RespondToAssignmentAsync(int bookingUid, int providerUid, bool accept, string? reason, CancellationToken cancellationToken = default);
+    Task<(bool Success, string? Error)> StartJobAsync(int bookingUid, int providerUid, CancellationToken cancellationToken = default);
     Task<(bool Success, string? Error)> VerifyCompletionPasscodeAsync(int bookingUid, int providerUid, string passcode, decimal actualAmountPaid, string? paymentMode, CancellationToken cancellationToken = default);
 }

@@ -167,6 +167,31 @@ public class ServiceBookingsApiController : ControllerBase
             request.Accept ? "Booking accepted successfully." : "Booking rejected successfully."));
     }
 
+    /// <summary>Provider marks an accepted booking as started (moves it to In Progress).</summary>
+    [HttpPost("{bookingUid:int}/start")]
+    [ProducesResponseType(typeof(ApiResponse<ServiceBookingApiDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<ServiceBookingApiDto>), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse<ServiceBookingApiDto>), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ApiResponse<ServiceBookingApiDto>>> Start(
+        int bookingUid,
+        [FromBody] StartJobDto request,
+        CancellationToken cancellationToken)
+    {
+        var (success, error, data) = await _service.StartJobAsync(bookingUid, request.ProviderUid, cancellationToken);
+
+        if (!success || data == null)
+        {
+            if (error?.Contains("not found", StringComparison.OrdinalIgnoreCase) == true)
+            {
+                return NotFound(ApiResponse<ServiceBookingApiDto>.Fail(error));
+            }
+
+            return BadRequest(ApiResponse<ServiceBookingApiDto>.Fail(error ?? "Failed to start booking."));
+        }
+
+        return Ok(ApiResponse<ServiceBookingApiDto>.Ok(data, "Booking marked as in progress."));
+    }
+
     /// <summary>Provider verifies the client's completion passcode and records the payment collected.</summary>
     [HttpPost("{bookingUid:int}/verify-completion")]
     [ProducesResponseType(typeof(ApiResponse<ServiceBookingApiDto>), StatusCodes.Status200OK)]

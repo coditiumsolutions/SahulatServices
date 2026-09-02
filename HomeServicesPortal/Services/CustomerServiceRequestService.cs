@@ -1,5 +1,6 @@
 using HomeServicesPortal.Data;
 using HomeServicesPortal.Entities;
+using HomeServicesPortal.Helpers;
 using HomeServicesPortal.Models.Api;
 using Microsoft.EntityFrameworkCore;
 
@@ -25,29 +26,38 @@ public class CustomerServiceRequestService : ICustomerServiceRequestService
             query = query.Where(r => r.ClientUid == clientUid.Value);
         }
 
-        return await query
+        var results = await query
             .OrderByDescending(r => r.CreatedOn)
             .ThenByDescending(r => r.Uid)
-            .Select(MapToDtoExpression())
+            .Select(MapToProgressInputExpression())
             .ToListAsync(cancellationToken);
+
+        foreach (var result in results)
+        {
+            ApplyProgressStatus(result.Dto, result.BookingStatus);
+        }
+
+        return results.Select(r => r.Dto).ToList();
     }
 
     public async Task<(bool Success, string? Error, CustomerServiceRequestApiDto? Data)> GetRequestByIdAsync(
         int requestUid,
         CancellationToken cancellationToken = default)
     {
-        var request = await _db.CustomerServiceRequests
+        var result = await _db.CustomerServiceRequests
             .AsNoTracking()
             .Where(r => r.Uid == requestUid)
-            .Select(MapToDtoExpression())
+            .Select(MapToProgressInputExpression())
             .FirstOrDefaultAsync(cancellationToken);
 
-        if (request == null)
+        if (result == null)
         {
             return (false, "Service request not found.", null);
         }
 
-        return (true, null, request);
+        ApplyProgressStatus(result.Dto, result.BookingStatus);
+
+        return (true, null, result.Dto);
     }
 
     public async Task<(bool Success, string? Error, CustomerServiceRequestApiDto? Data)> CreateRequestAsync(
@@ -99,6 +109,11 @@ public class CustomerServiceRequestService : ICustomerServiceRequestService
         if (entity == null)
         {
             return (false, "Service request not found.", null);
+        }
+
+        if (!RequestStatusConstants.ClientEditableStatuses.Contains(request.Status.Trim(), StringComparer.OrdinalIgnoreCase))
+        {
+            return (false, "Invalid status value.", null);
         }
 
         if (string.Equals(request.Status, "Cancelled", StringComparison.OrdinalIgnoreCase)
@@ -203,10 +218,73 @@ public class CustomerServiceRequestService : ICustomerServiceRequestService
         return null;
     }
 
-    private static readonly string[] ProviderVisibleStatuses = ["Accepted", "In Progress", "Completed"];
+    private static readonly string[] ProviderVisibleStatuses = ["Accepted", "In Progress", "Completed", "Closed"];
 
-    private System.Linq.Expressions.Expression<Func<CustomerServiceRequest, CustomerServiceRequestApiDto>> MapToDtoExpression() =>
-        r => new CustomerServiceRequestApiDto
+    private record ProgressInput(CustomerServiceRequestApiDto Dto, string? BookingStatus);
+
+    /// <summary>
+    /// Computes the client-facing progress-bar stage from the request's own status and its
+    /// linked (non-Rejected) booking's status, per docs/status-workflow.md. Cancelled always
+    /// wins and suppresses the field entirely (null) rather than appearing as a stage.
+    /// </summary>
+    private static void ApplyProgressStatus(CustomerServiceRequestApiDto dto, string? bookingStatus)
+    {
+        if (string.Equals(dto.Status, "Cancelled", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(bookingStatus, "Cancelled", StringComparison.OrdinalIgnoreCase))
+        {
+            dto.ProgressStatus = null;
+            return;
+        }
+
+        if (bookingStatus == null)
+        {
+            dto.ProgressStatus = "Requested";
+            return;
+        }
+
+        if (string.Equals(bookingStatus, "Completed", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(bookingStatus, "Closed", StringComparison.OrdinalIgnoreCase))
+        {
+            dto.ProgressStatus = "Completed";
+            return;
+        }
+
+        if (string.Equals(bookingStatus, "In Progress", StringComparison.OrdinalIgnoreCase))
+        {
+            dto.ProgressStatus = "In Progress";
+            return;
+        }
+
+        if (string.Equals(bookingStatus, "Accepted", StringComparison.OrdinalIgnoreCase)
+            && HasScheduleTimeArrived(dto.PreferredServiceDate, dto.PreferredServiceTime))
+        {
+            dto.ProgressStatus = "In Progress";
+            return;
+        }
+
+        // Booking is "Pending" (awaiting provider response) or "Accepted" but not yet due.
+        dto.ProgressStatus = "Assigned";
+    }
+
+    private static bool HasScheduleTimeArrived(DateOnly? preferredDate, string? preferredTime)
+    {
+        if (preferredDate == null)
+        {
+            return false;
+        }
+
+        var time = TimeOnly.MinValue;
+        if (!string.IsNullOrWhiteSpace(preferredTime))
+        {
+            TimeOnly.TryParse(preferredTime, out time);
+        }
+
+        return DateTime.Now >= preferredDate.Value.ToDateTime(time);
+    }
+
+    private System.Linq.Expressions.Expression<Func<CustomerServiceRequest, ProgressInput>> MapToProgressInputExpression() =>
+        r => new ProgressInput(
+            new CustomerServiceRequestApiDto
         {
             Uid = r.Uid,
             ClientUid = r.ClientUid,
@@ -254,5 +332,10 @@ public class CustomerServiceRequestService : ICustomerServiceRequestService
                 .Where(b => b.RequestUid == r.Uid && b.Passcode != null)
                 .Select(b => b.Passcode)
                 .FirstOrDefault()
-        };
+            },
+            _db.ServiceBookings
+                .Where(b => b.RequestUid == r.Uid && b.Status != "Rejected")
+                .OrderByDescending(b => b.Uid)
+                .Select(b => b.Status)
+                .FirstOrDefault());
 }

@@ -335,6 +335,17 @@ public class BookingService : IBookingService
         if (isPostAcceptanceCancel)
         {
             entity.CancelReason = model.CancelReason!.Trim();
+
+            // Same staff action, same save — mirrors AssignProviderAsync/RespondToAssignmentAsync
+            // (reject branch), which also update both tables atomically from one call site.
+            // See docs/status-workflow.md.
+            var linkedRequest = await _db.CustomerServiceRequests
+                .FirstOrDefaultAsync(r => r.Uid == entity.RequestUid, cancellationToken);
+            if (linkedRequest != null)
+            {
+                linkedRequest.Status = "Cancelled";
+                linkedRequest.CancelReason = model.CancelReason!.Trim();
+            }
         }
 
         await _db.SaveChangesAsync(cancellationToken);
@@ -673,6 +684,29 @@ public class BookingService : IBookingService
 
         // Single SaveChanges covers booking status + request status update atomically
         // (avoids SqlServerRetryingExecutionStrategy transaction restrictions).
+        await _db.SaveChangesAsync(cancellationToken);
+        return (true, null);
+    }
+
+    public async Task<(bool Success, string? Error)> StartJobAsync(
+        int bookingUid,
+        int providerUid,
+        CancellationToken cancellationToken = default)
+    {
+        var booking = await _db.ServiceBookings
+            .FirstOrDefaultAsync(b => b.Uid == bookingUid, cancellationToken);
+
+        if (booking == null || booking.ProviderUid != providerUid)
+        {
+            return (false, "Booking not found.");
+        }
+
+        if (!string.Equals(booking.Status, "Accepted", StringComparison.OrdinalIgnoreCase))
+        {
+            return (false, "This booking is not awaiting start.");
+        }
+
+        booking.Status = "In Progress";
         await _db.SaveChangesAsync(cancellationToken);
         return (true, null);
     }

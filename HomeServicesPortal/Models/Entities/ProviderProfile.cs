@@ -20,8 +20,6 @@ public partial class ProviderProfile
 
     public virtual ServiceCategory? CategoryU { get; set; }
 
-    public virtual ICollection<Booking> Bookings { get; set; } = new List<Booking>();
-
     public virtual ICollection<ProviderAvailability> ProviderAvailabilities { get; set; } = new List<ProviderAvailability>();
 
     public virtual ICollection<ProviderDocument> ProviderDocuments { get; set; } = new List<ProviderDocument>();

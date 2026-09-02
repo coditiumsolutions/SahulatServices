@@ -33,6 +33,11 @@ public interface IServiceBookingApiService
         string? reason,
         CancellationToken cancellationToken = default);
 
+    Task<(bool Success, string? Error, ServiceBookingApiDto? Data)> StartJobAsync(
+        int bookingUid,
+        int providerUid,
+        CancellationToken cancellationToken = default);
+
     Task<(bool Success, string? Error, ServiceBookingApiDto? Data)> VerifyCompletionAsync(
         int bookingUid,
         int providerUid,

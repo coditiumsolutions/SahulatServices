@@ -23,8 +23,6 @@ public partial class ServiceRequest
 
     public string? Status { get; set; }
 
-    public virtual ICollection<Booking> Bookings { get; set; } = new List<Booking>();
-
     public virtual ServiceCategory CategoryU { get; set; } = null!;
 
     public virtual Customer CustomerU { get; set; } = null!;

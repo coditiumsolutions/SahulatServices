@@ -16,6 +16,4 @@ public partial class Payment
     public string? TransactionNo { get; set; }
 
     public DateTime? PaymentDate { get; set; }
-
-    public virtual Booking Bookin { get; set; } = null!;
 }
