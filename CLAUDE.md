@@ -82,15 +82,15 @@ GitHub Actions (`.github/workflows/deploy.yml`): push to `main` → `dotnet publ
 
 ## WSL environment notes
 
-This repo lives on the Windows filesystem (`D:\Ry Work [D]\...`) and is normally edited/built from Windows tooling (Visual Studio, etc.) with `core.autocrlf=true`. WSL's own git does **not** see that setting, so WSL-side `git diff`/`git status` can show every tracked file as modified (a CRLF-vs-LF false alarm), and WSL can't run the app or tests directly (only .NET 10 is installed there vs the app's net8.0 target).
+This repo lives on the Windows filesystem (`D:\Ry Work [D]\...`) and is normally edited/built from Windows tooling (Visual Studio, etc.) with `core.autocrlf=true`. WSL's own git previously didn't see that setting, so WSL-side `git diff`/`git status` used to show every tracked file as modified (a CRLF-vs-LF false alarm). **Fixed** by setting `core.autocrlf=true` globally in WSL's own git config too, so both sides agree on line-ending handling — plain `git status`/`git diff`/`git add`/`git commit` from WSL Bash are safe to use directly now.
 
-**Use `powershell.exe` from WSL Bash for all git operations, builds, and running/testing the app** — it reaches the real Windows git config and the Windows .NET 8 runtime:
+WSL still can't run the app or tests directly (only .NET 10 is installed there vs the app's net8.0 target) — for builds, running, or testing the app, use `powershell.exe` from WSL Bash, which reaches the Windows .NET 8 runtime:
 
 ```bash
-powershell.exe -NoProfile -Command "Set-Location -LiteralPath 'D:\Ry Work [D]\Bahria Town\SahulatGharTak App\Web App'; git status"
+powershell.exe -NoProfile -Command "Set-Location -LiteralPath 'D:\Ry Work [D]\Bahria Town\SahulatGharTak App\Web App'; dotnet build HomeServicesPortal/HomeServicesPortal.csproj"
 ```
 
 - **Always use `-LiteralPath`, never plain `cd`/`Set-Location <path>`** — the `[D]` in the folder name is treated as a wildcard glob by PowerShell's path resolution and fails to resolve with a bare path argument.
-- For commit messages with a body (or any `$`/backtick-containing text), don't pass it inline via `-Command` from bash — bash's own `$()`/backtick expansion mangles it before PowerShell ever sees it. Write a `.ps1` file under `/mnt/c/Windows/Temp/` (using a single-quoted `@'...'@` here-string for the message) and run it with `-File`, e.g. `powershell.exe -NoProfile -File 'C:\Windows\Temp\commit.ps1'`.
+- For commit messages with a body (or any `$`/backtick-containing text) when running git through PowerShell, don't pass it inline via `-Command` from bash — bash's own `$()`/backtick expansion mangles it before PowerShell ever sees it. Write a `.ps1` file under `/mnt/c/Windows/Temp/` (using a single-quoted `@'...'@` here-string for the message) and run it with `-File`, e.g. `powershell.exe -NoProfile -File 'C:\Windows\Temp\commit.ps1'`.
 - Windows PowerShell 5.1 is what's installed (no `pwsh.exe`/PS7) — e.g. `Invoke-WebRequest -SkipCertificateCheck` isn't available; use the classic `ICertificatePolicy` bypass for self-signed HTTPS instead.
 - A detached long-running process (e.g. `dotnet run` in the background) must use `Start-Process -PassThru -WindowStyle Hidden`, not `Start-Job` — jobs die when the launching `powershell.exe -File` process exits after each Bash tool call.
