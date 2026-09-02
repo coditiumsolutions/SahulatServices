@@ -4,7 +4,7 @@ Version: 3.5 | Last Updated: 2026-09-01
 Database: SahulatAppDB
 Local Base URL:    https://localhost:7265/api/
 Deployed Base URL:  https://sahulatghartak.com/api/
-DB Server: 34.131.132.158,1433
+DB Server: 34.131.41.192,1433
 Format: REST over HTTPS, JSON request/response bodies
 Auth: None currently — no Authorization header/token required; identity is passed via userId/mobileNo/profileId fields in request bodies
 
