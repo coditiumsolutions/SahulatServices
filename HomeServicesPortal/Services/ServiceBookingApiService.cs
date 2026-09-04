@@ -266,9 +266,11 @@ public class ServiceBookingApiService : IServiceBookingApiService
                 : null,
             ProviderCnic = ContactVisibleStatuses.Contains(b.Status) ? b.Provider.Cnic : null,
             ClientMobileNo = ContactVisibleStatuses.Contains(b.Status) ? b.Client.User.MobileNo : null,
-            ClientAddressTitle = ContactVisibleStatuses.Contains(b.Status) ? b.Request.ClientAddress.AddressTitle : null,
-            ClientFullAddress = ContactVisibleStatuses.Contains(b.Status) ? b.Request.ClientAddress.FullAddress : null,
-            ClientArea = ContactVisibleStatuses.Contains(b.Status) ? b.Request.ClientAddress.Area : null,
-            ClientCity = ContactVisibleStatuses.Contains(b.Status) ? b.Request.ClientAddress.City : null
+            // Address is intentionally NOT gated by ContactVisibleStatuses: a provider needs the
+            // client's address to decide whether to accept a still-Pending booking at all.
+            ClientAddressTitle = b.Request.ClientAddress.AddressTitle,
+            ClientFullAddress = b.Request.ClientAddress.FullAddress,
+            ClientArea = b.Request.ClientAddress.Area,
+            ClientCity = b.Request.ClientAddress.City
         };
 }

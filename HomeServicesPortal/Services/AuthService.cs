@@ -61,7 +61,7 @@ public class AuthService : IAuthService
                     {
                         UserUid = existing.Uid,
                         FullName = request.FullName.Trim(),
-                        Cnic = request.CNIC?.Trim(),
+                        Cnic = string.IsNullOrWhiteSpace(request.CNIC) ? null : request.CNIC.Trim(),
                         Gender = request.Gender?.Trim(),
                         CreatedOn = DateTime.Now
                     };
@@ -71,7 +71,7 @@ public class AuthService : IAuthService
                 {
                     var tracked = await _db.Clients.FirstAsync(c => c.Uid == client.Uid, cancellationToken);
                     tracked.FullName = request.FullName.Trim();
-                    tracked.Cnic = request.CNIC?.Trim();
+                    tracked.Cnic = string.IsNullOrWhiteSpace(request.CNIC) ? null : request.CNIC.Trim();
                     tracked.Gender = request.Gender?.Trim();
                     await _db.SaveChangesAsync(cancellationToken);
                     client = tracked;
@@ -99,7 +99,7 @@ public class AuthService : IAuthService
             {
                 UserUid = user.Uid,
                 FullName = request.FullName.Trim(),
-                Cnic = request.CNIC?.Trim(),
+                Cnic = string.IsNullOrWhiteSpace(request.CNIC) ? null : request.CNIC.Trim(),
                 Gender = request.Gender?.Trim(),
                 CreatedOn = DateTime.Now
             };

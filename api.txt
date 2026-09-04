@@ -1,6 +1,6 @@
 ================================================================================
 SahulatGharTak API Reference
-Version: 3.5 | Last Updated: 2026-09-01
+Version: 3.7 | Last Updated: 2026-09-04
 Database: SahulatAppDB
 Local Base URL:    https://localhost:7265/api/
 Deployed Base URL:  https://sahulatghartak.com/api/
@@ -46,9 +46,16 @@ Request Body:
   "password": "ghauri12",
   "confirmPassword": "ghauri12",
   "fullName": "Shahid",
-  "cnic": "1-1-1",
   "gender": "Male"
 }
+
+Notes (cnic):
+- cnic is OPTIONAL on this endpoint (shipped 2026-09-04) — omit it, or send null/"" and it is
+  stored as NULL on Clients. Clients.CNIC is nullable in the DB; nothing else depends on it.
+- The Flutter app's placeholder-CNIC workaround (AuthApiService.registerCustomer /
+  _randomPlaceholderCnic) is no longer needed and should be removed — stop sending the field.
+- A real CNIC is still REQUIRED (and unique) on the provider upgrade flow,
+  POST /api/auth/register-provider below.
 
 Success (201):
 {
@@ -1692,9 +1699,14 @@ Notes:
 - providerUid query param is OPTIONAL; omit to fetch all bookings
 - use providerUid to fetch bookings for a specific provider
 - bookings with status "Rejected" are never returned by this API (staff-only, visible in admin portal only)
-- provider/client contact fields (providerMobileNo, providerProfilePhotoPath, providerCnic,
-  clientMobileNo, clientAddressTitle/FullAddress/Area/City) are only populated once status is
-  Accepted, In Progress, Completed, or Closed; null while Pending
+- provider/client CONTACT fields (providerMobileNo, providerProfilePhotoPath, providerCnic,
+  clientMobileNo) are only populated once status is Accepted, In Progress, Completed, or Closed;
+  null while Pending.
+- client ADDRESS fields (clientAddressTitle, clientFullAddress, clientArea, clientCity) are
+  populated UNCONDITIONALLY, including while status="Pending" (shipped 2026-09-04) — a provider
+  needs the address to decide whether to accept an incoming booking. The Flutter app's "WIP"
+  placeholder badge for Pending bookings (RequestsTab incoming-request card, BookingDetailScreen)
+  can be removed. Same for GET By Id, POST Create, and PUT Update — they share the same mapping.
 - rejectReason is set when a provider rejects a Pending booking (see POST .../respond below);
   cancelReason is set when an Accepted/In Progress booking is cancelled (see PUT .../{bookingUid}
   below). Both are null otherwise.

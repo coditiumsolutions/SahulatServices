@@ -67,15 +67,40 @@ Then set, at minimum:
 
 ### Run
 
-```bash
-# from the repo root
-./scripts/dev-run.ps1
+The `https` launch profile (`HomeServicesPortal/Properties/launchSettings.json`) binds
+`https://localhost:7265` — the same local base URL documented in `api.txt` — so always pass
+`--launch-profile https` (or the explicit `--urls` below) to keep the app and the API reference in sync.
 
-# or directly
-dotnet run --project HomeServicesPortal/HomeServicesPortal.csproj
+Note that `dotnet run` cannot take `SahulatGharTak.sln`; point it at the single project the solution contains.
+
+**Windows (PowerShell / Visual Studio terminal), from the repo root:**
+
+```powershell
+# from the repo root
+.\scripts\dev-run.ps1
+
+# or directly, on the port api.txt documents
+dotnet run --project HomeServicesPortal\HomeServicesPortal.csproj --launch-profile https
+
+# forcing the ports explicitly (ignores launch profiles)
+dotnet run --project HomeServicesPortal\HomeServicesPortal.csproj --urls "https://localhost:7265;http://localhost:5212"
 ```
 
-Once running:
+**WSL / Linux terminal:** WSL here only has the .NET 10 SDK, while the app targets `net8.0`, so shell out to
+Windows PowerShell rather than running `dotnet` directly. Use `-LiteralPath` — the `[D]` in the repo path is
+treated as a wildcard by PowerShell's path resolution and fails with a bare path argument.
+
+```bash
+powershell.exe -NoProfile -Command "Set-Location -LiteralPath 'D:\Ry Work [D]\Bahria Town\SahulatGharTak App\Web App'; dotnet run --project HomeServicesPortal\HomeServicesPortal.csproj --launch-profile https"
+```
+
+On a Linux box with the .NET 8 SDK actually installed, the plain command works as-is:
+
+```bash
+dotnet run --project HomeServicesPortal/HomeServicesPortal.csproj --launch-profile https
+```
+
+Once running (at `https://localhost:7265`):
 
 - **Admin portal:** `/adminportal` (login)
 - **Swagger UI:** `/swagger`
