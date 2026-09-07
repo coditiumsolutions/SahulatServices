@@ -90,15 +90,7 @@ dotnet run --project HomeServicesPortal\HomeServicesPortal.csproj --urls "https:
 Windows PowerShell rather than running `dotnet` directly. Use `-LiteralPath` — the `[D]` in the repo path is
 treated as a wildcard by PowerShell's path resolution and fails with a bare path argument.
 
-```bash
-powershell.exe -NoProfile -Command "Set-Location -LiteralPath 'D:\Ry Work [D]\Bahria Town\SahulatGharTak App\Web App'; dotnet run --project HomeServicesPortal\HomeServicesPortal.csproj --launch-profile https"
-```
-
-On a Linux box with the .NET 8 SDK actually installed, the plain command works as-is:
-
-```bash
-dotnet run --project HomeServicesPortal/HomeServicesPortal.csproj --launch-profile https
-```
+On a Linux box with the .NET 8 SDK actually installed, the plain command works as-is
 
 Once running (at `https://localhost:7265`):
 
