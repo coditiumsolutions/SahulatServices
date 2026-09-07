@@ -3,16 +3,24 @@ using HomeServicesPortal.Entities;
 using HomeServicesPortal.Helpers;
 using HomeServicesPortal.Models.Api;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace HomeServicesPortal.Services;
 
 public class CustomerServiceRequestService : ICustomerServiceRequestService
 {
     private readonly AppDbContext _db;
+    private readonly IServiceScopeFactory _scopeFactory;
+    private readonly ILogger<CustomerServiceRequestService> _logger;
 
-    public CustomerServiceRequestService(AppDbContext db)
+    public CustomerServiceRequestService(
+        AppDbContext db,
+        IServiceScopeFactory scopeFactory,
+        ILogger<CustomerServiceRequestService> logger)
     {
         _db = db;
+        _scopeFactory = scopeFactory;
+        _logger = logger;
     }
 
     public async Task<IReadOnlyList<CustomerServiceRequestApiDto>> GetRequestsAsync(
@@ -95,6 +103,8 @@ public class CustomerServiceRequestService : ICustomerServiceRequestService
 
         _db.CustomerServiceRequests.Add(entity);
         await _db.SaveChangesAsync(cancellationToken);
+
+        await PublishServiceRequestNotificationAsync(entity.Uid, entity.ServiceTitle, entity.ClientUid, cancellationToken);
 
         return await GetRequestByIdAsync(entity.Uid, cancellationToken);
     }
@@ -338,4 +348,34 @@ public class CustomerServiceRequestService : ICustomerServiceRequestService
                 .OrderByDescending(b => b.Uid)
                 .Select(b => b.Status)
                 .FirstOrDefault());
+
+    private async Task PublishServiceRequestNotificationAsync(
+        int requestUid,
+        string serviceTitle,
+        int clientUid,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            await using var scope = _scopeFactory.CreateAsyncScope();
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var notifications = scope.ServiceProvider.GetRequiredService<IAdminNotificationService>();
+
+            var clientName = await db.Clients
+                .AsNoTracking()
+                .Where(c => c.Uid == clientUid)
+                .Select(c => c.FullName)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            await notifications.NotifyServiceRequestCreatedAsync(
+                requestUid,
+                serviceTitle,
+                clientName,
+                cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to publish admin notification for service request {RequestUid}.", requestUid);
+        }
+    }
 }

@@ -41,6 +41,8 @@ public class AppDbContext : DbContext
 
     public DbSet<ProviderDocument> ProviderDocuments => Set<ProviderDocument>();
 
+    public DbSet<AdminNotification> AdminNotifications => Set<AdminNotification>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<UsersLogin>(entity =>
@@ -434,6 +436,25 @@ public class AppDbContext : DbContext
                 .HasForeignKey(e => e.ProviderUid)
                 .HasConstraintName("FK_ProviderDocuments_Providers")
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<AdminNotification>(entity =>
+        {
+            entity.ToTable("AdminNotifications");
+            entity.HasKey(e => e.Uid);
+            entity.Property(e => e.Uid).HasColumnName("UID");
+            entity.Property(e => e.Type).HasMaxLength(50).IsRequired();
+            entity.Property(e => e.Title).HasMaxLength(200).IsRequired();
+            entity.Property(e => e.Message).HasMaxLength(500).IsRequired();
+            entity.Property(e => e.LinkUrl).HasMaxLength(300);
+            entity.Property(e => e.RelatedEntityUid).HasColumnName("RelatedEntityUID");
+            entity.Property(e => e.IsRead).HasDefaultValue(false);
+            entity.Property(e => e.CreatedOn)
+                .HasColumnType("datetime")
+                .HasDefaultValueSql("(getdate())");
+
+            entity.HasIndex(e => new { e.IsRead, e.CreatedOn })
+                .HasDatabaseName("IX_AdminNotifications_IsRead_CreatedOn");
         });
     }
 }

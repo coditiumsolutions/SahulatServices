@@ -25,6 +25,36 @@
                     <dt class="col-sm-4 text-muted">Mobile</dt>
                     <dd class="col-sm-8">@(Model.MobileNo ?? "—")</dd>
                 </dl>
+
+                @if (Model.HasLinkedData)
+                {
+                    <div class="alert alert-warning">
+                        <strong>This will also permanently delete:</strong>
+                        <ul class="mb-0 mt-2">
+                            @if (Model.BookingCount > 0)
+                            {
+                                <li>@Model.BookingCount booking(s)</li>
+                            }
+                            @if (Model.PaymentLedgerCount > 0)
+                            {
+                                <li>@Model.PaymentLedgerCount payment ledger row(s)</li>
+                            }
+                            @if (Model.PayoutCount > 0)
+                            {
+                                <li>@Model.PayoutCount provider payout(s)</li>
+                            }
+                            @if (Model.CommissionRuleCount > 0)
+                            {
+                                <li>@Model.CommissionRuleCount commission rule(s)</li>
+                            }
+                            @if (Model.DocumentCount > 0)
+                            {
+                                <li>@Model.DocumentCount provider document record(s) and uploaded files</li>
+                            }
+                        </ul>
+                    </div>
+                }
+
                 <form asp-action="DeleteConfirmed" asp-route-id="@Model.Uid" method="post">
                     @Html.AntiForgeryToken()
                     <div class="d-flex gap-2">

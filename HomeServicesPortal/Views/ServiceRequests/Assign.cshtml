@@ -122,6 +122,11 @@
                     </div>
 
                     <h5 class="mb-3">Commission</h5>
+                    <p class="text-muted small mb-2" id="commissionSourceLabel">
+                        <i class="fa-solid fa-percent me-1"></i>@Model.CommissionSourceLabel
+                    </p>
+                    <input type="hidden" asp-for="CategoryUid" />
+                    <input type="hidden" asp-for="CommissionSourceLabel" id="CommissionSourceLabelHidden" />
                     <div class="row">
                         <div class="col-md-3 mb-3">
                             <label asp-for="CommissionType" class="form-label"></label>
@@ -164,40 +169,8 @@
             const form = document.getElementById('assignProviderForm');
             if (!form) return;
 
-            (function providerToggle() {
-                const matchingSelect = document.getElementById('ProviderUidMatching');
-                const allSelect = document.getElementById('ProviderUidAll');
-                const hiddenInput = document.getElementById('ProviderUid');
-                const toggle = document.getElementById('showAllProvidersToggle');
-                if (!matchingSelect || !allSelect || !hiddenInput || !toggle) return;
-
-                const preselected = '@Model.ProviderUid';
-
-                function syncHidden() {
-                    const activeSelect = toggle.checked ? allSelect : matchingSelect;
-                    hiddenInput.value = activeSelect.value;
-                }
-
-                function applyToggleState() {
-                    matchingSelect.classList.toggle('d-none', toggle.checked);
-                    allSelect.classList.toggle('d-none', !toggle.checked);
-                    syncHidden();
-                }
-
-                if (preselected && preselected !== '0') {
-                    if ([...matchingSelect.options].some(o => o.value === preselected)) {
-                        matchingSelect.value = preselected;
-                    } else if ([...allSelect.options].some(o => o.value === preselected)) {
-                        allSelect.value = preselected;
-                    }
-                }
-
-                matchingSelect.addEventListener('change', syncHidden);
-                allSelect.addEventListener('change', syncHidden);
-                toggle.addEventListener('change', applyToggleState);
-
-                applyToggleState();
-            })();
+            const categoryUid = @Model.CategoryUid;
+            const resolveUrl = '@Url.Action("ResolveCommission", "ServiceRequests")';
 
             const num = (id) => {
                 const el = form.querySelector('#' + id);
@@ -234,6 +207,73 @@
                 set('CommissionAmount', commission);
                 set('ProviderEarning', earning);
             }
+
+            function setCommissionSource(label) {
+                const text = document.getElementById('commissionSourceLabel');
+                const hidden = document.getElementById('CommissionSourceLabelHidden');
+                if (text) text.innerHTML = '<i class="fa-solid fa-percent me-1"></i>' + (label || '');
+                if (hidden) hidden.value = label || '';
+            }
+
+            async function applyResolvedCommission(providerUid) {
+                if (!categoryUid && !providerUid) return;
+                const params = new URLSearchParams({ categoryUid: String(categoryUid || 0) });
+                if (providerUid) params.set('providerUid', String(providerUid));
+                try {
+                    const res = await fetch(resolveUrl + '?' + params.toString(), {
+                        headers: { 'Accept': 'application/json' }
+                    });
+                    if (!res.ok) return;
+                    const data = await res.json();
+                    const typeEl = form.querySelector('#CommissionType');
+                    const valueEl = form.querySelector('#CommissionValue');
+                    if (typeEl && data.commissionType) typeEl.value = data.commissionType;
+                    if (valueEl && data.commissionValue != null) valueEl.value = data.commissionValue;
+                    setCommissionSource(data.sourceLabel || '');
+                    recalc();
+                } catch (_) { /* keep current values */ }
+            }
+
+            (function providerToggle() {
+                const matchingSelect = document.getElementById('ProviderUidMatching');
+                const allSelect = document.getElementById('ProviderUidAll');
+                const hiddenInput = document.getElementById('ProviderUid');
+                const toggle = document.getElementById('showAllProvidersToggle');
+                if (!matchingSelect || !allSelect || !hiddenInput || !toggle) return;
+
+                const preselected = '@Model.ProviderUid';
+
+                function syncHidden() {
+                    const activeSelect = toggle.checked ? allSelect : matchingSelect;
+                    hiddenInput.value = activeSelect.value;
+                }
+
+                function onProviderChanged() {
+                    syncHidden();
+                    const uid = parseInt(hiddenInput.value, 10);
+                    applyResolvedCommission(Number.isFinite(uid) && uid > 0 ? uid : null);
+                }
+
+                function applyToggleState() {
+                    matchingSelect.classList.toggle('d-none', toggle.checked);
+                    allSelect.classList.toggle('d-none', !toggle.checked);
+                    onProviderChanged();
+                }
+
+                if (preselected && preselected !== '0') {
+                    if ([...matchingSelect.options].some(o => o.value === preselected)) {
+                        matchingSelect.value = preselected;
+                    } else if ([...allSelect.options].some(o => o.value === preselected)) {
+                        allSelect.value = preselected;
+                    }
+                }
+
+                matchingSelect.addEventListener('change', onProviderChanged);
+                allSelect.addEventListener('change', onProviderChanged);
+                toggle.addEventListener('change', applyToggleState);
+
+                applyToggleState();
+            })();
 
             form.querySelectorAll('.calc-input').forEach(el => {
                 el.addEventListener('input', recalc);

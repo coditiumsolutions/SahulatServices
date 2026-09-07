@@ -65,6 +65,7 @@ builder.Services.AddScoped<IProviderDetailService, ProviderDetailService>();
 builder.Services.AddScoped<IClientDetailService, ClientDetailService>();
 builder.Services.AddScoped<IClientAddressService, ClientAddressService>();
 builder.Services.AddScoped<ICustomerServiceRequestService, CustomerServiceRequestService>();
+builder.Services.AddScoped<IAdminNotificationService, AdminNotificationService>();
 builder.Services.AddScoped<IServiceBookingApiService, ServiceBookingApiService>();
 builder.Services.AddScoped<IProviderDocumentService, ProviderDocumentService>();
 builder.Services.AddScoped<ICustomerService, CustomerService>();
@@ -296,5 +297,6 @@ app.MapControllerRoute(
     pattern: "{controller=Home}/{action=Index}/{id?}");
 app.MapControllers();
 app.MapHub<LocationTrackingHub>("/hubs/location");
+app.MapHub<AdminNotificationsHub>("/hubs/admin-notifications");
 
 app.Run();

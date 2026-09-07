@@ -221,6 +221,64 @@ public class CommissionRuleService : ICommissionRuleService
         return (true, null);
     }
 
+    public async Task<ResolvedCommissionVm> ResolveAsync(
+        int? providerUid,
+        int? categoryUid,
+        DateTime? asOf = null,
+        CancellationToken cancellationToken = default)
+    {
+        var onDate = (asOf ?? DateTime.Today).Date;
+
+        var candidates = await _db.CommissionRules
+            .AsNoTracking()
+            .Where(r => r.IsActive
+                && r.EffectiveFrom.Date <= onDate
+                && (r.EffectiveTo == null || r.EffectiveTo.Value.Date >= onDate)
+                && (
+                    (providerUid.HasValue && providerUid.Value > 0
+                        && r.Scope == "Provider" && r.ProviderUid == providerUid.Value)
+                    || (categoryUid.HasValue && categoryUid.Value > 0
+                        && r.Scope == "Category" && r.CategoryUid == categoryUid.Value)
+                    || r.Scope == "Global"
+                ))
+            .OrderByDescending(r => r.EffectiveFrom)
+            .ThenByDescending(r => r.Uid)
+            .Select(r => new { r.Scope, r.RuleType, r.Value })
+            .ToListAsync(cancellationToken);
+
+        var rule =
+            candidates.FirstOrDefault(r => r.Scope == "Provider")
+            ?? candidates.FirstOrDefault(r => r.Scope == "Category")
+            ?? candidates.FirstOrDefault(r => r.Scope == "Global");
+
+        if (rule == null)
+        {
+            return new ResolvedCommissionVm
+            {
+                Found = false,
+                CommissionType = "Percent",
+                CommissionValue = 10,
+                Scope = null,
+                SourceLabel = "Default (10%)"
+            };
+        }
+
+        var isPercent = rule.RuleType.Equals("Percentage", StringComparison.OrdinalIgnoreCase);
+        return new ResolvedCommissionVm
+        {
+            Found = true,
+            CommissionType = isPercent ? "Percent" : "Fixed",
+            CommissionValue = rule.Value,
+            Scope = rule.Scope,
+            SourceLabel = rule.Scope switch
+            {
+                "Provider" => "Commission Rules · Provider",
+                "Category" => "Commission Rules · Category",
+                _ => "Commission Rules · Global"
+            }
+        };
+    }
+
     private async Task<string?> ValidateAsync(CommissionRuleFormVm model, CancellationToken cancellationToken)
     {
         if (!ValidScopes.Contains(model.Scope)) return "Invalid scope.";

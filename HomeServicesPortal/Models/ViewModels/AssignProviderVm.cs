@@ -7,6 +7,8 @@ public class AssignProviderVm
 {
     public int RequestUid { get; set; }
 
+    public int CategoryUid { get; set; }
+
     public string ClientName { get; set; } = string.Empty;
     public string ServiceTitle { get; set; } = string.Empty;
     public string CategoryName { get; set; } = string.Empty;
@@ -81,6 +83,9 @@ public class AssignProviderVm
     [Display(Name = "Provider Earning")]
     [Range(0, double.MaxValue)]
     public decimal ProviderEarning { get; set; }
+
+    /// <summary>Where the prefilled commission came from (Commission Rules scope or default).</summary>
+    public string CommissionSourceLabel { get; set; } = string.Empty;
 
     public List<SelectListItem> Providers { get; set; } = new();
     public List<SelectListItem> AllProviders { get; set; } = new();

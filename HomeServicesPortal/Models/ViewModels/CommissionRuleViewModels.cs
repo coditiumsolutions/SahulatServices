@@ -89,3 +89,16 @@ public class CommissionRuleDeleteVm
     public decimal Value { get; set; }
     public string TargetLabel { get; set; } = string.Empty;
 }
+
+/// <summary>
+/// Resolved commission for Assign / booking flows.
+/// CommissionType uses Assign values: Percent | Fixed.
+/// </summary>
+public class ResolvedCommissionVm
+{
+    public bool Found { get; set; }
+    public string CommissionType { get; set; } = "Percent";
+    public decimal CommissionValue { get; set; }
+    public string? Scope { get; set; }
+    public string SourceLabel { get; set; } = "Default";
+}

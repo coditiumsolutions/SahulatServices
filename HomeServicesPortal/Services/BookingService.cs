@@ -14,11 +14,13 @@ public class BookingService : IBookingService
 
     private readonly AppDbContext _db;
     private readonly IPaymentService _payments;
+    private readonly ICommissionRuleService _commissionRules;
 
-    public BookingService(AppDbContext db, IPaymentService payments)
+    public BookingService(AppDbContext db, IPaymentService payments, ICommissionRuleService commissionRules)
     {
         _db = db;
         _payments = payments;
+        _commissionRules = commissionRules;
     }
 
     public async Task<List<SelectListItem>> GetRequestOptionsAsync(CancellationToken cancellationToken = default)
@@ -490,9 +492,15 @@ public class BookingService : IBookingService
         var allProviders = await GetProviderOptionsAsync(cancellationToken);
 
         var estimated = request.EstimatedBudget ?? 0m;
+        var resolved = await _commissionRules.ResolveAsync(
+            providerUid: null,
+            categoryUid: request.CategoryUid,
+            cancellationToken: cancellationToken);
+
         var vm = new AssignProviderVm
         {
             RequestUid = request.Uid,
+            CategoryUid = request.CategoryUid,
             ClientName = request.ClientName,
             ServiceTitle = request.ServiceTitle,
             CategoryName = request.CategoryName,
@@ -505,8 +513,9 @@ public class BookingService : IBookingService
             AdditionalCharges = 0,
             Deductions = 0,
             CustomerPaid = 0,
-            CommissionType = "Percent",
-            CommissionValue = 10,
+            CommissionType = resolved.CommissionType,
+            CommissionValue = resolved.CommissionValue,
+            CommissionSourceLabel = resolved.SourceLabel,
             PaymentMode = "CashToProvider",
             HasCategoryMatch = matchingProviders.Count > 0,
             ShowAllProviders = matchingProviders.Count == 0,

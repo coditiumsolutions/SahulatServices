@@ -10,11 +10,16 @@ public class ServiceRequestsController : Controller
 {
     private readonly IServiceRequestService _service;
     private readonly IBookingService _bookingService;
+    private readonly ICommissionRuleService _commissionRules;
 
-    public ServiceRequestsController(IServiceRequestService service, IBookingService bookingService)
+    public ServiceRequestsController(
+        IServiceRequestService service,
+        IBookingService bookingService,
+        ICommissionRuleService commissionRules)
     {
         _service = service;
         _bookingService = bookingService;
+        _commissionRules = commissionRules;
     }
 
     [HttpGet("/Admin/ServiceRequests")]
@@ -95,11 +100,16 @@ public class ServiceRequestsController : Controller
         model.ServiceAddress = form.ServiceAddress;
         model.Status = form.Status;
         model.EstimatedBudget = form.EstimatedBudget;
+        model.CategoryUid = form.CategoryUid;
         model.Providers = form.Providers;
         model.AllProviders = form.AllProviders;
         model.HasCategoryMatch = form.HasCategoryMatch;
         model.PaymentModeOptions = form.PaymentModeOptions;
         model.CommissionTypeOptions = form.CommissionTypeOptions;
+        if (string.IsNullOrWhiteSpace(model.CommissionSourceLabel))
+        {
+            model.CommissionSourceLabel = form.CommissionSourceLabel;
+        }
 
         if (!ModelState.IsValid) return View(model);
 
@@ -112,5 +122,22 @@ public class ServiceRequestsController : Controller
 
         TempData["SuccessMessage"] = $"Provider assigned and booking created for request #{id}.";
         return RedirectToAction(nameof(Index));
+    }
+
+    [HttpGet("/Admin/ServiceRequests/ResolveCommission")]
+    public async Task<IActionResult> ResolveCommission(
+        int categoryUid,
+        int? providerUid,
+        CancellationToken cancellationToken = default)
+    {
+        var resolved = await _commissionRules.ResolveAsync(providerUid, categoryUid, cancellationToken: cancellationToken);
+        return Json(new
+        {
+            found = resolved.Found,
+            commissionType = resolved.CommissionType,
+            commissionValue = resolved.CommissionValue,
+            scope = resolved.Scope,
+            sourceLabel = resolved.SourceLabel
+        });
     }
 }

@@ -95,4 +95,15 @@ public class ServiceProviderDeleteVm
     public string FullName { get; set; } = string.Empty;
     public string CategoryName { get; set; } = string.Empty;
     public string? MobileNo { get; set; }
+    public int DocumentCount { get; set; }
+    public int BookingCount { get; set; }
+    public int PaymentLedgerCount { get; set; }
+    public int PayoutCount { get; set; }
+    public int CommissionRuleCount { get; set; }
+    public bool HasLinkedData =>
+        DocumentCount > 0
+        || BookingCount > 0
+        || PaymentLedgerCount > 0
+        || PayoutCount > 0
+        || CommissionRuleCount > 0;
 }

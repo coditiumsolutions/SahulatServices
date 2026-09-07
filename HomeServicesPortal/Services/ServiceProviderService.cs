@@ -10,11 +10,16 @@ namespace HomeServicesPortal.Services;
 public class ServiceProviderService : IServiceProviderService
 {
     private readonly AppDbContext _db;
+    private readonly IFileStorageService _fileStorage;
     private readonly ILogger<ServiceProviderService> _logger;
 
-    public ServiceProviderService(AppDbContext db, ILogger<ServiceProviderService> logger)
+    public ServiceProviderService(
+        AppDbContext db,
+        IFileStorageService fileStorage,
+        ILogger<ServiceProviderService> logger)
     {
         _db = db;
+        _fileStorage = fileStorage;
         _logger = logger;
     }
 
@@ -154,7 +159,7 @@ public class ServiceProviderService : IServiceProviderService
 
     public async Task<ServiceProviderDeleteVm?> GetForDeleteAsync(int id, CancellationToken cancellationToken = default)
     {
-        return await _db.Providers
+        var provider = await _db.Providers
             .AsNoTracking()
             .Where(p => p.Uid == id)
             .Select(p => new ServiceProviderDeleteVm
@@ -165,6 +170,24 @@ public class ServiceProviderService : IServiceProviderService
                 CategoryName = p.Category.CategoryName
             })
             .FirstOrDefaultAsync(cancellationToken);
+
+        if (provider == null)
+        {
+            return null;
+        }
+
+        provider.DocumentCount = await _db.ProviderDocuments
+            .CountAsync(d => d.ProviderUid == id, cancellationToken);
+        provider.BookingCount = await _db.ServiceBookings
+            .CountAsync(b => b.ProviderUid == id, cancellationToken);
+        provider.PaymentLedgerCount = await _db.PaymentLedgers
+            .CountAsync(p => p.ProviderUid == id, cancellationToken);
+        provider.PayoutCount = await _db.ProviderPayouts
+            .CountAsync(p => p.ProviderUid == id, cancellationToken);
+        provider.CommissionRuleCount = await _db.CommissionRules
+            .CountAsync(c => c.ProviderUid == id, cancellationToken);
+
+        return provider;
     }
 
     public async Task<(bool Success, string? Error)> CreateAsync(
@@ -293,15 +316,91 @@ public class ServiceProviderService : IServiceProviderService
 
         try
         {
-            var user = provider.User;
+            var bookingIds = await _db.ServiceBookings
+                .Where(b => b.ProviderUid == id)
+                .Select(b => b.Uid)
+                .ToListAsync(cancellationToken);
+
+            if (bookingIds.Count > 0)
+            {
+                var bookingLedger = await _db.PaymentLedgers
+                    .Where(p => p.BookingUid != null && bookingIds.Contains(p.BookingUid.Value))
+                    .ToListAsync(cancellationToken);
+                if (bookingLedger.Count > 0)
+                {
+                    _db.PaymentLedgers.RemoveRange(bookingLedger);
+                }
+
+                var bookings = await _db.ServiceBookings
+                    .Where(b => b.ProviderUid == id)
+                    .ToListAsync(cancellationToken);
+                _db.ServiceBookings.RemoveRange(bookings);
+            }
+
+            var providerLedger = await _db.PaymentLedgers
+                .Where(p => p.ProviderUid == id)
+                .ToListAsync(cancellationToken);
+            if (providerLedger.Count > 0)
+            {
+                _db.PaymentLedgers.RemoveRange(providerLedger);
+            }
+
+            var payouts = await _db.ProviderPayouts
+                .Where(p => p.ProviderUid == id)
+                .ToListAsync(cancellationToken);
+            if (payouts.Count > 0)
+            {
+                _db.ProviderPayouts.RemoveRange(payouts);
+            }
+
+            var commissionRules = await _db.CommissionRules
+                .Where(c => c.ProviderUid == id)
+                .ToListAsync(cancellationToken);
+            if (commissionRules.Count > 0)
+            {
+                _db.CommissionRules.RemoveRange(commissionRules);
+            }
+
+            var documents = await _db.ProviderDocuments
+                .Where(d => d.ProviderUid == id)
+                .ToListAsync(cancellationToken);
+            if (documents.Count > 0)
+            {
+                _db.ProviderDocuments.RemoveRange(documents);
+            }
+
+            var userUid = provider.UserUid;
+            var loginStillLinked = await _db.Clients.AnyAsync(c => c.UserUid == userUid, cancellationToken)
+                || await _db.Staff.AnyAsync(s => s.UserUid == userUid, cancellationToken);
+
             _db.Providers.Remove(provider);
-            _db.UsersLogins.Remove(user);
+
+            // Keep UsersLogin when the same account is still used as a client or staff member.
+            if (!loginStillLinked && provider.User != null)
+            {
+                _db.UsersLogins.Remove(provider.User);
+            }
+
             await _db.SaveChangesAsync(cancellationToken);
+
+            if (documents.Count > 0)
+            {
+                _fileStorage.DeleteProviderDocumentFiles(id);
+            }
+
+            _logger.LogInformation(
+                "Provider {Uid} deleted (docs={Docs}, bookings={Bookings}, ledger={Ledger}, payouts={Payouts}, rules={Rules}).",
+                id,
+                documents.Count,
+                bookingIds.Count,
+                providerLedger.Count,
+                payouts.Count,
+                commissionRules.Count);
             return (true, null);
         }
         catch (DbUpdateException)
         {
-            return (false, "Cannot delete this provider because it is linked to other records.");
+            return (false, "Cannot delete this provider because related records still reference their account.");
         }
     }
 }

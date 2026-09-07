@@ -59,7 +59,7 @@
             --hs-maroon: #8B1A1A;
             --hs-tab-text: #1a3a5c;
             --topbar-primary-height: 68px;
-            --topbar-secondary-height: 38px;
+            --topbar-secondary-height: 44px;
         }
 
         body {
@@ -174,6 +174,12 @@
             z-index: 1020;
         }
 
+        .hs-topbar-secondary-inner {
+            display: flex;
+            align-items: stretch;
+            gap: 0.35rem;
+        }
+
         .hs-tab-nav {
             display: flex;
             align-items: stretch;
@@ -182,6 +188,7 @@
             padding: 0;
             height: 100%;
             flex-wrap: wrap;
+            flex: 1 1 auto;
         }
 
         .hs-tab-nav > li {
@@ -334,6 +341,142 @@
             display: none !important;
         }
 
+        .hs-notify-wrap {
+            position: relative;
+            display: flex;
+            align-items: center;
+            flex: 0 0 auto;
+            margin-left: auto;
+            padding: 0 0.65rem;
+            align-self: stretch;
+        }
+
+        .hs-notify-toggle {
+            border: 0;
+            background: transparent;
+            cursor: pointer;
+            position: relative;
+            color: #E6B422;
+            padding: 0.35rem 0.55rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+        }
+
+        .hs-notify-toggle:hover {
+            color: #F5C842;
+        }
+
+        .hs-notify-toggle > i {
+            font-size: 1.7rem;
+            color: #E6B422;
+            filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.18));
+        }
+
+        .hs-notify-badge {
+            position: absolute;
+            top: -0.15rem;
+            right: -0.2rem;
+            min-width: 1.35rem;
+            height: 1.35rem;
+            padding: 0 0.35rem;
+            border-radius: 999px;
+            background: #dc3545;
+            color: #fff;
+            font-size: 0.78rem;
+            font-weight: 800;
+            line-height: 1.35rem;
+            text-align: center;
+            box-shadow: 0 0 0 2px #d8d8d8;
+            display: none;
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        .hs-notify-badge.is-visible {
+            display: inline-block;
+        }
+
+        .hs-notify-panel {
+            position: absolute;
+            top: calc(100% + 0.45rem);
+            right: 0;
+            width: min(360px, 90vw);
+            max-height: 420px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            background: #fff;
+            color: #1a1a1a;
+            border-radius: 10px;
+            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.22);
+            z-index: 1100;
+        }
+
+        .hs-notify-panel.d-none {
+            display: none !important;
+        }
+
+        .hs-notify-panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 0.9rem;
+            border-bottom: 1px solid #e9ecef;
+            background: #f8f9fa;
+        }
+
+        .hs-notify-panel-sub {
+            font-size: 0.75rem;
+            color: #6c757d;
+        }
+
+        .hs-notify-list {
+            overflow-y: auto;
+            max-height: 360px;
+        }
+
+        .hs-notify-item {
+            display: block;
+            padding: 0.75rem 0.9rem;
+            text-decoration: none;
+            color: inherit;
+            border-bottom: 1px solid #f1f3f5;
+        }
+
+        .hs-notify-item:hover {
+            background: #f8f9fa;
+        }
+
+        .hs-notify-item.unread {
+            background: #eef5ff;
+        }
+
+        .hs-notify-item-title {
+            font-weight: 600;
+            font-size: 0.88rem;
+            margin-bottom: 0.15rem;
+        }
+
+        .hs-notify-item-msg {
+            font-size: 0.8rem;
+            color: #495057;
+        }
+
+        .hs-notify-item-time {
+            font-size: 0.72rem;
+            color: #868e96;
+            margin-top: 0.25rem;
+        }
+
+        .hs-notify-empty {
+            padding: 1.25rem 0.9rem;
+            text-align: center;
+            color: #868e96;
+            font-size: 0.85rem;
+        }
+
         .hs-sidebar .hs-nav-section-title {
             color: rgba(255, 255, 255, 0.55);
             font-size: 0.85rem;
@@ -374,6 +517,16 @@
 
             .hs-topbar-secondary .container-fluid {
                 padding: 0;
+            }
+
+            .hs-topbar-secondary-inner {
+                flex-wrap: wrap;
+            }
+
+            .hs-notify-wrap {
+                order: -1;
+                margin-left: auto;
+                padding: 0.35rem 0.75rem;
             }
 
             .hs-tab-nav {
@@ -456,15 +609,15 @@
 
     <!-- Tier 2: Gray tab navigation -->
     <nav class="hs-topbar-secondary">
-        <div class="container-fluid px-0 px-lg-3">
-            <button class="hs-mobile-toggle d-lg-none w-100 text-start px-3 py-2 border-0"
+        <div class="container-fluid px-0 px-lg-3 hs-topbar-secondary-inner">
+            <button class="hs-mobile-toggle d-lg-none text-start px-3 py-2 border-0 flex-grow-1"
                     type="button" data-bs-toggle="collapse" data-bs-target="#hsTabNav"
                     aria-controls="hsTabNav" aria-expanded="false" aria-label="Toggle navigation"
                     style="background: linear-gradient(180deg, #f0f0f0 0%, #dcdcdc 100%); color: var(--hs-tab-text); font-size: 0.75rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;">
                 <i class="fa-solid fa-bars me-2"></i>Menu
             </button>
 
-            <div class="collapse d-lg-block" id="hsTabNav">
+            <div class="collapse d-lg-block flex-grow-1" id="hsTabNav">
                 <ul class="hs-tab-nav">
                     <li>
                         <a class="hs-tab-link @TabClass("/admin/clients", "/admin/customers")"
@@ -490,6 +643,28 @@
                            href="#" data-hs-section="setup">Setup</a>
                     </li>
                 </ul>
+            </div>
+
+            <div class="hs-notify-wrap">
+                <button type="button"
+                        class="hs-notify-toggle"
+                        id="hsNotifyToggle"
+                        aria-expanded="false"
+                        aria-controls="hsNotifyPanel"
+                        title="Notifications">
+                    <i class="fa-solid fa-bell"></i>
+                    <span class="hs-notify-badge" id="hsNotifyBadge">0</span>
+                </button>
+                <div class="hs-notify-panel d-none" id="hsNotifyPanel" role="menu" aria-label="Notifications">
+                    <div class="hs-notify-panel-header">
+                        <strong>Notifications</strong>
+                        <span class="hs-notify-panel-sub" id="hsNotifyUnreadLabel">0 unread</span>
+                    </div>
+                    <div class="hs-notify-list" id="hsNotifyList">
+                        <div class="hs-notify-empty">No notifications yet.</div>
+                    </div>
+                </div>
+                <form id="hsNotifyAntiForgery" class="d-none">@Html.AntiForgeryToken()</form>
             </div>
         </div>
     </nav>
@@ -607,6 +782,7 @@
 
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@@microsoft/signalr@8.0.7/dist/browser/signalr.min.js"></script>
     <script>
         (function () {
             const activeSection = '@activeSection';
@@ -629,6 +805,231 @@
             });
 
             showSidebarSection(activeSection);
+        })();
+    </script>
+    <script>
+        (function () {
+            const toggle = document.getElementById('hsNotifyToggle');
+            const panel = document.getElementById('hsNotifyPanel');
+            const badge = document.getElementById('hsNotifyBadge');
+            const list = document.getElementById('hsNotifyList');
+            const unreadLabel = document.getElementById('hsNotifyUnreadLabel');
+            if (!toggle || !panel || !badge || !list) return;
+
+            const POLL_MS = 4000;
+            let items = [];
+            let unreadCount = 0;
+            let open = false;
+            let loading = false;
+
+            function antiForgeryToken() {
+                const input = document.querySelector('#hsNotifyAntiForgery input[name="__RequestVerificationToken"]');
+                return input ? input.value : '';
+            }
+
+            function formatTime(value) {
+                try {
+                    return new Date(value).toLocaleString();
+                } catch {
+                    return value;
+                }
+            }
+
+            function escapeHtml(value) {
+                return String(value ?? '')
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;');
+            }
+
+            function render() {
+                if (unreadLabel) {
+                    unreadLabel.textContent = unreadCount + ' unread';
+                }
+
+                const label = unreadCount > 99 ? '99+' : String(unreadCount);
+                badge.textContent = label;
+                badge.setAttribute('data-count', label);
+                if (unreadCount > 0) {
+                    badge.classList.add('is-visible');
+                    badge.style.background = '#dc3545';
+                } else {
+                    badge.classList.remove('is-visible');
+                }
+
+                if (!items.length) {
+                    list.innerHTML = '<div class="hs-notify-empty">No notifications yet.</div>';
+                    return;
+                }
+
+                list.innerHTML = items.map(function (n) {
+                    const href = escapeHtml(n.linkUrl || n.LinkUrl || '#');
+                    const title = escapeHtml(n.title || n.Title || 'Notification');
+                    const message = escapeHtml(n.message || n.Message || '');
+                    const created = n.createdOn || n.CreatedOn;
+                    const isRead = n.isRead === true || n.IsRead === true;
+                    return '<a class="hs-notify-item' + (isRead ? '' : ' unread') + '" href="' + href + '">' +
+                        '<div class="hs-notify-item-title">' + title + '</div>' +
+                        '<div class="hs-notify-item-msg">' + message + '</div>' +
+                        '<div class="hs-notify-item-time">' + escapeHtml(formatTime(created)) + '</div>' +
+                        '</a>';
+                }).join('');
+            }
+
+            function setFeed(feed) {
+                if (!feed || typeof feed !== 'object') return;
+                unreadCount = Number(feed.unreadCount ?? feed.UnreadCount ?? 0) || 0;
+                items = feed.items || feed.Items || items;
+                render();
+            }
+
+            function setUnreadOnly(count) {
+                unreadCount = Number(count) || 0;
+                render();
+            }
+
+            async function loadFeed() {
+                if (loading) return;
+                loading = true;
+                try {
+                    const res = await fetch('/Admin/Notifications/feed?_=' + Date.now(), {
+                        credentials: 'same-origin',
+                        headers: { 'Accept': 'application/json' },
+                        cache: 'no-store'
+                    });
+                    if (!res.ok) return;
+                    const data = await res.json();
+                    setFeed(data);
+                } catch {
+                    // Keep last known badge; next poll / SignalR can recover.
+                } finally {
+                    loading = false;
+                }
+            }
+
+            async function pollUnreadCount() {
+                if (open) return;
+                try {
+                    const res = await fetch('/Admin/Notifications/unread-count?_=' + Date.now(), {
+                        credentials: 'same-origin',
+                        headers: { 'Accept': 'application/json' },
+                        cache: 'no-store'
+                    });
+                    if (!res.ok) return;
+                    const data = await res.json();
+                    const next = Number(data.unreadCount ?? data.UnreadCount ?? 0) || 0;
+                    if (next !== unreadCount) {
+                        // Count changed — refresh full feed so the dropdown stays in sync.
+                        await loadFeed();
+                    }
+                } catch {
+                    // Ignore transient network errors.
+                }
+            }
+
+            async function markAllRead() {
+                if (unreadCount === 0) return;
+                const body = new URLSearchParams();
+                body.set('__RequestVerificationToken', antiForgeryToken());
+                try {
+                    const res = await fetch('/Admin/Notifications/mark-read', {
+                        method: 'POST',
+                        credentials: 'same-origin',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: body.toString()
+                    });
+                    if (!res.ok) return;
+                    unreadCount = 0;
+                    items = items.map(function (n) {
+                        return Object.assign({}, n, { isRead: true, IsRead: true });
+                    });
+                    render();
+                } catch {
+                    // Leave unread state; user can reopen.
+                }
+            }
+
+            async function openPanel() {
+                open = true;
+                panel.classList.remove('d-none');
+                toggle.setAttribute('aria-expanded', 'true');
+                await loadFeed();
+                await markAllRead();
+            }
+
+            function closePanel() {
+                open = false;
+                panel.classList.add('d-none');
+                toggle.setAttribute('aria-expanded', 'false');
+            }
+
+            toggle.addEventListener('click', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                if (open) closePanel();
+                else openPanel();
+            });
+
+            document.addEventListener('click', function (e) {
+                if (!open) return;
+                if (panel.contains(e.target) || toggle.contains(e.target)) return;
+                closePanel();
+            });
+
+            document.addEventListener('visibilitychange', function () {
+                if (!document.hidden) {
+                    loadFeed();
+                }
+            });
+
+            // Initial load + polling fallback (works even if SignalR fails).
+            loadFeed();
+            setInterval(pollUnreadCount, POLL_MS);
+
+            if (window.signalR) {
+                const connection = new signalR.HubConnectionBuilder()
+                    .withUrl('/hubs/admin-notifications')
+                    .withAutomaticReconnect([0, 2000, 5000, 10000, 30000])
+                    .build();
+
+                connection.on('ReceiveNotification', function (payload) {
+                    if (!payload) {
+                        loadFeed();
+                        return;
+                    }
+                    const notification = payload.notification || payload.Notification;
+                    const nextCount = payload.unreadCount ?? payload.UnreadCount;
+                    if (typeof nextCount === 'number') {
+                        setUnreadOnly(nextCount);
+                    } else {
+                        setUnreadOnly(unreadCount + 1);
+                    }
+                    if (notification) {
+                        const id = notification.uid || notification.Uid;
+                        items = items.filter(function (n) {
+                            return (n.uid || n.Uid) !== id;
+                        });
+                        items = [notification].concat(items).slice(0, 20);
+                        render();
+                    } else {
+                        loadFeed();
+                    }
+                });
+
+                connection.on('NotificationsMarkedRead', function (payload) {
+                    setUnreadOnly(payload && (payload.unreadCount ?? payload.UnreadCount) || 0);
+                    items = items.map(function (n) {
+                        return Object.assign({}, n, { isRead: true, IsRead: true });
+                    });
+                    render();
+                });
+
+                connection.onreconnected(function () { loadFeed(); });
+                connection.start()
+                    .then(function () { loadFeed(); })
+                    .catch(function () { /* polling keeps badge fresh */ });
+            }
         })();
     </script>
     @await RenderSectionAsync("Scripts", required: false)
