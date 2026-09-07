@@ -117,7 +117,7 @@ public class CustomerService : ICustomerService
 
     public async Task<CustomerDeleteVm?> GetForDeleteAsync(int id, CancellationToken cancellationToken = default)
     {
-        return await _db.Clients
+        var client = await _db.Clients
             .AsNoTracking()
             .Where(c => c.Uid == id)
             .Select(c => new CustomerDeleteVm
@@ -128,6 +128,31 @@ public class CustomerService : ICustomerService
                 Cnic = c.Cnic
             })
             .FirstOrDefaultAsync(cancellationToken);
+
+        if (client == null)
+        {
+            return null;
+        }
+
+        client.AddressCount = await _db.ClientAddresses
+            .CountAsync(a => a.ClientUid == id, cancellationToken);
+        client.ServiceRequestCount = await _db.CustomerServiceRequests
+            .CountAsync(r => r.ClientUid == id, cancellationToken);
+        client.BookingCount = await _db.ServiceBookings
+            .CountAsync(b => b.ClientUid == id, cancellationToken);
+
+        var bookingIds = await _db.ServiceBookings
+            .AsNoTracking()
+            .Where(b => b.ClientUid == id)
+            .Select(b => b.Uid)
+            .ToListAsync(cancellationToken);
+
+        client.PaymentLedgerCount = bookingIds.Count == 0
+            ? 0
+            : await _db.PaymentLedgers
+                .CountAsync(p => p.BookingUid != null && bookingIds.Contains(p.BookingUid.Value), cancellationToken);
+
+        return client;
     }
 
     public async Task<(bool Success, string? Error)> CreateAsync(
@@ -221,21 +246,63 @@ public class CustomerService : ICustomerService
             return (false, "Client not found.");
         }
 
-        var hasRequests = await _db.CustomerServiceRequests
-            .AnyAsync(r => r.ClientUid == id, cancellationToken);
-
-        var hasAddresses = await _db.ClientAddresses
-            .AnyAsync(a => a.ClientUid == id, cancellationToken);
-
-        if (hasRequests || hasAddresses)
+        try
         {
-            return (false, "Cannot delete this client because they have linked addresses or service requests.");
-        }
+            var bookingIds = await _db.ServiceBookings
+                .Where(b => b.ClientUid == id)
+                .Select(b => b.Uid)
+                .ToListAsync(cancellationToken);
 
-        var user = client.User;
-        _db.Clients.Remove(client);
-        _db.UsersLogins.Remove(user);
-        await _db.SaveChangesAsync(cancellationToken);
-        return (true, null);
+            if (bookingIds.Count > 0)
+            {
+                var ledgerRows = await _db.PaymentLedgers
+                    .Where(p => p.BookingUid != null && bookingIds.Contains(p.BookingUid.Value))
+                    .ToListAsync(cancellationToken);
+                if (ledgerRows.Count > 0)
+                {
+                    _db.PaymentLedgers.RemoveRange(ledgerRows);
+                }
+
+                var bookings = await _db.ServiceBookings
+                    .Where(b => b.ClientUid == id)
+                    .ToListAsync(cancellationToken);
+                _db.ServiceBookings.RemoveRange(bookings);
+            }
+
+            var requests = await _db.CustomerServiceRequests
+                .Where(r => r.ClientUid == id)
+                .ToListAsync(cancellationToken);
+            if (requests.Count > 0)
+            {
+                _db.CustomerServiceRequests.RemoveRange(requests);
+            }
+
+            var addresses = await _db.ClientAddresses
+                .Where(a => a.ClientUid == id)
+                .ToListAsync(cancellationToken);
+            if (addresses.Count > 0)
+            {
+                _db.ClientAddresses.RemoveRange(addresses);
+            }
+
+            var userUid = client.UserUid;
+            var loginStillLinked = await _db.Providers.AnyAsync(p => p.UserUid == userUid, cancellationToken)
+                || await _db.Staff.AnyAsync(s => s.UserUid == userUid, cancellationToken);
+
+            _db.Clients.Remove(client);
+
+            // Keep UsersLogin when the same account is still used as a provider or staff member.
+            if (!loginStillLinked && client.User != null)
+            {
+                _db.UsersLogins.Remove(client.User);
+            }
+
+            await _db.SaveChangesAsync(cancellationToken);
+            return (true, null);
+        }
+        catch (DbUpdateException)
+        {
+            return (false, "Cannot delete this client because related records still reference their account.");
+        }
     }
 }

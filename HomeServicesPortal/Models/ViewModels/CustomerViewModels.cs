@@ -65,4 +65,9 @@ public class CustomerDeleteVm
     public string FullName { get; set; } = string.Empty;
     public string? MobileNo { get; set; }
     public string? Cnic { get; set; }
+    public int AddressCount { get; set; }
+    public int ServiceRequestCount { get; set; }
+    public int BookingCount { get; set; }
+    public int PaymentLedgerCount { get; set; }
+    public bool HasLinkedData => AddressCount > 0 || ServiceRequestCount > 0 || BookingCount > 0 || PaymentLedgerCount > 0;
 }
