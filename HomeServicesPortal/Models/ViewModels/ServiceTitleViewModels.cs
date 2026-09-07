@@ -7,7 +7,9 @@ public class ServiceTitleListVm
 {
     public List<ServiceTitleItemVm> Items { get; set; } = new();
     public string? Search { get; set; }
-    public string Sort { get; set; } = "name";
+    public int? CategoryUid { get; set; }
+    public List<SelectListItem> Categories { get; set; } = new();
+    public string Sort { get; set; } = "title";
     public string SortDir { get; set; } = "asc";
     public int Page { get; set; } = 1;
     public int PageSize { get; set; } = 10;

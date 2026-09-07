@@ -16,9 +16,9 @@ public class ServiceTitlesController : Controller
     }
 
     [HttpGet("/Admin/ServiceTitles")]
-    public async Task<IActionResult> Index(string? search, string? sort, string? sortDir, int page = 1, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> Index(string? search, int? categoryUid, string? sort, string? sortDir, int page = 1, CancellationToken cancellationToken = default)
     {
-        var vm = await _service.GetListAsync(search, sort, sortDir, page, cancellationToken);
+        var vm = await _service.GetListAsync(search, categoryUid, sort, sortDir, page, cancellationToken);
         return View(vm);
     }
 
@@ -42,7 +42,7 @@ public class ServiceTitlesController : Controller
             return View(model);
         }
 
-        TempData["SuccessMessage"] = $"S-Title '{model.Title}' created successfully.";
+        TempData["SuccessMessage"] = $"Job Type '{model.Title}' created successfully.";
         return RedirectToAction(nameof(Index));
     }
 
@@ -77,7 +77,7 @@ public class ServiceTitlesController : Controller
             return View(model);
         }
 
-        TempData["SuccessMessage"] = $"S-Title '{model.Title}' updated successfully.";
+        TempData["SuccessMessage"] = $"Job Type '{model.Title}' updated successfully.";
         return RedirectToAction(nameof(Index));
     }
 
@@ -103,7 +103,7 @@ public class ServiceTitlesController : Controller
             return View("Delete", vm);
         }
 
-        TempData["SuccessMessage"] = $"S-Title '{vm.Title}' deleted successfully.";
+        TempData["SuccessMessage"] = $"Job Type '{vm.Title}' deleted successfully.";
         return RedirectToAction(nameof(Index));
     }
 }

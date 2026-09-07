@@ -1,16 +1,16 @@
 @model HomeServicesPortal.Models.ViewModels.ServiceTitleListVm
 @{
     Layout = "_AdminLayout";
-    ViewData["Title"] = "S-Titles";
+    ViewData["Title"] = "Job Types";
 }
 
 <div class="d-flex flex-wrap align-items-center justify-content-between mb-4 gap-2">
     <div>
-        <h2 class="mb-1"><i class="fa-solid fa-list-ul me-2 text-primary"></i>S-Titles</h2>
-        <p class="text-muted mb-0">Manage service title master data</p>
+        <h2 class="mb-1"><i class="fa-solid fa-list-ul me-2 text-primary"></i>Job Types</h2>
+        <p class="text-muted mb-0">Manage job type master data</p>
     </div>
     <a asp-action="Create" class="btn btn-primary">
-        <i class="fa-solid fa-plus me-1"></i>Add S-Title
+        <i class="fa-solid fa-plus me-1"></i>Add Job Type
     </a>
 </div>
 
@@ -24,18 +24,31 @@
 
 <div class="card hs-card">
     <div class="card-body">
-        <form method="get" asp-action="Index" class="row g-2 mb-3">
-            <div class="col-md-6 col-lg-4">
+        <form method="get" asp-action="Index" class="row g-2 mb-3 align-items-center">
+            <div class="col-md-4 col-lg-3">
+                <select name="categoryUid" class="form-select" onchange="this.form.submit()">
+                    <option value="">All Categories</option>
+                    @foreach (var cat in Model.Categories)
+                    {
+                        <option value="@cat.Value" selected="@(Model.CategoryUid?.ToString() == cat.Value ? "selected" : null)">
+                            @cat.Text
+                        </option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-5 col-lg-4">
                 <div class="input-group">
                     <span class="input-group-text"><i class="fa-solid fa-search"></i></span>
                     <input type="text" name="search" value="@Model.Search" class="form-control" placeholder="Search titles..." />
                     <button type="submit" class="btn btn-outline-primary">Search</button>
                 </div>
             </div>
-            @if (!string.IsNullOrWhiteSpace(Model.Search))
+            <input type="hidden" name="sort" value="@Model.Sort" />
+            <input type="hidden" name="sortDir" value="@Model.SortDir" />
+            @if (!string.IsNullOrWhiteSpace(Model.Search) || Model.CategoryUid.HasValue)
             {
                 <div class="col-auto">
-                    <a asp-action="Index" class="btn btn-outline-secondary">Clear</a>
+                    <a asp-action="Index" asp-route-sort="@Model.Sort" asp-route-sortDir="@Model.SortDir" class="btn btn-outline-secondary">Clear</a>
                 </div>
             }
         </form>
@@ -46,14 +59,18 @@
                     <tr>
                         <th>
                             <a class="text-decoration-none text-dark" asp-action="Index"
-                               asp-route-search="@Model.Search" asp-route-sort="category"
+                               asp-route-search="@Model.Search" asp-route-categoryUid="@Model.CategoryUid" asp-route-sort="category"
                                asp-route-sortDir="@(Model.Sort == "category" && Model.SortDir == "asc" ? "desc" : "asc")">
                                 Category
+                                @if (Model.Sort == "category")
+                                {
+                                    <i class="fa-solid fa-sort-@(Model.SortDir == "asc" ? "up" : "down") ms-1"></i>
+                                }
                             </a>
                         </th>
                         <th>
                             <a class="text-decoration-none text-dark" asp-action="Index"
-                               asp-route-search="@Model.Search" asp-route-sort="title"
+                               asp-route-search="@Model.Search" asp-route-categoryUid="@Model.CategoryUid" asp-route-sort="title"
                                asp-route-sortDir="@(Model.Sort == "title" && Model.SortDir == "asc" ? "desc" : "asc")">
                                 Title
                                 @if (Model.Sort == "title")
@@ -65,23 +82,35 @@
                         <th>Description</th>
                         <th>
                             <a class="text-decoration-none text-dark" asp-action="Index"
-                               asp-route-search="@Model.Search" asp-route-sort="order"
+                               asp-route-search="@Model.Search" asp-route-categoryUid="@Model.CategoryUid" asp-route-sort="order"
                                asp-route-sortDir="@(Model.Sort == "order" && Model.SortDir == "asc" ? "desc" : "asc")">
                                 Display Order
+                                @if (Model.Sort == "order")
+                                {
+                                    <i class="fa-solid fa-sort-@(Model.SortDir == "asc" ? "up" : "down") ms-1"></i>
+                                }
                             </a>
                         </th>
                         <th>
                             <a class="text-decoration-none text-dark" asp-action="Index"
-                               asp-route-search="@Model.Search" asp-route-sort="status"
+                               asp-route-search="@Model.Search" asp-route-categoryUid="@Model.CategoryUid" asp-route-sort="status"
                                asp-route-sortDir="@(Model.Sort == "status" && Model.SortDir == "asc" ? "desc" : "asc")">
                                 Status
+                                @if (Model.Sort == "status")
+                                {
+                                    <i class="fa-solid fa-sort-@(Model.SortDir == "asc" ? "up" : "down") ms-1"></i>
+                                }
                             </a>
                         </th>
                         <th>
                             <a class="text-decoration-none text-dark" asp-action="Index"
-                               asp-route-search="@Model.Search" asp-route-sort="date"
+                               asp-route-search="@Model.Search" asp-route-categoryUid="@Model.CategoryUid" asp-route-sort="date"
                                asp-route-sortDir="@(Model.Sort == "date" && Model.SortDir == "asc" ? "desc" : "asc")">
                                 Created On
+                                @if (Model.Sort == "date")
+                                {
+                                    <i class="fa-solid fa-sort-@(Model.SortDir == "asc" ? "up" : "down") ms-1"></i>
+                                }
                             </a>
                         </th>
                         <th class="text-end">Actions</th>
@@ -137,18 +166,18 @@
                 <ul class="pagination pagination-sm justify-content-center mb-0">
                     <li class="page-item @(Model.Page <= 1 ? "disabled" : "")">
                         <a class="page-link" asp-action="Index" asp-route-page="@(Model.Page - 1)"
-                           asp-route-search="@Model.Search" asp-route-sort="@Model.Sort" asp-route-sortDir="@Model.SortDir">Previous</a>
+                           asp-route-search="@Model.Search" asp-route-categoryUid="@Model.CategoryUid" asp-route-sort="@Model.Sort" asp-route-sortDir="@Model.SortDir">Previous</a>
                     </li>
                     @for (var p = 1; p <= Model.TotalPages; p++)
                     {
                         <li class="page-item @(p == Model.Page ? "active" : "")">
                             <a class="page-link" asp-action="Index" asp-route-page="@p"
-                               asp-route-search="@Model.Search" asp-route-sort="@Model.Sort" asp-route-sortDir="@Model.SortDir">@p</a>
+                               asp-route-search="@Model.Search" asp-route-categoryUid="@Model.CategoryUid" asp-route-sort="@Model.Sort" asp-route-sortDir="@Model.SortDir">@p</a>
                         </li>
                     }
                     <li class="page-item @(Model.Page >= Model.TotalPages ? "disabled" : "")">
                         <a class="page-link" asp-action="Index" asp-route-page="@(Model.Page + 1)"
-                           asp-route-search="@Model.Search" asp-route-sort="@Model.Sort" asp-route-sortDir="@Model.SortDir">Next</a>
+                           asp-route-search="@Model.Search" asp-route-categoryUid="@Model.CategoryUid" asp-route-sort="@Model.Sort" asp-route-sortDir="@Model.SortDir">Next</a>
                     </li>
                 </ul>
             </nav>

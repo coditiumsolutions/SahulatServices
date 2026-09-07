@@ -81,6 +81,7 @@ public class ServiceTitleService : IServiceTitleService
 
     public async Task<ServiceTitleListVm> GetListAsync(
         string? search,
+        int? categoryUid,
         string? sort,
         string? sortDir,
         int page,
@@ -95,6 +96,11 @@ public class ServiceTitleService : IServiceTitleService
             from t in _db.ServiceTitles.AsNoTracking()
             join c in _db.ServiceCategories.AsNoTracking() on t.CategoryUid equals c.Uid
             select new { Title = t, Category = c };
+
+        if (categoryUid.HasValue && categoryUid.Value > 0)
+        {
+            query = query.Where(x => x.Title.CategoryUid == categoryUid.Value);
+        }
 
         if (!string.IsNullOrWhiteSpace(search))
         {
@@ -125,6 +131,7 @@ public class ServiceTitleService : IServiceTitleService
         };
 
         var totalCount = await query.CountAsync(cancellationToken);
+        var categories = await GetCategoryOptionsAsync(cancellationToken);
 
         var items = await query
             .Skip((page - 1) * pageSize)
@@ -146,6 +153,8 @@ public class ServiceTitleService : IServiceTitleService
         {
             Items = items,
             Search = search,
+            CategoryUid = categoryUid,
+            Categories = categories,
             Sort = sort,
             SortDir = sortDir,
             Page = page,

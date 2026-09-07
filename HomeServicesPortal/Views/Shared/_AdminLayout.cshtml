@@ -19,21 +19,19 @@
         path.StartsWith("/admin/bookings", StringComparison.OrdinalIgnoreCase) &&
         !path.StartsWith("/admin/bookingtracking", StringComparison.OrdinalIgnoreCase);
 
-    var activeSection = "dashboard";
-    if (IsDashboardPath())
-        activeSection = "dashboard";
-    else if (TabClass("/admin/services", "/admin/servicecategories", "/admin/servicetitles", "/admin/serviceproviders", "/admin/providerlocations", "/admin/provideravailability", "/admin/providerdocuments", "/admin/customers", "/admin/clients") == "active")
-        activeSection = "masters";
+    var activeSection = "";
+    if (TabClass("/admin/clients", "/admin/customers") == "active")
+        activeSection = "customers";
+    else if (TabClass("/admin/serviceproviders", "/admin/providerdocuments", "/admin/mapstest") == "active")
+        activeSection = "providers";
     else if (TabClass("/admin/servicerequests") == "active" || IsBookingsPath())
         activeSection = "operations";
-    else if (TabClass("/admin/bookingtracking", "/admin/mapstest") == "active")
-        activeSection = "tracking";
     else if (TabClass("/admin/payments", "/admin/reviews") == "active")
         activeSection = "finance";
     else if (TabClass("/admin/reports") == "active")
         activeSection = "reports";
-    else if (TabClass("/admin/administration", "/admin/apkmanagement") == "active")
-        activeSection = "administration";
+    else if (TabClass("/admin/services", "/admin/servicecategories", "/admin/servicetitles", "/admin/administration", "/admin/apkmanagement") == "active")
+        activeSection = "setup";
 }
 
 <!DOCTYPE html>
@@ -469,19 +467,16 @@
             <div class="collapse d-lg-block" id="hsTabNav">
                 <ul class="hs-tab-nav">
                     <li>
-                        <a class="hs-tab-link @(IsDashboardPath() ? "active" : "")" href="/Admin" data-hs-section="dashboard">Dashboard</a>
+                        <a class="hs-tab-link @TabClass("/admin/clients", "/admin/customers")"
+                           href="#" data-hs-section="customers">Customers</a>
                     </li>
                     <li>
-                        <a class="hs-tab-link @TabClass("/admin/services", "/admin/servicecategories", "/admin/servicetitles", "/admin/serviceproviders", "/admin/providerlocations", "/admin/provideravailability", "/admin/providerdocuments", "/admin/customers", "/admin/clients")"
-                           href="#" data-hs-section="masters">Masters</a>
+                        <a class="hs-tab-link @TabClass("/admin/serviceproviders", "/admin/providerdocuments", "/admin/mapstest")"
+                           href="#" data-hs-section="providers">Providers</a>
                     </li>
                     <li>
                         <a class="hs-tab-link @(TabClass("/admin/servicerequests") == "active" || IsBookingsPath() ? "active" : "")"
                            href="#" data-hs-section="operations">Operations</a>
-                    </li>
-                    <li>
-                        <a class="hs-tab-link @TabClass("/admin/bookingtracking", "/admin/mapstest")"
-                           href="#" data-hs-section="tracking">Tracking</a>
                     </li>
                     <li>
                         <a class="hs-tab-link @TabClass("/admin/payments", "/admin/reviews")" href="#" data-hs-section="finance">Finance</a>
@@ -491,8 +486,8 @@
                            href="#" data-hs-section="reports">Reports</a>
                     </li>
                     <li>
-                        <a class="hs-tab-link @TabClass("/admin/administration")"
-                           href="#" data-hs-section="administration">Administration</a>
+                        <a class="hs-tab-link @TabClass("/admin/services", "/admin/servicecategories", "/admin/servicetitles", "/admin/administration", "/admin/apkmanagement")"
+                           href="#" data-hs-section="setup">Setup</a>
                     </li>
                 </ul>
             </div>
@@ -505,38 +500,27 @@
             <aside class="col-12 col-lg-2 hs-sidebar d-none d-lg-block" id="hsSidebar">
                 <div class="px-2 pb-4 pt-3">
 
-                    <div class="hs-sidebar-panel @(activeSection == "dashboard" ? "" : "d-none")" data-section="dashboard">
-                        <div class="hs-nav-parent"><i class="fa-solid fa-gauge"></i> Dashboard</div>
-                        <a class="hs-nav-link hs-nav-sublink @(IsDashboardPath() ? "active" : "")" href="/Admin">
-                            <i class="fa-solid fa-chart-line"></i> Overview
+                    <a class="hs-nav-link @(IsDashboardPath() ? "active" : "") mb-2" href="/Admin">
+                        <i class="fa-solid fa-gauge"></i> Dashboard
+                    </a>
+
+                    <div class="hs-sidebar-panel @(activeSection == "customers" ? "" : "d-none")" data-section="customers">
+                        <div class="hs-nav-parent"><i class="fa-solid fa-users"></i> Customers</div>
+                        <a class="hs-nav-link hs-nav-sublink @NavClass("/admin/clients", "/admin/customers")" href="/Admin/Clients">
+                            <i class="fa-solid fa-users"></i> Customers
                         </a>
                     </div>
 
-                    <div class="hs-sidebar-panel @(activeSection == "masters" ? "" : "d-none")" data-section="masters">
-                        <div class="hs-nav-parent"><i class="fa-solid fa-layer-group"></i> Masters</div>
-                        <a class="hs-nav-link hs-nav-sublink @NavClass("/admin/services")" href="/Admin/Services">
-                            <i class="fa-solid fa-toolbox"></i> S-Services
-                        </a>
-                        <a class="hs-nav-link hs-nav-sublink @NavClass("/admin/servicecategories")" href="/Admin/ServiceCategories">
-                            <i class="fa-solid fa-layer-group"></i> S-Categories
-                        </a>
-                        <a class="hs-nav-link hs-nav-sublink @NavClass("/admin/servicetitles")" href="/Admin/ServiceTitles">
-                            <i class="fa-solid fa-list-ul"></i> S-Titles
-                        </a>
+                    <div class="hs-sidebar-panel @(activeSection == "providers" ? "" : "d-none")" data-section="providers">
+                        <div class="hs-nav-parent"><i class="fa-solid fa-user-tie"></i> Providers</div>
                         <a class="hs-nav-link hs-nav-sublink @NavClass("/admin/serviceproviders")" href="/Admin/ServiceProviders">
-                            <i class="fa-solid fa-user-tie"></i> S-Provider
-                        </a>
-                        <a class="hs-nav-link hs-nav-sublink @NavClass("/admin/providerlocations")" href="/Admin/ProviderLocations">
-                            <i class="fa-solid fa-location-dot"></i> P-Locations <span class="hs-wip-badge-row"><span class="hs-wip-badge">WIP</span></span>
-                        </a>
-                        <a class="hs-nav-link hs-nav-sublink @NavClass("/admin/provideravailability")" href="/Admin/ProviderAvailability">
-                            <i class="fa-solid fa-clock"></i> P-Availability <span class="hs-wip-badge-row"><span class="hs-wip-badge">WIP</span></span>
+                            <i class="fa-solid fa-user-tie"></i> Job Providers
                         </a>
                         <a class="hs-nav-link hs-nav-sublink @NavClass("/admin/providerdocuments")" href="/Admin/ProviderDocuments">
                             <i class="fa-solid fa-file-signature"></i> P-Documents
                         </a>
-                        <a class="hs-nav-link hs-nav-sublink @NavClass("/admin/clients", "/admin/customers")" href="/Admin/Clients">
-                            <i class="fa-solid fa-users"></i> Clients
+                        <a class="hs-nav-link hs-nav-sublink @NavClass("/admin/mapstest")" href="/Admin/MapsTest">
+                            <i class="fa-solid fa-map-location-dot"></i> Maps/GPS Test
                         </a>
                     </div>
 
@@ -547,13 +531,6 @@
                         </a>
                         <a class="hs-nav-link hs-nav-sublink @(IsBookingsPath() ? "active" : "")" href="/Admin/Bookings">
                             <i class="fa-solid fa-clipboard-list"></i> Booking
-                        </a>
-                    </div>
-
-                    <div class="hs-sidebar-panel @(activeSection == "tracking" ? "" : "d-none")" data-section="tracking">
-                        <div class="hs-nav-parent"><i class="fa-solid fa-location-dot"></i> Tracking</div>
-                        <a class="hs-nav-link hs-nav-sublink @NavClass("/admin/mapstest")" href="/Admin/MapsTest">
-                            <i class="fa-solid fa-map-location-dot"></i> Maps/GPS Test
                         </a>
                     </div>
 
@@ -598,8 +575,17 @@
                         </a>
                     </div>
 
-                    <div class="hs-sidebar-panel @(activeSection == "administration" ? "" : "d-none")" data-section="administration">
-                        <div class="hs-nav-parent"><i class="fa-solid fa-user-shield"></i> Administration</div>
+                    <div class="hs-sidebar-panel @(activeSection == "setup" ? "" : "d-none")" data-section="setup">
+                        <div class="hs-nav-parent"><i class="fa-solid fa-sliders"></i> Setup</div>
+                        <a class="hs-nav-link hs-nav-sublink @NavClass("/admin/services")" href="/Admin/Services">
+                            <i class="fa-solid fa-toolbox"></i> App Services
+                        </a>
+                        <a class="hs-nav-link hs-nav-sublink @NavClass("/admin/servicecategories")" href="/Admin/ServiceCategories">
+                            <i class="fa-solid fa-layer-group"></i> App Categories
+                        </a>
+                        <a class="hs-nav-link hs-nav-sublink @NavClass("/admin/servicetitles")" href="/Admin/ServiceTitles">
+                            <i class="fa-solid fa-list-ul"></i> Job Types
+                        </a>
                         <a class="hs-nav-link hs-nav-sublink @NavClass("/admin/administration/users", "/admin/administration/roles")" href="/Admin/Administration/Users">
                             <i class="fa-solid fa-user-shield"></i> Users &amp; Roles
                         </a>

@@ -22,6 +22,7 @@ public interface IServiceTitleService
 
     Task<ServiceTitleListVm> GetListAsync(
         string? search,
+        int? categoryUid,
         string? sort,
         string? sortDir,
         int page,

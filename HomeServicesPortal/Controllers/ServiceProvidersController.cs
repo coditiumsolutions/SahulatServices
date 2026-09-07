@@ -45,7 +45,7 @@ public class ServiceProvidersController : Controller
             return View(model);
         }
 
-        TempData["SuccessMessage"] = $"S-Provider '{model.FullName}' created successfully.";
+        TempData["SuccessMessage"] = $"Job Provider '{model.FullName}' created successfully.";
         return RedirectToAction(nameof(Index));
     }
 
@@ -80,7 +80,7 @@ public class ServiceProvidersController : Controller
             return View(model);
         }
 
-        TempData["SuccessMessage"] = $"S-Provider '{model.FullName}' updated successfully.";
+        TempData["SuccessMessage"] = $"Job Provider '{model.FullName}' updated successfully.";
         return RedirectToAction(nameof(Index));
     }
 
@@ -106,7 +106,7 @@ public class ServiceProvidersController : Controller
             return View("Delete", vm);
         }
 
-        TempData["SuccessMessage"] = $"S-Provider '{vm.FullName}' deleted successfully.";
+        TempData["SuccessMessage"] = $"Job Provider '{vm.FullName}' deleted successfully.";
         return RedirectToAction(nameof(Index));
     }
 }
