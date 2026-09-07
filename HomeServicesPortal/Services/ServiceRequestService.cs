@@ -86,7 +86,20 @@ public class ServiceRequestService : IServiceRequestService
 
         if (!string.IsNullOrWhiteSpace(status))
         {
-            if (RequestStatusConstants.IsUnassigned(status)
+            if (RequestStatusConstants.IsPendingRequestsFilter(status))
+            {
+                // Assigned jobs still waiting for the provider to accept/reject.
+                query = query.Where(r => _db.ServiceBookings.Any(b =>
+                    b.RequestUid == r.Uid && b.Status == "Pending"));
+            }
+            else if (RequestStatusConstants.IsUrgentFilter(status))
+            {
+                query = query.Where(r =>
+                    r.IsUrgent
+                    && r.Status != RequestStatusConstants.Completed
+                    && r.Status != RequestStatusConstants.Cancelled);
+            }
+            else if (RequestStatusConstants.IsUnassigned(status)
                 || string.Equals(status, RequestStatusConstants.Initiated, StringComparison.OrdinalIgnoreCase))
             {
                 // Treat legacy Pending rows as Initiated when filtering.

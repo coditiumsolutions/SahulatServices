@@ -11,6 +11,20 @@
 
     string NavClass(params string[] prefixes) => TabClass(prefixes);
 
+    var requestStatusFilter = Context.Request.Query["status"].ToString();
+
+    bool IsServiceRequestsIndex() =>
+        path.Equals("/admin/servicerequests", StringComparison.OrdinalIgnoreCase);
+
+    string ServiceRequestNavClass(string? expectedStatus)
+    {
+        if (!IsServiceRequestsIndex()) return "";
+        var current = requestStatusFilter?.Trim() ?? "";
+        if (string.IsNullOrEmpty(expectedStatus))
+            return string.IsNullOrEmpty(current) ? "active" : "";
+        return string.Equals(current, expectedStatus, StringComparison.OrdinalIgnoreCase) ? "active" : "";
+    }
+
     bool IsDashboardPath() =>
         path.Equals("/admin", StringComparison.OrdinalIgnoreCase)
         || path.StartsWith("/admin/dashboard", StringComparison.OrdinalIgnoreCase);
@@ -230,6 +244,37 @@
             box-shadow: inset 0 2px 0 var(--hs-maroon);
         }
 
+        /* Fixed Dashboard control — always present; not a section tab */
+        .hs-tab-link--dashboard {
+            gap: 0.3rem;
+            padding: 0 0.85rem;
+            font-size: 0.68rem;
+            line-height: 1;
+            height: calc(var(--topbar-secondary-height) - 8px);
+            margin: 4px 0;
+            align-self: center;
+            border-radius: 3px;
+            color: #fff !important;
+            background: linear-gradient(180deg, #0a5cad 0%, #003366 100%) !important;
+            box-shadow: inset 0 2px 0 #f0c14b;
+        }
+
+        .hs-tab-link--dashboard:hover,
+        .hs-tab-link--dashboard:focus {
+            color: #fff !important;
+            background: linear-gradient(180deg, #1470c4 0%, #004080 100%) !important;
+        }
+
+        .hs-tab-link--dashboard.active {
+            color: #fff !important;
+            background: linear-gradient(180deg, #0d6efd 0%, #003366 100%) !important;
+            box-shadow: inset 0 2px 0 #ffc107;
+        }
+
+        .hs-tab-link--dashboard i {
+            font-size: 0.72rem;
+        }
+
         .hs-tab-dropdown .dropdown-menu {
             border: 1px solid #b5b5b5;
             border-radius: 0 0 4px 4px;
@@ -273,7 +318,7 @@
         }
 
         .hs-sidebar .hs-nav-link {
-            color: rgba(255, 255, 255, 0.8);
+            color: #f0c14b;
             text-decoration: none;
             padding: 0.6rem 0.75rem;
             display: flex;
@@ -281,22 +326,53 @@
             gap: 0.1rem 0.6rem;
             align-items: center;
             border-radius: 10px;
-            transition: background-color 0.15s ease;
+            transition: background-color 0.15s ease, color 0.15s ease;
         }
 
         .hs-sidebar .hs-nav-link > i:first-child {
             flex: 0 0 auto;
+            color: #f5d76e;
         }
 
         .hs-sidebar .hs-nav-link:hover {
-            background: rgba(13, 110, 253, 0.15);
-            color: #fff;
+            background: rgba(240, 193, 75, 0.16);
+            color: #ffe08a;
+        }
+
+        .hs-sidebar .hs-nav-link:hover > i:first-child {
+            color: #ffe08a;
         }
 
         .hs-sidebar .hs-nav-link.active {
-            background: rgba(255, 255, 255, 0.14);
-            color: #fff;
+            background: rgba(240, 193, 75, 0.22);
+            color: #ffd966;
             font-weight: 600;
+        }
+
+        .hs-sidebar .hs-nav-link.active > i:first-child {
+            color: #ffd966;
+        }
+
+        .hs-sidebar .hs-nav-link--dashboard {
+            color: #002244;
+            background: linear-gradient(180deg, #ffe08a 0%, #f0c14b 100%);
+            font-weight: 700;
+            font-size: 0.82rem;
+            border: 1px solid rgba(240, 193, 75, 0.9);
+            margin-bottom: 0.65rem;
+            padding: 0.4rem 0.65rem;
+            border-radius: 8px;
+        }
+
+        .hs-sidebar .hs-nav-link--dashboard:hover {
+            color: #002244;
+            background: linear-gradient(180deg, #ffe9a8 0%, #f5cc5c 100%);
+        }
+
+        .hs-sidebar .hs-nav-link--dashboard.active {
+            color: #002244;
+            background: linear-gradient(180deg, #ffd966 0%, #e8b020 100%);
+            box-shadow: inset 0 0 0 2px rgba(0, 51, 102, 0.25);
         }
 
         .hs-sidebar .hs-nav-parent {
@@ -316,6 +392,10 @@
         .hs-sidebar .hs-nav-sublink {
             padding-left: 1.1rem;
             font-size: 0.88rem;
+        }
+
+        .hs-sidebar-panel {
+            padding-top: 1.1rem;
         }
 
         .hs-wip-badge-row {
@@ -620,6 +700,13 @@
             <div class="collapse d-lg-block flex-grow-1" id="hsTabNav">
                 <ul class="hs-tab-nav">
                     <li>
+                        <a class="hs-tab-link hs-tab-link--dashboard @(IsDashboardPath() ? "active" : "")"
+                           href="/Admin"
+                           title="Dashboard (always available)">
+                            <i class="fa-solid fa-gauge"></i> Dashboard
+                        </a>
+                    </li>
+                    <li>
                         <a class="hs-tab-link @TabClass("/admin/clients", "/admin/customers")"
                            href="#" data-hs-section="customers">Customers</a>
                     </li>
@@ -673,36 +760,41 @@
     <div class="container-fluid">
         <div class="row">
             <aside class="col-12 col-lg-2 hs-sidebar d-none d-lg-block" id="hsSidebar">
-                <div class="px-2 pb-4 pt-3">
-
-                    <a class="hs-nav-link @(IsDashboardPath() ? "active" : "") mb-2" href="/Admin">
-                        <i class="fa-solid fa-gauge"></i> Dashboard
-                    </a>
+                <div class="px-2 pb-4 pt-4">
 
                     <div class="hs-sidebar-panel @(activeSection == "customers" ? "" : "d-none")" data-section="customers">
-                        <div class="hs-nav-parent"><i class="fa-solid fa-users"></i> Customers</div>
                         <a class="hs-nav-link hs-nav-sublink @NavClass("/admin/clients", "/admin/customers")" href="/Admin/Clients">
                             <i class="fa-solid fa-users"></i> Customers
                         </a>
                     </div>
 
                     <div class="hs-sidebar-panel @(activeSection == "providers" ? "" : "d-none")" data-section="providers">
-                        <div class="hs-nav-parent"><i class="fa-solid fa-user-tie"></i> Providers</div>
                         <a class="hs-nav-link hs-nav-sublink @NavClass("/admin/serviceproviders")" href="/Admin/ServiceProviders">
-                            <i class="fa-solid fa-user-tie"></i> Job Providers
+                            <i class="fa-solid fa-user-tie"></i> All Providers
                         </a>
                         <a class="hs-nav-link hs-nav-sublink @NavClass("/admin/providerdocuments")" href="/Admin/ProviderDocuments">
-                            <i class="fa-solid fa-file-signature"></i> P-Documents
+                            <i class="fa-solid fa-file-signature"></i> Legal Document
                         </a>
                         <a class="hs-nav-link hs-nav-sublink @NavClass("/admin/mapstest")" href="/Admin/MapsTest">
-                            <i class="fa-solid fa-map-location-dot"></i> Maps/GPS Test
+                            <i class="fa-solid fa-map-location-dot"></i> Maps/GPS
                         </a>
                     </div>
 
                     <div class="hs-sidebar-panel @(activeSection == "operations" ? "" : "d-none")" data-section="operations">
-                        <div class="hs-nav-parent"><i class="fa-solid fa-list-check"></i> Operations</div>
-                        <a class="hs-nav-link hs-nav-sublink @NavClass("/admin/servicerequests")" href="/Admin/ServiceRequests">
-                            <i class="fa-solid fa-list-check"></i> S-Requeste
+                        <a class="hs-nav-link hs-nav-sublink @ServiceRequestNavClass(null)" href="/Admin/ServiceRequests">
+                            <i class="fa-solid fa-list-check"></i> All Requests
+                        </a>
+                        <a class="hs-nav-link hs-nav-sublink @ServiceRequestNavClass("Initiated")" href="/Admin/ServiceRequests?status=Initiated">
+                            <i class="fa-solid fa-flag"></i> Initiated
+                        </a>
+                        <a class="hs-nav-link hs-nav-sublink @ServiceRequestNavClass("PendingRequests")" href="/Admin/ServiceRequests?status=PendingRequests">
+                            <i class="fa-solid fa-hourglass-half"></i> Pending
+                        </a>
+                        <a class="hs-nav-link hs-nav-sublink @ServiceRequestNavClass("Urgent")" href="/Admin/ServiceRequests?status=Urgent">
+                            <i class="fa-solid fa-bolt"></i> Urgent
+                        </a>
+                        <a class="hs-nav-link hs-nav-sublink @ServiceRequestNavClass("Completed")" href="/Admin/ServiceRequests?status=Completed">
+                            <i class="fa-solid fa-circle-check"></i> Completed
                         </a>
                         <a class="hs-nav-link hs-nav-sublink @(IsBookingsPath() ? "active" : "")" href="/Admin/Bookings">
                             <i class="fa-solid fa-clipboard-list"></i> Booking
@@ -710,7 +802,6 @@
                     </div>
 
                     <div class="hs-sidebar-panel @(activeSection == "finance" ? "" : "d-none")" data-section="finance">
-                        <div class="hs-nav-parent"><i class="fa-solid fa-money-bill-wave"></i> Finance</div>
                         <a class="hs-nav-link hs-nav-sublink @NavClass("/admin/payments/ledger")" href="/Admin/Payments/Ledger">
                             <i class="fa-solid fa-book"></i> Payment Ledger
                         </a>
@@ -732,7 +823,6 @@
                     </div>
 
                     <div class="hs-sidebar-panel @(activeSection == "reports" ? "" : "d-none")" data-section="reports">
-                        <div class="hs-nav-parent"><i class="fa-solid fa-chart-column"></i> Reports</div>
                         <a class="hs-nav-link hs-nav-sublink @NavClass("/admin/reports/provider")" href="/Admin/Reports/Provider">
                             <i class="fa-solid fa-chart-column"></i> Provider Report <span class="hs-wip-badge-row"><span class="hs-wip-badge">WIP</span></span>
                         </a>
@@ -751,7 +841,6 @@
                     </div>
 
                     <div class="hs-sidebar-panel @(activeSection == "setup" ? "" : "d-none")" data-section="setup">
-                        <div class="hs-nav-parent"><i class="fa-solid fa-sliders"></i> Setup</div>
                         <a class="hs-nav-link hs-nav-sublink @NavClass("/admin/services")" href="/Admin/Services">
                             <i class="fa-solid fa-toolbox"></i> App Services
                         </a>
@@ -789,11 +878,12 @@
 
             function showSidebarSection(section) {
                 document.querySelectorAll('.hs-sidebar-panel').forEach(function (panel) {
-                    panel.classList.toggle('d-none', panel.dataset.section !== section);
+                    // Empty section (Dashboard): hide all tab panels; Dashboard stays fixed above.
+                    panel.classList.toggle('d-none', !section || panel.dataset.section !== section);
                 });
 
                 document.querySelectorAll('.hs-tab-link[data-hs-section]').forEach(function (tab) {
-                    tab.classList.toggle('active', tab.dataset.hsSection === section);
+                    tab.classList.toggle('active', !!section && tab.dataset.hsSection === section);
                 });
             }
 

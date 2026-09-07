@@ -1,6 +1,6 @@
 ================================================================================
 SahulatGharTak API Reference
-Version: 3.8 | Last Updated: 2026-09-07
+Version: 3.9 | Last Updated: 2026-09-07
 Database: SahulatAppDB
 Local Base URL:    https://localhost:7265/api/
 Deployed Base URL:  https://sahulatghartak.com/api/
@@ -1308,6 +1308,13 @@ Fail (404):
 CUSTOMER SERVICE REQUESTS APIs
 ================================================================================
 
+Status (CustomerServiceRequests.Status) — live CHECK:
+  Initiated | Assigned | Accepted | In Progress | Completed | Cancelled | Rejected
+- Initiated = newly created by client/customer (replaces former request-level "Pending").
+  Also restored when a provider rejects an assignment so staff can reassign.
+- Assigned / Completed / Cancelled are the main values clients see after create.
+- ServiceBookings still use their own Status machine (Pending = awaiting provider response).
+
 --------------------------------------------------------------------------------
 GET All Customer Service Requests
 --------------------------------------------------------------------------------
@@ -1337,12 +1344,12 @@ Notes:
   simply type a different contact number. Do not treat contactPerson/contactNo as "the logged-in
   client's identity" in the UI — use clientName (and the client's own profile/account data) for that.
 - progressStatus is a COMPUTED, read-only field for the client progress bar — it is never
-  persisted and never equals the raw "status" column. Values: "Requested" (no booking yet),
-  "Assigned" (booking exists, provider hasn't started), "In Progress" (provider is actively on
-  the job — either they tapped Start, or the preferred service date/time has arrived while the
-  booking sits Accepted), "Completed" (job done, whether or not staff has since closed it out).
-  progressStatus is null whenever the request or its booking is Cancelled — render a plain
-  "Cancelled" label and hide the progress bar entirely rather than switching on this field.
+  persisted and never equals the raw "status" column. Values: "Requested" (request Status=Initiated
+  / no non-Rejected booking yet), "Assigned" (booking exists, provider hasn't started), "In Progress"
+  (provider is actively on the job — either they tapped Start, or the preferred service date/time has
+  arrived while the booking sits Accepted), "Completed" (job done, whether or not staff has since
+  closed it out). progressStatus is null whenever the request or its booking is Cancelled — render a
+  plain "Cancelled" label and hide the progress bar entirely rather than switching on this field.
   Do not derive UI state from "status" directly for the progress bar; use progressStatus.
   See docs/status-workflow.md for the full design and rationale.
 

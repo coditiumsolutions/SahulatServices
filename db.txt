@@ -1,4 +1,4 @@
-# Version: 3.7 | UpdatedAt: 07/09/2026
+# Version: 3.8 | UpdatedAt: 07/09/2026
 # Database: SahulatAppDB
 # Server: 34.131.41.192,1433
 
@@ -176,6 +176,7 @@ Table: CustomerServiceRequests
   -- Initiated = created by client/customer (or provider rejected; awaiting staff assign)
   -- Legacy "Pending" was renamed to Initiated (2026-09-07)
   Remarks              nvarchar(500)    NULL
+  CancelReason         nvarchar(500)    NULL  -- set when client cancels (Status=Cancelled)
   CreatedOn            datetime         NOT NULL  DEFAULT (getdate())
 
 --------------------------------------------------------------------------------
@@ -205,6 +206,8 @@ Table: ServiceBookings
   Passcode             nvarchar(10)     NULL      -- 4-digit completion passcode, set when provider accepts
   AcceptedOn           datetime         NULL      -- set when provider accepts the assignment
   CompletedOn          datetime         NULL      -- set when provider verifies the passcode
+  CancelReason         nvarchar(500)    NULL      -- set when Accepted/In Progress booking is cancelled
+  RejectReason         nvarchar(500)    NULL      -- set when provider rejects a Pending booking
   CreatedOn            datetime         NOT NULL  DEFAULT (getdate())
   -- Finance post (auto when Status=Completed):
   --   PaymentLedger: Company/Credit/Commission, Provider/Credit/JobEarning,
@@ -216,7 +219,7 @@ Table: ServiceBookings
 Table: CommissionRules
 --------------------------------------------------------------------------------
   UID                  int              NOT NULL  PK
-  Scope                nvarchar(20)     NOT NULL
+  Scope                nvarchar(20)     NOT NULL  CHECK (Global | Category | Provider)
   CategoryUID          int              NULL
   ProviderUID          int              NULL      FK -> Providers.UID
   RuleType             nvarchar(10)     NOT NULL  CHECK (Percentage | Fixed)
@@ -225,6 +228,8 @@ Table: CommissionRules
   EffectiveTo          datetime         NULL
   IsActive             bit              NOT NULL  DEFAULT (1)
   CreatedOn            datetime         NOT NULL  DEFAULT (getdate())
+  -- Assign Provider resolves: Provider rule → Category rule → Global rule (active + effective window).
+  -- Percentage maps to booking CommissionType=Percent; Fixed maps to Fixed.
 
 --------------------------------------------------------------------------------
 Table: PaymentLedger

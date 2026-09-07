@@ -17,6 +17,16 @@ public static class RequestStatusConstants
     /// <summary>Legacy pre-assignment value; still accepted for older clients / rows.</summary>
     public const string LegacyPending = "Pending";
 
+    /// <summary>
+    /// Admin list filter (not a stored Status): requests with a booking still awaiting provider response.
+    /// </summary>
+    public const string PendingRequestsFilter = "PendingRequests";
+
+    /// <summary>
+    /// Admin list filter: IsUrgent and not Completed (and not Cancelled).
+    /// </summary>
+    public const string UrgentFilter = "Urgent";
+
     public static readonly string[] ClientEditableStatuses =
     [
         Initiated,
@@ -28,6 +38,13 @@ public static class RequestStatusConstants
     public static bool IsUnassigned(string? status) =>
         string.Equals(status, Initiated, StringComparison.OrdinalIgnoreCase)
         || string.Equals(status, LegacyPending, StringComparison.OrdinalIgnoreCase);
+
+    public static bool IsPendingRequestsFilter(string? status) =>
+        string.Equals(status, PendingRequestsFilter, StringComparison.OrdinalIgnoreCase)
+        || string.Equals(status, "Pending Requests", StringComparison.OrdinalIgnoreCase);
+
+    public static bool IsUrgentFilter(string? status) =>
+        string.Equals(status, UrgentFilter, StringComparison.OrdinalIgnoreCase);
 
     /// <summary>Normalize client/admin input: Pending → Initiated.</summary>
     public static string Normalize(string? status)
