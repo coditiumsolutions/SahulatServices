@@ -71,3 +71,26 @@ public class CustomerDeleteVm
     public int PaymentLedgerCount { get; set; }
     public bool HasLinkedData => AddressCount > 0 || ServiceRequestCount > 0 || BookingCount > 0 || PaymentLedgerCount > 0;
 }
+
+public class CustomerRequestsListVm
+{
+    public List<CustomerRequestRowVm> Items { get; set; } = new();
+    public string? Search { get; set; }
+    public int Page { get; set; } = 1;
+    public int PageSize { get; set; } = 15;
+    public int TotalCount { get; set; }
+    public int TotalPages => PageSize > 0 ? (int)Math.Ceiling(TotalCount / (double)PageSize) : 0;
+}
+
+public class CustomerRequestRowVm
+{
+    public int ClientUid { get; set; }
+    public string CustomerName { get; set; } = string.Empty;
+    public string? MobileNo { get; set; }
+    public int RequestUid { get; set; }
+    public string ServiceTitle { get; set; } = string.Empty;
+    public string CategoryName { get; set; } = string.Empty;
+    public string Status { get; set; } = string.Empty;
+    public bool IsUrgent { get; set; }
+    public DateTime CreatedOn { get; set; }
+}

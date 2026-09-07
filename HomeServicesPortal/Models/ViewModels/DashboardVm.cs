@@ -81,3 +81,12 @@ public class LatestPaymentVm
     public string? BookingStatus { get; set; }
 }
 
+public class RequestGraphVm
+{
+    public int InitiatedCount { get; set; }
+    public int PendingCount { get; set; }
+    public int CompletedCount { get; set; }
+
+    public int TotalCount => InitiatedCount + PendingCount + CompletedCount;
+}
+

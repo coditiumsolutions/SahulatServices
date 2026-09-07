@@ -80,6 +80,61 @@ public class CustomerService : ICustomerService
         };
     }
 
+    public async Task<CustomerRequestsListVm> GetCustomerRequestsAsync(
+        string? search,
+        int page,
+        CancellationToken cancellationToken = default)
+    {
+        const int pageSize = 15;
+        page = page < 1 ? 1 : page;
+
+        var query =
+            from r in _db.CustomerServiceRequests.AsNoTracking()
+            join c in _db.Clients.AsNoTracking() on r.ClientUid equals c.Uid
+            select new { Request = r, Client = c };
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var term = search.Trim();
+            query = query.Where(x =>
+                x.Client.FullName.Contains(term) ||
+                x.Client.User.MobileNo.Contains(term) ||
+                x.Request.ServiceTitle.Contains(term) ||
+                x.Request.Status.Contains(term) ||
+                x.Request.Category.CategoryName.Contains(term));
+        }
+
+        var totalCount = await query.CountAsync(cancellationToken);
+
+        var items = await query
+            .OrderByDescending(x => x.Request.CreatedOn)
+            .ThenByDescending(x => x.Request.Uid)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(x => new CustomerRequestRowVm
+            {
+                ClientUid = x.Client.Uid,
+                CustomerName = x.Client.FullName,
+                MobileNo = x.Client.User.MobileNo,
+                RequestUid = x.Request.Uid,
+                ServiceTitle = x.Request.ServiceTitle,
+                CategoryName = x.Request.Category.CategoryName,
+                Status = x.Request.Status,
+                IsUrgent = x.Request.IsUrgent,
+                CreatedOn = x.Request.CreatedOn
+            })
+            .ToListAsync(cancellationToken);
+
+        return new CustomerRequestsListVm
+        {
+            Items = items,
+            Search = search,
+            Page = page,
+            PageSize = pageSize,
+            TotalCount = totalCount
+        };
+    }
+
     public async Task<CustomerDetailsVm?> GetDetailsAsync(int id, CancellationToken cancellationToken = default)
     {
         return await _db.Clients

@@ -27,14 +27,35 @@
 
     bool IsDashboardPath() =>
         path.Equals("/admin", StringComparison.OrdinalIgnoreCase)
-        || path.StartsWith("/admin/dashboard", StringComparison.OrdinalIgnoreCase);
+        || path.StartsWith("/admin/dashboard", StringComparison.OrdinalIgnoreCase)
+        || path.StartsWith("/admin/graph", StringComparison.OrdinalIgnoreCase);
 
     bool IsBookingsPath() =>
         path.StartsWith("/admin/bookings", StringComparison.OrdinalIgnoreCase) &&
         !path.StartsWith("/admin/bookingtracking", StringComparison.OrdinalIgnoreCase);
 
+    bool IsGraphPath() =>
+        path.StartsWith("/admin/graph", StringComparison.OrdinalIgnoreCase);
+
+    bool IsSummaryPath() =>
+        path.Equals("/admin", StringComparison.OrdinalIgnoreCase)
+        || path.StartsWith("/admin/dashboard", StringComparison.OrdinalIgnoreCase);
+
+    string CustomerNavClass(bool requestsLink)
+    {
+        var onRequests = path.StartsWith("/admin/clients/requests", StringComparison.OrdinalIgnoreCase)
+            || path.StartsWith("/admin/customers/requests", StringComparison.OrdinalIgnoreCase);
+        var onCustomers = (path.StartsWith("/admin/clients", StringComparison.OrdinalIgnoreCase)
+                || path.StartsWith("/admin/customers", StringComparison.OrdinalIgnoreCase))
+            && !onRequests;
+        if (requestsLink) return onRequests ? "active" : "";
+        return onCustomers ? "active" : "";
+    }
+
     var activeSection = "";
-    if (TabClass("/admin/clients", "/admin/customers") == "active")
+    if (IsDashboardPath())
+        activeSection = "dashboard";
+    else if (TabClass("/admin/clients", "/admin/customers") == "active")
         activeSection = "customers";
     else if (TabClass("/admin/serviceproviders", "/admin/providerdocuments", "/admin/mapstest") == "active")
         activeSection = "providers";
@@ -762,9 +783,21 @@
             <aside class="col-12 col-lg-2 hs-sidebar d-none d-lg-block" id="hsSidebar">
                 <div class="px-2 pb-4 pt-4">
 
+                    <div class="hs-sidebar-panel @(activeSection == "dashboard" ? "" : "d-none")" data-section="dashboard">
+                        <a class="hs-nav-link hs-nav-sublink @(IsSummaryPath() ? "active" : "")" href="/Admin">
+                            <i class="fa-solid fa-chart-pie"></i> Summary
+                        </a>
+                        <a class="hs-nav-link hs-nav-sublink @(IsGraphPath() ? "active" : "")" href="/Admin/Graph">
+                            <i class="fa-solid fa-chart-column"></i> Graph
+                        </a>
+                    </div>
+
                     <div class="hs-sidebar-panel @(activeSection == "customers" ? "" : "d-none")" data-section="customers">
-                        <a class="hs-nav-link hs-nav-sublink @NavClass("/admin/clients", "/admin/customers")" href="/Admin/Clients">
+                        <a class="hs-nav-link hs-nav-sublink @CustomerNavClass(false)" href="/Admin/Clients">
                             <i class="fa-solid fa-users"></i> Customers
+                        </a>
+                        <a class="hs-nav-link hs-nav-sublink @CustomerNavClass(true)" href="/Admin/Clients/Requests">
+                            <i class="fa-solid fa-clipboard-user"></i> Customer Requests
                         </a>
                     </div>
 
@@ -878,7 +911,6 @@
 
             function showSidebarSection(section) {
                 document.querySelectorAll('.hs-sidebar-panel').forEach(function (panel) {
-                    // Empty section (Dashboard): hide all tab panels; Dashboard stays fixed above.
                     panel.classList.toggle('d-none', !section || panel.dataset.section !== section);
                 });
 

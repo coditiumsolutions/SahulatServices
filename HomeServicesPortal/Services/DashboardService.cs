@@ -1,4 +1,5 @@
 using HomeServicesPortal.Data;
+using HomeServicesPortal.Helpers;
 using HomeServicesPortal.Models.ViewModels;
 using Microsoft.EntityFrameworkCore;
 
@@ -15,6 +16,33 @@ public class DashboardService : IDashboardService
     public DashboardService(AppDbContext db)
     {
         _db = db;
+    }
+
+    public async Task<RequestGraphVm> GetRequestGraphAsync(CancellationToken cancellationToken = default)
+    {
+        var initiated = await _db.CustomerServiceRequests
+            .AsNoTracking()
+            .CountAsync(r =>
+                r.Status == RequestStatusConstants.Initiated
+                || r.Status == RequestStatusConstants.LegacyPending,
+                cancellationToken);
+
+        var pending = await _db.CustomerServiceRequests
+            .AsNoTracking()
+            .CountAsync(r => _db.ServiceBookings.Any(b =>
+                b.RequestUid == r.Uid && b.Status == "Pending"),
+                cancellationToken);
+
+        var completed = await _db.CustomerServiceRequests
+            .AsNoTracking()
+            .CountAsync(r => r.Status == RequestStatusConstants.Completed, cancellationToken);
+
+        return new RequestGraphVm
+        {
+            InitiatedCount = initiated,
+            PendingCount = pending,
+            CompletedCount = completed
+        };
     }
 
     public async Task<DashboardVm> GetDashboardAsync(CancellationToken cancellationToken = default)

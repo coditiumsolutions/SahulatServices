@@ -1,0 +1,122 @@
+@model HomeServicesPortal.Models.ViewModels.RequestGraphVm
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Request Graphs";
+}
+
+<div class="d-flex align-items-center justify-content-between mb-3">
+    <div>
+        <h2 class="mb-0">
+            <i class="fa-solid fa-chart-column me-2 text-primary"></i>Request Graphs
+        </h2>
+        <p class="text-muted mb-0">Initiated, Pending, and Completed service requests</p>
+    </div>
+    <div class="text-muted">
+        <i class="fa-regular fa-calendar me-1"></i>@DateTime.Now.ToString("dd MMM yyyy")
+    </div>
+</div>
+
+<div class="row g-3 mb-3">
+    <div class="col-12 col-md-4">
+        <div class="card hs-card h-100">
+            <div class="card-body">
+                <div class="text-muted small">Initiated</div>
+                <div class="fs-3 fw-bold">@Model.InitiatedCount</div>
+                <div class="text-muted small"><i class="fa-solid fa-flag text-warning me-2"></i>Awaiting assignment</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-md-4">
+        <div class="card hs-card h-100">
+            <div class="card-body">
+                <div class="text-muted small">Pending</div>
+                <div class="fs-3 fw-bold">@Model.PendingCount</div>
+                <div class="text-muted small"><i class="fa-solid fa-hourglass-half text-info me-2"></i>Awaiting provider</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-md-4">
+        <div class="card hs-card h-100">
+            <div class="card-body">
+                <div class="text-muted small">Completed</div>
+                <div class="fs-3 fw-bold">@Model.CompletedCount</div>
+                <div class="text-muted small"><i class="fa-solid fa-circle-check text-success me-2"></i>Done requests</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-12 col-lg-6">
+        <div class="card hs-card">
+            <div class="card-body">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <h5 class="mb-0">Request Status Share</h5>
+                    <span class="text-muted small">Doughnut</span>
+                </div>
+                <canvas id="requestStatusDoughnut" height="140"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-lg-6">
+        <div class="card hs-card">
+            <div class="card-body">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <h5 class="mb-0">Request Status Counts</h5>
+                    <span class="text-muted small">Bar</span>
+                </div>
+                <canvas id="requestStatusBar" height="140"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+    <script>
+        const labels = ['Initiated', 'Pending', 'Completed'];
+        const values = [@Model.InitiatedCount, @Model.PendingCount, @Model.CompletedCount];
+        const colors = ['#FFC107', '#0DCAF0', '#198754'];
+
+        new Chart(document.getElementById('requestStatusDoughnut'), {
+            type: 'doughnut',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: values,
+                    backgroundColor: colors
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { position: 'bottom' }
+                }
+            }
+        });
+
+        new Chart(document.getElementById('requestStatusBar'), {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Requests',
+                    data: values,
+                    backgroundColor: colors
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: { precision: 0 }
+                    }
+                }
+            }
+        });
+    </script>
+}

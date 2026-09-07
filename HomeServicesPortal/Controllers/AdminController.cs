@@ -22,4 +22,11 @@ public class AdminController : Controller
         DashboardVm vm = await _dashboardService.GetDashboardAsync(cancellationToken);
         return View(vm);
     }
+
+    [HttpGet("/Admin/Graph")]
+    public async Task<IActionResult> Graph(CancellationToken cancellationToken)
+    {
+        var vm = await _dashboardService.GetRequestGraphAsync(cancellationToken);
+        return View(vm);
+    }
 }

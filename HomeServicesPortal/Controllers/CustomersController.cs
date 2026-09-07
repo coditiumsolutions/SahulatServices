@@ -23,6 +23,14 @@ public class CustomersController : Controller
         return View(vm);
     }
 
+    [HttpGet("/Admin/Clients/Requests")]
+    [HttpGet("/Admin/Customers/Requests")]
+    public async Task<IActionResult> Requests(string? search, int page = 1, CancellationToken cancellationToken = default)
+    {
+        var vm = await _service.GetCustomerRequestsAsync(search, page, cancellationToken);
+        return View(vm);
+    }
+
     [HttpGet("/Admin/Clients/Create")]
     [HttpGet("/Admin/Customers/Create")]
     public IActionResult Create()
