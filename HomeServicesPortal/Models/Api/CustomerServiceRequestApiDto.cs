@@ -32,7 +32,7 @@ public class CustomerServiceRequestApiDto
 
     public decimal? EstimatedBudget { get; set; }
 
-    public string Status { get; set; } = "Pending";
+    public string Status { get; set; } = "Initiated";
 
     /// <summary>
     /// Computed, read-only client progress-bar stage: Requested / Assigned / In Progress /

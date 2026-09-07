@@ -1,6 +1,6 @@
 ================================================================================
 SahulatGharTak API Reference
-Version: 3.7 | Last Updated: 2026-09-04
+Version: 3.8 | Last Updated: 2026-09-07
 Database: SahulatAppDB
 Local Base URL:    https://localhost:7265/api/
 Deployed Base URL:  https://sahulatghartak.com/api/
@@ -1321,8 +1321,8 @@ Request Body: none
 Notes:
 - providerUid, providerName, providerMobileNo, providerProfilePhotoPath, providerCnic are populated
   once a ServiceBooking exists for this request AND that booking's status is Accepted, In Progress,
-  Completed, or Closed (same rule as GET /service-bookings). Otherwise (no booking yet, still Pending, or
-  Rejected) all five fields are null.
+  Completed, or Closed (same rule as GET /service-bookings). Otherwise (no booking yet, booking still
+  Pending, or Rejected) all five fields are null.
 - passcode is populated once the linked ServiceBooking has a non-null Passcode — i.e. the booking
   has been Accepted (Passcode is generated at accept time, see POST .../respond in the Service
   Bookings section). If no booking exists yet, or it hasn't been accepted yet, passcode is null.
@@ -1367,7 +1367,7 @@ Success (200):
       "contactPerson": "Shahid",
       "contactNo": "03335191392",
       "estimatedBudget": 2500.00,
-      "status": "Pending",
+      "status": "Initiated",
       "progressStatus": "Requested",
       "remarks": "Please call before arrival",
       "cancelReason": null,
@@ -1426,8 +1426,8 @@ Request Body: none
 Notes:
 - providerUid, providerName, providerMobileNo, providerProfilePhotoPath, providerCnic are populated
   once a ServiceBooking exists for this request AND that booking's status is Accepted, In Progress,
-  Completed, or Closed (same rule as GET /service-bookings). Otherwise (no booking yet, still Pending, or
-  Rejected) all five fields are null.
+  Completed, or Closed (same rule as GET /service-bookings). Otherwise (no booking yet, booking still
+  Pending, or Rejected) all five fields are null.
 - passcode is populated once the linked ServiceBooking has a non-null Passcode — i.e. the booking
   has been Accepted (Passcode is generated at accept time, see POST .../respond in the Service
   Bookings section). If no booking exists yet, or it hasn't been accepted yet, passcode is null.
@@ -1508,7 +1508,8 @@ Request Body:
 }
 
 Notes:
-- status defaults to "Pending" on create
+- status defaults to "Initiated" on create (replaces former "Pending" on CustomerServiceRequests;
+  ServiceBookings still use "Pending" = awaiting provider response)
 - clientAddressUid must belong to the same clientUid
 - serviceDescription is OPTIONAL (omit, null, or "" when not provided)
 - preferredServiceDate and preferredServiceTime are OPTIONAL (omit, null, or "" when not provided)
@@ -1537,7 +1538,7 @@ Success (201):
     "contactPerson": "Shahid",
     "contactNo": "03335191392",
     "estimatedBudget": 2500.00,
-    "status": "Pending",
+    "status": "Initiated",
     "remarks": "Please call before arrival",
     "createdOn": "2026-07-08T00:00:00"
   }
@@ -1572,7 +1573,7 @@ Request Body:
   "contactPerson": "Shahid",
   "contactNo": "03335191392",
   "estimatedBudget": 3000,
-  "status": "Pending",
+  "status": "Initiated",
   "remarks": "Technician assigned",
   "cancelReason": null
 }
@@ -1582,13 +1583,14 @@ Notes:
 - clientUid cannot be changed on update
 - serviceDescription is OPTIONAL (omit, null, or "" when not provided)
 - preferredServiceDate and preferredServiceTime are OPTIONAL (omit, null, or "" when not provided)
-- status is WHITELISTED to "Pending" or "Cancelled" only — a client can edit request details
-  while it's still Pending, or cancel it. "Assigned"/"In Progress"/"Completed" are set by
-  staff/the provider flow, never by the client's own PUT; any other value fails with 400
-  ("Invalid status value."). See docs/status-workflow.md.
+- status is WHITELISTED to "Initiated" or "Cancelled" only (legacy "Pending" is still accepted and
+  normalized to "Initiated") — a client can edit request details while it's still Initiated, or
+  cancel it. "Assigned"/"In Progress"/"Completed" are set by staff/the provider flow, never by
+  the client's own PUT; any other value fails with 400 ("Invalid status value.").
+  See docs/status-workflow.md.
 - cancelReason is REQUIRED (non-empty) whenever status is being set to "Cancelled" — the customer's
   reason for cancelling. Fails with 400 if status="Cancelled" and cancelReason is missing/empty.
-  For status="Pending", cancelReason is optional/ignored (existing stored value is preserved).
+  For status="Initiated", cancelReason is optional/ignored (existing stored value is preserved).
 
 Example (customer cancelling):
 {
@@ -1624,7 +1626,7 @@ Success (200):
     "contactPerson": "Shahid",
     "contactNo": "03335191392",
     "estimatedBudget": 3000.00,
-    "status": "Pending",
+    "status": "Initiated",
     "progressStatus": "Requested",
     "remarks": "Technician assigned",
     "cancelReason": null,
@@ -2090,7 +2092,7 @@ Notes:
 - accept:false -> reason is REQUIRED (non-empty), fails with 400 if missing/empty.
   Status="Rejected" (staff-only; hidden from all client/provider-facing GET/list responses),
   reason is persisted to RejectReason, and the parent CustomerServiceRequest reverts to
-  Status="Pending" so staff can reassign a different provider
+  Status="Initiated" so staff can reassign a different provider
 
 Success (200 - accepted):
 {

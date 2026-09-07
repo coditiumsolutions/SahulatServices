@@ -1,4 +1,4 @@
-# Version: 3.6 | UpdatedAt: 07/09/2026
+# Version: 3.7 | UpdatedAt: 07/09/2026
 # Database: SahulatAppDB
 # Server: 34.131.41.192,1433
 
@@ -171,7 +171,10 @@ Table: CustomerServiceRequests
   ContactPerson        nvarchar(150)    NULL
   ContactNo            nvarchar(20)     NOT NULL
   EstimatedBudget      decimal(12,2)    NULL
-  Status               nvarchar(30)     NOT NULL  DEFAULT ('Pending')
+  Status               nvarchar(30)     NOT NULL  DEFAULT ('Initiated')
+  -- Status CHECK: Initiated | Assigned | Accepted | In Progress | Completed | Cancelled | Rejected
+  -- Initiated = created by client/customer (or provider rejected; awaiting staff assign)
+  -- Legacy "Pending" was renamed to Initiated (2026-09-07)
   Remarks              nvarchar(500)    NULL
   CreatedOn            datetime         NOT NULL  DEFAULT (getdate())
 

@@ -52,7 +52,7 @@ Accepted / In Progress -> Cancelled   (staff-only, post-acceptance cancel)
 |---|---|---|
 | `Pending` | staff | booking created when staff assigns a provider to a request |
 | `Accepted` | provider | `POST /service-bookings/{id}/respond` with `accept:true` |
-| `Rejected` | provider | `POST /service-bookings/{id}/respond` with `accept:false` (hidden from all client/provider GET responses; parent request reverts to `Pending` so staff can reassign) |
+| `Rejected` | provider | `POST /service-bookings/{id}/respond` with `accept:false` (hidden from all client/provider GET responses; parent request reverts to `Initiated` so staff can reassign) |
 | `In Progress` | provider | **new:** `POST /service-bookings/{id}/start` (precondition: current status `Accepted`) |
 | `Completed` | provider | `POST /service-bookings/{id}/verify-completion` (passcode match). Posts `PaymentLedger`/`ProviderPayout` entries automatically (`RecordBookingCompletionAsync`) and syncs the parent request to `Completed`. |
 | `Closed` | staff | manual, via admin portal, after reviewing/reconciling the completed job. **No automatic ledger action is tied to this today** — ledger posting already happened at `Completed`. Confirmed by reading `PaymentService.cs`; if `Closed` should trigger something additional, that logic doesn't exist yet and needs to be specified separately. |
@@ -73,13 +73,14 @@ Canonical values (whitelist now enforced on the mobile `PUT` — previously unva
 text, see Implementation status):
 
 ```
-Pending -> Assigned -> Completed
-Pending -> Cancelled     (client-driven, pre-assignment)
+Initiated -> Assigned -> Completed
+Initiated -> Cancelled     (client-driven, pre-assignment)
 Assigned -> Cancelled    (staff-driven, post-assignment — see note below)
 ```
 
-- `Pending` — request created, no booking yet, or a provider just rejected (reverted here by
-  the reject flow so staff can reassign).
+- `Initiated` — request created by client/customer, no booking yet, or a provider just rejected
+  (reverted here by the reject flow so staff can reassign). Replaces the former `Pending`
+  label on this table (booking rows still use `Pending` = awaiting provider response).
 - `Assigned` — staff created a booking for this request (booking `Pending`, `Accepted`, or
   `In Progress`/`Completed`/`Closed` — this column does not track the fine-grained booking
   states, see `progressStatus` below).
@@ -108,7 +109,7 @@ booking (if any). This is what the Flutter client app renders as the progress ba
 
 | `progressStatus` | Derived when |
 |---|---|
-| `Requested` | no non-`Rejected` booking exists yet; request `Status == "Pending"` |
+| `Requested` | no non-`Rejected` booking exists yet; request `Status` is `Initiated` (or legacy `Pending`) |
 | `Assigned` | booking exists with `Status` in (`Pending`, `Accepted`) |
 | `In Progress` | booking `Status == "In Progress"`, **or** booking `Status == "Accepted"` and `now >= PreferredServiceDate`/`PreferredServiceTime` |
 | `Completed` | booking `Status` is `Completed` **or** `Closed` — the client never needs to know a job was staff-reviewed, `Closed` still just reads as `Completed` to them |

@@ -1,5 +1,6 @@
 using HomeServicesPortal.Data;
 using HomeServicesPortal.Entities;
+using HomeServicesPortal.Helpers;
 using HomeServicesPortal.Models.ViewModels;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
@@ -469,7 +470,7 @@ public class BookingService : IBookingService
 
         if (request == null) return null;
 
-        if (!string.Equals(request.Status, "Pending", StringComparison.OrdinalIgnoreCase))
+        if (!RequestStatusConstants.IsUnassigned(request.Status))
         {
             return null;
         }
@@ -563,9 +564,9 @@ public class BookingService : IBookingService
             return (false, "Service request not found.");
         }
 
-        if (!string.Equals(request.Status, "Pending", StringComparison.OrdinalIgnoreCase))
+        if (!RequestStatusConstants.IsUnassigned(request.Status))
         {
-            return (false, "Only pending requests can be assigned to a provider.");
+            return (false, "Only initiated requests can be assigned to a provider.");
         }
 
         var alreadyBooked = await _db.ServiceBookings
@@ -687,7 +688,7 @@ public class BookingService : IBookingService
                 .FirstOrDefaultAsync(r => r.Uid == booking.RequestUid, cancellationToken);
             if (request != null)
             {
-                request.Status = "Pending";
+                request.Status = RequestStatusConstants.Initiated;
             }
         }
 

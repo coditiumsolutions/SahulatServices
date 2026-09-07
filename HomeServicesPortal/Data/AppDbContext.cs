@@ -254,7 +254,7 @@ public class AppDbContext : DbContext
             entity.Property(e => e.ContactPerson).HasMaxLength(150);
             entity.Property(e => e.ContactNo).HasMaxLength(20).IsRequired();
             entity.Property(e => e.EstimatedBudget).HasColumnType("decimal(12,2)");
-            entity.Property(e => e.Status).HasMaxLength(30).IsRequired().HasDefaultValue("Pending");
+            entity.Property(e => e.Status).HasMaxLength(30).IsRequired().HasDefaultValue("Initiated");
             entity.Property(e => e.Remarks).HasMaxLength(500);
             entity.Property(e => e.CancelReason).HasMaxLength(500);
             entity.Property(e => e.CreatedOn)

@@ -31,7 +31,7 @@ public class DashboardService : IDashboardService
             .CountAsync(r => r.CreatedOn >= today && r.CreatedOn < tomorrow, cancellationToken);
 
         var pendingRequests = await _db.CustomerServiceRequests
-            .CountAsync(r => r.Status == "Pending" || r.Status == "Assigned" || r.Status == "In Progress", cancellationToken);
+            .CountAsync(r => r.Status == "Initiated" || r.Status == "Pending" || r.Status == "Assigned" || r.Status == "In Progress", cancellationToken);
 
         var completedRequests = await _db.CustomerServiceRequests
             .CountAsync(r => r.Status == "Completed", cancellationToken);

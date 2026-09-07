@@ -99,7 +99,7 @@
                                 <div class="small text-muted">@(string.IsNullOrWhiteSpace(item.ServiceAddress) ? "—" : item.ServiceAddress)</div>
                             </td>
                             <td>
-                                <span class="badge bg-@StatusBadgeClass(item.Status)">@(item.Status ?? "Pending")</span>
+                                <span class="badge bg-@StatusBadgeClass(item.Status)">@(item.Status ?? "Initiated")</span>
                                 @if (item.IsUrgent)
                                 {
                                     <span class="badge bg-danger ms-1">Urgent</span>
@@ -109,7 +109,8 @@
                             <td class="text-end">
                                 <div class="btn-group btn-group-sm">
                                     <a asp-action="Details" asp-route-id="@item.Uid" class="btn btn-outline-secondary" title="Details"><i class="fa-solid fa-eye"></i></a>
-                                    @if (string.Equals(item.Status, "Pending", StringComparison.OrdinalIgnoreCase))
+                                    @if (string.Equals(item.Status, "Initiated", StringComparison.OrdinalIgnoreCase)
+                                         || string.Equals(item.Status, "Pending", StringComparison.OrdinalIgnoreCase))
                                     {
                                         <a asp-action="Assign" asp-route-id="@item.Uid" class="btn btn-outline-success" title="Assign Provider">
                                             <i class="fa-solid fa-user-check"></i>

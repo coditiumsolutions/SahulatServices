@@ -96,7 +96,7 @@ public class CustomerServiceRequestService : ICustomerServiceRequestService
             ContactPerson = request.ContactPerson?.Trim(),
             ContactNo = request.ContactNo.Trim(),
             EstimatedBudget = request.EstimatedBudget,
-            Status = "Pending",
+            Status = RequestStatusConstants.Initiated,
             Remarks = request.Remarks?.Trim(),
             CreatedOn = DateTime.Now
         };
@@ -153,9 +153,9 @@ public class CustomerServiceRequestService : ICustomerServiceRequestService
         entity.ContactPerson = request.ContactPerson?.Trim();
         entity.ContactNo = request.ContactNo.Trim();
         entity.EstimatedBudget = request.EstimatedBudget;
-        entity.Status = request.Status.Trim();
+        entity.Status = RequestStatusConstants.Normalize(request.Status);
         entity.Remarks = request.Remarks?.Trim();
-        entity.CancelReason = string.Equals(request.Status, "Cancelled", StringComparison.OrdinalIgnoreCase)
+        entity.CancelReason = string.Equals(entity.Status, RequestStatusConstants.Cancelled, StringComparison.OrdinalIgnoreCase)
             ? request.CancelReason?.Trim()
             : entity.CancelReason;
 

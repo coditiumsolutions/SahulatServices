@@ -79,7 +79,7 @@ public class ServiceRequestFormVm
 
     [StringLength(50)]
     [Display(Name = "Status")]
-    public string Status { get; set; } = "Pending";
+    public string Status { get; set; } = "Initiated";
 
     [StringLength(500)]
     [Display(Name = "Remarks")]

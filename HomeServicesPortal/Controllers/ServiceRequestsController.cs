@@ -75,7 +75,7 @@ public class ServiceRequestsController : Controller
         var vm = await _bookingService.GetAssignProviderFormAsync(id, cancellationToken);
         if (vm == null)
         {
-            TempData["ErrorMessage"] = "Request not found, not pending, or already assigned.";
+            TempData["ErrorMessage"] = "Request not found, not initiated, or already assigned.";
             return RedirectToAction(nameof(Index));
         }
 

@@ -26,7 +26,7 @@ public class CustomerServiceRequest
 
     public decimal? EstimatedBudget { get; set; }
 
-    public string Status { get; set; } = "Pending";
+    public string Status { get; set; } = "Initiated";
 
     public string? Remarks { get; set; }
 

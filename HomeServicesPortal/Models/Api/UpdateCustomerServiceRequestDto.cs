@@ -47,7 +47,7 @@ public class UpdateCustomerServiceRequestDto
 
     [Required]
     [StringLength(30)]
-    public string Status { get; set; } = "Pending";
+    public string Status { get; set; } = "Initiated";
 
     [StringLength(500)]
     public string? Remarks { get; set; }

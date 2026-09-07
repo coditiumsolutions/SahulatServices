@@ -1,5 +1,6 @@
 using HomeServicesPortal.Data;
 using HomeServicesPortal.Entities;
+using HomeServicesPortal.Helpers;
 using HomeServicesPortal.Models.ViewModels;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
@@ -9,7 +10,15 @@ namespace HomeServicesPortal.Services;
 
 public class ServiceRequestService : IServiceRequestService
 {
-    private static readonly string[] ValidStatuses = ["Pending", "Assigned", "In Progress", "Completed", "Cancelled"];
+    private static readonly string[] ValidStatuses =
+    [
+        RequestStatusConstants.Initiated,
+        RequestStatusConstants.Assigned,
+        "In Progress",
+        RequestStatusConstants.Completed,
+        RequestStatusConstants.Cancelled,
+        RequestStatusConstants.LegacyPending // keep for editing legacy rows
+    ];
 
     private readonly AppDbContext _db;
     private readonly IServiceScopeFactory _scopeFactory;
@@ -55,6 +64,7 @@ public class ServiceRequestService : IServiceRequestService
     public List<SelectListItem> GetStatusOptions()
     {
         return ValidStatuses
+            .Where(s => !string.Equals(s, RequestStatusConstants.LegacyPending, StringComparison.OrdinalIgnoreCase))
             .Select(s => new SelectListItem { Value = s, Text = s })
             .ToList();
     }
@@ -76,7 +86,18 @@ public class ServiceRequestService : IServiceRequestService
 
         if (!string.IsNullOrWhiteSpace(status))
         {
-            query = query.Where(r => r.Status == status);
+            if (RequestStatusConstants.IsUnassigned(status)
+                || string.Equals(status, RequestStatusConstants.Initiated, StringComparison.OrdinalIgnoreCase))
+            {
+                // Treat legacy Pending rows as Initiated when filtering.
+                query = query.Where(r =>
+                    r.Status == RequestStatusConstants.Initiated
+                    || r.Status == RequestStatusConstants.LegacyPending);
+            }
+            else
+            {
+                query = query.Where(r => r.Status == status);
+            }
         }
 
         if (!string.IsNullOrWhiteSpace(search))
@@ -116,6 +137,14 @@ public class ServiceRequestService : IServiceRequestService
             .Select(g => new { Status = g.Key, Count = g.Count() })
             .ToDictionaryAsync(g => g.Status, g => g.Count, cancellationToken);
 
+        // Fold legacy Pending into Initiated for filter chips.
+        if (statusCounts.TryGetValue(RequestStatusConstants.LegacyPending, out var pendingCount))
+        {
+            statusCounts.Remove(RequestStatusConstants.LegacyPending);
+            statusCounts[RequestStatusConstants.Initiated] =
+                statusCounts.GetValueOrDefault(RequestStatusConstants.Initiated) + pendingCount;
+        }
+
         var items = await query
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
@@ -139,7 +168,9 @@ public class ServiceRequestService : IServiceRequestService
             Sort = sort,
             SortDir = sortDir,
             Status = status,
-            StatusOptions = ValidStatuses,
+            StatusOptions = ValidStatuses
+                .Where(s => !string.Equals(s, RequestStatusConstants.LegacyPending, StringComparison.OrdinalIgnoreCase))
+                .ToArray(),
             StatusCounts = statusCounts,
             Page = page,
             PageSize = pageSize,
@@ -248,6 +279,8 @@ public class ServiceRequestService : IServiceRequestService
             return (false, "Invalid status value.");
         }
 
+        model.Status = RequestStatusConstants.Normalize(model.Status);
+
         var entity = new CustomerServiceRequest
         {
             ClientUid = model.CustomerUid,
@@ -329,7 +362,7 @@ public class ServiceRequestService : IServiceRequestService
         entity.ContactPerson = model.ContactPerson?.Trim();
         entity.ContactNo = model.ContactNo.Trim();
         entity.EstimatedBudget = model.EstimatedBudget;
-        entity.Status = model.Status;
+        entity.Status = RequestStatusConstants.Normalize(model.Status);
         entity.Remarks = model.Remarks?.Trim();
 
         await _db.SaveChangesAsync(cancellationToken);
