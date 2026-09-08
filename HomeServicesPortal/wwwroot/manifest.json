@@ -1,0 +1,21 @@
+{
+  "name": "Sahulat Ghar Tak",
+  "short_name": "Sahulat Ghar Tak",
+  "description": "Book verified electricians, plumbers, cleaners, AC technicians, carpenters and painters across Pakistan.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#003366",
+  "icons": [
+    {
+      "src": "/img/logo-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "/img/logo-1024.png",
+      "sizes": "1024x1024",
+      "type": "image/png"
+    }
+  ]
+}

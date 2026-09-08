@@ -1,0 +1,30 @@
+User-agent: *
+Allow: /
+Allow: /privacy-policy
+Allow: /delete-account
+Allow: /Home/DownloadApp
+
+Disallow: /adminportal
+Disallow: /Account/
+Disallow: /Admin
+Disallow: /Administration
+Disallow: /ApkManagement
+Disallow: /Bookings
+Disallow: /Customers
+Disallow: /Payments
+Disallow: /ProviderAvailability
+Disallow: /ProviderDocuments
+Disallow: /ProviderLocations
+Disallow: /ProviderQuotes
+Disallow: /Reports
+Disallow: /Reviews
+Disallow: /ServiceCategories
+Disallow: /ServiceProviders
+Disallow: /ServiceRequests
+Disallow: /ServiceTitles
+Disallow: /Services
+Disallow: /api/
+Disallow: /Home/DownloadApkFile
+Disallow: /Home/Error
+
+Sitemap: https://sahulatghartak.com/sitemap.xml

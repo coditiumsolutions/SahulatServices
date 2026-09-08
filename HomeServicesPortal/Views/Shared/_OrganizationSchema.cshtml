@@ -1,0 +1,21 @@
+@{
+    var schemaBaseUrl = $"{Context.Request.Scheme}://{Context.Request.Host}";
+}
+<script type="application/ld+json">
+{
+    "@@context": "https://schema.org",
+    "@@type": "LocalBusiness",
+    "name": "Sahulat Ghar Tak",
+    "description": "Home services marketplace connecting verified electricians, plumbers, cleaners, AC technicians, carpenters and painters with households across Pakistan.",
+    "url": "@schemaBaseUrl/",
+    "logo": "@schemaBaseUrl/img/og-default.jpg",
+    "image": "@schemaBaseUrl/img/og-default.jpg",
+    "telephone": "+92-300-1234567",
+    "email": "info@sahulatghartak.com",
+    "areaServed": {
+        "@@type": "Country",
+        "name": "Pakistan"
+    },
+    "priceRange": "$$"
+}
+</script>

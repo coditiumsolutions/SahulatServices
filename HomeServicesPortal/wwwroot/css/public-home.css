@@ -170,6 +170,23 @@
     margin-bottom: 0.75rem;
 }
 
+.public-faq-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+}
+
+.public-faq-item {
+    background: #fff;
+    border-radius: 14px;
+    padding: 1.5rem;
+    border: 1px solid #e4eaf2;
+}
+
+.public-faq-item h3 {
+    color: var(--hs-navy);
+}
+
 .public-cta {
     background: var(--hs-navy);
     color: #fff;
