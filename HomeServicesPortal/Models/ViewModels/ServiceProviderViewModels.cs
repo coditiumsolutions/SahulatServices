@@ -48,6 +48,10 @@ public class ServiceProviderFormVm
     [Display(Name = "CNIC")]
     public string? Cnic { get; set; }
 
+    [StringLength(100)]
+    [Display(Name = "City")]
+    public string? City { get; set; }
+
     [Required(ErrorMessage = "Category is required.")]
     [Display(Name = "Category")]
     public int CategoryUid { get; set; }
@@ -72,6 +76,7 @@ public class ServiceProviderFormVm
     public string? ExistingProfilePicturePath { get; set; }
 
     public List<SelectListItem> Categories { get; set; } = new();
+    public List<SelectListItem> CityOptions { get; set; } = new();
 }
 
 public class ServiceProviderDetailsVm
@@ -80,6 +85,7 @@ public class ServiceProviderDetailsVm
     public string FullName { get; set; } = string.Empty;
     public string? MobileNo { get; set; }
     public string? Cnic { get; set; }
+    public string? City { get; set; }
     public string CategoryName { get; set; } = string.Empty;
     public int? ExperienceYears { get; set; }
     public decimal? Rating { get; set; }

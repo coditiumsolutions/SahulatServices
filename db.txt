@@ -1,4 +1,4 @@
-# Version: 4.1 | UpdatedAt: 08/09/2026
+# Version: 4.2 | UpdatedAt: 08/09/2026
 # Database: SahulatAppDB
 # Server: 34.131.41.192,1433
 
@@ -87,6 +87,7 @@ Table: Providers
   FullName         nvarchar(150)    NOT NULL
   CNIC             nvarchar(15)     NOT NULL  UNIQUE
   Gender           nvarchar(20)     NULL
+  City             nvarchar(100)    NULL  -- primary city (from Configurations Cities)
   ExperienceYears  int              NULL      DEFAULT (0)
   Description      nvarchar(MAX)    NULL
   IsVerified       bit              NOT NULL  DEFAULT (0)

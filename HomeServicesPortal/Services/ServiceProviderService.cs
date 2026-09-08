@@ -9,17 +9,22 @@ namespace HomeServicesPortal.Services;
 
 public class ServiceProviderService : IServiceProviderService
 {
+    private const string CitiesConfigKey = "Cities";
+
     private readonly AppDbContext _db;
     private readonly IFileStorageService _fileStorage;
+    private readonly IConfigurationEntryService _configurations;
     private readonly ILogger<ServiceProviderService> _logger;
 
     public ServiceProviderService(
         AppDbContext db,
         IFileStorageService fileStorage,
+        IConfigurationEntryService configurations,
         ILogger<ServiceProviderService> logger)
     {
         _db = db;
         _fileStorage = fileStorage;
+        _configurations = configurations;
         _logger = logger;
     }
 
@@ -35,6 +40,37 @@ public class ServiceProviderService : IServiceProviderService
                 Text = c.CategoryName
             })
             .ToListAsync(cancellationToken);
+    }
+
+    public async Task<ServiceProviderFormVm> PopulateFormAsync(
+        ServiceProviderFormVm model,
+        CancellationToken cancellationToken = default)
+    {
+        model.Categories = await GetCategoryOptionsAsync(cancellationToken);
+        model.CityOptions = await BuildCityOptionsAsync(model.City, cancellationToken);
+        return model;
+    }
+
+    private async Task<List<SelectListItem>> BuildCityOptionsAsync(
+        string? currentCity,
+        CancellationToken cancellationToken)
+    {
+        var values = await _configurations.GetValuesByKeyAsync(CitiesConfigKey, cancellationToken);
+        var options = values
+            .Select(v => new SelectListItem { Value = v, Text = v })
+            .ToList();
+
+        if (!string.IsNullOrWhiteSpace(currentCity)
+            && !options.Any(o => string.Equals(o.Value, currentCity, StringComparison.OrdinalIgnoreCase)))
+        {
+            options.Insert(0, new SelectListItem
+            {
+                Value = currentCity,
+                Text = currentCity
+            });
+        }
+
+        return options;
     }
 
     public async Task<ServiceProviderListVm> GetListAsync(
@@ -121,6 +157,7 @@ public class ServiceProviderService : IServiceProviderService
                 FullName = p.FullName,
                 MobileNo = p.User.MobileNo,
                 Cnic = p.Cnic,
+                City = p.City,
                 CategoryName = p.Category.CategoryName,
                 ExperienceYears = p.ExperienceYears,
                 Rating = p.AverageRating,
@@ -143,6 +180,7 @@ public class ServiceProviderService : IServiceProviderService
                 FullName = p.FullName,
                 MobileNo = p.User.MobileNo,
                 Cnic = p.Cnic,
+                City = p.City,
                 CategoryUid = p.CategoryUid,
                 ExperienceYears = p.ExperienceYears,
                 Rating = p.AverageRating,
@@ -153,8 +191,7 @@ public class ServiceProviderService : IServiceProviderService
 
         if (provider == null) return null;
 
-        provider.Categories = await GetCategoryOptionsAsync(cancellationToken);
-        return provider;
+        return await PopulateFormAsync(provider, cancellationToken);
     }
 
     public async Task<ServiceProviderDeleteVm?> GetForDeleteAsync(int id, CancellationToken cancellationToken = default)
@@ -236,6 +273,7 @@ public class ServiceProviderService : IServiceProviderService
             UserUid = user.Uid,
             FullName = model.FullName.Trim(),
             Cnic = model.Cnic.Trim(),
+            City = string.IsNullOrWhiteSpace(model.City) ? null : model.City.Trim(),
             ExperienceYears = model.ExperienceYears ?? 0,
             IsVerified = model.IsVerified,
             AverageRating = model.Rating ?? 0,
@@ -291,6 +329,7 @@ public class ServiceProviderService : IServiceProviderService
 
         provider.FullName = model.FullName.Trim();
         provider.Cnic = model.Cnic.Trim();
+        provider.City = string.IsNullOrWhiteSpace(model.City) ? null : model.City.Trim();
         provider.CategoryUid = model.CategoryUid;
         provider.ExperienceYears = model.ExperienceYears ?? 0;
         provider.AverageRating = model.Rating ?? provider.AverageRating;

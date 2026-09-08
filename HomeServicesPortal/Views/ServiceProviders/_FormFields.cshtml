@@ -80,6 +80,19 @@
         <div class="col-md-6">
             <div class="row g-2 align-items-center">
                 <div class="col-sm-4">
+                    <label asp-for="City" class="form-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <select asp-for="City" class="form-select form-select-sm" asp-items="Model.CityOptions">
+                        <option value="">-- Select City --</option>
+                    </select>
+                    <span asp-validation-for="City" class="text-danger small"></span>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="row g-2 align-items-center">
+                <div class="col-sm-4">
                     <label asp-for="ExperienceYears" class="form-label"></label>
                 </div>
                 <div class="col-sm-8">
@@ -88,6 +101,9 @@
                 </div>
             </div>
         </div>
+    </div>
+
+    <div class="row g-2 mb-2">
         <div class="col-md-6">
             <div class="row g-2 align-items-center">
                 <div class="col-sm-4">
@@ -98,6 +114,8 @@
                     <span asp-validation-for="Rating" class="text-danger small"></span>
                 </div>
             </div>
+        </div>
+        <div class="col-md-6">
         </div>
     </div>
 

@@ -10,6 +10,7 @@ public interface IServiceProviderService
     Task<ServiceProviderFormVm?> GetForEditAsync(int id, CancellationToken cancellationToken = default);
     Task<ServiceProviderDeleteVm?> GetForDeleteAsync(int id, CancellationToken cancellationToken = default);
     Task<List<SelectListItem>> GetCategoryOptionsAsync(CancellationToken cancellationToken = default);
+    Task<ServiceProviderFormVm> PopulateFormAsync(ServiceProviderFormVm model, CancellationToken cancellationToken = default);
     Task<(bool Success, string? Error)> CreateAsync(ServiceProviderFormVm model, CancellationToken cancellationToken = default);
     Task<(bool Success, string? Error)> UpdateAsync(ServiceProviderFormVm model, CancellationToken cancellationToken = default);
     Task<(bool Success, string? Error)> DeleteAsync(int id, CancellationToken cancellationToken = default);
