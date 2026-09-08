@@ -1,6 +1,6 @@
 # Privacy Policy for Sahulat Ghar Tak
 
-**Last Updated: August 24, 2026**
+**Last Updated: September 8, 2026**
 
 Sahulat Ghar Tak ("we," "us," "our," or the "App") is a home services marketplace mobile application operated by Coditum Solutions ("Company") that connects Customers seeking home services with independent Service Providers who offer those services. This Privacy Policy explains how we collect, use, disclose, and protect information when you use our mobile application.
 
@@ -19,13 +19,12 @@ We collect different types of information depending on whether you use the App a
 - Mobile phone number (used as your primary account identifier and for OTP verification)
 - Password (stored securely; never stored or transmitted in plain text)
 - Gender
-- National Identity Card number (CNIC)
 
 **Service Providers additionally provide:**
 - Years of experience and service category/skills
 - Description of services offered
 - Profile photograph
-- CNIC front and back images (used solely for identity verification and provider vetting)
+- National Identity Card number (CNIC) and CNIC front and back images (used solely for identity verification and provider vetting)
 
 **Customers additionally provide:**
 - Saved service addresses, including address label, full address, area, city, and the geographic coordinates (latitude/longitude) of each saved address
@@ -111,8 +110,8 @@ You can permanently delete your account in either of the following ways:
 
 Account deletion is immediate and irreversible — it is not a temporary freeze or deactivation. When you delete your account:
 
-- Your profile information (full name, CNIC, gender, description) is permanently removed or anonymized.
-- For Service Providers, your uploaded profile photo and CNIC verification images are permanently deleted from our servers.
+- Your profile information (full name, gender, description) is permanently removed or anonymized.
+- For Service Providers, your CNIC number, uploaded profile photo, and CNIC verification images are permanently deleted from our servers.
 - Your saved addresses are permanently deleted, except where an address is still referenced by a past service request (see below).
 - Your mobile number is released and becomes available for re-registration.
 - Login credentials (password) and OTP records tied to your account are permanently deleted.
