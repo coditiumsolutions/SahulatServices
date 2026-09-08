@@ -5,202 +5,361 @@
     var selected = new HashSet<int>(Model.ProviderUids ?? new List<int>());
 }
 
-<div class="mb-4">
-    <a asp-action="Index" class="text-decoration-none text-muted"><i class="fa-solid fa-arrow-left me-1"></i>Back to S-Requests</a>
-    <h2 class="mt-2 mb-0"><i class="fa-solid fa-user-check me-2 text-primary"></i>Assign Provider</h2>
-    <p class="text-muted mb-0">Select one or more providers and create ServiceBookings with bill and commission totals</p>
+<style>
+    .assign-form-grid .form-label {
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: #6c757d;
+        margin-bottom: 0;
+    }
+    .assign-form-grid .form-control,
+    .assign-form-grid .form-select {
+        font-size: 0.875rem;
+    }
+    .assign-form-grid .form-text {
+        font-size: 0.72rem;
+        margin-top: 0.2rem;
+    }
+    .assign-form-grid .assign-provider-list {
+        max-height: 220px;
+        overflow-y: auto;
+    }
+    .assign-summary-grid .sum-label {
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: #6c757d;
+    }
+    .assign-summary-grid .sum-value {
+        font-size: 0.9rem;
+        font-weight: 500;
+        color: #212529;
+        word-break: break-word;
+    }
+</style>
+
+<div class="mb-3">
+    <a asp-action="Index" class="text-decoration-none text-muted small"><i class="fa-solid fa-arrow-left me-1"></i>Back to S-Requests</a>
+    <h2 class="mt-1 mb-0 h4"><i class="fa-solid fa-user-check me-2 text-primary"></i>Assign Provider <span class="text-muted fw-normal">#@Model.RequestUid</span></h2>
+    <p class="text-muted small mb-0">Select one or more providers and create bookings with shared bill/commission</p>
 </div>
 
-<div class="row justify-content-center">
-    <div class="col-lg-10">
-        <div class="card hs-card mb-3">
-            <div class="card-body p-4">
-                <dl class="row mb-0">
-                    <dt class="col-sm-4 text-muted">Request</dt>
-                    <dd class="col-sm-8 fw-semibold">#@Model.RequestUid — @Model.ServiceTitle</dd>
-                    <dt class="col-sm-4 text-muted">Client</dt>
-                    <dd class="col-sm-8">@Model.ClientName</dd>
-                    <dt class="col-sm-4 text-muted">Category</dt>
-                    <dd class="col-sm-8">@Model.CategoryName</dd>
-                    <dt class="col-sm-4 text-muted">Address</dt>
-                    <dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.ServiceAddress) ? "—" : Model.ServiceAddress)</dd>
-                    <dt class="col-sm-4 text-muted">Estimated Budget</dt>
-                    <dd class="col-sm-8">@(Model.EstimatedBudget?.ToString("N2") ?? "—")</dd>
-                    <dt class="col-sm-4 text-muted">Status</dt>
-                    <dd class="col-sm-8"><span class="badge bg-warning text-dark">@(Model.Status ?? "Initiated")</span></dd>
-                </dl>
+<div class="card hs-card mb-3">
+    <div class="card-body p-3 assign-summary-grid">
+        <div class="row g-2 mb-2">
+            <div class="col-md-6">
+                <div class="row g-2">
+                    <div class="col-sm-4 sum-label">Request</div>
+                    <div class="col-sm-8 sum-value">#@Model.RequestUid — @Model.ServiceTitle</div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="row g-2">
+                    <div class="col-sm-4 sum-label">Client</div>
+                    <div class="col-sm-8 sum-value">@Model.ClientName</div>
+                </div>
             </div>
         </div>
+        <div class="row g-2 mb-2">
+            <div class="col-md-6">
+                <div class="row g-2">
+                    <div class="col-sm-4 sum-label">City</div>
+                    <div class="col-sm-8 sum-value">@(string.IsNullOrWhiteSpace(Model.ClientCity) ? "—" : Model.ClientCity)</div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="row g-2">
+                    <div class="col-sm-4 sum-label">Category</div>
+                    <div class="col-sm-8 sum-value">@Model.CategoryName</div>
+                </div>
+            </div>
+        </div>
+        <div class="row g-2">
+            <div class="col-md-6">
+                <div class="row g-2">
+                    <div class="col-sm-4 sum-label">Address</div>
+                    <div class="col-sm-8 sum-value">@(string.IsNullOrWhiteSpace(Model.ServiceAddress) ? "—" : Model.ServiceAddress)</div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="row g-2">
+                    <div class="col-sm-4 sum-label">Status</div>
+                    <div class="col-sm-8 sum-value"><span class="badge bg-warning text-dark">@(Model.Status ?? "Initiated")</span></div>
+                </div>
+            </div>
+        </div>
+        <div class="row g-2 mt-2">
+            <div class="col-md-6">
+                <div class="row g-2">
+                    <div class="col-sm-4 sum-label">Est. Budget</div>
+                    <div class="col-sm-8 sum-value">@(Model.EstimatedBudget?.ToString("N2") ?? "—")</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
-        <div class="card hs-card">
-            <div class="card-body p-4">
-                <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
-                <form asp-action="Assign" asp-route-id="@Model.RequestUid" method="post" id="assignProviderForm">
-                    @Html.AntiForgeryToken()
-                    <input type="hidden" asp-for="RequestUid" />
+<div class="card hs-card">
+    <div class="card-body p-3">
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2"></div>
+        <form asp-action="Assign" asp-route-id="@Model.RequestUid" method="post" id="assignProviderForm" class="assign-form-grid">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="RequestUid" />
+            <input type="hidden" asp-for="CategoryUid" />
+            <input type="hidden" asp-for="CommissionSourceLabel" id="CommissionSourceLabelHidden" />
 
-                    <div class="mb-3">
-                        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2">
-                            <label class="form-label mb-0">Providers</label>
-                            <span class="badge bg-primary" id="selectedProviderCount">0 selected</span>
+            <div class="row g-2 mb-2">
+                <div class="col-md-6">
+                    <div class="row g-2 align-items-start">
+                        <div class="col-sm-4 pt-1">
+                            <label class="form-label">Providers</label>
+                            <div class="mt-1"><span class="badge bg-primary" id="selectedProviderCount">0 selected</span></div>
                         </div>
+                        <div class="col-sm-8">
+                            @if (!Model.HasCategoryMatch)
+                            {
+                                <div class="alert alert-warning py-2 px-3 small mb-2">
+                                    <i class="fa-solid fa-triangle-exclamation me-1"></i>
+                                    No category match. Showing all providers.
+                                </div>
+                            }
 
-                        @if (!Model.HasCategoryMatch)
-                        {
-                            <div class="alert alert-warning py-2 px-3 small mb-2">
-                                <i class="fa-solid fa-triangle-exclamation me-1"></i>
-                                No providers match this request's category (@Model.CategoryName). Showing all providers instead.
+                            <div id="providerListMatching" class="border rounded p-2 assign-provider-list @(Model.ShowAllProviders ? "d-none" : "")">
+                                @if (Model.Providers.Count == 0)
+                                {
+                                    <div class="text-muted small py-2 px-1">No matching providers.</div>
+                                }
+                                @foreach (var p in Model.Providers)
+                                {
+                                    var uid = int.TryParse(p.Value, out var id) ? id : 0;
+                                    <div class="form-check">
+                                        @if (selected.Contains(uid))
+                                        {
+                                            <input class="form-check-input provider-check matching-check" type="checkbox"
+                                                   name="ProviderUids" value="@p.Value" id="match_@p.Value" checked />
+                                        }
+                                        else
+                                        {
+                                            <input class="form-check-input provider-check matching-check" type="checkbox"
+                                                   name="ProviderUids" value="@p.Value" id="match_@p.Value" />
+                                        }
+                                        <label class="form-check-label small" for="match_@p.Value">@p.Text</label>
+                                    </div>
+                                }
                             </div>
-                        }
 
-                        <div id="providerListMatching" class="border rounded p-2 @(Model.ShowAllProviders ? "d-none" : "")" style="max-height: 260px; overflow-y: auto;">
-                            @if (Model.Providers.Count == 0)
-                            {
-                                <div class="text-muted small py-2 px-1">No matching providers.</div>
-                            }
-                            @foreach (var p in Model.Providers)
-                            {
-                                var uid = int.TryParse(p.Value, out var id) ? id : 0;
-                                <div class="form-check">
-                                    @if (selected.Contains(uid))
-                                    {
-                                        <input class="form-check-input provider-check matching-check" type="checkbox"
-                                               name="ProviderUids" value="@p.Value" id="match_@p.Value" checked />
-                                    }
-                                    else
-                                    {
-                                        <input class="form-check-input provider-check matching-check" type="checkbox"
-                                               name="ProviderUids" value="@p.Value" id="match_@p.Value" />
-                                    }
-                                    <label class="form-check-label" for="match_@p.Value">@p.Text</label>
-                                </div>
-                            }
+                            <div id="providerListAll" class="border rounded p-2 assign-provider-list @(Model.ShowAllProviders ? "" : "d-none")">
+                                @if (string.IsNullOrWhiteSpace(Model.ClientCity))
+                                {
+                                    <div class="text-muted small py-2 px-1">Client has no City set. Update the client record first.</div>
+                                }
+                                else if (Model.AllProviders.Count == 0)
+                                {
+                                    <div class="text-muted small py-2 px-1">No providers found in @Model.ClientCity.</div>
+                                }
+                                @foreach (var p in Model.AllProviders)
+                                {
+                                    var uid = int.TryParse(p.Value, out var id) ? id : 0;
+                                    <div class="form-check">
+                                        @if (selected.Contains(uid))
+                                        {
+                                            <input class="form-check-input provider-check all-check" type="checkbox"
+                                                   name="ProviderUids" value="@p.Value" id="all_@p.Value" checked
+                                                   disabled="@(!Model.ShowAllProviders)" />
+                                        }
+                                        else
+                                        {
+                                            <input class="form-check-input provider-check all-check" type="checkbox"
+                                                   name="ProviderUids" value="@p.Value" id="all_@p.Value"
+                                                   disabled="@(!Model.ShowAllProviders)" />
+                                        }
+                                        <label class="form-check-label small" for="all_@p.Value">@p.Text</label>
+                                    </div>
+                                }
+                            </div>
+
+                            <span asp-validation-for="ProviderUids" class="text-danger small"></span>
+                            <div class="form-text">Override list shows providers in the client's city only (category ignored).</div>
                         </div>
-
-                        <div id="providerListAll" class="border rounded p-2 @(Model.ShowAllProviders ? "" : "d-none")" style="max-height: 260px; overflow-y: auto;">
-                            @foreach (var p in Model.AllProviders)
-                            {
-                                var uid = int.TryParse(p.Value, out var id) ? id : 0;
-                                <div class="form-check">
-                                    @if (selected.Contains(uid))
-                                    {
-                                        <input class="form-check-input provider-check all-check" type="checkbox"
-                                               name="ProviderUids" value="@p.Value" id="all_@p.Value" checked
-                                               disabled="@(!Model.ShowAllProviders)" />
-                                    }
-                                    else
-                                    {
-                                        <input class="form-check-input provider-check all-check" type="checkbox"
-                                               name="ProviderUids" value="@p.Value" id="all_@p.Value"
-                                               disabled="@(!Model.ShowAllProviders)" />
-                                    }
-                                    <label class="form-check-label" for="all_@p.Value">@p.Text</label>
-                                </div>
-                            }
-                        </div>
-
-                        <span asp-validation-for="ProviderUids" class="text-danger small"></span>
-
-                        <div class="form-check mt-2">
-                            <input asp-for="ShowAllProviders" class="form-check-input" id="showAllProvidersToggle" disabled="@(!Model.HasCategoryMatch)" />
-                            <label asp-for="ShowAllProviders" class="form-check-label small"></label>
-                        </div>
-                        <div class="form-text">Same bill and commission will be applied to each selected provider.</div>
                     </div>
-
-                    <div class="mb-4">
-                        <label asp-for="ServiceDetail" class="form-label"></label>
-                        <textarea asp-for="ServiceDetail" class="form-control" rows="3" maxlength="1000"></textarea>
-                        <span asp-validation-for="ServiceDetail" class="text-danger small"></span>
+                </div>
+                <div class="col-md-6">
+                    <div class="row g-2 align-items-start">
+                        <div class="col-sm-4 pt-1">
+                            <label class="form-label">Options</label>
+                        </div>
+                        <div class="col-sm-8">
+                            <div class="form-check form-switch mb-2">
+                                <input asp-for="ShowAllProviders" class="form-check-input" id="showAllProvidersToggle" disabled="@(!Model.HasCategoryMatch)" />
+                                <label asp-for="ShowAllProviders" class="form-check-label small"></label>
+                            </div>
+                            <label asp-for="ServiceDetail" class="form-label d-block mb-1"></label>
+                            <textarea asp-for="ServiceDetail" class="form-control form-control-sm" rows="4" maxlength="1000"></textarea>
+                            <span asp-validation-for="ServiceDetail" class="text-danger small"></span>
+                        </div>
                     </div>
+                </div>
+            </div>
 
-                    <h5 class="mb-3">Bill Breakdown</h5>
-                    <div class="row">
-                        <div class="col-md-3 mb-3">
+            <h6 class="text-muted mt-3 mb-2">Bill Breakdown</h6>
+            <div class="row g-2 mb-2">
+                <div class="col-md-6">
+                    <div class="row g-2 align-items-center">
+                        <div class="col-sm-4">
                             <label asp-for="EstimatedAmount" class="form-label"></label>
-                            <input asp-for="EstimatedAmount" class="form-control calc-input" type="number" step="0.01" min="0" />
+                        </div>
+                        <div class="col-sm-8">
+                            <input asp-for="EstimatedAmount" class="form-control form-control-sm calc-input" type="number" step="0.01" min="0" />
                             <span asp-validation-for="EstimatedAmount" class="text-danger small"></span>
                         </div>
-                        <div class="col-md-3 mb-3">
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="row g-2 align-items-center">
+                        <div class="col-sm-4">
                             <label asp-for="VisitCharges" class="form-label"></label>
-                            <input asp-for="VisitCharges" class="form-control calc-input" type="number" step="0.01" min="0" />
+                        </div>
+                        <div class="col-sm-8">
+                            <input asp-for="VisitCharges" class="form-control form-control-sm calc-input" type="number" step="0.01" min="0" />
                             <span asp-validation-for="VisitCharges" class="text-danger small"></span>
                         </div>
-                        <div class="col-md-3 mb-3">
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-2 mb-2">
+                <div class="col-md-6">
+                    <div class="row g-2 align-items-center">
+                        <div class="col-sm-4">
                             <label asp-for="AdditionalCharges" class="form-label"></label>
-                            <input asp-for="AdditionalCharges" class="form-control calc-input" type="number" step="0.01" min="0" />
+                        </div>
+                        <div class="col-sm-8">
+                            <input asp-for="AdditionalCharges" class="form-control form-control-sm calc-input" type="number" step="0.01" min="0" />
                             <span asp-validation-for="AdditionalCharges" class="text-danger small"></span>
                         </div>
-                        <div class="col-md-3 mb-3">
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="row g-2 align-items-center">
+                        <div class="col-sm-4">
                             <label asp-for="Deductions" class="form-label"></label>
-                            <input asp-for="Deductions" class="form-control calc-input" type="number" step="0.01" min="0" />
+                        </div>
+                        <div class="col-sm-8">
+                            <input asp-for="Deductions" class="form-control form-control-sm calc-input" type="number" step="0.01" min="0" />
                             <span asp-validation-for="Deductions" class="text-danger small"></span>
                         </div>
                     </div>
+                </div>
+            </div>
 
-                    <div class="row">
-                        <div class="col-md-4 mb-3">
+            <div class="row g-2 mb-2">
+                <div class="col-md-6">
+                    <div class="row g-2 align-items-center">
+                        <div class="col-sm-4">
                             <label asp-for="FinalAmount" class="form-label"></label>
-                            <input asp-for="FinalAmount" class="form-control fw-semibold" type="number" step="0.01" readonly tabindex="-1" />
+                        </div>
+                        <div class="col-sm-8">
+                            <input asp-for="FinalAmount" class="form-control form-control-sm" type="number" step="0.01" readonly tabindex="-1" />
                             <div class="form-text">Estimated + Visit + Additional − Deductions</div>
                             <span asp-validation-for="FinalAmount" class="text-danger small"></span>
                         </div>
-                        <div class="col-md-4 mb-3">
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="row g-2 align-items-center">
+                        <div class="col-sm-4">
                             <label asp-for="CustomerPaid" class="form-label"></label>
-                            <input asp-for="CustomerPaid" class="form-control calc-input" type="number" step="0.01" min="0" />
+                        </div>
+                        <div class="col-sm-8">
+                            <input asp-for="CustomerPaid" class="form-control form-control-sm calc-input" type="number" step="0.01" min="0" />
                             <span asp-validation-for="CustomerPaid" class="text-danger small"></span>
                         </div>
-                        <div class="col-md-4 mb-3">
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-2 mb-2">
+                <div class="col-md-6">
+                    <div class="row g-2 align-items-center">
+                        <div class="col-sm-4">
                             <label asp-for="PaymentMode" class="form-label"></label>
-                            <select asp-for="PaymentMode" class="form-select" asp-items="Model.PaymentModeOptions"></select>
+                        </div>
+                        <div class="col-sm-8">
+                            <select asp-for="PaymentMode" class="form-select form-select-sm" asp-items="Model.PaymentModeOptions"></select>
                             <span asp-validation-for="PaymentMode" class="text-danger small"></span>
                         </div>
                     </div>
-
-                    <div class="mb-4">
-                        <label asp-for="CustomerRemaining" class="form-label"></label>
-                        <input asp-for="CustomerRemaining" class="form-control" type="number" step="0.01" readonly tabindex="-1" />
-                        <div class="form-text">Final Bill − Customer Paid</div>
+                </div>
+                <div class="col-md-6">
+                    <div class="row g-2 align-items-center">
+                        <div class="col-sm-4">
+                            <label asp-for="CustomerRemaining" class="form-label"></label>
+                        </div>
+                        <div class="col-sm-8">
+                            <input asp-for="CustomerRemaining" class="form-control form-control-sm" type="number" step="0.01" readonly tabindex="-1" />
+                            <div class="form-text">Final Bill − Customer Paid</div>
+                        </div>
                     </div>
+                </div>
+            </div>
 
-                    <h5 class="mb-3">Commission</h5>
-                    <p class="text-muted small mb-2" id="commissionSourceLabel">
-                        <i class="fa-solid fa-percent me-1"></i>@Model.CommissionSourceLabel
-                    </p>
-                    <input type="hidden" asp-for="CategoryUid" />
-                    <input type="hidden" asp-for="CommissionSourceLabel" id="CommissionSourceLabelHidden" />
-                    <div class="row">
-                        <div class="col-md-3 mb-3">
+            <h6 class="text-muted mt-3 mb-2">Commission <span class="fw-normal" id="commissionSourceLabel">(@Model.CommissionSourceLabel)</span></h6>
+            <div class="row g-2 mb-2">
+                <div class="col-md-6">
+                    <div class="row g-2 align-items-center">
+                        <div class="col-sm-4">
                             <label asp-for="CommissionType" class="form-label"></label>
-                            <select asp-for="CommissionType" class="form-select calc-input" asp-items="Model.CommissionTypeOptions"></select>
+                        </div>
+                        <div class="col-sm-8">
+                            <select asp-for="CommissionType" class="form-select form-select-sm calc-input" asp-items="Model.CommissionTypeOptions"></select>
                             <span asp-validation-for="CommissionType" class="text-danger small"></span>
                         </div>
-                        <div class="col-md-3 mb-3">
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="row g-2 align-items-center">
+                        <div class="col-sm-4">
                             <label asp-for="CommissionValue" class="form-label"></label>
-                            <input asp-for="CommissionValue" class="form-control calc-input" type="number" step="0.01" min="0" />
+                        </div>
+                        <div class="col-sm-8">
+                            <input asp-for="CommissionValue" class="form-control form-control-sm calc-input" type="number" step="0.01" min="0" />
                             <span asp-validation-for="CommissionValue" class="text-danger small"></span>
                         </div>
-                        <div class="col-md-3 mb-3">
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-2 mb-2">
+                <div class="col-md-6">
+                    <div class="row g-2 align-items-center">
+                        <div class="col-sm-4">
                             <label asp-for="CommissionAmount" class="form-label"></label>
-                            <input asp-for="CommissionAmount" class="form-control" type="number" step="0.01" readonly tabindex="-1" />
+                        </div>
+                        <div class="col-sm-8">
+                            <input asp-for="CommissionAmount" class="form-control form-control-sm" type="number" step="0.01" readonly tabindex="-1" />
                             <div class="form-text">Auto from type + rate on Final Bill</div>
                         </div>
-                        <div class="col-md-3 mb-3">
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="row g-2 align-items-center">
+                        <div class="col-sm-4">
                             <label asp-for="ProviderEarning" class="form-label"></label>
-                            <input asp-for="ProviderEarning" class="form-control" type="number" step="0.01" readonly tabindex="-1" />
+                        </div>
+                        <div class="col-sm-8">
+                            <input asp-for="ProviderEarning" class="form-control form-control-sm" type="number" step="0.01" readonly tabindex="-1" />
                             <div class="form-text">Final Bill − Company Commission</div>
                         </div>
                     </div>
-
-                    <div class="d-flex gap-2">
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fa-solid fa-check me-1"></i>Assign &amp; Create Booking
-                        </button>
-                        <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
-                    </div>
-                </form>
+                </div>
             </div>
-        </div>
+
+            <div class="d-flex gap-2 mt-3">
+                <button type="submit" class="btn btn-primary btn-sm">
+                    <i class="fa-solid fa-check me-1"></i>Assign &amp; Create Booking
+                </button>
+                <a asp-action="Index" class="btn btn-outline-secondary btn-sm">Cancel</a>
+            </div>
+        </form>
     </div>
 </div>
 
@@ -257,7 +416,7 @@
             function setCommissionSource(label) {
                 const text = document.getElementById('commissionSourceLabel');
                 const hidden = document.getElementById('CommissionSourceLabelHidden');
-                if (text) text.innerHTML = '<i class="fa-solid fa-percent me-1"></i>' + (label || '');
+                if (text) text.textContent = label ? '(' + label + ')' : '';
                 if (hidden) hidden.value = label || '';
             }
 

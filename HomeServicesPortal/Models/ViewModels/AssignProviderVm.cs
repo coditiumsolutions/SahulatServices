@@ -10,6 +10,7 @@ public class AssignProviderVm
     public int CategoryUid { get; set; }
 
     public string ClientName { get; set; } = string.Empty;
+    public string? ClientCity { get; set; }
     public string ServiceTitle { get; set; } = string.Empty;
     public string CategoryName { get; set; } = string.Empty;
     public string? ServiceAddress { get; set; }
@@ -24,7 +25,7 @@ public class AssignProviderVm
     [MinLength(1, ErrorMessage = "Select at least one provider.")]
     public List<int> ProviderUids { get; set; } = new();
 
-    [Display(Name = "Show all providers (override category match)")]
+    [Display(Name = "Show city providers (override category match)")]
     public bool ShowAllProviders { get; set; }
 
     public bool HasCategoryMatch { get; set; }

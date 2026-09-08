@@ -463,6 +463,7 @@ public class BookingService : IBookingService
                 r.EstimatedBudget,
                 r.CategoryUid,
                 ClientName = r.Client.FullName,
+                ClientCity = r.Client.City,
                 CategoryName = r.Category.CategoryName,
                 ServiceAddress = r.ClientAddress.AddressTitle + " - " + r.ClientAddress.FullAddress
             })
@@ -487,10 +488,34 @@ public class BookingService : IBookingService
             {
                 Value = p.Uid.ToString(),
                 Text = p.FullName + " (" + p.Category.CategoryName + ")"
+                    + (p.City != null && p.City != "" ? " — " + p.City : "")
             })
             .ToListAsync(cancellationToken);
 
-        var allProviders = await GetProviderOptionsAsync(cancellationToken);
+        // Override list: same client city (category ignored). Empty if client has no city.
+        var clientCity = (request.ClientCity ?? string.Empty).Trim();
+        List<SelectListItem> cityProviders;
+        if (string.IsNullOrWhiteSpace(clientCity))
+        {
+            cityProviders = new List<SelectListItem>();
+        }
+        else
+        {
+            var cityLower = clientCity.ToLower();
+            cityProviders = await _db.Providers
+                .AsNoTracking()
+                .Where(p => p.User.IsActive
+                    && p.City != null
+                    && p.City.ToLower() == cityLower)
+                .OrderBy(p => p.FullName)
+                .Select(p => new SelectListItem
+                {
+                    Value = p.Uid.ToString(),
+                    Text = p.FullName + " (" + p.Category.CategoryName + ")"
+                        + (p.City != null && p.City != "" ? " — " + p.City : "")
+                })
+                .ToListAsync(cancellationToken);
+        }
 
         var estimated = request.EstimatedBudget ?? 0m;
         var resolved = await _commissionRules.ResolveAsync(
@@ -503,6 +528,7 @@ public class BookingService : IBookingService
             RequestUid = request.Uid,
             CategoryUid = request.CategoryUid,
             ClientName = request.ClientName,
+            ClientCity = string.IsNullOrWhiteSpace(clientCity) ? null : clientCity,
             ServiceTitle = request.ServiceTitle,
             CategoryName = request.CategoryName,
             ServiceAddress = request.ServiceAddress,
@@ -521,7 +547,7 @@ public class BookingService : IBookingService
             HasCategoryMatch = matchingProviders.Count > 0,
             ShowAllProviders = matchingProviders.Count == 0,
             Providers = matchingProviders,
-            AllProviders = allProviders,
+            AllProviders = cityProviders,
             PaymentModeOptions = ValidPaymentModes
                 .Select(m => new SelectListItem
                 {
@@ -589,13 +615,19 @@ public class BookingService : IBookingService
         var providers = await _db.Providers
             .AsNoTracking()
             .Where(p => providerUids.Contains(p.Uid))
-            .Select(p => new { p.Uid, p.CategoryUid, p.FullName })
+            .Select(p => new { p.Uid, p.CategoryUid, p.FullName, p.City })
             .ToListAsync(cancellationToken);
 
         if (providers.Count != providerUids.Count)
         {
             return (false, "One or more selected providers do not exist.");
         }
+
+        var clientCity = await _db.Clients
+            .AsNoTracking()
+            .Where(c => c.Uid == request.ClientUid)
+            .Select(c => c.City)
+            .FirstOrDefaultAsync(cancellationToken);
 
         if (!model.ShowAllProviders)
         {
@@ -605,7 +637,23 @@ public class BookingService : IBookingService
                 .ToList();
             if (mismatched.Count > 0)
             {
-                return (false, "Some selected providers do not match this request's service category. Enable \"Show all providers\" to override.");
+                return (false, "Some selected providers do not match this request's service category. Enable \"Show city providers\" to override.");
+            }
+        }
+        else
+        {
+            if (string.IsNullOrWhiteSpace(clientCity))
+            {
+                return (false, "Client has no City set. Set the client's city before using city-matched providers.");
+            }
+
+            var cityMismatched = providers
+                .Where(p => !string.Equals(p.City?.Trim(), clientCity.Trim(), StringComparison.OrdinalIgnoreCase))
+                .Select(p => p.FullName)
+                .ToList();
+            if (cityMismatched.Count > 0)
+            {
+                return (false, $"Some selected providers are not in the client's city ({clientCity}).");
             }
         }
 
