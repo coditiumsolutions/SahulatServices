@@ -95,6 +95,7 @@ public class ServiceRequestsController : Controller
         }
 
         model.ClientName = form.ClientName;
+        model.ClientCity = form.ClientCity;
         model.ServiceTitle = form.ServiceTitle;
         model.CategoryName = form.CategoryName;
         model.ServiceAddress = form.ServiceAddress;
