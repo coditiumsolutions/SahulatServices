@@ -33,9 +33,9 @@ public class CustomersController : Controller
 
     [HttpGet("/Admin/Clients/Create")]
     [HttpGet("/Admin/Customers/Create")]
-    public IActionResult Create()
+    public async Task<IActionResult> Create(CancellationToken cancellationToken)
     {
-        return View(new CustomerFormVm());
+        return View(await _service.PopulateFormAsync(new CustomerFormVm(), cancellationToken));
     }
 
     [HttpPost("/Admin/Clients/Create")]
@@ -43,6 +43,7 @@ public class CustomersController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(CustomerFormVm model, CancellationToken cancellationToken)
     {
+        await _service.PopulateFormAsync(model, cancellationToken);
         if (!ModelState.IsValid) return View(model);
 
         var (success, error) = await _service.CreateAsync(model, cancellationToken);
@@ -80,6 +81,7 @@ public class CustomersController : Controller
     public async Task<IActionResult> Edit(int id, CustomerFormVm model, CancellationToken cancellationToken)
     {
         if (id != model.Uid) return BadRequest();
+        await _service.PopulateFormAsync(model, cancellationToken);
         if (!ModelState.IsValid) return View(model);
 
         var (success, error) = await _service.UpdateAsync(model, cancellationToken);

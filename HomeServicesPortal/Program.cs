@@ -84,6 +84,7 @@ builder.Services.AddScoped<ISmsService, DummySmsService>();
 builder.Services.AddScoped<IImageService, ImageService>();
 builder.Services.AddScoped<IFileStorageService, FileStorageService>();
 builder.Services.AddScoped<IApkManagementService, ApkManagementService>();
+builder.Services.AddScoped<IConfigurationEntryService, ConfigurationEntryService>();
 builder.Services.AddScoped<IProviderDocumentRepository, ProviderDocumentRepository>();
 builder.Services.AddScoped<IProviderDocumentsApiService, ProviderDocumentsApiService>();
 builder.Services.AddScoped<IProviderLocationQueryService, ProviderLocationQueryService>();

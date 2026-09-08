@@ -16,39 +16,9 @@ public class DashboardVm
     public decimal TotalRevenue { get; set; }
     public decimal AverageRating { get; set; }
 
-    public List<ChartPointVm> BookingStatusChart { get; set; } = new();
-    public List<MonthlyRevenuePointVm> MonthlyRevenueChart { get; set; } = new();
-    public List<CategoryWiseRequestPointVm> ServiceCategoryWiseRequestsChart { get; set; } = new();
-    public List<ProviderPerformancePointVm> ProviderPerformanceChart { get; set; } = new();
-
     public List<LatestRequestVm> LatestRequests { get; set; } = new();
     public List<LatestBookingVm> LatestBookings { get; set; } = new();
     public List<LatestPaymentVm> LatestPayments { get; set; } = new();
-}
-
-public class ChartPointVm
-{
-    public string Label { get; set; } = string.Empty;
-    public int Value { get; set; }
-}
-
-public class MonthlyRevenuePointVm
-{
-    public string MonthLabel { get; set; } = string.Empty;
-    public decimal Value { get; set; }
-}
-
-public class CategoryWiseRequestPointVm
-{
-    public string CategoryName { get; set; } = string.Empty;
-    public int Value { get; set; }
-}
-
-public class ProviderPerformancePointVm
-{
-    public string ProviderName { get; set; } = string.Empty;
-    public int CompletedBookings { get; set; }
-    public decimal AverageRating { get; set; }
 }
 
 public class LatestRequestVm

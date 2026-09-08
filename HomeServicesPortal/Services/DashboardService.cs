@@ -91,64 +91,6 @@ public class DashboardService : IDashboardService
             AverageRating = averageRating
         };
 
-        dashboard.BookingStatusChart = await _db.CustomerServiceRequests
-            .AsNoTracking()
-            .GroupBy(r => r.Status)
-            .Select(g => new ChartPointVm { Label = g.Key, Value = g.Count() })
-            .OrderByDescending(x => x.Value)
-            .ToListAsync(cancellationToken);
-
-        var monthStarts = Enumerable.Range(0, 6)
-            .Select(i => new DateTime(today.Year, today.Month, 1).AddMonths(-i))
-            .OrderBy(d => d)
-            .ToList();
-
-        var rangeStart = monthStarts[0];
-        var monthlyBudget = await _db.CustomerServiceRequests
-            .AsNoTracking()
-            .Where(r => r.CreatedOn >= rangeStart && r.EstimatedBudget != null)
-            .Select(r => new { r.CreatedOn, Amount = r.EstimatedBudget!.Value })
-            .ToListAsync(cancellationToken);
-
-        dashboard.MonthlyRevenueChart = monthStarts
-            .Select(ms =>
-            {
-                var next = ms.AddMonths(1);
-                return new MonthlyRevenuePointVm
-                {
-                    MonthLabel = ms.ToString("MMM yyyy"),
-                    Value = monthlyBudget
-                        .Where(x => x.CreatedOn >= ms && x.CreatedOn < next)
-                        .Sum(x => x.Amount)
-                };
-            })
-            .ToList();
-
-        dashboard.ServiceCategoryWiseRequestsChart = await _db.CustomerServiceRequests
-            .AsNoTracking()
-            .GroupBy(r => r.Category.CategoryName)
-            .Select(g => new CategoryWiseRequestPointVm
-            {
-                CategoryName = g.Key,
-                Value = g.Count()
-            })
-            .OrderByDescending(x => x.Value)
-            .Take(5)
-            .ToListAsync(cancellationToken);
-
-        dashboard.ProviderPerformanceChart = await _db.Providers
-            .AsNoTracking()
-            .OrderByDescending(p => p.TotalJobsCompleted)
-            .ThenByDescending(p => p.AverageRating)
-            .Take(5)
-            .Select(p => new ProviderPerformancePointVm
-            {
-                ProviderName = p.FullName,
-                CompletedBookings = p.TotalJobsCompleted,
-                AverageRating = p.AverageRating
-            })
-            .ToListAsync(cancellationToken);
-
         dashboard.LatestRequests = await _db.CustomerServiceRequests
             .AsNoTracking()
             .OrderByDescending(r => r.CreatedOn)

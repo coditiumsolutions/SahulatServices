@@ -1,0 +1,15 @@
+@model HomeServicesPortal.Models.ViewModels.ConfigurationFormVm
+
+<div class="mb-3">
+    <label asp-for="ConfigKey" class="form-label"></label>
+    <input asp-for="ConfigKey" class="form-control" placeholder="e.g. Cities" />
+    <div class="form-text">Unique key name for this setting.</div>
+    <span asp-validation-for="ConfigKey" class="text-danger small"></span>
+</div>
+
+<div class="mb-3">
+    <label asp-for="ConfigValue" class="form-label"></label>
+    <textarea asp-for="ConfigValue" class="form-control" rows="5" placeholder="Karachi, Islamabad, Faisalabad, Lahore"></textarea>
+    <div class="form-text">Enter multiple values separated by commas.</div>
+    <span asp-validation-for="ConfigValue" class="text-danger small"></span>
+</div>

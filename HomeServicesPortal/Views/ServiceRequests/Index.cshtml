@@ -1,15 +1,19 @@
 @model HomeServicesPortal.Models.ViewModels.ServiceRequestListVm
 @{
     Layout = "_AdminLayout";
+    var isPendingFilter = string.Equals(Model.Status, "PendingRequests", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(Model.Status, "Pending Requests", StringComparison.OrdinalIgnoreCase);
     var listTitle = string.Equals(Model.Status, "Initiated", StringComparison.OrdinalIgnoreCase)
         ? "Initiated Requests"
-        : string.Equals(Model.Status, "PendingRequests", StringComparison.OrdinalIgnoreCase)
+        : isPendingFilter
             ? "Pending Requests"
-            : string.Equals(Model.Status, "Urgent", StringComparison.OrdinalIgnoreCase)
-                ? "Urgent Requests"
-                : string.Equals(Model.Status, "Completed", StringComparison.OrdinalIgnoreCase)
-                    ? "Completed Requests"
-                    : "All Requests";
+            : string.Equals(Model.Status, "Assigned", StringComparison.OrdinalIgnoreCase)
+                ? "Assigned Requests"
+                : string.Equals(Model.Status, "Urgent", StringComparison.OrdinalIgnoreCase)
+                    ? "Urgent Requests"
+                    : string.Equals(Model.Status, "Completed", StringComparison.OrdinalIgnoreCase)
+                        ? "Completed Requests"
+                        : "All Requests";
     ViewData["Title"] = listTitle;
     string StatusBadgeClass(string? status) => status switch
     {
@@ -30,9 +34,13 @@
             {
                 <text>New requests awaiting staff assignment</text>
             }
-            else if (string.Equals(Model.Status, "PendingRequests", StringComparison.OrdinalIgnoreCase))
+            else if (isPendingFilter)
             {
                 <text>Assigned requests waiting for the provider to accept</text>
+            }
+            else if (string.Equals(Model.Status, "Assigned", StringComparison.OrdinalIgnoreCase))
+            {
+                <text>Requests assigned to a provider</text>
             }
             else if (string.Equals(Model.Status, "Urgent", StringComparison.OrdinalIgnoreCase))
             {
@@ -70,36 +78,83 @@
 
 <div class="card hs-card">
     <div class="card-body">
-        <form method="get" asp-action="Index" class="row g-2 mb-3">
-            <input type="hidden" name="status" value="@Model.Status" />
-            <div class="col-md-6 col-lg-4">
+        <form method="get" asp-action="Index" class="row g-2 mb-3 align-items-end">
+            <div class="col-md-4 col-lg-3">
+                <label class="form-label small text-muted mb-1" for="statusFilter">Status</label>
+                @{
+                    var knownStatus = string.IsNullOrWhiteSpace(Model.Status)
+                        || string.Equals(Model.Status, "Initiated", StringComparison.OrdinalIgnoreCase)
+                        || isPendingFilter
+                        || string.Equals(Model.Status, "Assigned", StringComparison.OrdinalIgnoreCase)
+                        || string.Equals(Model.Status, "Completed", StringComparison.OrdinalIgnoreCase);
+                }
+                <select id="statusFilter" name="status" class="form-select" onchange="this.form.submit()">
+                    @if (string.IsNullOrWhiteSpace(Model.Status))
+                    {
+                        <option value="" selected>All</option>
+                    }
+                    else
+                    {
+                        <option value="">All</option>
+                    }
+
+                    @if (string.Equals(Model.Status, "Initiated", StringComparison.OrdinalIgnoreCase))
+                    {
+                        <option value="Initiated" selected>Initiated</option>
+                    }
+                    else
+                    {
+                        <option value="Initiated">Initiated</option>
+                    }
+
+                    @if (isPendingFilter)
+                    {
+                        <option value="PendingRequests" selected>Pending</option>
+                    }
+                    else
+                    {
+                        <option value="PendingRequests">Pending</option>
+                    }
+
+                    @if (string.Equals(Model.Status, "Assigned", StringComparison.OrdinalIgnoreCase))
+                    {
+                        <option value="Assigned" selected>Assigned</option>
+                    }
+                    else
+                    {
+                        <option value="Assigned">Assigned</option>
+                    }
+
+                    @if (string.Equals(Model.Status, "Completed", StringComparison.OrdinalIgnoreCase))
+                    {
+                        <option value="Completed" selected>Completed</option>
+                    }
+                    else
+                    {
+                        <option value="Completed">Completed</option>
+                    }
+
+                    @if (!knownStatus)
+                    {
+                        <option value="@Model.Status" selected>@Model.Status</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-6 col-lg-5">
+                <label class="form-label small text-muted mb-1" for="searchFilter">Search</label>
                 <div class="input-group">
                     <span class="input-group-text"><i class="fa-solid fa-search"></i></span>
-                    <input type="text" name="search" value="@Model.Search" class="form-control" placeholder="Search requests..." />
+                    <input id="searchFilter" type="text" name="search" value="@Model.Search" class="form-control" placeholder="Search requests..." />
                     <button type="submit" class="btn btn-outline-primary">Search</button>
                 </div>
             </div>
-            @if (!string.IsNullOrWhiteSpace(Model.Search))
+            @if (!string.IsNullOrWhiteSpace(Model.Search) || !string.IsNullOrWhiteSpace(Model.Status))
             {
                 <div class="col-auto">
-                    <a asp-action="Index" asp-route-status="@Model.Status" class="btn btn-outline-secondary">Clear</a>
+                    <a asp-action="Index" class="btn btn-outline-secondary">Clear</a>
                 </div>
             }
         </form>
-
-        <div class="d-flex flex-wrap gap-2 mb-3">
-            <a asp-action="Index" asp-route-status="" asp-route-search="@Model.Search"
-               class="btn btn-sm @(string.IsNullOrWhiteSpace(Model.Status) ? "btn-primary" : "btn-outline-secondary")">
-                All <span class="badge bg-light text-dark ms-1">@Model.StatusCounts.Values.Sum()</span>
-            </a>
-            @foreach (var s in Model.StatusOptions)
-            {
-                <a asp-action="Index" asp-route-status="@s" asp-route-search="@Model.Search"
-                   class="btn btn-sm @(string.Equals(Model.Status, s, StringComparison.OrdinalIgnoreCase) ? "btn-primary" : "btn-outline-secondary")">
-                    @s <span class="badge bg-light text-dark ms-1">@(Model.StatusCounts.TryGetValue(s, out var c) ? c : 0)</span>
-                </a>
-            }
-        </div>
 
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0">

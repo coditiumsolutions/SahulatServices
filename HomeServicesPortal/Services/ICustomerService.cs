@@ -9,6 +9,7 @@ public interface ICustomerService
     Task<CustomerDetailsVm?> GetDetailsAsync(int id, CancellationToken cancellationToken = default);
     Task<CustomerFormVm?> GetForEditAsync(int id, CancellationToken cancellationToken = default);
     Task<CustomerDeleteVm?> GetForDeleteAsync(int id, CancellationToken cancellationToken = default);
+    Task<CustomerFormVm> PopulateFormAsync(CustomerFormVm model, CancellationToken cancellationToken = default);
     Task<(bool Success, string? Error)> CreateAsync(CustomerFormVm model, CancellationToken cancellationToken = default);
     Task<(bool Success, string? Error)> UpdateAsync(CustomerFormVm model, CancellationToken cancellationToken = default);
     Task<(bool Success, string? Error)> DeleteAsync(int id, CancellationToken cancellationToken = default);
