@@ -20,9 +20,9 @@ public class AssignProviderVm
     [StringLength(1000)]
     public string? ServiceDetail { get; set; }
 
-    [Required(ErrorMessage = "Provider is required.")]
-    [Display(Name = "Provider")]
-    public int ProviderUid { get; set; }
+    [Display(Name = "Providers")]
+    [MinLength(1, ErrorMessage = "Select at least one provider.")]
+    public List<int> ProviderUids { get; set; } = new();
 
     [Display(Name = "Show all providers (override category match)")]
     public bool ShowAllProviders { get; set; }

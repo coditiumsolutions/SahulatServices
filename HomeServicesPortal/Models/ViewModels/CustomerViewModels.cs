@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace HomeServicesPortal.Models.ViewModels;
 
@@ -45,6 +46,26 @@ public class CustomerFormVm
     [StringLength(20)]
     [Display(Name = "Gender")]
     public string? Gender { get; set; }
+
+    [StringLength(500)]
+    [Display(Name = "Customer Alert")]
+    public string? CustomerAlert { get; set; }
+
+    [StringLength(1000)]
+    [Display(Name = "Comments")]
+    public string? Comments { get; set; }
+
+    [StringLength(100)]
+    [Display(Name = "City")]
+    public string? City { get; set; }
+
+    [StringLength(250)]
+    [Display(Name = "Location")]
+    public string? Location { get; set; }
+
+    public List<SelectListItem> CityOptions { get; set; } = new();
+    public List<SelectListItem> LocationOptions { get; set; } = new();
+    public List<SelectListItem> AlertOptions { get; set; } = new();
 }
 
 public class CustomerDetailsVm
@@ -54,6 +75,10 @@ public class CustomerDetailsVm
     public string? MobileNo { get; set; }
     public string? Cnic { get; set; }
     public string? Gender { get; set; }
+    public string? CustomerAlert { get; set; }
+    public string? Comments { get; set; }
+    public string? City { get; set; }
+    public string? Location { get; set; }
     public DateTime? CreatedOn { get; set; }
     public int ServiceRequestCount { get; set; }
     public int AddressCount { get; set; }

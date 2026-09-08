@@ -12,6 +12,8 @@ public class Provider
 
     public string? Gender { get; set; }
 
+    public string? City { get; set; }
+
     public int? ExperienceYears { get; set; }
 
     public string? Description { get; set; }

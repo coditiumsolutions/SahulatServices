@@ -2,17 +2,24 @@ using HomeServicesPortal.Data;
 using HomeServicesPortal.Entities;
 using HomeServicesPortal.Helpers;
 using HomeServicesPortal.Models.ViewModels;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 
 namespace HomeServicesPortal.Services;
 
 public class CustomerService : ICustomerService
 {
-    private readonly AppDbContext _db;
+    private const string CitiesConfigKey = "Cities";
+    private const string LocationConfigKey = "Location";
+    private const string AlertsConfigKey = "Alerts";
 
-    public CustomerService(AppDbContext db)
+    private readonly AppDbContext _db;
+    private readonly IConfigurationEntryService _configurations;
+
+    public CustomerService(AppDbContext db, IConfigurationEntryService configurations)
     {
         _db = db;
+        _configurations = configurations;
     }
 
     public async Task<CustomerListVm> GetListAsync(
@@ -147,6 +154,10 @@ public class CustomerService : ICustomerService
                 MobileNo = c.User.MobileNo,
                 Cnic = c.Cnic,
                 Gender = c.Gender,
+                CustomerAlert = c.CustomerAlert,
+                Comments = c.Comments,
+                City = c.City,
+                Location = c.Location,
                 CreatedOn = c.CreatedOn,
                 ServiceRequestCount = _db.CustomerServiceRequests.Count(r => r.ClientUid == c.Uid),
                 AddressCount = _db.ClientAddresses.Count(a => a.ClientUid == c.Uid)
@@ -156,7 +167,7 @@ public class CustomerService : ICustomerService
 
     public async Task<CustomerFormVm?> GetForEditAsync(int id, CancellationToken cancellationToken = default)
     {
-        return await _db.Clients
+        var model = await _db.Clients
             .AsNoTracking()
             .Where(c => c.Uid == id)
             .Select(c => new CustomerFormVm
@@ -165,9 +176,53 @@ public class CustomerService : ICustomerService
                 FullName = c.FullName,
                 MobileNo = c.User.MobileNo,
                 Cnic = c.Cnic,
-                Gender = c.Gender
+                Gender = c.Gender,
+                CustomerAlert = c.CustomerAlert,
+                Comments = c.Comments,
+                City = c.City,
+                Location = c.Location
             })
             .FirstOrDefaultAsync(cancellationToken);
+
+        if (model == null) return null;
+        return await PopulateFormAsync(model, cancellationToken);
+    }
+
+    public async Task<CustomerFormVm> PopulateFormAsync(
+        CustomerFormVm model,
+        CancellationToken cancellationToken = default)
+    {
+        model.CityOptions = await BuildConfigOptionsAsync(
+            CitiesConfigKey, model.City, cancellationToken);
+        model.LocationOptions = await BuildConfigOptionsAsync(
+            LocationConfigKey, model.Location, cancellationToken);
+        model.AlertOptions = await BuildConfigOptionsAsync(
+            AlertsConfigKey, model.CustomerAlert, cancellationToken);
+        return model;
+    }
+
+    private async Task<List<SelectListItem>> BuildConfigOptionsAsync(
+        string configKey,
+        string? currentValue,
+        CancellationToken cancellationToken)
+    {
+        var values = await _configurations.GetValuesByKeyAsync(configKey, cancellationToken);
+        var options = values
+            .Select(v => new SelectListItem { Value = v, Text = v })
+            .ToList();
+
+        // Keep an existing saved value even if it was removed from configuration.
+        if (!string.IsNullOrWhiteSpace(currentValue)
+            && !options.Any(o => string.Equals(o.Value, currentValue, StringComparison.OrdinalIgnoreCase)))
+        {
+            options.Insert(0, new SelectListItem
+            {
+                Value = currentValue,
+                Text = currentValue
+            });
+        }
+
+        return options;
     }
 
     public async Task<CustomerDeleteVm?> GetForDeleteAsync(int id, CancellationToken cancellationToken = default)
@@ -247,6 +302,10 @@ public class CustomerService : ICustomerService
             FullName = model.FullName.Trim(),
             Cnic = model.Cnic?.Trim(),
             Gender = model.Gender?.Trim(),
+            CustomerAlert = string.IsNullOrWhiteSpace(model.CustomerAlert) ? null : model.CustomerAlert.Trim(),
+            Comments = string.IsNullOrWhiteSpace(model.Comments) ? null : model.Comments.Trim(),
+            City = string.IsNullOrWhiteSpace(model.City) ? null : model.City.Trim(),
+            Location = string.IsNullOrWhiteSpace(model.Location) ? null : model.Location.Trim(),
             CreatedOn = DateTime.Now
         });
 
@@ -284,6 +343,10 @@ public class CustomerService : ICustomerService
         client.FullName = model.FullName.Trim();
         client.Cnic = model.Cnic?.Trim();
         client.Gender = model.Gender?.Trim();
+        client.CustomerAlert = string.IsNullOrWhiteSpace(model.CustomerAlert) ? null : model.CustomerAlert.Trim();
+        client.Comments = string.IsNullOrWhiteSpace(model.Comments) ? null : model.Comments.Trim();
+        client.City = string.IsNullOrWhiteSpace(model.City) ? null : model.City.Trim();
+        client.Location = string.IsNullOrWhiteSpace(model.Location) ? null : model.Location.Trim();
         client.User.MobileNo = mobile;
 
         await _db.SaveChangesAsync(cancellationToken);

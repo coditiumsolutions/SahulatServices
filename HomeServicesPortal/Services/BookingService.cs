@@ -576,17 +576,37 @@ public class BookingService : IBookingService
             return (false, "This request already has a booking.");
         }
 
-        var provider = await _db.Providers
-            .AsNoTracking()
-            .FirstOrDefaultAsync(p => p.Uid == model.ProviderUid, cancellationToken);
-        if (provider == null)
+        var providerUids = (model.ProviderUids ?? new List<int>())
+            .Where(id => id > 0)
+            .Distinct()
+            .ToList();
+
+        if (providerUids.Count == 0)
         {
-            return (false, "Selected provider does not exist.");
+            return (false, "Select at least one provider.");
         }
 
-        if (!model.ShowAllProviders && provider.CategoryUid != request.CategoryUid)
+        var providers = await _db.Providers
+            .AsNoTracking()
+            .Where(p => providerUids.Contains(p.Uid))
+            .Select(p => new { p.Uid, p.CategoryUid, p.FullName })
+            .ToListAsync(cancellationToken);
+
+        if (providers.Count != providerUids.Count)
         {
-            return (false, "Selected provider does not match this request's service category. Enable \"Show all providers\" to override.");
+            return (false, "One or more selected providers do not exist.");
+        }
+
+        if (!model.ShowAllProviders)
+        {
+            var mismatched = providers
+                .Where(p => p.CategoryUid != request.CategoryUid)
+                .Select(p => p.FullName)
+                .ToList();
+            if (mismatched.Count > 0)
+            {
+                return (false, "Some selected providers do not match this request's service category. Enable \"Show all providers\" to override.");
+            }
         }
 
         if (!ValidPaymentModes.Contains(model.PaymentMode))
@@ -612,31 +632,36 @@ public class BookingService : IBookingService
             return (false, totalsError);
         }
 
-        // Single SaveChanges covers booking insert + request status update atomically
+        var serviceDetail = string.IsNullOrWhiteSpace(model.ServiceDetail)
+            ? request.ServiceDescription
+            : model.ServiceDetail.Trim();
+
+        // Single SaveChanges covers all booking inserts + request status update atomically
         // (avoids SqlServerRetryingExecutionStrategy transaction restrictions).
-        _db.ServiceBookings.Add(new ServiceBooking
+        foreach (var providerUid in providerUids)
         {
-            RequestUid = request.Uid,
-            ClientUid = request.ClientUid,
-            ProviderUid = model.ProviderUid,
-            ServiceDetail = string.IsNullOrWhiteSpace(model.ServiceDetail)
-                ? request.ServiceDescription
-                : model.ServiceDetail.Trim(),
-            EstimatedAmount = model.EstimatedAmount,
-            VisitCharges = model.VisitCharges,
-            AdditionalCharges = model.AdditionalCharges,
-            Deductions = model.Deductions,
-            FinalAmount = model.FinalAmount,
-            CustomerPaid = model.CustomerPaid,
-            PaymentMode = model.PaymentMode.Trim(),
-            CustomerRemaining = model.CustomerRemaining,
-            CommissionType = model.CommissionType.Trim(),
-            CommissionValue = model.CommissionValue,
-            CommissionAmount = model.CommissionAmount,
-            ProviderEarning = model.ProviderEarning,
-            Status = "Pending",
-            CreatedOn = DateTime.Now
-        });
+            _db.ServiceBookings.Add(new ServiceBooking
+            {
+                RequestUid = request.Uid,
+                ClientUid = request.ClientUid,
+                ProviderUid = providerUid,
+                ServiceDetail = serviceDetail,
+                EstimatedAmount = model.EstimatedAmount,
+                VisitCharges = model.VisitCharges,
+                AdditionalCharges = model.AdditionalCharges,
+                Deductions = model.Deductions,
+                FinalAmount = model.FinalAmount,
+                CustomerPaid = model.CustomerPaid,
+                PaymentMode = model.PaymentMode.Trim(),
+                CustomerRemaining = model.CustomerRemaining,
+                CommissionType = model.CommissionType.Trim(),
+                CommissionValue = model.CommissionValue,
+                CommissionAmount = model.CommissionAmount,
+                ProviderEarning = model.ProviderEarning,
+                Status = "Pending",
+                CreatedOn = DateTime.Now
+            });
+        }
 
         request.Status = "Assigned";
         await _db.SaveChangesAsync(cancellationToken);

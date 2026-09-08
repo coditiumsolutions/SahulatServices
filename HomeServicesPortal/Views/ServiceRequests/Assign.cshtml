@@ -2,12 +2,13 @@
 @{
     Layout = "_AdminLayout";
     ViewData["Title"] = "Assign Provider";
+    var selected = new HashSet<int>(Model.ProviderUids ?? new List<int>());
 }
 
 <div class="mb-4">
     <a asp-action="Index" class="text-decoration-none text-muted"><i class="fa-solid fa-arrow-left me-1"></i>Back to S-Requests</a>
     <h2 class="mt-2 mb-0"><i class="fa-solid fa-user-check me-2 text-primary"></i>Assign Provider</h2>
-    <p class="text-muted mb-0">Create a ServiceBookings record with bill and commission totals</p>
+    <p class="text-muted mb-0">Select one or more providers and create ServiceBookings with bill and commission totals</p>
 </div>
 
 <div class="row justify-content-center">
@@ -39,7 +40,10 @@
                     <input type="hidden" asp-for="RequestUid" />
 
                     <div class="mb-3">
-                        <label asp-for="ProviderUid" class="form-label"></label>
+                        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2">
+                            <label class="form-label mb-0">Providers</label>
+                            <span class="badge bg-primary" id="selectedProviderCount">0 selected</span>
+                        </div>
 
                         @if (!Model.HasCategoryMatch)
                         {
@@ -49,21 +53,59 @@
                             </div>
                         }
 
-                        <select id="ProviderUidMatching" class="form-select @(Model.ShowAllProviders ? "d-none" : "")"
-                                asp-items="Model.Providers">
-                            <option value="">-- Select Provider --</option>
-                        </select>
-                        <select id="ProviderUidAll" class="form-select @(Model.ShowAllProviders ? "" : "d-none")"
-                                asp-items="Model.AllProviders">
-                            <option value="">-- Select Provider --</option>
-                        </select>
-                        <input type="hidden" asp-for="ProviderUid" id="ProviderUid" />
-                        <span asp-validation-for="ProviderUid" class="text-danger small"></span>
+                        <div id="providerListMatching" class="border rounded p-2 @(Model.ShowAllProviders ? "d-none" : "")" style="max-height: 260px; overflow-y: auto;">
+                            @if (Model.Providers.Count == 0)
+                            {
+                                <div class="text-muted small py-2 px-1">No matching providers.</div>
+                            }
+                            @foreach (var p in Model.Providers)
+                            {
+                                var uid = int.TryParse(p.Value, out var id) ? id : 0;
+                                <div class="form-check">
+                                    @if (selected.Contains(uid))
+                                    {
+                                        <input class="form-check-input provider-check matching-check" type="checkbox"
+                                               name="ProviderUids" value="@p.Value" id="match_@p.Value" checked />
+                                    }
+                                    else
+                                    {
+                                        <input class="form-check-input provider-check matching-check" type="checkbox"
+                                               name="ProviderUids" value="@p.Value" id="match_@p.Value" />
+                                    }
+                                    <label class="form-check-label" for="match_@p.Value">@p.Text</label>
+                                </div>
+                            }
+                        </div>
+
+                        <div id="providerListAll" class="border rounded p-2 @(Model.ShowAllProviders ? "" : "d-none")" style="max-height: 260px; overflow-y: auto;">
+                            @foreach (var p in Model.AllProviders)
+                            {
+                                var uid = int.TryParse(p.Value, out var id) ? id : 0;
+                                <div class="form-check">
+                                    @if (selected.Contains(uid))
+                                    {
+                                        <input class="form-check-input provider-check all-check" type="checkbox"
+                                               name="ProviderUids" value="@p.Value" id="all_@p.Value" checked
+                                               disabled="@(!Model.ShowAllProviders)" />
+                                    }
+                                    else
+                                    {
+                                        <input class="form-check-input provider-check all-check" type="checkbox"
+                                               name="ProviderUids" value="@p.Value" id="all_@p.Value"
+                                               disabled="@(!Model.ShowAllProviders)" />
+                                    }
+                                    <label class="form-check-label" for="all_@p.Value">@p.Text</label>
+                                </div>
+                            }
+                        </div>
+
+                        <span asp-validation-for="ProviderUids" class="text-danger small"></span>
 
                         <div class="form-check mt-2">
                             <input asp-for="ShowAllProviders" class="form-check-input" id="showAllProvidersToggle" disabled="@(!Model.HasCategoryMatch)" />
                             <label asp-for="ShowAllProviders" class="form-check-label small"></label>
                         </div>
+                        <div class="form-text">Same bill and commission will be applied to each selected provider.</div>
                     </div>
 
                     <div class="mb-4">
@@ -171,6 +213,10 @@
 
             const categoryUid = @Model.CategoryUid;
             const resolveUrl = '@Url.Action("ResolveCommission", "ServiceRequests")';
+            const matchingList = document.getElementById('providerListMatching');
+            const allList = document.getElementById('providerListAll');
+            const toggle = document.getElementById('showAllProvidersToggle');
+            const countBadge = document.getElementById('selectedProviderCount');
 
             const num = (id) => {
                 const el = form.querySelector('#' + id);
@@ -216,7 +262,6 @@
             }
 
             async function applyResolvedCommission(providerUid) {
-                if (!categoryUid && !providerUid) return;
                 const params = new URLSearchParams({ categoryUid: String(categoryUid || 0) });
                 if (providerUid) params.set('providerUid', String(providerUid));
                 try {
@@ -234,52 +279,54 @@
                 } catch (_) { /* keep current values */ }
             }
 
-            (function providerToggle() {
-                const matchingSelect = document.getElementById('ProviderUidMatching');
-                const allSelect = document.getElementById('ProviderUidAll');
-                const hiddenInput = document.getElementById('ProviderUid');
-                const toggle = document.getElementById('showAllProvidersToggle');
-                if (!matchingSelect || !allSelect || !hiddenInput || !toggle) return;
+            function activeChecks() {
+                return [...form.querySelectorAll('.provider-check:not([disabled]):checked')];
+            }
 
-                const preselected = '@Model.ProviderUid';
+            function updateSelectedCount() {
+                const n = activeChecks().length;
+                if (countBadge) countBadge.textContent = n + ' selected';
+            }
 
-                function syncHidden() {
-                    const activeSelect = toggle.checked ? allSelect : matchingSelect;
-                    hiddenInput.value = activeSelect.value;
-                }
-
-                function onProviderChanged() {
-                    syncHidden();
-                    const uid = parseInt(hiddenInput.value, 10);
+            function onProviderSelectionChanged() {
+                updateSelectedCount();
+                const checked = activeChecks();
+                if (checked.length === 1) {
+                    const uid = parseInt(checked[0].value, 10);
                     applyResolvedCommission(Number.isFinite(uid) && uid > 0 ? uid : null);
+                } else {
+                    applyResolvedCommission(null);
                 }
+            }
 
-                function applyToggleState() {
-                    matchingSelect.classList.toggle('d-none', toggle.checked);
-                    allSelect.classList.toggle('d-none', !toggle.checked);
-                    onProviderChanged();
-                }
+            function applyToggleState() {
+                const showAll = toggle && toggle.checked;
+                if (matchingList) matchingList.classList.toggle('d-none', showAll);
+                if (allList) allList.classList.toggle('d-none', !showAll);
 
-                if (preselected && preselected !== '0') {
-                    if ([...matchingSelect.options].some(o => o.value === preselected)) {
-                        matchingSelect.value = preselected;
-                    } else if ([...allSelect.options].some(o => o.value === preselected)) {
-                        allSelect.value = preselected;
-                    }
-                }
+                form.querySelectorAll('.matching-check').forEach(function (el) {
+                    el.disabled = !!showAll;
+                    if (showAll) el.checked = false;
+                });
+                form.querySelectorAll('.all-check').forEach(function (el) {
+                    el.disabled = !showAll;
+                    if (!showAll) el.checked = false;
+                });
 
-                matchingSelect.addEventListener('change', onProviderChanged);
-                allSelect.addEventListener('change', onProviderChanged);
-                toggle.addEventListener('change', applyToggleState);
+                onProviderSelectionChanged();
+            }
 
-                applyToggleState();
-            })();
+            form.querySelectorAll('.provider-check').forEach(function (el) {
+                el.addEventListener('change', onProviderSelectionChanged);
+            });
+            if (toggle) toggle.addEventListener('change', applyToggleState);
 
             form.querySelectorAll('.calc-input').forEach(el => {
                 el.addEventListener('input', recalc);
                 el.addEventListener('change', recalc);
             });
 
+            applyToggleState();
             recalc();
         })();
     </script>

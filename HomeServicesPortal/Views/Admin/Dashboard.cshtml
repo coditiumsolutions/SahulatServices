@@ -2,12 +2,12 @@
 
 @{
     Layout = "_AdminLayout";
-    ViewData["Title"] = "Dashboard";
+    ViewData["Title"] = "Summary";
 }
 
 <div class="d-flex align-items-center justify-content-between mb-3">
     <h2 class="mb-0">
-        <i class="fa-solid fa-gauge me-2" style="color: #0D6EFD"></i>Dashboard Overview
+        <i class="fa-solid fa-gauge me-2" style="color: #0D6EFD"></i>Summary Overview
     </h2>
     <div class="text-muted">
         <i class="fa-regular fa-calendar me-1"></i>@DateTime.Now.ToString("dd MMM yyyy")
@@ -114,56 +114,6 @@
 </div>
 
 <div class="row g-3 mt-2">
-    <div class="col-12 col-lg-6">
-        <div class="card hs-card">
-            <div class="card-body">
-                <div class="d-flex align-items-center justify-content-between mb-2">
-                    <h5 class="mb-0">Booking Status</h5>
-                    <span class="text-muted small">Distribution</span>
-                </div>
-                <canvas id="bookingStatusChart" height="120"></canvas>
-            </div>
-        </div>
-    </div>
-    <div class="col-12 col-lg-6">
-        <div class="card hs-card">
-            <div class="card-body">
-                <div class="d-flex align-items-center justify-content-between mb-2">
-                    <h5 class="mb-0">Monthly Revenue</h5>
-                    <span class="text-muted small">Last 6 months</span>
-                </div>
-                <canvas id="monthlyRevenueChart" height="120"></canvas>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="row g-3 mt-2">
-    <div class="col-12 col-lg-6">
-        <div class="card hs-card">
-            <div class="card-body">
-                <div class="d-flex align-items-center justify-content-between mb-2">
-                    <h5 class="mb-0">Service Category Wise Requests</h5>
-                    <span class="text-muted small">Top categories</span>
-                </div>
-                <canvas id="categoryWiseRequestsChart" height="120"></canvas>
-            </div>
-        </div>
-    </div>
-    <div class="col-12 col-lg-6">
-        <div class="card hs-card">
-            <div class="card-body">
-                <div class="d-flex align-items-center justify-content-between mb-2">
-                    <h5 class="mb-0">Provider Performance</h5>
-                    <span class="text-muted small">Completed bookings</span>
-                </div>
-                <canvas id="providerPerformanceChart" height="120"></canvas>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="row g-3 mt-2">
     <div class="col-12 col-lg-4">
         <div class="card hs-card">
             <div class="card-body">
@@ -179,6 +129,10 @@
                             </tr>
                         </thead>
                         <tbody>
+                            @if (!Model.LatestRequests.Any())
+                            {
+                                <tr><td colspan="2" class="text-muted text-center py-3">No requests yet.</td></tr>
+                            }
                             @foreach (var r in Model.LatestRequests)
                             {
                                 <tr>
@@ -210,6 +164,10 @@
                             </tr>
                         </thead>
                         <tbody>
+                            @if (!Model.LatestBookings.Any())
+                            {
+                                <tr><td colspan="2" class="text-muted text-center py-3">No bookings yet.</td></tr>
+                            }
                             @foreach (var b in Model.LatestBookings)
                             {
                                 <tr>
@@ -241,6 +199,10 @@
                             </tr>
                         </thead>
                         <tbody>
+                            @if (!Model.LatestPayments.Any())
+                            {
+                                <tr><td colspan="2" class="text-muted text-center py-3">No payments yet.</td></tr>
+                            }
                             @foreach (var p in Model.LatestPayments)
                             {
                                 <tr>
@@ -255,79 +217,3 @@
         </div>
     </div>
 </div>
-
-@section Scripts {
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
-
-    <script>
-        const bookingStatusLabels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.BookingStatusChart.Select(x => x.Label)));
-        const bookingStatusValues = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.BookingStatusChart.Select(x => x.Value)));
-
-        new Chart(document.getElementById('bookingStatusChart'), {
-            type: 'doughnut',
-            data: {
-                labels: bookingStatusLabels,
-                datasets: [{
-                    data: bookingStatusValues,
-                    backgroundColor: ['#0D6EFD', '#198754', '#DC3545', '#FFC107', '#6C757D']
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: { position: 'bottom' }
-                }
-            }
-        });
-
-        const monthlyRevenueLabels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.MonthlyRevenueChart.Select(x => x.MonthLabel)));
-        const monthlyRevenueValues = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.MonthlyRevenueChart.Select(x => x.Value)));
-
-        new Chart(document.getElementById('monthlyRevenueChart'), {
-            type: 'bar',
-            data: {
-                labels: monthlyRevenueLabels,
-                datasets: [{
-                    label: 'Revenue',
-                    data: monthlyRevenueValues,
-                    backgroundColor: '#198754'
-                }]
-            },
-            options: { responsive: true }
-        });
-
-        const categoryWiseLabels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ServiceCategoryWiseRequestsChart.Select(x => x.CategoryName)));
-        const categoryWiseValues = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ServiceCategoryWiseRequestsChart.Select(x => x.Value)));
-
-        new Chart(document.getElementById('categoryWiseRequestsChart'), {
-            type: 'line',
-            data: {
-                labels: categoryWiseLabels,
-                datasets: [{
-                    label: 'Requests',
-                    data: categoryWiseValues,
-                    borderColor: '#0D6EFD',
-                    backgroundColor: 'rgba(13,110,253,0.15)'
-                }]
-            },
-            options: { responsive: true }
-        });
-
-        const providerPerfLabels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ProviderPerformanceChart.Select(x => x.ProviderName)));
-        const providerPerfValues = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ProviderPerformanceChart.Select(x => x.CompletedBookings)));
-
-        new Chart(document.getElementById('providerPerformanceChart'), {
-            type: 'bar',
-            data: {
-                labels: providerPerfLabels,
-                datasets: [{
-                    label: 'Completed Jobs',
-                    data: providerPerfValues,
-                    backgroundColor: '#0D6EFD'
-                }]
-            },
-            options: { responsive: true, plugins: { legend: { display: false } } }
-        });
-    </script>
-}
-

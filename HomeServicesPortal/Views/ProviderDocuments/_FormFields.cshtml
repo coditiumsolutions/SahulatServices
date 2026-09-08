@@ -4,88 +4,146 @@
     var isEdit = Model.Uid > 0;
 }
 
-<div class="mb-3">
-    <label asp-for="ProviderUid" class="form-label"></label>
-    @if (isEdit)
-    {
-        <input type="hidden" asp-for="ProviderUid" />
-        <select class="form-select" asp-items="Model.Providers" disabled></select>
-        <div class="form-text">Provider cannot be changed after documents are created.</div>
+<style>
+    .pd-form-grid .form-label {
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: #6c757d;
+        margin-bottom: 0;
     }
-    else
-    {
-        <select asp-for="ProviderUid" class="form-select" asp-items="Model.Providers">
-            <option value="">-- Select Provider --</option>
-        </select>
-        <span asp-validation-for="ProviderUid" class="text-danger small"></span>
+    .pd-form-grid .form-control,
+    .pd-form-grid .form-select {
+        font-size: 0.875rem;
     }
-</div>
+    .pd-form-grid .pd-thumb {
+        max-height: 72px;
+        margin-top: 0.35rem;
+    }
+    .pd-form-grid .form-text {
+        font-size: 0.72rem;
+        margin-top: 0.2rem;
+    }
+</style>
 
-<div class="row">
-    <div class="col-md-4 mb-3">
-        <label asp-for="ProfilePhoto" class="form-label"></label>
-        <input asp-for="ProfilePhoto" class="form-control" type="file" accept=".jpg,.jpeg,.png" />
-        @if (!string.IsNullOrWhiteSpace(Model.ExistingProfilePhotoPath))
-        {
-            <div class="mt-2">
-                <img src="@UrlPath(Model.ExistingProfilePhotoPath)" alt="Profile" class="img-thumbnail" style="max-height:120px" />
-                <div class="form-text">Leave empty to keep current photo.</div>
-            </div>
-        }
-        else
-        {
-            <div class="form-text">JPG/PNG — max 5 MB. Required.</div>
-        }
-        <span asp-validation-for="ProfilePhoto" class="text-danger small"></span>
-    </div>
-    <div class="col-md-4 mb-3">
-        <label asp-for="CnicFront" class="form-label"></label>
-        <input asp-for="CnicFront" class="form-control" type="file" accept=".jpg,.jpeg,.png" />
-        @if (!string.IsNullOrWhiteSpace(Model.ExistingCnicFrontPath))
-        {
-            <div class="mt-2">
-                <img src="@UrlPath(Model.ExistingCnicFrontPath)" alt="CNIC Front" class="img-thumbnail" style="max-height:120px" />
-                <div class="form-text">Leave empty to keep current image.</div>
-            </div>
-        }
-        else
-        {
-            <div class="form-text">JPG/PNG — max 5 MB. Required.</div>
-        }
-        <span asp-validation-for="CnicFront" class="text-danger small"></span>
-    </div>
-    <div class="col-md-4 mb-3">
-        <label asp-for="CnicBack" class="form-label"></label>
-        <input asp-for="CnicBack" class="form-control" type="file" accept=".jpg,.jpeg,.png" />
-        @if (!string.IsNullOrWhiteSpace(Model.ExistingCnicBackPath))
-        {
-            <div class="mt-2">
-                <img src="@UrlPath(Model.ExistingCnicBackPath)" alt="CNIC Back" class="img-thumbnail" style="max-height:120px" />
-                <div class="form-text">Leave empty to keep current image.</div>
-            </div>
-        }
-        else
-        {
-            <div class="form-text">JPG/PNG — max 5 MB. Required.</div>
-        }
-        <span asp-validation-for="CnicBack" class="text-danger small"></span>
-    </div>
-</div>
-
-@if (isEdit)
-{
-    <hr />
-    <div class="row">
-        <div class="col-md-4 mb-3">
-            <div class="form-check form-switch mt-4">
-                <input asp-for="IsVerified" class="form-check-input" type="checkbox" />
-                <label asp-for="IsVerified" class="form-check-label"></label>
+<div class="pd-form-grid">
+    <div class="row g-2 mb-2">
+        <div class="col-md-6">
+            <div class="row g-2 align-items-center">
+                <div class="col-sm-4">
+                    <label asp-for="ProviderUid" class="form-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    @if (isEdit)
+                    {
+                        <input type="hidden" asp-for="ProviderUid" />
+                        <select class="form-select form-select-sm" asp-items="Model.Providers" disabled></select>
+                        <div class="form-text">Provider cannot be changed after create.</div>
+                    }
+                    else
+                    {
+                        <select asp-for="ProviderUid" class="form-select form-select-sm" asp-items="Model.Providers">
+                            <option value="">-- Select Provider --</option>
+                        </select>
+                        <span asp-validation-for="ProviderUid" class="text-danger small"></span>
+                    }
+                </div>
             </div>
         </div>
-        <div class="col-md-8 mb-3">
-            <label asp-for="VerificationRemarks" class="form-label"></label>
-            <input asp-for="VerificationRemarks" class="form-control" maxlength="500" placeholder="Optional remarks" />
-            <span asp-validation-for="VerificationRemarks" class="text-danger small"></span>
+        <div class="col-md-6">
+            @if (isEdit)
+            {
+                <div class="row g-2 align-items-center">
+                    <div class="col-sm-4">
+                        <label asp-for="IsVerified" class="form-label"></label>
+                    </div>
+                    <div class="col-sm-8">
+                        <div class="form-check form-switch mb-0">
+                            <input asp-for="IsVerified" class="form-check-input" type="checkbox" />
+                            <label asp-for="IsVerified" class="form-check-label small"></label>
+                        </div>
+                    </div>
+                </div>
+            }
         </div>
     </div>
-}
+
+    <div class="row g-2 mb-2">
+        <div class="col-md-6">
+            <div class="row g-2 align-items-start">
+                <div class="col-sm-4 pt-1">
+                    <label asp-for="ProfilePhoto" class="form-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="ProfilePhoto" class="form-control form-control-sm" type="file" accept=".jpg,.jpeg,.png" />
+                    @if (!string.IsNullOrWhiteSpace(Model.ExistingProfilePhotoPath))
+                    {
+                        <img src="@UrlPath(Model.ExistingProfilePhotoPath)" alt="Profile" class="img-thumbnail pd-thumb" />
+                        <div class="form-text">Leave empty to keep current photo.</div>
+                    }
+                    else
+                    {
+                        <div class="form-text">JPG/PNG — max 5 MB. Required.</div>
+                    }
+                    <span asp-validation-for="ProfilePhoto" class="text-danger small"></span>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="row g-2 align-items-start">
+                <div class="col-sm-4 pt-1">
+                    <label asp-for="CnicFront" class="form-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="CnicFront" class="form-control form-control-sm" type="file" accept=".jpg,.jpeg,.png" />
+                    @if (!string.IsNullOrWhiteSpace(Model.ExistingCnicFrontPath))
+                    {
+                        <img src="@UrlPath(Model.ExistingCnicFrontPath)" alt="CNIC Front" class="img-thumbnail pd-thumb" />
+                        <div class="form-text">Leave empty to keep current image.</div>
+                    }
+                    else
+                    {
+                        <div class="form-text">JPG/PNG — max 5 MB. Required.</div>
+                    }
+                    <span asp-validation-for="CnicFront" class="text-danger small"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-2 mb-2">
+        <div class="col-md-6">
+            <div class="row g-2 align-items-start">
+                <div class="col-sm-4 pt-1">
+                    <label asp-for="CnicBack" class="form-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="CnicBack" class="form-control form-control-sm" type="file" accept=".jpg,.jpeg,.png" />
+                    @if (!string.IsNullOrWhiteSpace(Model.ExistingCnicBackPath))
+                    {
+                        <img src="@UrlPath(Model.ExistingCnicBackPath)" alt="CNIC Back" class="img-thumbnail pd-thumb" />
+                        <div class="form-text">Leave empty to keep current image.</div>
+                    }
+                    else
+                    {
+                        <div class="form-text">JPG/PNG — max 5 MB. Required.</div>
+                    }
+                    <span asp-validation-for="CnicBack" class="text-danger small"></span>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            @if (isEdit)
+            {
+                <div class="row g-2 align-items-start">
+                    <div class="col-sm-4 pt-1">
+                        <label asp-for="VerificationRemarks" class="form-label"></label>
+                    </div>
+                    <div class="col-sm-8">
+                        <input asp-for="VerificationRemarks" class="form-control form-control-sm" maxlength="500" placeholder="Optional remarks" />
+                        <span asp-validation-for="VerificationRemarks" class="text-danger small"></span>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>

@@ -43,6 +43,8 @@ public class AppDbContext : DbContext
 
     public DbSet<AdminNotification> AdminNotifications => Set<AdminNotification>();
 
+    public DbSet<ConfigurationEntry> Configurations => Set<ConfigurationEntry>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<UsersLogin>(entity =>
@@ -91,6 +93,10 @@ public class AppDbContext : DbContext
             entity.Property(e => e.FullName).HasMaxLength(150).IsRequired();
             entity.Property(e => e.Cnic).HasMaxLength(15).HasColumnName("CNIC");
             entity.Property(e => e.Gender).HasMaxLength(20);
+            entity.Property(e => e.CustomerAlert).HasMaxLength(500);
+            entity.Property(e => e.Comments).HasMaxLength(1000);
+            entity.Property(e => e.City).HasMaxLength(100);
+            entity.Property(e => e.Location).HasMaxLength(250);
             entity.Property(e => e.CreatedOn)
                 .HasColumnType("datetime")
                 .HasDefaultValueSql("(getdate())");
@@ -111,6 +117,7 @@ public class AppDbContext : DbContext
             entity.Property(e => e.FullName).HasMaxLength(150).IsRequired();
             entity.Property(e => e.Cnic).HasMaxLength(15).HasColumnName("CNIC").IsRequired();
             entity.Property(e => e.Gender).HasMaxLength(20);
+            entity.Property(e => e.City).HasMaxLength(100);
             entity.Property(e => e.ExperienceYears).HasDefaultValue(0);
             entity.Property(e => e.Description).HasColumnType("nvarchar(max)");
             entity.Property(e => e.IsVerified).HasDefaultValue(false);
@@ -455,6 +462,22 @@ public class AppDbContext : DbContext
 
             entity.HasIndex(e => new { e.IsRead, e.CreatedOn })
                 .HasDatabaseName("IX_AdminNotifications_IsRead_CreatedOn");
+        });
+
+        modelBuilder.Entity<ConfigurationEntry>(entity =>
+        {
+            entity.ToTable("Configurations");
+            entity.HasKey(e => e.Uid);
+            entity.Property(e => e.Uid).HasColumnName("UID");
+            entity.Property(e => e.ConfigKey).HasMaxLength(100).IsRequired();
+            entity.Property(e => e.ConfigValue).IsRequired();
+            entity.Property(e => e.CreatedOn)
+                .HasColumnType("datetime")
+                .HasDefaultValueSql("(getdate())");
+
+            entity.HasIndex(e => e.ConfigKey)
+                .IsUnique()
+                .HasDatabaseName("UQ_Configurations_ConfigKey");
         });
     }
 }

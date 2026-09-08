@@ -6,47 +6,46 @@ using Microsoft.AspNetCore.Mvc;
 namespace HomeServicesPortal.Controllers;
 
 [Authorize(Roles = "Super Admin,Admin,Dispatcher,Customer Support")]
-public class ServiceProvidersController : Controller
+public class ConfigurationsController : Controller
 {
-    private readonly IServiceProviderService _service;
+    private readonly IConfigurationEntryService _service;
 
-    public ServiceProvidersController(IServiceProviderService service)
+    public ConfigurationsController(IConfigurationEntryService service)
     {
         _service = service;
     }
 
-    [HttpGet("/Admin/ServiceProviders")]
-    public async Task<IActionResult> Index(string? search, string? sort, string? sortDir, int page = 1, CancellationToken cancellationToken = default)
+    [HttpGet("/Admin/Configurations")]
+    public async Task<IActionResult> Index(string? search, int page = 1, CancellationToken cancellationToken = default)
     {
-        var vm = await _service.GetListAsync(search, sort, sortDir, page, cancellationToken);
+        var vm = await _service.GetListAsync(search, page, cancellationToken);
         return View(vm);
     }
 
-    [HttpGet("/Admin/ServiceProviders/Create")]
-    public async Task<IActionResult> Create(CancellationToken cancellationToken)
+    [HttpGet("/Admin/Configurations/Create")]
+    public IActionResult Create()
     {
-        return View(await _service.PopulateFormAsync(new ServiceProviderFormVm(), cancellationToken));
+        return View(new ConfigurationFormVm());
     }
 
-    [HttpPost("/Admin/ServiceProviders/Create")]
+    [HttpPost("/Admin/Configurations/Create")]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create(ServiceProviderFormVm model, CancellationToken cancellationToken)
+    public async Task<IActionResult> Create(ConfigurationFormVm model, CancellationToken cancellationToken)
     {
-        await _service.PopulateFormAsync(model, cancellationToken);
         if (!ModelState.IsValid) return View(model);
 
         var (success, error) = await _service.CreateAsync(model, cancellationToken);
         if (!success)
         {
-            ModelState.AddModelError(string.Empty, error ?? "Failed to create provider.");
+            ModelState.AddModelError(string.Empty, error ?? "Failed to create configuration.");
             return View(model);
         }
 
-        TempData["SuccessMessage"] = $"Job Provider '{model.FullName}' created successfully.";
+        TempData["SuccessMessage"] = $"Configuration '{model.ConfigKey}' created successfully.";
         return RedirectToAction(nameof(Index));
     }
 
-    [HttpGet("/Admin/ServiceProviders/Details/{id:int}")]
+    [HttpGet("/Admin/Configurations/Details/{id:int}")]
     public async Task<IActionResult> Details(int id, CancellationToken cancellationToken)
     {
         var vm = await _service.GetDetailsAsync(id, cancellationToken);
@@ -54,7 +53,7 @@ public class ServiceProvidersController : Controller
         return View(vm);
     }
 
-    [HttpGet("/Admin/ServiceProviders/Edit/{id:int}")]
+    [HttpGet("/Admin/Configurations/Edit/{id:int}")]
     public async Task<IActionResult> Edit(int id, CancellationToken cancellationToken)
     {
         var vm = await _service.GetForEditAsync(id, cancellationToken);
@@ -62,26 +61,25 @@ public class ServiceProvidersController : Controller
         return View(vm);
     }
 
-    [HttpPost("/Admin/ServiceProviders/Edit/{id:int}")]
+    [HttpPost("/Admin/Configurations/Edit/{id:int}")]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Edit(int id, ServiceProviderFormVm model, CancellationToken cancellationToken)
+    public async Task<IActionResult> Edit(int id, ConfigurationFormVm model, CancellationToken cancellationToken)
     {
         if (id != model.Uid) return BadRequest();
-        await _service.PopulateFormAsync(model, cancellationToken);
         if (!ModelState.IsValid) return View(model);
 
         var (success, error) = await _service.UpdateAsync(model, cancellationToken);
         if (!success)
         {
-            ModelState.AddModelError(string.Empty, error ?? "Failed to update provider.");
+            ModelState.AddModelError(string.Empty, error ?? "Failed to update configuration.");
             return View(model);
         }
 
-        TempData["SuccessMessage"] = $"Job Provider '{model.FullName}' updated successfully.";
+        TempData["SuccessMessage"] = $"Configuration '{model.ConfigKey}' updated successfully.";
         return RedirectToAction(nameof(Index));
     }
 
-    [HttpGet("/Admin/ServiceProviders/Delete/{id:int}")]
+    [HttpGet("/Admin/Configurations/Delete/{id:int}")]
     public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
     {
         var vm = await _service.GetForDeleteAsync(id, cancellationToken);
@@ -89,7 +87,7 @@ public class ServiceProvidersController : Controller
         return View(vm);
     }
 
-    [HttpPost("/Admin/ServiceProviders/Delete/{id:int}")]
+    [HttpPost("/Admin/Configurations/Delete/{id:int}")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteConfirmed(int id, CancellationToken cancellationToken)
     {
@@ -99,11 +97,11 @@ public class ServiceProvidersController : Controller
         var (success, error) = await _service.DeleteAsync(id, cancellationToken);
         if (!success)
         {
-            ModelState.AddModelError(string.Empty, error ?? "Failed to delete provider.");
+            ModelState.AddModelError(string.Empty, error ?? "Failed to delete configuration.");
             return View("Delete", vm);
         }
 
-        TempData["SuccessMessage"] = $"Job Provider '{vm.FullName}' deleted successfully.";
+        TempData["SuccessMessage"] = $"Configuration '{vm.ConfigKey}' deleted successfully.";
         return RedirectToAction(nameof(Index));
     }
 }

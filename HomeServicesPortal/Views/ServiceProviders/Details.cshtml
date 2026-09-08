@@ -4,69 +4,143 @@
     ViewData["Title"] = "Job Provider Details";
 }
 
-<div class="mb-4">
-    <a asp-action="Index" class="text-decoration-none text-muted"><i class="fa-solid fa-arrow-left me-1"></i>Back to Job Providers</a>
-    <h2 class="mt-2 mb-0"><i class="fa-solid fa-eye me-2 text-primary"></i>Job Provider Details</h2>
+<style>
+    .sp-details-grid .sp-label {
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: #6c757d;
+    }
+    .sp-details-grid .sp-value {
+        font-size: 0.9rem;
+        font-weight: 500;
+        color: #212529;
+        word-break: break-word;
+    }
+</style>
+
+<div class="mb-3">
+    <a asp-action="Index" class="text-decoration-none text-muted small"><i class="fa-solid fa-arrow-left me-1"></i>Back to Job Providers</a>
+    <h2 class="mt-1 mb-0 h4"><i class="fa-solid fa-eye me-2 text-primary"></i>Job Provider Details <span class="text-muted fw-normal">#@Model.Uid</span></h2>
 </div>
 
-<div class="row justify-content-center">
-    <div class="col-lg-8">
-        <div class="card hs-card">
-            <div class="card-body p-4">
-                <div class="d-flex align-items-start gap-3 mb-4">
-                    @if (!string.IsNullOrWhiteSpace(Model.ProfilePicturePath))
-                    {
-                        <img src="@Model.ProfilePicturePath" alt="@Model.FullName" class="rounded-circle" width="80" height="80" style="object-fit:cover" />
-                    }
-                    else
-                    {
-                        <div class="rounded-circle bg-light d-flex align-items-center justify-content-center" style="width:80px;height:80px">
-                            <i class="fa-solid fa-user fa-2x text-muted"></i>
-                        </div>
-                    }
-                    <div>
-                        <h4 class="mb-1">@Model.FullName</h4>
-                        <div class="text-muted small mb-1">Provider ID: #@Model.Uid</div>
-                        <span class="badge bg-primary">@Model.CategoryName</span>
-                    </div>
+<div class="card hs-card">
+    <div class="card-body p-3 sp-details-grid">
+        <div class="d-flex align-items-center gap-3 mb-3">
+            @if (!string.IsNullOrWhiteSpace(Model.ProfilePicturePath))
+            {
+                <img src="@Model.ProfilePicturePath" alt="@Model.FullName" class="rounded-circle" width="56" height="56" style="object-fit:cover" />
+            }
+            else
+            {
+                <div class="rounded-circle bg-light d-flex align-items-center justify-content-center" style="width:56px;height:56px">
+                    <i class="fa-solid fa-user text-muted"></i>
                 </div>
+            }
+            <div>
+                <div class="fw-semibold">@Model.FullName</div>
+                <span class="badge bg-primary">@Model.CategoryName</span>
+            </div>
+        </div>
 
-                <dl class="row mb-0">
-                    <dt class="col-sm-4 text-muted">Provider ID</dt>
-                    <dd class="col-sm-8 fw-semibold">@Model.Uid</dd>
-                    <dt class="col-sm-4 text-muted">Mobile No</dt>
-                    <dd class="col-sm-8">@(Model.MobileNo ?? "—")</dd>
-                    <dt class="col-sm-4 text-muted">CNIC</dt>
-                    <dd class="col-sm-8">@(Model.Cnic ?? "—")</dd>
-                    <dt class="col-sm-4 text-muted">Experience Years</dt>
-                    <dd class="col-sm-8">@(Model.ExperienceYears?.ToString() ?? "0")</dd>
-                    <dt class="col-sm-4 text-muted">Rating</dt>
-                    <dd class="col-sm-8">
+        <div class="row g-2 mb-2">
+            <div class="col-md-6">
+                <div class="row g-2">
+                    <div class="col-sm-4 sp-label">Provider ID</div>
+                    <div class="col-sm-8 sp-value">@Model.Uid</div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="row g-2">
+                    <div class="col-sm-4 sp-label">Category</div>
+                    <div class="col-sm-8 sp-value">@Model.CategoryName</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-2 mb-2">
+            <div class="col-md-6">
+                <div class="row g-2">
+                    <div class="col-sm-4 sp-label">Mobile No</div>
+                    <div class="col-sm-8 sp-value">@(Model.MobileNo ?? "—")</div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="row g-2">
+                    <div class="col-sm-4 sp-label">CNIC</div>
+                    <div class="col-sm-8 sp-value">@(Model.Cnic ?? "—")</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-2 mb-2">
+            <div class="col-md-6">
+                <div class="row g-2">
+                    <div class="col-sm-4 sp-label">City</div>
+                    <div class="col-sm-8 sp-value">@(string.IsNullOrWhiteSpace(Model.City) ? "—" : Model.City)</div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="row g-2">
+                    <div class="col-sm-4 sp-label">Experience</div>
+                    <div class="col-sm-8 sp-value">@(Model.ExperienceYears?.ToString() ?? "0") yrs</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-2 mb-2">
+            <div class="col-md-6">
+                <div class="row g-2">
+                    <div class="col-sm-4 sp-label">Rating</div>
+                    <div class="col-sm-8 sp-value">
                         @if (Model.Rating.HasValue)
                         {
                             <span class="text-warning"><i class="fa-solid fa-star"></i></span>
                             @Model.Rating.Value.ToString("0.0")
                         }
-                        else { <span>—</span> }
-                    </dd>
-                    <dt class="col-sm-4 text-muted">Verified</dt>
-                    <dd class="col-sm-8">
-                        <span class="badge bg-@(Model.IsVerified ? "success" : "secondary")">@(Model.IsVerified ? "Yes" : "No")</span>
-                    </dd>
-                    <dt class="col-sm-4 text-muted">Status</dt>
-                    <dd class="col-sm-8">
-                        <span class="badge bg-@(Model.IsActive ? "success" : "secondary")">@(Model.IsActive ? "Active" : "Inactive")</span>
-                    </dd>
-                    <dt class="col-sm-4 text-muted">Created On</dt>
-                    <dd class="col-sm-8">@(Model.CreatedOn?.ToString("dd MMM yyyy HH:mm") ?? "—")</dd>
-                </dl>
-
-                <hr />
-                <div class="d-flex gap-2">
-                    <a asp-action="Edit" asp-route-id="@Model.Uid" class="btn btn-primary"><i class="fa-solid fa-pen me-1"></i>Edit</a>
-                    <a asp-action="Delete" asp-route-id="@Model.Uid" class="btn btn-outline-danger"><i class="fa-solid fa-trash me-1"></i>Delete</a>
+                        else
+                        {
+                            <text>—</text>
+                        }
+                    </div>
                 </div>
             </div>
+            <div class="col-md-6">
+            </div>
+        </div>
+
+        <div class="row g-2 mb-2">
+            <div class="col-md-6">
+                <div class="row g-2">
+                    <div class="col-sm-4 sp-label">Verified</div>
+                    <div class="col-sm-8 sp-value">
+                        <span class="badge bg-@(Model.IsVerified ? "success" : "secondary")">@(Model.IsVerified ? "Yes" : "No")</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="row g-2">
+                    <div class="col-sm-4 sp-label">Status</div>
+                    <div class="col-sm-8 sp-value">
+                        <span class="badge bg-@(Model.IsActive ? "success" : "secondary")">@(Model.IsActive ? "Active" : "Inactive")</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-2 mb-2">
+            <div class="col-md-6">
+                <div class="row g-2">
+                    <div class="col-sm-4 sp-label">Created On</div>
+                    <div class="col-sm-8 sp-value">@(Model.CreatedOn?.ToString("dd MMM yyyy HH:mm") ?? "—")</div>
+                </div>
+            </div>
+        </div>
+
+        <hr class="my-3" />
+        <div class="d-flex gap-2">
+            <a asp-action="Edit" asp-route-id="@Model.Uid" class="btn btn-primary btn-sm"><i class="fa-solid fa-pen me-1"></i>Edit</a>
+            <a asp-action="Delete" asp-route-id="@Model.Uid" class="btn btn-outline-danger btn-sm"><i class="fa-solid fa-trash me-1"></i>Delete</a>
+            <a asp-action="Index" class="btn btn-outline-secondary btn-sm">Back</a>
         </div>
     </div>
 </div>

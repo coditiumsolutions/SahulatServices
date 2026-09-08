@@ -1,4 +1,4 @@
-# Version: 3.8 | UpdatedAt: 07/09/2026
+# Version: 4.2 | UpdatedAt: 08/09/2026
 # Database: SahulatAppDB
 # Server: 34.131.41.192,1433
 
@@ -42,6 +42,10 @@ Table: Clients
   FullName         nvarchar(150)    NOT NULL
   CNIC             nvarchar(15)     NULL
   Gender           nvarchar(20)     NULL
+  CustomerAlert    nvarchar(500)    NULL  -- staff alert note for this customer
+  Comments         nvarchar(1000)   NULL  -- internal comments
+  City             nvarchar(100)    NULL  -- primary city
+  Location         nvarchar(250)    NULL  -- area / location text
   CreatedOn        datetime         NOT NULL  DEFAULT (getdate())
 
 --------------------------------------------------------------------------------
@@ -83,6 +87,7 @@ Table: Providers
   FullName         nvarchar(150)    NOT NULL
   CNIC             nvarchar(15)     NOT NULL  UNIQUE
   Gender           nvarchar(20)     NULL
+  City             nvarchar(100)    NULL  -- primary city (from Configurations Cities)
   ExperienceYears  int              NULL      DEFAULT (0)
   Description      nvarchar(MAX)    NULL
   IsVerified       bit              NOT NULL  DEFAULT (0)
@@ -132,6 +137,15 @@ Table: AdminNotifications
   CreatedOn            datetime         NOT NULL  DEFAULT (getdate())
   -- Admin portal bell notifications (e.g. Type=ServiceRequestCreated).
   -- Index: IX_AdminNotifications_IsRead_CreatedOn
+
+--------------------------------------------------------------------------------
+Table: Configurations
+--------------------------------------------------------------------------------
+  UID              int              NOT NULL  PK  IDENTITY
+  ConfigKey        nvarchar(100)    NOT NULL  UNIQUE  -- e.g. Cities
+  ConfigValue      nvarchar(MAX)    NOT NULL  -- comma-separated multi-values
+  CreatedOn        datetime         NOT NULL  DEFAULT (getdate())
+  -- Example: ConfigKey=Cities, ConfigValue=Karachi, Islamabad, Faisalabad, Lahore, ...
 
 --------------------------------------------------------------------------------
 Table: Staff

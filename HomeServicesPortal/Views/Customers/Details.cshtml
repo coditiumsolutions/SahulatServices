@@ -4,39 +4,131 @@
     ViewData["Title"] = "Client Details";
 }
 
-<div class="mb-4">
-    <a asp-action="Index" class="text-decoration-none text-muted"><i class="fa-solid fa-arrow-left me-1"></i>Back to Clients</a>
-    <h2 class="mt-2 mb-0"><i class="fa-solid fa-eye me-2 text-primary"></i>Client Details</h2>
+<style>
+    .client-details-grid .client-label {
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: #6c757d;
+    }
+    .client-details-grid .client-value {
+        font-size: 0.9rem;
+        font-weight: 500;
+        color: #212529;
+        word-break: break-word;
+    }
+</style>
+
+<div class="mb-3">
+    <a asp-action="Index" class="text-decoration-none text-muted small"><i class="fa-solid fa-arrow-left me-1"></i>Back to Clients</a>
+    <h2 class="mt-1 mb-0 h4"><i class="fa-solid fa-eye me-2 text-primary"></i>Client Details <span class="text-muted fw-normal">#@Model.Uid</span></h2>
 </div>
 
-<div class="row justify-content-center">
-    <div class="col-lg-7">
-        <div class="card hs-card">
-            <div class="card-body p-4">
-                <dl class="row mb-0">
-                    <dt class="col-sm-4 text-muted">Client ID</dt>
-                    <dd class="col-sm-8 fw-semibold">@Model.Uid</dd>
-                    <dt class="col-sm-4 text-muted">Full Name</dt>
-                    <dd class="col-sm-8 fw-semibold">@Model.FullName</dd>
-                    <dt class="col-sm-4 text-muted">Mobile No</dt>
-                    <dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.MobileNo) ? "—" : Model.MobileNo)</dd>
-                    <dt class="col-sm-4 text-muted">CNIC</dt>
-                    <dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.Cnic) ? "—" : Model.Cnic)</dd>
-                    <dt class="col-sm-4 text-muted">Gender</dt>
-                    <dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.Gender) ? "—" : Model.Gender)</dd>
-                    <dt class="col-sm-4 text-muted">Created On</dt>
-                    <dd class="col-sm-8">@(Model.CreatedOn?.ToString("dd MMM yyyy HH:mm") ?? "—")</dd>
-                    <dt class="col-sm-4 text-muted">Service Requests</dt>
-                    <dd class="col-sm-8"><span class="badge bg-info">@Model.ServiceRequestCount</span></dd>
-                    <dt class="col-sm-4 text-muted">Addresses</dt>
-                    <dd class="col-sm-8"><span class="badge bg-secondary">@Model.AddressCount</span></dd>
-                </dl>
-                <hr />
-                <div class="d-flex gap-2">
-                    <a asp-action="Edit" asp-route-id="@Model.Uid" class="btn btn-primary"><i class="fa-solid fa-pen me-1"></i>Edit</a>
-                    <a asp-action="Delete" asp-route-id="@Model.Uid" class="btn btn-outline-danger"><i class="fa-solid fa-trash me-1"></i>Delete</a>
+<div class="card hs-card">
+    <div class="card-body p-3 client-details-grid">
+        <div class="row g-2 mb-2">
+            <div class="col-md-6">
+                <div class="row g-2">
+                    <div class="col-sm-4 client-label">Client ID</div>
+                    <div class="col-sm-8 client-value">@Model.Uid</div>
                 </div>
             </div>
+            <div class="col-md-6">
+                <div class="row g-2">
+                    <div class="col-sm-4 client-label">Full Name</div>
+                    <div class="col-sm-8 client-value">@Model.FullName</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-2 mb-2">
+            <div class="col-md-6">
+                <div class="row g-2">
+                    <div class="col-sm-4 client-label">Mobile No</div>
+                    <div class="col-sm-8 client-value">@(string.IsNullOrWhiteSpace(Model.MobileNo) ? "—" : Model.MobileNo)</div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="row g-2">
+                    <div class="col-sm-4 client-label">CNIC</div>
+                    <div class="col-sm-8 client-value">@(string.IsNullOrWhiteSpace(Model.Cnic) ? "—" : Model.Cnic)</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-2 mb-2">
+            <div class="col-md-6">
+                <div class="row g-2">
+                    <div class="col-sm-4 client-label">Gender</div>
+                    <div class="col-sm-8 client-value">@(string.IsNullOrWhiteSpace(Model.Gender) ? "—" : Model.Gender)</div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="row g-2">
+                    <div class="col-sm-4 client-label">Created On</div>
+                    <div class="col-sm-8 client-value">@(Model.CreatedOn?.ToString("dd MMM yyyy HH:mm") ?? "—")</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-2 mb-2">
+            <div class="col-md-6">
+                <div class="row g-2">
+                    <div class="col-sm-4 client-label">City</div>
+                    <div class="col-sm-8 client-value">@(string.IsNullOrWhiteSpace(Model.City) ? "—" : Model.City)</div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="row g-2">
+                    <div class="col-sm-4 client-label">Location</div>
+                    <div class="col-sm-8 client-value">@(string.IsNullOrWhiteSpace(Model.Location) ? "—" : Model.Location)</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-2 mb-2">
+            <div class="col-md-6">
+                <div class="row g-2">
+                    <div class="col-sm-4 client-label">Customer Alert</div>
+                    <div class="col-sm-8 client-value">
+                        @if (string.IsNullOrWhiteSpace(Model.CustomerAlert))
+                        {
+                            <text>—</text>
+                        }
+                        else
+                        {
+                            <span class="badge bg-warning text-dark text-wrap text-start">@Model.CustomerAlert</span>
+                        }
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="row g-2">
+                    <div class="col-sm-4 client-label">Comments</div>
+                    <div class="col-sm-8 client-value">@(string.IsNullOrWhiteSpace(Model.Comments) ? "—" : Model.Comments)</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-2 mb-2">
+            <div class="col-md-6">
+                <div class="row g-2">
+                    <div class="col-sm-4 client-label">Service Requests</div>
+                    <div class="col-sm-8 client-value"><span class="badge bg-info">@Model.ServiceRequestCount</span></div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="row g-2">
+                    <div class="col-sm-4 client-label">Addresses</div>
+                    <div class="col-sm-8 client-value"><span class="badge bg-secondary">@Model.AddressCount</span></div>
+                </div>
+            </div>
+        </div>
+
+        <hr class="my-3" />
+        <div class="d-flex gap-2">
+            <a asp-action="Edit" asp-route-id="@Model.Uid" class="btn btn-primary btn-sm"><i class="fa-solid fa-pen me-1"></i>Edit</a>
+            <a asp-action="Delete" asp-route-id="@Model.Uid" class="btn btn-outline-danger btn-sm"><i class="fa-solid fa-trash me-1"></i>Delete</a>
+            <a asp-action="Index" class="btn btn-outline-secondary btn-sm">Back</a>
         </div>
     </div>
 </div>

@@ -120,7 +120,9 @@ public class ServiceRequestsController : Controller
             return View(model);
         }
 
-        TempData["SuccessMessage"] = $"Provider assigned and booking created for request #{id}.";
+        TempData["SuccessMessage"] = model.ProviderUids.Count > 1
+            ? $"{model.ProviderUids.Distinct().Count()} providers assigned and bookings created for request #{id}."
+            : $"Provider assigned and booking created for request #{id}.";
         return RedirectToAction(nameof(Index));
     }
 
