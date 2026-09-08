@@ -215,7 +215,8 @@ public class AuthService : IAuthService
                 FullName = fullName,
                 MobileNo = user.MobileNo,
                 CategoryId = categoryId,
-                CategoryName = categoryName
+                CategoryName = categoryName,
+                ClientId = client.Uid
             }, StatusCodes.Status200OK);
         }, cancellationToken);
     }
@@ -339,7 +340,7 @@ public class AuthService : IAuthService
             return (false, "Invalid user type on account.", null, StatusCodes.Status403Forbidden);
         }
 
-        var (profileId, fullName) = await ResolveProfileAsync(user, cancellationToken);
+        var (profileId, fullName, clientId, providerId) = await ResolveProfileAsync(user, cancellationToken);
         if (profileId == 0 || string.IsNullOrWhiteSpace(fullName))
         {
             return (false, "User profile not found.", null, StatusCodes.Status404NotFound);
@@ -353,33 +354,41 @@ public class AuthService : IAuthService
             ProfileId = profileId,
             UserType = user.UserType,
             FullName = fullName,
-            MobileNo = user.MobileNo
+            MobileNo = user.MobileNo,
+            ClientId = clientId,
+            ProviderId = providerId
         }, StatusCodes.Status200OK);
     }
 
-    private async Task<(int ProfileId, string FullName)> ResolveProfileAsync(
+    private async Task<(int ProfileId, string FullName, int? ClientId, int? ProviderId)> ResolveProfileAsync(
         UsersLogin user,
         CancellationToken cancellationToken)
     {
+        // Client and Provider profiles can coexist on the same account (a Client that upgraded
+        // to Provider keeps its original Clients row), so both are resolved independently of
+        // UserType — the app needs both ids to let an upgraded provider still act as a customer.
+        var client = await _userRepository.GetClientByUserIdAsync(user.Uid, cancellationToken);
+        var provider = await _userRepository.GetProviderByUserIdAsync(user.Uid, cancellationToken);
+        var clientId = client?.Uid;
+        var providerId = provider?.Uid;
+
         if (user.UserType.Equals(UserTypeConstants.Client, StringComparison.OrdinalIgnoreCase))
         {
-            var client = await _userRepository.GetClientByUserIdAsync(user.Uid, cancellationToken);
-            return client == null ? (0, string.Empty) : (client.Uid, client.FullName);
+            return client == null ? (0, string.Empty, clientId, providerId) : (client.Uid, client.FullName, clientId, providerId);
         }
 
         if (user.UserType.Equals(UserTypeConstants.Provider, StringComparison.OrdinalIgnoreCase))
         {
-            var provider = await _userRepository.GetProviderByUserIdAsync(user.Uid, cancellationToken);
-            return provider == null ? (0, string.Empty) : (provider.Uid, provider.FullName);
+            return provider == null ? (0, string.Empty, clientId, providerId) : (provider.Uid, provider.FullName, clientId, providerId);
         }
 
         if (user.UserType.Equals(UserTypeConstants.Staff, StringComparison.OrdinalIgnoreCase))
         {
             var staff = await _userRepository.GetStaffByUserIdAsync(user.Uid, cancellationToken);
-            return staff == null ? (0, string.Empty) : (staff.Uid, staff.FullName);
+            return staff == null ? (0, string.Empty, clientId, providerId) : (staff.Uid, staff.FullName, clientId, providerId);
         }
 
-        return (0, string.Empty);
+        return (0, string.Empty, clientId, providerId);
     }
 
     /// <summary>

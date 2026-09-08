@@ -1,6 +1,6 @@
 ================================================================================
 SahulatGharTak API Reference
-Version: 3.9 | Last Updated: 2026-09-07
+Version: 3.10 | Last Updated: 2026-09-08
 Database: SahulatAppDB
 Local Base URL:    https://localhost:7265/api/
 Deployed Base URL:  https://sahulatghartak.com/api/
@@ -120,12 +120,16 @@ Success (200):
     "fullName": "Shahid",
     "mobileNo": "03335191392",
     "categoryId": 1,
-    "categoryName": "Plumber"
+    "categoryName": "Plumber",
+    "clientId": 1
   }
 }
 
 Notes (register-provider):
 - profileId and providerUid are the same value (Providers.UID)
+- clientId is the original Clients.UID — always present, since only an existing client account
+  can be upgraded, and the Clients row is kept (not deleted) after upgrade. Use it to submit
+  customer service requests (POST /api/customer-service-requests) even after becoming a provider.
 - Document upload is a separate API: POST /api/provider/upload-documents
 
 Fail (401):
@@ -216,9 +220,18 @@ Success (200):
     "profileId": 4,
     "userType": "Provider",
     "fullName": "Shahid",
-    "mobileNo": "03335191392"
+    "mobileNo": "03335191392",
+    "clientId": 1,
+    "providerId": 4
   }
 }
+
+Notes (login):
+- clientId / providerId reflect whichever of those profiles exist on the account, independent of
+  userType — an account that upgraded from client to provider gets both back. userType/profileId
+  still identify the account's primary profile (unchanged). Use clientId to submit customer
+  service requests even when userType is "Provider"; either id is null if that profile doesn't
+  exist (e.g. a Client account that never upgraded has providerId: null).
 
 Fail (401):
 {

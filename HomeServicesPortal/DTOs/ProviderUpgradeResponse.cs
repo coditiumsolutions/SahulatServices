@@ -19,4 +19,7 @@ public class ProviderUpgradeResponse
     public int? CategoryId { get; set; }
 
     public string? CategoryName { get; set; }
+
+    /// <summary>Clients.UID for the account this provider profile was upgraded from — lets the app submit customer service requests immediately after upgrading, without a fresh login.</summary>
+    public int? ClientId { get; set; }
 }
