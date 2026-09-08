@@ -3,6 +3,7 @@
     Layout = "_PublicLayout";
     ViewData["Title"] = "Download App";
     var apkAvailable = Model != null;
+    var playStoreUrl = "https://play.google.com/store/apps/details?id=com.coditiumsols.sahulatghartak";
 }
 
 <section class="public-hero download-hero">
@@ -18,19 +19,16 @@
                     right from your phone.
                 </p>
                 <div class="public-hero-actions">
-                    @if (apkAvailable)
-                    {
-                        <a asp-controller="Home" asp-action="DownloadApkFile" class="public-btn-light">
-                            <i class="fa-solid fa-download me-2"></i>Download for Android
-                        </a>
-                    }
-                    else
-                    {
-                        <span class="public-btn-light disabled" style="opacity: 0.6; cursor: not-allowed;">
-                            <i class="fa-solid fa-download me-2"></i>Download Coming Soon
+                    <a href="@playStoreUrl" target="_blank" rel="noopener" class="store-badge-img-link">
+                        <img src="~/img/downloads/google-play-badge.png" alt="Get it on Google Play" class="store-badge-img" />
+                    </a>
+                    <span class="store-badge is-disabled" aria-disabled="true">
+                        <i class="fa-brands fa-app-store-ios"></i>
+                        <span class="store-badge-copy">
+                            <small>Coming soon on</small>
+                            <strong>App Store</strong>
                         </span>
-                    }
-                    <a href="#install-help" class="public-btn-outline">Installation Help</a>
+                    </span>
                 </div>
             </div>
             <div class="col-lg-5 d-none d-lg-block text-center">
@@ -42,69 +40,95 @@
 
 <section class="public-section">
     <div class="container">
-        <div class="download-notice-grid">
-            <div class="download-notice-card">
-                <div class="download-notice-icon"><i class="fa-brands fa-google-play"></i></div>
-                <div>
-                    <h3 class="h6 mb-1">Coming Soon to Google Play</h3>
-                    <p class="text-muted mb-0">
-                        We're finalizing our Play Store listing. Until then, download the APK directly
-                        from this page.
-                    </p>
+        <h2 class="public-section-title">Get the App</h2>
+        <p class="public-section-subtitle">
+            Scan a QR code with your phone's camera, or tap a store link below.
+        </p>
+
+        <div class="store-grid">
+            <div class="store-card is-live">
+                <span class="store-card-pill is-live">Available now</span>
+                <div class="store-card-heading">
+                    <i class="fa-brands fa-google-play"></i>
+                    <h3>Google Play</h3>
                 </div>
+                <a href="@playStoreUrl" target="_blank" rel="noopener" class="store-qr-frame" aria-label="Open Sahulat Ghar Tak on Google Play">
+                    <img src="~/img/downloads/playstore-qr.png" alt="QR code linking to the Sahulat Ghar Tak Google Play listing" />
+                </a>
+                <p class="text-muted mb-0">Scan to open the Play Store listing directly on your Android phone.</p>
+                <a href="@playStoreUrl" target="_blank" rel="noopener" class="store-badge-img-link">
+                    <img src="~/img/downloads/google-play-badge.png" alt="Get it on Google Play" class="store-badge-img" />
+                </a>
             </div>
-            <div class="download-notice-card">
-                <div class="download-notice-icon"><i class="fa-brands fa-apple"></i></div>
-                <div>
-                    <h3 class="h6 mb-1">iOS Build In Development</h3>
-                    <p class="text-muted mb-0">
-                        An iPhone/iPad version of Sahulat Ghar Tak is currently in development. Stay tuned!
-                    </p>
+
+            <div class="store-card is-coming-soon">
+                <span class="store-card-pill is-pending">Coming soon</span>
+                <div class="store-card-heading">
+                    <i class="fa-brands fa-apple"></i>
+                    <h3>App Store</h3>
                 </div>
+                <span class="store-qr-frame is-placeholder" aria-hidden="true">
+                    <i class="fa-solid fa-hourglass-half"></i>
+                </span>
+                <p class="text-muted mb-0">An iPhone/iPad version of Sahulat Ghar Tak is currently in development. Stay tuned!</p>
+                <span class="store-badge is-disabled" aria-disabled="true">
+                    <i class="fa-brands fa-app-store-ios"></i>
+                    <span class="store-badge-copy">
+                        <small>Coming soon on</small>
+                        <strong>App Store</strong>
+                    </span>
+                </span>
             </div>
         </div>
+
+        @if (apkAvailable)
+        {
+            <div class="apk-backup-card mt-4">
+                <div class="apk-backup-card-text">
+                    <i class="fa-solid fa-file-arrow-down"></i>
+                    <span class="text-muted">Having trouble with the Play Store? A direct APK is available as a backup.</span>
+                </div>
+                <a asp-controller="Home" asp-action="DownloadApkFile" class="apk-backup-btn">
+                    <i class="fa-solid fa-download me-2"></i>Download APK
+                </a>
+            </div>
+        }
     </div>
 </section>
 
-<section id="install-help" class="public-section public-bg-soft">
-    <div class="container">
-        <h2 class="public-section-title">Installing the APK on Android</h2>
-        <p class="public-section-subtitle">
-            Since the app isn't listed on the Play Store yet, Android may show a security prompt the
-            first time you install it. Here's how to get past it in two quick steps.
-        </p>
-        <div class="public-steps">
-            <div class="public-step">
-                <div class="public-step-num">1</div>
-                <h3 class="h5">Allow Unknown Sources</h3>
-                <p class="text-muted mb-0">
-                    When you open the downloaded file, tap <strong>Settings</strong> on the warning prompt
-                    and enable <strong>&quot;Allow from this source&quot;</strong>.
-                </p>
+@if (apkAvailable)
+{
+    <section id="install-help" class="public-section public-bg-soft">
+        <div class="container">
+            <h2 class="public-section-title">Installing the Backup APK</h2>
+            <p class="public-section-subtitle">
+                If you downloaded the APK directly instead of using the Play Store, Android may show a
+                security prompt the first time you install it. Here's how to get past it in two quick steps.
+            </p>
+            <div class="public-steps">
+                <div class="public-step">
+                    <div class="public-step-num">1</div>
+                    <h3 class="h5">Allow Unknown Sources</h3>
+                    <p class="text-muted mb-0">
+                        When you open the downloaded file, tap <strong>Settings</strong> on the warning prompt
+                        and enable <strong>&quot;Allow from this source&quot;</strong>.
+                    </p>
+                </div>
+                <div class="public-step">
+                    <div class="public-step-num">2</div>
+                    <h3 class="h5">Install &amp; Open</h3>
+                    <p class="text-muted mb-0">
+                        Go back to the installer, tap <strong>Install</strong>, and open Sahulat Ghar Tak once
+                        it's done.
+                    </p>
+                </div>
             </div>
-            <div class="public-step">
-                <div class="public-step-num">2</div>
-                <h3 class="h5">Install &amp; Open</h3>
-                <p class="text-muted mb-0">
-                    Go back to the installer, tap <strong>Install</strong>, and open Sahulat Ghar Tak once
-                    it's done.
-                </p>
-            </div>
-        </div>
 
-        <div class="text-center mt-5">
-            @if (apkAvailable)
-            {
+            <div class="text-center mt-5">
                 <a asp-controller="Home" asp-action="DownloadApkFile" class="btn btn-lg download-cta-btn">
                     <i class="fa-solid fa-download me-2"></i>Download Sahulat Ghar Tak APK
                 </a>
-            }
-            else
-            {
-                <span class="btn btn-lg download-cta-btn disabled" style="opacity: 0.6; cursor: not-allowed;">
-                    <i class="fa-solid fa-download me-2"></i>Download Coming Soon
-                </span>
-            }
+            </div>
         </div>
-    </div>
-</section>
+    </section>
+}
