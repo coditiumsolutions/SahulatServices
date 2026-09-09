@@ -13,4 +13,11 @@ public interface ICustomerService
     Task<(bool Success, string? Error)> CreateAsync(CustomerFormVm model, CancellationToken cancellationToken = default);
     Task<(bool Success, string? Error)> UpdateAsync(CustomerFormVm model, CancellationToken cancellationToken = default);
     Task<(bool Success, string? Error)> DeleteAsync(int id, CancellationToken cancellationToken = default);
+
+    Task<CustomerAddressFormVm?> GetNewAddressFormAsync(int clientUid, CancellationToken cancellationToken = default);
+    Task<CustomerAddressFormVm?> GetAddressForEditAsync(int clientUid, int addressUid, CancellationToken cancellationToken = default);
+    Task<CustomerAddressDeleteVm?> GetAddressForDeleteAsync(int clientUid, int addressUid, CancellationToken cancellationToken = default);
+    Task<(bool Success, string? Error)> CreateAddressAsync(CustomerAddressFormVm model, CancellationToken cancellationToken = default);
+    Task<(bool Success, string? Error)> UpdateAddressAsync(CustomerAddressFormVm model, CancellationToken cancellationToken = default);
+    Task<(bool Success, string? Error)> DeleteAddressAsync(int clientUid, int addressUid, CancellationToken cancellationToken = default);
 }

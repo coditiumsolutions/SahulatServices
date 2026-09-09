@@ -191,6 +191,9 @@ public class AppDbContext : DbContext
             entity.Property(e => e.CategoryUid).HasColumnName("CategoryUID");
             entity.Property(e => e.Title).HasMaxLength(150).IsRequired();
             entity.Property(e => e.Description).HasMaxLength(500);
+            entity.Property(e => e.EstiBudget)
+                .HasColumnName("esti_budget")
+                .HasColumnType("decimal(12,2)");
             entity.Property(e => e.DisplayOrder).HasDefaultValue(0);
             entity.Property(e => e.IsActive).HasDefaultValue(true);
             entity.Property(e => e.CreatedOn)

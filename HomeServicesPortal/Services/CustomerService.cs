@@ -144,7 +144,7 @@ public class CustomerService : ICustomerService
 
     public async Task<CustomerDetailsVm?> GetDetailsAsync(int id, CancellationToken cancellationToken = default)
     {
-        return await _db.Clients
+        var vm = await _db.Clients
             .AsNoTracking()
             .Where(c => c.Uid == id)
             .Select(c => new CustomerDetailsVm
@@ -163,6 +163,10 @@ public class CustomerService : ICustomerService
                 AddressCount = _db.ClientAddresses.Count(a => a.ClientUid == c.Uid)
             })
             .FirstOrDefaultAsync(cancellationToken);
+
+        if (vm == null) return null;
+        vm.Addresses = await GetAddressesForClientAsync(id, cancellationToken);
+        return vm;
     }
 
     public async Task<CustomerFormVm?> GetForEditAsync(int id, CancellationToken cancellationToken = default)
@@ -198,6 +202,12 @@ public class CustomerService : ICustomerService
             LocationConfigKey, model.Location, cancellationToken);
         model.AlertOptions = await BuildConfigOptionsAsync(
             AlertsConfigKey, model.CustomerAlert, cancellationToken);
+
+        if (model.Uid > 0)
+        {
+            model.Addresses = await GetAddressesForClientAsync(model.Uid, cancellationToken);
+        }
+
         return model;
     }
 
@@ -422,5 +432,177 @@ public class CustomerService : ICustomerService
         {
             return (false, "Cannot delete this client because related records still reference their account.");
         }
+    }
+
+    public async Task<CustomerAddressFormVm?> GetNewAddressFormAsync(
+        int clientUid,
+        CancellationToken cancellationToken = default)
+    {
+        var client = await _db.Clients
+            .AsNoTracking()
+            .Where(c => c.Uid == clientUid)
+            .Select(c => new { c.Uid, c.FullName, c.City })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (client == null) return null;
+
+        return new CustomerAddressFormVm
+        {
+            ClientUid = client.Uid,
+            ClientName = client.FullName,
+            City = client.City ?? string.Empty
+        };
+    }
+
+    public async Task<CustomerAddressFormVm?> GetAddressForEditAsync(
+        int clientUid,
+        int addressUid,
+        CancellationToken cancellationToken = default)
+    {
+        return await _db.ClientAddresses
+            .AsNoTracking()
+            .Where(a => a.Uid == addressUid && a.ClientUid == clientUid)
+            .Select(a => new CustomerAddressFormVm
+            {
+                Uid = a.Uid,
+                ClientUid = a.ClientUid,
+                ClientName = a.Client.FullName,
+                AddressTitle = a.AddressTitle,
+                FullAddress = a.FullAddress,
+                Area = a.Area,
+                City = a.City,
+                Latitude = a.Latitude,
+                Longitude = a.Longitude
+            })
+            .FirstOrDefaultAsync(cancellationToken);
+    }
+
+    public async Task<CustomerAddressDeleteVm?> GetAddressForDeleteAsync(
+        int clientUid,
+        int addressUid,
+        CancellationToken cancellationToken = default)
+    {
+        var vm = await _db.ClientAddresses
+            .AsNoTracking()
+            .Where(a => a.Uid == addressUid && a.ClientUid == clientUid)
+            .Select(a => new CustomerAddressDeleteVm
+            {
+                Uid = a.Uid,
+                ClientUid = a.ClientUid,
+                ClientName = a.Client.FullName,
+                AddressTitle = a.AddressTitle,
+                FullAddress = a.FullAddress,
+                Area = a.Area,
+                City = a.City
+            })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (vm == null) return null;
+
+        vm.IsLinkedToRequests = await _db.CustomerServiceRequests
+            .AsNoTracking()
+            .AnyAsync(r => r.ClientAddressUid == addressUid, cancellationToken);
+
+        return vm;
+    }
+
+    public async Task<(bool Success, string? Error)> CreateAddressAsync(
+        CustomerAddressFormVm model,
+        CancellationToken cancellationToken = default)
+    {
+        var clientExists = await _db.Clients
+            .AsNoTracking()
+            .AnyAsync(c => c.Uid == model.ClientUid, cancellationToken);
+
+        if (!clientExists)
+        {
+            return (false, "Client not found.");
+        }
+
+        _db.ClientAddresses.Add(new ClientAddress
+        {
+            ClientUid = model.ClientUid,
+            AddressTitle = model.AddressTitle.Trim(),
+            FullAddress = model.FullAddress.Trim(),
+            Area = model.Area.Trim(),
+            City = model.City.Trim(),
+            Latitude = model.Latitude,
+            Longitude = model.Longitude
+        });
+
+        await _db.SaveChangesAsync(cancellationToken);
+        return (true, null);
+    }
+
+    public async Task<(bool Success, string? Error)> UpdateAddressAsync(
+        CustomerAddressFormVm model,
+        CancellationToken cancellationToken = default)
+    {
+        var address = await _db.ClientAddresses
+            .FirstOrDefaultAsync(a => a.Uid == model.Uid && a.ClientUid == model.ClientUid, cancellationToken);
+
+        if (address == null)
+        {
+            return (false, "Address not found for this client.");
+        }
+
+        address.AddressTitle = model.AddressTitle.Trim();
+        address.FullAddress = model.FullAddress.Trim();
+        address.Area = model.Area.Trim();
+        address.City = model.City.Trim();
+        address.Latitude = model.Latitude;
+        address.Longitude = model.Longitude;
+
+        await _db.SaveChangesAsync(cancellationToken);
+        return (true, null);
+    }
+
+    public async Task<(bool Success, string? Error)> DeleteAddressAsync(
+        int clientUid,
+        int addressUid,
+        CancellationToken cancellationToken = default)
+    {
+        var address = await _db.ClientAddresses
+            .FirstOrDefaultAsync(a => a.Uid == addressUid && a.ClientUid == clientUid, cancellationToken);
+
+        if (address == null)
+        {
+            return (false, "Address not found for this client.");
+        }
+
+        var inUse = await _db.CustomerServiceRequests
+            .AsNoTracking()
+            .AnyAsync(r => r.ClientAddressUid == addressUid, cancellationToken);
+
+        if (inUse)
+        {
+            return (false, "Cannot delete address because it is linked to service requests.");
+        }
+
+        _db.ClientAddresses.Remove(address);
+        await _db.SaveChangesAsync(cancellationToken);
+        return (true, null);
+    }
+
+    private async Task<List<CustomerAddressItemVm>> GetAddressesForClientAsync(
+        int clientUid,
+        CancellationToken cancellationToken)
+    {
+        return await _db.ClientAddresses
+            .AsNoTracking()
+            .Where(a => a.ClientUid == clientUid)
+            .OrderBy(a => a.AddressTitle)
+            .Select(a => new CustomerAddressItemVm
+            {
+                Uid = a.Uid,
+                ClientUid = a.ClientUid,
+                AddressTitle = a.AddressTitle,
+                FullAddress = a.FullAddress,
+                Area = a.Area,
+                City = a.City,
+                Latitude = a.Latitude,
+                Longitude = a.Longitude
+            })
+            .ToListAsync(cancellationToken);
     }
 }

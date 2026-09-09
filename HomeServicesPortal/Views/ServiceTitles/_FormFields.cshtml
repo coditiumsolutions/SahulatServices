@@ -1,32 +1,95 @@
 @model HomeServicesPortal.Models.ViewModels.ServiceTitleFormVm
 
-<div class="mb-3">
-    <label asp-for="CategoryUid" class="form-label"></label>
-    <select asp-for="CategoryUid" class="form-select" asp-items="Model.Categories">
-        <option value="">-- Select Category --</option>
-    </select>
-    <span asp-validation-for="CategoryUid" class="text-danger small"></span>
-</div>
+<style>
+    .st-form-grid .form-label {
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: #6c757d;
+        margin-bottom: 0;
+    }
+    .st-form-grid .form-control,
+    .st-form-grid .form-select {
+        font-size: 0.875rem;
+    }
+</style>
 
-<div class="mb-3">
-    <label asp-for="Title" class="form-label"></label>
-    <input asp-for="Title" class="form-control" placeholder="Enter title" />
-    <span asp-validation-for="Title" class="text-danger small"></span>
-</div>
+<div class="st-form-grid">
+    <div class="row g-2 mb-2">
+        <div class="col-md-6">
+            <div class="row g-2 align-items-center">
+                <div class="col-sm-4">
+                    <label asp-for="Title" class="form-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="Title" class="form-control form-control-sm" placeholder="Enter title" />
+                    <span asp-validation-for="Title" class="text-danger small"></span>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="row g-2 align-items-center">
+                <div class="col-sm-4">
+                    <label asp-for="CategoryUid" class="form-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <select asp-for="CategoryUid" class="form-select form-select-sm" asp-items="Model.Categories">
+                        <option value="">-- Select Category --</option>
+                    </select>
+                    <span asp-validation-for="CategoryUid" class="text-danger small"></span>
+                </div>
+            </div>
+        </div>
+    </div>
 
-<div class="mb-3">
-    <label asp-for="Description" class="form-label"></label>
-    <textarea asp-for="Description" class="form-control" rows="3" placeholder="Optional description"></textarea>
-    <span asp-validation-for="Description" class="text-danger small"></span>
-</div>
+    <div class="row g-2 mb-2">
+        <div class="col-md-6">
+            <div class="row g-2 align-items-center">
+                <div class="col-sm-4">
+                    <label asp-for="EstiBudget" class="form-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="EstiBudget" class="form-control form-control-sm" type="number" step="0.01" min="0" placeholder="0.00" />
+                    <span asp-validation-for="EstiBudget" class="text-danger small"></span>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="row g-2 align-items-center">
+                <div class="col-sm-4">
+                    <label asp-for="DisplayOrder" class="form-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="DisplayOrder" type="number" class="form-control form-control-sm" />
+                    <span asp-validation-for="DisplayOrder" class="text-danger small"></span>
+                </div>
+            </div>
+        </div>
+    </div>
 
-<div class="mb-3">
-    <label asp-for="DisplayOrder" class="form-label"></label>
-    <input asp-for="DisplayOrder" type="number" class="form-control" />
-    <span asp-validation-for="DisplayOrder" class="text-danger small"></span>
-</div>
-
-<div class="form-check mb-2">
-    <input asp-for="IsActive" class="form-check-input" />
-    <label asp-for="IsActive" class="form-check-label"></label>
+    <div class="row g-2 mb-2">
+        <div class="col-md-6">
+            <div class="row g-2 align-items-start">
+                <div class="col-sm-4 pt-1">
+                    <label asp-for="Description" class="form-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <textarea asp-for="Description" class="form-control form-control-sm" rows="2" placeholder="Optional description"></textarea>
+                    <span asp-validation-for="Description" class="text-danger small"></span>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="row g-2 align-items-center">
+                <div class="col-sm-4">
+                    <label asp-for="IsActive" class="form-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <div class="form-check form-switch mb-0">
+                        <input asp-for="IsActive" class="form-check-input" type="checkbox" />
+                        <label asp-for="IsActive" class="form-check-label small"></label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>

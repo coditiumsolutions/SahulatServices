@@ -1,0 +1,33 @@
+@model HomeServicesPortal.Models.ViewModels.CustomerAddressFormVm
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Edit Address";
+}
+
+<div class="mb-3">
+    <a asp-action="Edit" asp-route-id="@Model.ClientUid" class="text-decoration-none text-muted small">
+        <i class="fa-solid fa-arrow-left me-1"></i>Back to Client
+    </a>
+    <h2 class="mt-1 mb-0 h4">
+        <i class="fa-solid fa-pen me-2 text-primary"></i>Edit Address
+        <span class="text-muted fw-normal">#@Model.Uid — @Model.ClientName</span>
+    </h2>
+</div>
+
+<div class="card hs-card">
+    <div class="card-body p-3">
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2"></div>
+        <form asp-action="EditAddress" asp-route-clientId="@Model.ClientUid" asp-route-addressId="@Model.Uid" method="post">
+            @Html.AntiForgeryToken()
+            <partial name="_AddressFormFields" model="Model" />
+            <div class="d-flex gap-2 mt-3">
+                <button type="submit" class="btn btn-primary btn-sm"><i class="fa-solid fa-save me-1"></i>Update Address</button>
+                <a asp-action="Edit" asp-route-id="@Model.ClientUid" class="btn btn-outline-secondary btn-sm">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

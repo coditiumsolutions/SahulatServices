@@ -10,6 +10,8 @@ public class ServiceTitle
 
     public string? Description { get; set; }
 
+    public decimal? EstiBudget { get; set; }
+
     public int DisplayOrder { get; set; }
 
     public bool IsActive { get; set; } = true;

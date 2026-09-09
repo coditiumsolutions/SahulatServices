@@ -57,18 +57,7 @@
             <table class="table table-hover align-middle mb-0">
                 <thead class="table-light">
                     <tr>
-                        <th>
-                            <a class="text-decoration-none text-dark" asp-action="Index"
-                               asp-route-search="@Model.Search" asp-route-categoryUid="@Model.CategoryUid" asp-route-sort="category"
-                               asp-route-sortDir="@(Model.Sort == "category" && Model.SortDir == "asc" ? "desc" : "asc")">
-                                Category
-                                @if (Model.Sort == "category")
-                                {
-                                    <i class="fa-solid fa-sort-@(Model.SortDir == "asc" ? "up" : "down") ms-1"></i>
-                                }
-                            </a>
-                        </th>
-                        <th>
+                        <th style="width: 22%;">
                             <a class="text-decoration-none text-dark" asp-action="Index"
                                asp-route-search="@Model.Search" asp-route-categoryUid="@Model.CategoryUid" asp-route-sort="title"
                                asp-route-sortDir="@(Model.Sort == "title" && Model.SortDir == "asc" ? "desc" : "asc")">
@@ -79,7 +68,18 @@
                                 }
                             </a>
                         </th>
-                        <th>Description</th>
+                        <th>
+                            <a class="text-decoration-none text-dark" asp-action="Index"
+                               asp-route-search="@Model.Search" asp-route-categoryUid="@Model.CategoryUid" asp-route-sort="category"
+                               asp-route-sortDir="@(Model.Sort == "category" && Model.SortDir == "asc" ? "desc" : "asc")">
+                                Categories
+                                @if (Model.Sort == "category")
+                                {
+                                    <i class="fa-solid fa-sort-@(Model.SortDir == "asc" ? "up" : "down") ms-1"></i>
+                                }
+                            </a>
+                        </th>
+                        <th>Est. Budget</th>
                         <th>
                             <a class="text-decoration-none text-dark" asp-action="Index"
                                asp-route-search="@Model.Search" asp-route-categoryUid="@Model.CategoryUid" asp-route-sort="order"
@@ -102,17 +102,6 @@
                                 }
                             </a>
                         </th>
-                        <th>
-                            <a class="text-decoration-none text-dark" asp-action="Index"
-                               asp-route-search="@Model.Search" asp-route-categoryUid="@Model.CategoryUid" asp-route-sort="date"
-                               asp-route-sortDir="@(Model.Sort == "date" && Model.SortDir == "asc" ? "desc" : "asc")">
-                                Created On
-                                @if (Model.Sort == "date")
-                                {
-                                    <i class="fa-solid fa-sort-@(Model.SortDir == "asc" ? "up" : "down") ms-1"></i>
-                                }
-                            </a>
-                        </th>
                         <th class="text-end">Actions</th>
                     </tr>
                 </thead>
@@ -120,21 +109,15 @@
                     @if (!Model.Items.Any())
                     {
                         <tr>
-                            <td colspan="7" class="text-center text-muted py-4">No titles found.</td>
+                            <td colspan="6" class="text-center text-muted py-4">No titles found.</td>
                         </tr>
                     }
                     @foreach (var item in Model.Items)
                     {
                         <tr>
-                            <td>
-                                <div>@item.CategoryName</div>
-                                <div class="small text-muted">ID #@item.CategoryUid</div>
-                            </td>
-                            <td class="fw-semibold">
-                                <div>@item.Title</div>
-                                <div class="small text-muted">ID #@item.Uid</div>
-                            </td>
-                            <td>@(string.IsNullOrWhiteSpace(item.Description) ? "—" : item.Description)</td>
+                            <td class="fw-semibold">@item.Title</td>
+                            <td>@item.CategoryName</td>
+                            <td>@(item.EstiBudget?.ToString("N2") ?? "—")</td>
                             <td>@item.DisplayOrder</td>
                             <td>
                                 @if (item.IsActive)
@@ -146,7 +129,6 @@
                                     <span class="badge bg-secondary">Inactive</span>
                                 }
                             </td>
-                            <td>@(item.CreatedOn?.ToString("dd MMM yyyy") ?? "—")</td>
                             <td class="text-end">
                                 <div class="btn-group btn-group-sm">
                                     <a asp-action="Details" asp-route-id="@item.Uid" class="btn btn-outline-secondary" title="Details"><i class="fa-solid fa-eye"></i></a>

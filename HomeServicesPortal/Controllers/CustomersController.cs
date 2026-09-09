@@ -92,7 +92,107 @@ public class CustomersController : Controller
         }
 
         TempData["SuccessMessage"] = $"Client '{model.FullName}' updated successfully.";
-        return RedirectToAction(nameof(Index));
+        return RedirectToAction(nameof(Edit), new { id });
+    }
+
+    [HttpGet("/Admin/Clients/{clientId:int}/Addresses/Create")]
+    [HttpGet("/Admin/Customers/{clientId:int}/Addresses/Create")]
+    public async Task<IActionResult> CreateAddress(int clientId, CancellationToken cancellationToken)
+    {
+        var vm = await _service.GetNewAddressFormAsync(clientId, cancellationToken);
+        if (vm == null) return NotFound();
+        return View(vm);
+    }
+
+    [HttpPost("/Admin/Clients/{clientId:int}/Addresses/Create")]
+    [HttpPost("/Admin/Customers/{clientId:int}/Addresses/Create")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> CreateAddress(int clientId, CustomerAddressFormVm model, CancellationToken cancellationToken)
+    {
+        if (clientId != model.ClientUid) return BadRequest();
+        if (!ModelState.IsValid)
+        {
+            var existing = await _service.GetNewAddressFormAsync(clientId, cancellationToken);
+            if (existing == null) return NotFound();
+            model.ClientName = existing.ClientName;
+            return View(model);
+        }
+
+        var (success, error) = await _service.CreateAddressAsync(model, cancellationToken);
+        if (!success)
+        {
+            ModelState.AddModelError(string.Empty, error ?? "Failed to create address.");
+            var existing = await _service.GetNewAddressFormAsync(clientId, cancellationToken);
+            model.ClientName = existing?.ClientName ?? model.ClientName;
+            return View(model);
+        }
+
+        TempData["SuccessMessage"] = "Address added successfully.";
+        return RedirectToAction(nameof(Edit), new { id = clientId });
+    }
+
+    [HttpGet("/Admin/Clients/{clientId:int}/Addresses/Edit/{addressId:int}")]
+    [HttpGet("/Admin/Customers/{clientId:int}/Addresses/Edit/{addressId:int}")]
+    public async Task<IActionResult> EditAddress(int clientId, int addressId, CancellationToken cancellationToken)
+    {
+        var vm = await _service.GetAddressForEditAsync(clientId, addressId, cancellationToken);
+        if (vm == null) return NotFound();
+        return View(vm);
+    }
+
+    [HttpPost("/Admin/Clients/{clientId:int}/Addresses/Edit/{addressId:int}")]
+    [HttpPost("/Admin/Customers/{clientId:int}/Addresses/Edit/{addressId:int}")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> EditAddress(int clientId, int addressId, CustomerAddressFormVm model, CancellationToken cancellationToken)
+    {
+        if (clientId != model.ClientUid || addressId != model.Uid) return BadRequest();
+        if (!ModelState.IsValid)
+        {
+            var existing = await _service.GetAddressForEditAsync(clientId, addressId, cancellationToken);
+            if (existing == null) return NotFound();
+            model.ClientName = existing.ClientName;
+            return View(model);
+        }
+
+        var (success, error) = await _service.UpdateAddressAsync(model, cancellationToken);
+        if (!success)
+        {
+            ModelState.AddModelError(string.Empty, error ?? "Failed to update address.");
+            var existing = await _service.GetAddressForEditAsync(clientId, addressId, cancellationToken);
+            model.ClientName = existing?.ClientName ?? model.ClientName;
+            return View(model);
+        }
+
+        TempData["SuccessMessage"] = "Address updated successfully.";
+        return RedirectToAction(nameof(Edit), new { id = clientId });
+    }
+
+    [HttpGet("/Admin/Clients/{clientId:int}/Addresses/Delete/{addressId:int}")]
+    [HttpGet("/Admin/Customers/{clientId:int}/Addresses/Delete/{addressId:int}")]
+    public async Task<IActionResult> DeleteAddress(int clientId, int addressId, CancellationToken cancellationToken)
+    {
+        var vm = await _service.GetAddressForDeleteAsync(clientId, addressId, cancellationToken);
+        if (vm == null) return NotFound();
+        return View(vm);
+    }
+
+    [HttpPost("/Admin/Clients/{clientId:int}/Addresses/Delete/{addressId:int}")]
+    [HttpPost("/Admin/Customers/{clientId:int}/Addresses/Delete/{addressId:int}")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeleteAddressConfirmed(int clientId, int addressId, CancellationToken cancellationToken)
+    {
+        var vm = await _service.GetAddressForDeleteAsync(clientId, addressId, cancellationToken);
+        if (vm == null) return NotFound();
+
+        var (success, error) = await _service.DeleteAddressAsync(clientId, addressId, cancellationToken);
+        if (!success)
+        {
+            ModelState.AddModelError(string.Empty, error ?? "Failed to delete address.");
+            return View("DeleteAddress", vm);
+        }
+
+        TempData["SuccessMessage"] = $"Address '{vm.AddressTitle}' deleted successfully.";
+        return RedirectToAction(nameof(Edit), new { id = clientId });
     }
 
     [HttpGet("/Admin/Clients/Delete/{id:int}")]

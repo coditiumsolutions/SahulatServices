@@ -9,6 +9,14 @@
     <h2 class="mt-1 mb-0 h4"><i class="fa-solid fa-pen me-2 text-primary"></i>Edit Client <span class="text-muted fw-normal">#@Model.Uid</span></h2>
 </div>
 
+@if (TempData["SuccessMessage"] is string success)
+{
+    <div class="alert alert-success alert-dismissible fade show py-2" role="alert">
+        <i class="fa-solid fa-circle-check me-2"></i>@success
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
 <div class="card hs-card">
     <div class="card-body p-3">
         <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2"></div>
@@ -23,6 +31,12 @@
         </form>
     </div>
 </div>
+
+@{
+    ViewData["ClientUid"] = Model.Uid;
+    ViewData["CanManage"] = true;
+}
+<partial name="_AddressesSection" model="Model.Addresses" />
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />

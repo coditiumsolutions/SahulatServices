@@ -132,3 +132,9 @@
         </div>
     </div>
 </div>
+
+@{
+    ViewData["ClientUid"] = Model.Uid;
+    ViewData["CanManage"] = true;
+}
+<partial name="_AddressesSection" model="Model.Addresses" />

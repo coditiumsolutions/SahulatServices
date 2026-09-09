@@ -143,6 +143,7 @@ public class ServiceTitleService : IServiceTitleService
                 CategoryName = x.Category.CategoryName,
                 Title = x.Title.Title,
                 Description = x.Title.Description,
+                EstiBudget = x.Title.EstiBudget,
                 DisplayOrder = x.Title.DisplayOrder,
                 IsActive = x.Title.IsActive,
                 CreatedOn = x.Title.CreatedOn
@@ -176,6 +177,7 @@ public class ServiceTitleService : IServiceTitleService
                 CategoryName = c.CategoryName,
                 Title = t.Title,
                 Description = t.Description,
+                EstiBudget = t.EstiBudget,
                 DisplayOrder = t.DisplayOrder,
                 IsActive = t.IsActive,
                 CreatedOn = t.CreatedOn
@@ -193,6 +195,7 @@ public class ServiceTitleService : IServiceTitleService
                 CategoryUid = t.CategoryUid,
                 Title = t.Title,
                 Description = t.Description,
+                EstiBudget = t.EstiBudget,
                 DisplayOrder = t.DisplayOrder,
                 IsActive = t.IsActive
             })
@@ -242,6 +245,7 @@ public class ServiceTitleService : IServiceTitleService
             CategoryUid = model.CategoryUid,
             Title = title,
             Description = model.Description?.Trim(),
+            EstiBudget = model.EstiBudget,
             DisplayOrder = model.DisplayOrder,
             IsActive = model.IsActive,
             CreatedOn = DateTime.Now
@@ -285,6 +289,7 @@ public class ServiceTitleService : IServiceTitleService
         entity.CategoryUid = model.CategoryUid;
         entity.Title = title;
         entity.Description = model.Description?.Trim();
+        entity.EstiBudget = model.EstiBudget;
         entity.DisplayOrder = model.DisplayOrder;
         entity.IsActive = model.IsActive;
 

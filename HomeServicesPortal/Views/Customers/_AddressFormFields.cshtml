@@ -1,0 +1,93 @@
+@model HomeServicesPortal.Models.ViewModels.CustomerAddressFormVm
+
+<style>
+    .address-form-grid .form-label {
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: #6c757d;
+        margin-bottom: 0.2rem;
+    }
+    .address-form-grid .form-control {
+        font-size: 0.875rem;
+    }
+</style>
+
+<input type="hidden" asp-for="Uid" />
+<input type="hidden" asp-for="ClientUid" />
+
+<div class="address-form-grid">
+    <div class="row g-2 mb-2">
+        <div class="col-md-6">
+            <div class="row g-2 align-items-center">
+                <div class="col-sm-4">
+                    <label asp-for="AddressTitle" class="form-label mb-0"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="AddressTitle" class="form-control form-control-sm" placeholder="e.g. Home, Office" />
+                    <span asp-validation-for="AddressTitle" class="text-danger small"></span>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="row g-2 align-items-center">
+                <div class="col-sm-4">
+                    <label asp-for="City" class="form-label mb-0"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="City" class="form-control form-control-sm" placeholder="Enter city" />
+                    <span asp-validation-for="City" class="text-danger small"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-2 mb-2">
+        <div class="col-md-6">
+            <div class="row g-2 align-items-center">
+                <div class="col-sm-4">
+                    <label asp-for="Area" class="form-label mb-0"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="Area" class="form-control form-control-sm" placeholder="Enter area" />
+                    <span asp-validation-for="Area" class="text-danger small"></span>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="row g-2 align-items-start">
+                <div class="col-sm-4 pt-1">
+                    <label asp-for="FullAddress" class="form-label mb-0"></label>
+                </div>
+                <div class="col-sm-8">
+                    <textarea asp-for="FullAddress" class="form-control form-control-sm" rows="2" placeholder="Enter full address"></textarea>
+                    <span asp-validation-for="FullAddress" class="text-danger small"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-2 mb-2">
+        <div class="col-md-6">
+            <div class="row g-2 align-items-center">
+                <div class="col-sm-4">
+                    <label asp-for="Latitude" class="form-label mb-0"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="Latitude" class="form-control form-control-sm" type="number" step="any" min="-90" max="90" placeholder="Optional" />
+                    <span asp-validation-for="Latitude" class="text-danger small"></span>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="row g-2 align-items-center">
+                <div class="col-sm-4">
+                    <label asp-for="Longitude" class="form-label mb-0"></label>
+                </div>
+                <div class="col-sm-8">
+                    <input asp-for="Longitude" class="form-control form-control-sm" type="number" step="any" min="-180" max="180" placeholder="Optional" />
+                    <span asp-validation-for="Longitude" class="text-danger small"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
