@@ -33,6 +33,12 @@ public class HomeController : Controller
         return View();
     }
 
+    [Route("/about")]
+    public IActionResult About()
+    {
+        return View();
+    }
+
     [Route("/privacy-policy")]
     public IActionResult Privacy()
     {

@@ -37,6 +37,7 @@
     <link rel="stylesheet" href="~/css/public-home.css" asp-append-version="true" />
     <link rel="manifest" href="~/manifest.json" />
     <partial name="_OrganizationSchema" />
+    @await RenderSectionAsync("Head", required: false)
 </head>
 <body class="public-home">
     <partial name="_SiteHeaderPublic" />
@@ -55,7 +56,7 @@
                             across Bahria Town.
                         </p>
                         <div class="hs-footer-social">
-                            <a href="tel:+923001234567" aria-label="Call us"><i class="fa-solid fa-phone"></i></a>
+                            <a href="tel:+923225040823" aria-label="Call us"><i class="fa-solid fa-phone"></i></a>
                             <a href="mailto:info@sahulatghartak.com" aria-label="Email us"><i class="fa-solid fa-envelope"></i></a>
                         </div>
                     </div>
@@ -64,6 +65,7 @@
                         <h6 class="hs-footer-heading">Explore</h6>
                         <ul class="hs-footer-links">
                             <li><a href="/">Home</a></li>
+                            <li><a href="/about">About</a></li>
                             <li><a href="/#services">Services</a></li>
                             <li><a href="/#providers">Providers</a></li>
                             <li><a href="/#how-it-works">How It Works</a></li>
@@ -85,7 +87,7 @@
                     <div class="hs-footer-col">
                         <h6 class="hs-footer-heading">Reach Us</h6>
                         <ul class="hs-footer-links hs-footer-contact">
-                            <li><i class="fa-solid fa-phone"></i><a href="tel:+923001234567">+92 300 1234567</a></li>
+                            <li><i class="fa-solid fa-phone"></i><a href="tel:+923225040823">0322-5040823</a></li>
                             <li><i class="fa-solid fa-envelope"></i><a href="mailto:info@sahulatghartak.com">info@sahulatghartak.com</a></li>
                             <li><i class="fa-solid fa-location-dot"></i><span>Bahria Town, Pakistan</span></li>
                         </ul>

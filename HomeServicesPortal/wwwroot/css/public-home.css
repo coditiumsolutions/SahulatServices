@@ -144,6 +144,187 @@
     margin-bottom: 1rem;
 }
 
+/* Our Services — pillars + motion */
+.public-services-section {
+    overflow: hidden;
+}
+
+.public-services-rotator {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.55rem 0.75rem;
+    margin: -0.75rem 0 1.75rem;
+    min-height: 1.75rem;
+    font-size: 1.05rem;
+    color: #5c6b7f;
+}
+
+.public-services-rotator-label {
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--hs-maroon, #8b1e3f);
+}
+
+.public-services-rotator-track {
+    font-family: "Libre Baskerville", Georgia, serif;
+    font-size: 1.2rem;
+    color: var(--hs-navy);
+    transition: opacity 0.28s ease, transform 0.28s ease;
+}
+
+.public-services-rotator-track.is-fading {
+    opacity: 0;
+    transform: translateY(6px);
+}
+
+.public-services-marquee {
+    margin: 0 0 2rem;
+    padding: 0.85rem 0;
+    border-block: 1px solid #e4eaf2;
+    background: linear-gradient(90deg, #f7f9fc 0%, #fff 40%, #fff 60%, #f7f9fc 100%);
+    overflow: hidden;
+    mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+}
+
+.public-services-marquee-track {
+    display: flex;
+    width: max-content;
+    gap: 0.65rem;
+    animation: publicMarquee 36s linear infinite;
+}
+
+.public-services-marquee-track span {
+    flex: 0 0 auto;
+    padding: 0.35rem 0.9rem;
+    border-radius: 999px;
+    border: 1px solid #d7e0eb;
+    background: #fff;
+    color: var(--hs-navy);
+    font-size: 0.82rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.public-pillar-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.25rem;
+}
+
+.public-pillar-card {
+    display: block;
+    background: #fff;
+    border: 1px solid #e4eaf2;
+    border-radius: 16px;
+    padding: 1.6rem 1.4rem;
+    box-shadow: 0 8px 24px rgba(18, 38, 63, 0.06);
+    text-decoration: none;
+    color: inherit;
+    height: 100%;
+    animation: publicPillarIn 0.7s ease both;
+    animation-delay: var(--delay, 0s);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.public-pillar-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 16px 36px rgba(18, 38, 63, 0.12);
+    border-color: #c5d3e4;
+    color: inherit;
+}
+
+.public-pillar-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    background: rgba(0, 51, 102, 0.08);
+    color: var(--hs-navy);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.35rem;
+    margin-bottom: 1rem;
+}
+
+.public-pillar-icon-ride {
+    background: rgba(139, 30, 63, 0.1);
+    color: var(--hs-maroon, #8b1e3f);
+}
+
+.public-pillar-card h3 {
+    font-family: "Libre Baskerville", Georgia, serif;
+    font-size: 1.25rem;
+    color: var(--hs-navy);
+    margin-bottom: 0.65rem;
+}
+
+.public-pillar-card p {
+    color: #5c6b7f;
+    margin-bottom: 1rem;
+    line-height: 1.55;
+}
+
+.public-pillar-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.public-pillar-tags li {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #3d5168;
+    background: #f0f4f8;
+    border-radius: 999px;
+    padding: 0.28rem 0.65rem;
+}
+
+.public-pillar-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-weight: 700;
+    color: var(--hs-maroon, #8b1e3f);
+    font-size: 0.92rem;
+}
+
+@keyframes publicMarquee {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+}
+
+@keyframes publicPillarIn {
+    from {
+        opacity: 0;
+        transform: translateY(18px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@media (max-width: 767.98px) {
+    .public-pillar-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .public-services-marquee-track,
+    .public-pillar-card,
+    .public-services-rotator-track {
+        animation: none !important;
+        transition: none !important;
+    }
+}
+
 .public-steps {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -693,4 +874,117 @@
 .delete-account-success i {
     font-size: 3.5rem;
     color: #1e8e3e;
+}
+
+/* About page + homepage teaser */
+.about-prose {
+    max-width: 760px;
+    margin-bottom: 2.5rem;
+}
+
+.about-prose p {
+    color: #3d5168;
+    line-height: 1.7;
+    margin-bottom: 1rem;
+}
+
+.about-quote {
+    max-width: 820px;
+    margin: 0 0 2.5rem;
+    padding: 1.75rem 1.5rem 1.75rem 1.75rem;
+    border-left: 4px solid var(--hs-maroon, #8b1e3f);
+    background: #f7f9fc;
+    border-radius: 0 14px 14px 0;
+}
+
+.about-quote p {
+    font-family: "Libre Baskerville", Georgia, serif;
+    font-size: clamp(1.2rem, 2.4vw, 1.55rem);
+    color: var(--hs-navy);
+    margin-bottom: 0.85rem;
+}
+
+.about-quote footer {
+    color: #5c6b7f;
+    line-height: 1.65;
+    font-size: 0.95rem;
+}
+
+.about-vm-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.25rem;
+    margin-bottom: 2.5rem;
+}
+
+.about-vm-card {
+    background: #fff;
+    border: 1px solid #e4eaf2;
+    border-radius: 16px;
+    padding: 1.6rem 1.4rem;
+    box-shadow: 0 8px 24px rgba(18, 38, 63, 0.06);
+}
+
+.about-vm-label {
+    display: inline-block;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--hs-maroon, #8b1e3f);
+    margin-bottom: 0.65rem;
+}
+
+.about-vm-card h3 {
+    font-family: "Libre Baskerville", Georgia, serif;
+    font-size: 1.25rem;
+    color: var(--hs-navy);
+    margin-bottom: 0.65rem;
+}
+
+.about-vm-card p {
+    color: #5c6b7f;
+    margin-bottom: 0;
+    line-height: 1.6;
+}
+
+.about-closing {
+    text-align: center;
+    padding: 2rem 1rem 0.5rem;
+}
+
+.about-closing-line {
+    font-family: "Libre Baskerville", Georgia, serif;
+    font-size: clamp(1.1rem, 2vw, 1.35rem);
+    color: var(--hs-navy);
+    margin-bottom: 1.25rem;
+}
+
+.about-preview-panel {
+    max-width: 820px;
+    margin: 0 auto;
+    text-align: center;
+}
+
+.about-preview-eyebrow {
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--hs-maroon, #8b1e3f);
+    margin-bottom: 0.75rem;
+}
+
+.about-preview-quote {
+    font-family: "Libre Baskerville", Georgia, serif;
+    font-size: clamp(1.15rem, 2.2vw, 1.45rem);
+    color: var(--hs-navy);
+    margin: 0 auto;
+    max-width: 640px;
+}
+
+@media (max-width: 767.98px) {
+    .about-vm-grid {
+        grid-template-columns: 1fr;
+    }
 }

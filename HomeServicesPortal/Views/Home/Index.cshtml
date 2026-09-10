@@ -4,6 +4,28 @@
     ViewData["Description"] = "Sahulat Ghar Tak is Pakistan's trusted home services platform — book verified electricians, plumbers, cleaners, AC technicians, carpenters and painters with transparent pricing and live tracking.";
 }
 
+@section Head {
+    <!-- Meta Pixel Code -->
+    <script>
+    !function(f,b,e,v,n,t,s)
+    {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+    n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+    if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+    n.queue=[];t=b.createElement(e);t.async=!0;
+    t.src=v;s=b.getElementsByTagName(e)[0];
+    s.parentNode.insertBefore(t,s)}(window, document,'script',
+    'https://connect.facebook.net/en_US/fbevents.js');
+    fbq('init', '943484539264647');
+    fbq('track', 'PageView');
+    </script>
+    <noscript>
+        <img height="1" width="1" style="display:none"
+             src="https://www.facebook.com/tr?id=943484539264647&ev=PageView&noscript=1"
+             alt="" />
+    </noscript>
+    <!-- End Meta Pixel Code -->
+}
+
 <section class="public-hero">
     <div class="container public-hero-content">
         <div class="row align-items-center g-4">
@@ -42,48 +64,122 @@
     </div>
 </section>
 
-<section id="services" class="public-section">
+<section id="services" class="public-section public-services-section">
     <div class="container">
         <h2 class="public-section-title">Our Services</h2>
         <p class="public-section-subtitle">
-            From everyday repairs to specialist jobs — find skilled professionals for every corner of your home.
+            Four pillars of convenience — from your home to the road, and everything in between.
         </p>
-        <div class="public-service-grid">
-            <article class="public-service-card">
-                <div class="public-service-icon"><i class="fa-solid fa-bolt"></i></div>
-                <h3 class="h5">Electrician</h3>
-                <p class="text-muted mb-0">Wiring, fixtures, power issues, and safety inspections.</p>
+        <p class="public-services-rotator" aria-live="polite">
+            <span class="public-services-rotator-label">Now covering</span>
+            <span class="public-services-rotator-track" id="servicesRotatorText">Home Maintenance</span>
+        </p>
+    </div>
+
+    <div class="public-services-marquee" aria-hidden="true">
+        <div class="public-services-marquee-track">
+            <span>Electrician</span><span>Plumbing</span><span>Cleaning</span><span>AC Service</span>
+            <span>Carpentry</span><span>Painting</span><span>Legal Support</span><span>Property Care</span>
+            <span>Sahulat Ride</span><span>Home Maintenance</span><span>Specialized Services</span>
+            <span>Electrician</span><span>Plumbing</span><span>Cleaning</span><span>AC Service</span>
+            <span>Carpentry</span><span>Painting</span><span>Legal Support</span><span>Property Care</span>
+            <span>Sahulat Ride</span><span>Home Maintenance</span><span>Specialized Services</span>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="public-pillar-grid">
+            <article class="public-pillar-card" style="--delay: 0s">
+                <div class="public-pillar-icon"><i class="fa-solid fa-house-chimney"></i></div>
+                <h3>Home Maintenance</h3>
+                <p>Everyday upkeep for your home — electrical, plumbing, cleaning, AC, carpentry, and painting by verified professionals.</p>
+                <ul class="public-pillar-tags">
+                    <li>Electrician</li>
+                    <li>Plumber</li>
+                    <li>Cleaner</li>
+                    <li>AC Tech</li>
+                </ul>
             </article>
-            <article class="public-service-card">
-                <div class="public-service-icon"><i class="fa-solid fa-faucet-drip"></i></div>
-                <h3 class="h5">Plumbing</h3>
-                <p class="text-muted mb-0">Leaks, pipe fitting, bathroom & kitchen plumbing.</p>
+
+            <article class="public-pillar-card" style="--delay: 0.08s">
+                <div class="public-pillar-icon"><i class="fa-solid fa-screwdriver-wrench"></i></div>
+                <h3>Specialized Services</h3>
+                <p>Expert help for complex jobs that need skilled technicians and tailored solutions beyond routine maintenance.</p>
+                <ul class="public-pillar-tags">
+                    <li>Technicians</li>
+                    <li>Repairs</li>
+                    <li>Installations</li>
+                    <li>Custom Jobs</li>
+                </ul>
             </article>
-            <article class="public-service-card">
-                <div class="public-service-icon"><i class="fa-solid fa-broom"></i></div>
-                <h3 class="h5">Cleaning</h3>
-                <p class="text-muted mb-0">Deep cleaning, carpet care, and regular housekeeping.</p>
+
+            <article class="public-pillar-card" style="--delay: 0.16s">
+                <div class="public-pillar-icon"><i class="fa-solid fa-scale-balanced"></i></div>
+                <h3>Property and Legal Services</h3>
+                <p>Support for property-related needs and legal assistance — practical guidance when ownership and paperwork matter.</p>
+                <ul class="public-pillar-tags">
+                    <li>Property</li>
+                    <li>Documentation</li>
+                    <li>Legal Aid</li>
+                    <li>Advisory</li>
+                </ul>
             </article>
-            <article class="public-service-card">
-                <div class="public-service-icon"><i class="fa-solid fa-fan"></i></div>
-                <h3 class="h5">AC Technician</h3>
-                <p class="text-muted mb-0">Installation, gas refill, servicing, and repairs.</p>
-            </article>
-            <article class="public-service-card">
-                <div class="public-service-icon"><i class="fa-solid fa-hammer"></i></div>
-                <h3 class="h5">Carpenter</h3>
-                <p class="text-muted mb-0">Furniture, doors, cabinets, and woodwork fixes.</p>
-            </article>
-            <article class="public-service-card">
-                <div class="public-service-icon"><i class="fa-solid fa-paint-roller"></i></div>
-                <h3 class="h5">Painting</h3>
-                <p class="text-muted mb-0">Interior & exterior painting with quality finishes.</p>
-            </article>
+
+            <a class="public-pillar-card public-pillar-card-link" href="https://sahulatride.com" target="_blank" rel="noopener noreferrer" style="--delay: 0.24s">
+                <div class="public-pillar-icon public-pillar-icon-ride"><i class="fa-solid fa-car-side"></i></div>
+                <h3>Sahulat Ride</h3>
+                <p>Reliable rides when you need to move — book transport through our companion service.</p>
+                <span class="public-pillar-cta">
+                    sahulatride.com <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                </span>
+            </a>
         </div>
     </div>
 </section>
 
-<section id="providers" class="public-section public-bg-soft">
+@section Scripts {
+<script>
+(() => {
+    const phrases = [
+        'Home Maintenance',
+        'Specialized Services',
+        'Property and Legal Services',
+        'Sahulat Ride'
+    ];
+    const el = document.getElementById('servicesRotatorText');
+    if (!el || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    let i = 0;
+    setInterval(() => {
+        i = (i + 1) % phrases.length;
+        el.classList.add('is-fading');
+        setTimeout(() => {
+            el.textContent = phrases[i];
+            el.classList.remove('is-fading');
+        }, 280);
+    }, 2800);
+})();
+</script>
+}
+
+<section id="about-preview" class="public-section public-bg-soft">
+    <div class="container">
+        <div class="about-preview-panel">
+            <p class="about-preview-eyebrow">About Sahulat Ghar Tak</p>
+            <h2 class="public-section-title mb-3">One Platform. Every Service. Endless Possibilities.</h2>
+            <p class="public-section-subtitle mb-3">
+                Sahulat Ghar Tak is Pakistan’s all-in-one service ecosystem — connecting customers with trusted
+                professionals while empowering people to earn through their skills.
+            </p>
+            <blockquote class="about-preview-quote mb-4">
+                “My client is my provider, and my provider is my client.”
+            </blockquote>
+            <a href="/about" class="btn btn-primary">Read Our Story</a>
+        </div>
+    </div>
+</section>
+
+<section id="providers" class="public-section">
     <div class="container">
         <div class="row align-items-center g-4">
             <div class="col-lg-6">
@@ -106,7 +202,7 @@
                         Join our network and grow your business. Manage bookings, availability, and customer
                         relationships through our provider platform.
                     </p>
-                    <a href="/adminportal" class="btn btn-outline-primary">Partner With Us</a>
+                    <a href="/#contact" class="btn btn-outline-primary">Partner With Us</a>
                 </div>
             </div>
         </div>
@@ -233,7 +329,7 @@
             <h2>Ready to get started?</h2>
             <p class="mb-4 opacity-75">Book trusted home services today or reach out to our team for assistance.</p>
             <div class="d-flex flex-wrap justify-content-center gap-2">
-                <a href="tel:+923001234567" class="public-btn-light">Call +92 300 1234567</a>
+                <a href="tel:+923225040823" class="public-btn-light">Call 0322-5040823</a>
                 <a href="mailto:info@sahulatghartak.com" class="public-btn-outline">Email Us</a>
             </div>
         </div>

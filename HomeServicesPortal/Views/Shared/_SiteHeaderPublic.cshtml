@@ -29,7 +29,7 @@
                         </span>
                     </li>
                     <li>
-                        <a class="hs-utility-link" href="tel:+923001234567">
+                        <a class="hs-utility-link" href="tel:+923225040823">
                             Call Us<i class="fa-solid fa-chevron-right"></i>
                         </a>
                     </li>
@@ -67,6 +67,9 @@
             <ul class="hs-tab-nav">
                 <li>
                     <a class="hs-tab-link @TabActive("home")" href="/">Home</a>
+                </li>
+                <li>
+                    <a class="hs-tab-link @(path.StartsWith("/about") ? "active" : "")" href="/about">About</a>
                 </li>
                 <li>
                     <a class="hs-tab-link @TabActive("services")" href="/#services">Services</a>
