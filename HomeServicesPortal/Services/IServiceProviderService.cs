@@ -5,7 +5,7 @@ namespace HomeServicesPortal.Services;
 
 public interface IServiceProviderService
 {
-    Task<ServiceProviderListVm> GetListAsync(string? search, string? sort, string? sortDir, int page, CancellationToken cancellationToken = default);
+    Task<ServiceProviderListVm> GetListAsync(string? search, string? verifyStatus, string? sort, string? sortDir, int page, CancellationToken cancellationToken = default);
     Task<ServiceProviderDetailsVm?> GetDetailsAsync(int id, CancellationToken cancellationToken = default);
     Task<ServiceProviderFormVm?> GetForEditAsync(int id, CancellationToken cancellationToken = default);
     Task<ServiceProviderDeleteVm?> GetForDeleteAsync(int id, CancellationToken cancellationToken = default);

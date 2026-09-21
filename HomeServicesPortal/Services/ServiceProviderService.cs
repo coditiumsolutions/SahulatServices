@@ -126,6 +126,7 @@ public class ServiceProviderService : IServiceProviderService
 
     public async Task<ServiceProviderListVm> GetListAsync(
         string? search,
+        string? verifyStatus,
         string? sort,
         string? sortDir,
         int page,
@@ -148,6 +149,26 @@ public class ServiceProviderService : IServiceProviderService
                 p.Category.CategoryName.Contains(term));
         }
 
+        if (string.Equals(verifyStatus, "1", StringComparison.Ordinal)
+            || string.Equals(verifyStatus, "true", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(verifyStatus, "verified", StringComparison.OrdinalIgnoreCase))
+        {
+            query = query.Where(p => p.IsVerified);
+            verifyStatus = "1";
+        }
+        else if (string.Equals(verifyStatus, "0", StringComparison.Ordinal)
+            || string.Equals(verifyStatus, "false", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(verifyStatus, "notverified", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(verifyStatus, "not verified", StringComparison.OrdinalIgnoreCase))
+        {
+            query = query.Where(p => !p.IsVerified);
+            verifyStatus = "0";
+        }
+        else
+        {
+            verifyStatus = null;
+        }
+
         query = sort switch
         {
             "id" or "uid" => sortDir == "desc"
@@ -159,6 +180,9 @@ public class ServiceProviderService : IServiceProviderService
             "date" => sortDir == "desc"
                 ? query.OrderByDescending(p => p.CreatedOn)
                 : query.OrderBy(p => p.CreatedOn),
+            "category" => sortDir == "desc"
+                ? query.OrderByDescending(p => p.Category.CategoryName)
+                : query.OrderBy(p => p.Category.CategoryName),
             _ => sortDir == "desc"
                 ? query.OrderByDescending(p => p.Uid)
                 : query.OrderBy(p => p.Uid)
@@ -188,6 +212,7 @@ public class ServiceProviderService : IServiceProviderService
         {
             Items = items,
             Search = search,
+            VerifyStatus = verifyStatus,
             Sort = sort,
             SortDir = sortDir,
             Page = page,

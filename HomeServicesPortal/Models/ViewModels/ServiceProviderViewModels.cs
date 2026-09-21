@@ -8,6 +8,8 @@ public class ServiceProviderListVm
 {
     public List<ServiceProviderItemVm> Items { get; set; } = new();
     public string? Search { get; set; }
+    /// <summary>Filter: null/empty = all, "1" = Verified, "0" = Not Verified.</summary>
+    public string? VerifyStatus { get; set; }
     public string Sort { get; set; } = "id";
     public string SortDir { get; set; } = "desc";
     public int Page { get; set; } = 1;
