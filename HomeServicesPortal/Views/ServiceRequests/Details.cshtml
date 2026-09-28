@@ -13,88 +13,108 @@
 }
 
 <style>
+    .sr-details-grid {
+        font-size: 1rem;
+        line-height: 1.45;
+    }
     .sr-details-grid .sr-title {
         font-weight: normal;
-        color: #111111;
+        color: #003366;
+        font-size: 1.05rem;
     }
     .sr-details-grid .sr-field {
-        color: #003366;
+        color: #0a58ca;
         font-weight: normal;
+        font-size: 1.05rem;
     }
     .sr-details-grid > .row {
-        border-bottom: 1px solid #dee2e6;
-        padding-bottom: 0.75rem;
-        margin-bottom: 0.75rem !important;
+        --bs-gutter-x: 0.5rem;
+        --bs-gutter-y: 0.15rem;
+        border-bottom: 1px solid #e9ecef;
+        padding-top: 0.35rem;
+        padding-bottom: 0.35rem;
+        margin-bottom: 0 !important;
+        align-items: baseline;
     }
     .sr-details-grid > .row:last-child {
         border-bottom: none;
-        margin-bottom: 0 !important;
         padding-bottom: 0;
+    }
+    .sr-details-card .card-body {
+        padding: 1rem 1.15rem !important;
+    }
+    .sr-details-actions {
+        gap: 0.4rem !important;
+        margin-top: 0.75rem;
+    }
+    .sr-details-actions .btn {
+        padding: 0.25rem 0.65rem;
+        font-size: 0.8125rem;
     }
 </style>
 
-<div class="mb-4">
-    <a asp-action="Index" class="text-decoration-none text-muted"><i class="fa-solid fa-arrow-left me-1"></i>Back to S-Requests</a>
-    <h2 class="mt-2 mb-0"><i class="fa-solid fa-eye me-2 text-primary"></i>S-Request Details</h2>
+<div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+    <h2 class="mb-0 h4"><i class="fa-solid fa-eye me-2 text-primary"></i>S-Request Details</h2>
+    <a asp-action="Index" class="text-decoration-none text-muted small"><i class="fa-solid fa-arrow-left me-1"></i>Back to S-Requests</a>
 </div>
 
 <div class="row justify-content-center">
-    <div class="col-lg-10">
-        <div class="card hs-card">
-            <div class="card-body p-4">
+    <div class="col-lg-9">
+        <div class="card hs-card sr-details-card">
+            <div class="card-body">
                 <div class="sr-details-grid">
-                    <div class="row g-3 mb-3">
+                    <div class="row">
                         <div class="col-md-3 sr-title">Client</div>
                         <div class="col-md-3 sr-field">@Model.CustomerName</div>
                         <div class="col-md-3 sr-title">Category</div>
                         <div class="col-md-3 sr-field">@Model.CategoryName</div>
                     </div>
-                    <div class="row g-3 mb-3">
+                    <div class="row">
                         <div class="col-md-3 sr-title">Service Title</div>
                         <div class="col-md-3 sr-field">@Model.ServiceTitle</div>
                         <div class="col-md-3 sr-title">Urgent</div>
                         <div class="col-md-3 sr-field">@(Model.IsUrgent ? "Yes" : "No")</div>
                     </div>
-                    <div class="row g-3 mb-3">
-                        <div class="col-md-3 sr-title">Description</div>
-                        <div class="col-md-9 sr-field">@Model.ServiceDescription</div>
-                    </div>
-                    <div class="row g-3 mb-3">
-                        <div class="col-md-3 sr-title">Address</div>
-                        <div class="col-md-9 sr-field">@(string.IsNullOrWhiteSpace(Model.ServiceAddress) ? "—" : Model.ServiceAddress)</div>
-                    </div>
-                    <div class="row g-3 mb-3">
+                    <div class="row">
                         <div class="col-md-3 sr-title">Preferred Date</div>
                         <div class="col-md-3 sr-field">@(Model.PreferredServiceDate.ToDisplay("—"))</div>
                         <div class="col-md-3 sr-title">Preferred Time</div>
                         <div class="col-md-3 sr-field">@(Model.PreferredServiceTime.ToTimeDisplay("—"))</div>
                     </div>
-                    <div class="row g-3 mb-3">
+                    <div class="row">
                         <div class="col-md-3 sr-title">Contact</div>
                         <div class="col-md-3 sr-field">@(Model.ContactPerson ?? "—") / @Model.ContactNo</div>
                         <div class="col-md-3 sr-title">Budget</div>
                         <div class="col-md-3 sr-field">@(Model.EstimatedBudget?.ToString("N2") ?? "—")</div>
                     </div>
-                    <div class="row g-3 mb-3">
+                    <div class="row">
                         <div class="col-md-3 sr-title">Created On</div>
                         <div class="col-md-3 sr-field">@(Model.RequestDate.ToPktDisplay())</div>
                         <div class="col-md-3 sr-title">Status</div>
                         <div class="col-md-3 sr-field"><span class="badge bg-@statusClass">@(Model.Status ?? "Initiated")</span></div>
                     </div>
-                    <div class="row g-3 mb-3">
+                    <div class="row">
+                        <div class="col-md-3 sr-title">Description</div>
+                        <div class="col-md-9 sr-field">@Model.ServiceDescription</div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-3 sr-title">Address</div>
+                        <div class="col-md-9 sr-field">@(string.IsNullOrWhiteSpace(Model.ServiceAddress) ? "—" : Model.ServiceAddress)</div>
+                    </div>
+                    <div class="row">
                         <div class="col-md-3 sr-title">Remarks</div>
                         <div class="col-md-9 sr-field">@(string.IsNullOrWhiteSpace(Model.Remarks) ? "—" : Model.Remarks)</div>
                     </div>
                     @if (!string.IsNullOrWhiteSpace(Model.CancelReason))
                     {
-                        <div class="row g-3">
+                        <div class="row">
                             <div class="col-md-3 sr-title">Cancel Reason</div>
                             <div class="col-md-9 sr-field">@Model.CancelReason</div>
                         </div>
                     }
                 </div>
-                <hr />
-                <div class="d-flex gap-2">
+                <hr class="my-3" />
+                <div class="d-flex flex-wrap sr-details-actions">
                     @if (string.Equals(Model.Status, "Initiated", StringComparison.OrdinalIgnoreCase)
                          || string.Equals(Model.Status, "Pending", StringComparison.OrdinalIgnoreCase))
                     {

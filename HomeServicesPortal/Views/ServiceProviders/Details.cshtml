@@ -9,12 +9,12 @@
     .sp-details-grid .sp-label {
         font-size: 0.78rem;
         font-weight: 600;
-        color: #6c757d;
+        color: #111111;
     }
     .sp-details-grid .sp-value {
         font-size: 0.9rem;
         font-weight: 500;
-        color: #212529;
+        color: #0a58ca;
         word-break: break-word;
     }
     .sp-details-grid .sp-thumb {
@@ -22,6 +22,14 @@
     }
     .sp-details-tabs .nav-link {
         font-size: 0.9rem;
+    }
+    .sp-details-grid .sp-detail-row {
+        border-bottom: 1px solid #dee2e6;
+        padding-bottom: 0.55rem;
+        margin-bottom: 0.55rem !important;
+    }
+    .sp-details-grid .tab-pane > .sp-detail-row:last-of-type {
+        border-bottom: 1px solid #dee2e6;
     }
 </style>
 
@@ -60,7 +68,7 @@
     <div class="card-body p-3 sp-details-grid">
         <div class="tab-content" id="providerDetailsTabContent">
             <div class="tab-pane fade show active" id="provider-pane" role="tabpanel" aria-labelledby="provider-tab" tabindex="0">
-                <div class="d-flex align-items-center gap-3 mb-3">
+                <div class="d-flex align-items-center gap-3 mb-2 sp-detail-row pb-2">
                     @if (!string.IsNullOrWhiteSpace(Model.ProfilePicturePath))
                     {
                         <img src="@Model.ProfilePicturePath" alt="@Model.FullName" class="rounded-circle" width="56" height="56" style="object-fit:cover" />
@@ -77,7 +85,7 @@
                     </div>
                 </div>
 
-                <div class="row g-2 mb-2">
+                <div class="row g-2 mb-2 sp-detail-row">
                     <div class="col-md-6">
                         <div class="row g-2">
                             <div class="col-sm-4 sp-label">Provider ID</div>
@@ -92,7 +100,7 @@
                     </div>
                 </div>
 
-                <div class="row g-2 mb-2">
+                <div class="row g-2 mb-2 sp-detail-row">
                     <div class="col-md-6">
                         <div class="row g-2">
                             <div class="col-sm-4 sp-label">Mobile No</div>
@@ -107,7 +115,7 @@
                     </div>
                 </div>
 
-                <div class="row g-2 mb-2">
+                <div class="row g-2 mb-2 sp-detail-row">
                     <div class="col-md-6">
                         <div class="row g-2">
                             <div class="col-sm-4 sp-label">City</div>
@@ -122,7 +130,7 @@
                     </div>
                 </div>
 
-                <div class="row g-2 mb-2">
+                <div class="row g-2 mb-2 sp-detail-row">
                     <div class="col-md-6">
                         <div class="row g-2">
                             <div class="col-sm-4 sp-label">Rating</div>
@@ -157,7 +165,7 @@
                     </div>
                 </div>
 
-                <div class="row g-2 mb-2">
+                <div class="row g-2 mb-2 sp-detail-row">
                     <div class="col-md-6">
                         <div class="row g-2">
                             <div class="col-sm-4 sp-label">Created On</div>
@@ -183,7 +191,7 @@
                 else
                 {
                     var docs = Model.Documents;
-                    <div class="row g-2 mb-2">
+                    <div class="row g-2 mb-2 sp-detail-row">
                         <div class="col-md-6">
                             <div class="row g-2">
                                 <div class="col-sm-4 sp-label">Document ID</div>
@@ -198,7 +206,7 @@
                         </div>
                     </div>
 
-                    <div class="row g-2 mb-2">
+                    <div class="row g-2 mb-2 sp-detail-row">
                         <div class="col-md-6">
                             <div class="row g-2">
                                 <div class="col-sm-4 sp-label">Status</div>
@@ -222,7 +230,7 @@
                         </div>
                     </div>
 
-                    <div class="row g-2 mb-2">
+                    <div class="row g-2 mb-2 sp-detail-row">
                         <div class="col-md-6">
                             <div class="row g-2">
                                 <div class="col-sm-4 sp-label">Verified By</div>
@@ -237,7 +245,7 @@
                         </div>
                     </div>
 
-                    <div class="row g-2 mb-2">
+                    <div class="row g-2 mb-2 sp-detail-row">
                         <div class="col-md-6">
                             <div class="row g-2">
                                 <div class="col-sm-4 sp-label">Created</div>
@@ -252,7 +260,7 @@
                         </div>
                     </div>
 
-                    <div class="row g-2 mb-2">
+                    <div class="row g-2 mb-2 sp-detail-row">
                         <div class="col-md-4">
                             <div class="sp-label mb-1">Profile Photo</div>
                             @if (!string.IsNullOrWhiteSpace(docs.ProfilePhotoPath))
@@ -291,7 +299,7 @@
                         </div>
                     </div>
 
-                    <div class="row g-2 mb-2">
+                    <div class="row g-2 mb-2 sp-detail-row">
                         <div class="col-md-4">
                             <div class="sp-label mb-1">Police Verification</div>
                             @if (!string.IsNullOrWhiteSpace(docs.PoliceVerificationPath))

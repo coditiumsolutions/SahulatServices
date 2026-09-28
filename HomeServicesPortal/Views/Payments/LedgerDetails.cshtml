@@ -4,40 +4,84 @@
     ViewData["Title"] = "Ledger Entry Details";
 }
 
-<div class="mb-4">
-    <a asp-action="Ledger" class="text-decoration-none text-muted"><i class="fa-solid fa-arrow-left me-1"></i>Back to Payment Ledger</a>
-    <h2 class="mt-2 mb-0"><i class="fa-solid fa-eye me-2 text-primary"></i>Ledger Entry #@Model.Uid</h2>
+<style>
+    .pl-details-grid {
+        font-size: 1rem;
+        line-height: 1.45;
+    }
+    .pl-details-grid .pl-title {
+        font-weight: normal;
+        color: #111111;
+        font-size: 1.05rem;
+    }
+    .pl-details-grid .pl-field {
+        color: #0a58ca;
+        font-weight: normal;
+        font-size: 1.05rem;
+        word-break: break-word;
+    }
+    .pl-details-grid > .row {
+        --bs-gutter-x: 0.5rem;
+        --bs-gutter-y: 0.15rem;
+        border-bottom: 1px solid #e9ecef;
+        padding-top: 0.35rem;
+        padding-bottom: 0.35rem;
+        margin-bottom: 0 !important;
+        align-items: baseline;
+    }
+    .pl-details-grid > .row:last-child {
+        border-bottom: none;
+        padding-bottom: 0;
+    }
+    .pl-details-card .card-body {
+        padding: 1rem 1.15rem !important;
+    }
+</style>
+
+<div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+    <h2 class="mb-0 h4"><i class="fa-solid fa-eye me-2 text-primary"></i>Ledger Entry #@Model.Uid</h2>
+    <a asp-action="Ledger" class="text-decoration-none text-muted small"><i class="fa-solid fa-arrow-left me-1"></i>Back to Payment Ledger</a>
 </div>
 
 <div class="row justify-content-center">
-    <div class="col-lg-7">
-        <div class="card hs-card">
-            <div class="card-body p-4">
-                <dl class="row mb-0">
-                    <dt class="col-sm-4 text-muted">Booking UID</dt>
-                    <dd class="col-sm-8">
-                        @if (Model.BookingUid.HasValue)
-                        {
-                            <a href="/Admin/Bookings/Details/@Model.BookingUid.Value">#@Model.BookingUid.Value</a>
-                        }
-                        else
-                        {
-                            <text>—</text>
-                        }
-                    </dd>
-                    <dt class="col-sm-4 text-muted">Provider</dt>
-                    <dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.ProviderName) ? "—" : Model.ProviderName)</dd>
-                    <dt class="col-sm-4 text-muted">Account Type</dt>
-                    <dd class="col-sm-8">@Model.AccountType</dd>
-                    <dt class="col-sm-4 text-muted">Entry Type</dt>
-                    <dd class="col-sm-8">@Model.EntryType</dd>
-                    <dt class="col-sm-4 text-muted">Reason</dt>
-                    <dd class="col-sm-8">@Model.Reason</dd>
-                    <dt class="col-sm-4 text-muted">Amount</dt>
-                    <dd class="col-sm-8 fw-semibold">@Model.Amount.ToString("N2")</dd>
-                    <dt class="col-sm-4 text-muted">Created On</dt>
-                    <dd class="col-sm-8">@Model.CreatedOn.ToPktDisplay()</dd>
-                </dl>
+    <div class="col-lg-10">
+        <div class="card hs-card pl-details-card">
+            <div class="card-body">
+                <div class="pl-details-grid">
+                    <div class="row">
+                        <div class="col-md-3 pl-title">Booking UID</div>
+                        <div class="col-md-3 pl-field">
+                            @if (Model.BookingUid.HasValue)
+                            {
+                                <a href="/Admin/Bookings/Details/@Model.BookingUid.Value">#@Model.BookingUid.Value</a>
+                            }
+                            else
+                            {
+                                <text>—</text>
+                            }
+                        </div>
+                        <div class="col-md-3 pl-title">Provider</div>
+                        <div class="col-md-3 pl-field">@(string.IsNullOrWhiteSpace(Model.ProviderName) ? "—" : Model.ProviderName)</div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-3 pl-title">Account Type</div>
+                        <div class="col-md-3 pl-field">@Model.AccountType</div>
+                        <div class="col-md-3 pl-title">Entry Type</div>
+                        <div class="col-md-3 pl-field">@Model.EntryType</div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-3 pl-title">Reason</div>
+                        <div class="col-md-3 pl-field">@Model.Reason</div>
+                        <div class="col-md-3 pl-title">Amount</div>
+                        <div class="col-md-3 pl-field">@Model.Amount.ToString("N2")</div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-3 pl-title">Created On</div>
+                        <div class="col-md-3 pl-field">@Model.CreatedOn.ToPktDisplay()</div>
+                        <div class="col-md-3 pl-title"></div>
+                        <div class="col-md-3 pl-field"></div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
