@@ -364,7 +364,7 @@ public class ServiceProviderService : IServiceProviderService
             UserType = UserTypeConstants.Provider,
             IsActive = model.IsActive,
             IsVerified = false,
-            CreatedOn = DateTime.Now
+            CreatedOn = DateTime.UtcNow
         };
 
         _db.UsersLogins.Add(user);
@@ -382,7 +382,7 @@ public class ServiceProviderService : IServiceProviderService
             AverageRating = model.Rating ?? 0,
             CategoryUid = model.CategoryUid,
             IsAvailable = true,
-            CreatedOn = DateTime.Now
+            CreatedOn = DateTime.UtcNow
         };
 
         _db.Providers.Add(provider);

@@ -305,7 +305,7 @@ public class CustomerService : ICustomerService
             UserType = UserTypeConstants.Client,
             IsActive = true,
             IsVerified = false,
-            CreatedOn = DateTime.Now
+            CreatedOn = DateTime.UtcNow
         };
 
         _db.UsersLogins.Add(user);
@@ -321,7 +321,7 @@ public class CustomerService : ICustomerService
             Comments = string.IsNullOrWhiteSpace(model.Comments) ? null : model.Comments.Trim(),
             City = string.IsNullOrWhiteSpace(model.City) ? null : model.City.Trim(),
             Location = string.IsNullOrWhiteSpace(model.Location) ? null : model.Location.Trim(),
-            CreatedOn = DateTime.Now
+            CreatedOn = DateTime.UtcNow
         });
 
         await _db.SaveChangesAsync(cancellationToken);

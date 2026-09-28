@@ -4,6 +4,15 @@ public static class PktTimeHelper
 {
     private static readonly TimeSpan PktOffset = TimeSpan.FromHours(5); // PKT = UTC+5, no DST
 
+    /// <summary>
+    /// Current time in Pakistan Standard Time, derived from DateTime.UtcNow so it stays correct
+    /// even if the server's OS clock is ever changed away from UTC (unlike DateTime.Now, which
+    /// this codebase used to rely on being UTC — see AGENTS.md/db.txt TIMEZONE STANDARD note).
+    /// Use this for any admin-portal "today"/"now" display; use DateTime.UtcNow directly for
+    /// anything being stored/compared server-side.
+    /// </summary>
+    public static DateTime NowPkt => DateTime.UtcNow.ToPkt();
+
     /// <summary>Converts a UTC DateTime to Pakistan Standard Time. Assumes input is UTC regardless of Kind.</summary>
     public static DateTime ToPkt(this DateTime utc) => DateTime.SpecifyKind(utc, DateTimeKind.Utc).Add(PktOffset);
 

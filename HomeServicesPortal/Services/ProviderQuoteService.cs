@@ -44,7 +44,7 @@ public class ProviderQuoteService : IProviderQuoteService
             .Select(p => new SelectListItem
             {
                 Value = p.Uid.ToString(),
-                Text = p.UserU.FullName ?? ""
+                Text = p.UserU.FullName ?? "ï¿½"
             })
             .ToListAsync(cancellationToken);
     }
@@ -69,7 +69,7 @@ public class ProviderQuoteService : IProviderQuoteService
             query = query.Where(q =>
                 q.RequestU.CustomerU.FullName.Contains(term) ||
                 q.RequestU.CategoryU.CategoryName.Contains(term) ||
-                q.ProviderU.UserU.FullName.Contains(term) ||
+                (q.ProviderU.UserU.FullName != null && q.ProviderU.UserU.FullName.Contains(term)) ||
                 (q.Remarks != null && q.Remarks.Contains(term)));
         }
 
@@ -98,7 +98,7 @@ public class ProviderQuoteService : IProviderQuoteService
             {
                 Uid = q.Uid,
                 RequestLabel = $"#{q.RequestUid} - {q.RequestU.CustomerU.FullName}",
-                ProviderName = q.ProviderU.UserU.FullName,
+                ProviderName = q.ProviderU.UserU.FullName ?? string.Empty,
                 QuoteAmount = q.QuoteAmount,
                 EstimatedArrivalMinutes = q.EstimatedArrivalMinutes,
                 DistanceKm = q.DistanceKm,
@@ -128,7 +128,7 @@ public class ProviderQuoteService : IProviderQuoteService
                 RequestUid = q.RequestUid,
                 RequestLabel = $"#{q.RequestUid} - {q.RequestU.CustomerU.FullName} ({q.RequestU.CategoryU.CategoryName})",
                 ProviderUid = q.ProviderUid,
-                ProviderName = q.ProviderU.UserU.FullName,
+                ProviderName = q.ProviderU.UserU.FullName ?? string.Empty,
                 QuoteAmount = q.QuoteAmount,
                 EstimatedArrivalMinutes = q.EstimatedArrivalMinutes,
                 DistanceKm = q.DistanceKm,
@@ -163,7 +163,7 @@ public class ProviderQuoteService : IProviderQuoteService
             {
                 Uid = q.Uid,
                 RequestLabel = $"#{q.RequestUid} - {q.RequestU.CustomerU.FullName}",
-                ProviderName = q.ProviderU.UserU.FullName,
+                ProviderName = q.ProviderU.UserU.FullName ?? string.Empty,
                 QuoteAmount = q.QuoteAmount,
                 QuoteDate = q.QuoteDate
             })
@@ -185,7 +185,7 @@ public class ProviderQuoteService : IProviderQuoteService
             EstimatedArrivalMinutes = model.EstimatedArrivalMinutes,
             DistanceKm = model.DistanceKm,
             Remarks = model.Remarks?.Trim(),
-            QuoteDate = DateTime.Now
+            QuoteDate = DateTime.UtcNow
         };
 
         await _quoteRepo.AddAsync(entity, cancellationToken);

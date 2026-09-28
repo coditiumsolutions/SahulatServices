@@ -95,7 +95,7 @@ public class ProviderCategoryService : IProviderCategoryService
                     ProviderUid = providerUid,
                     CategoryUid = categoryUid,
                     IsPrimary = categoryUid == primaryCategoryUid,
-                    CreatedOn = DateTime.Now
+                    CreatedOn = DateTime.UtcNow
                 });
             }
         }

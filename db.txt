@@ -8,6 +8,22 @@
 # portal via Helpers/PktTimeHelper.cs (ToPkt/ToPktString extension methods); API responses carry
 # explicit UTC "Z"-suffixed timestamps (UtcDateTimeJsonConverter, registered globally in
 # Program.cs) for the Flutter app to convert client-side. See api.txt for the API-side note.
+#
+# TIMEZONE STANDARD, PART 2 (2026-09-28): the same latent bug existed in app code — every
+# CreatedOn/UpdatedOn/AcceptedOn/CompletedOn/etc. write used DateTime.Now, not DateTime.UtcNow,
+# again only correct today because the server OS clock happens to be UTC. Swept to DateTime.UtcNow
+# everywhere in Services/*.cs so storage no longer silently depends on that clock assumption. Also
+# fixed one real, live bug this caused: Controllers/AdminNotificationsController.cs builds its own
+# JsonResult/JsonSerializerOptions instead of going through the pipeline that has
+# UtcDateTimeJsonConverter registered, so the admin notification bell was serializing a naive
+# DateTime.Now value with no "Z" suffix — the browser's `new Date(value)` then silently
+# misinterpreted it as already-local time instead of UTC, so admins saw wrong times. Fixed by
+# adding AdminNotificationDto.CreatedOnDisplay, a server-formatted PKT string (via
+# PktTimeHelper.ToPktDisplay()) that the bell now renders directly instead of parsing a raw
+# DateTime client-side. Admin-portal "today" displays (Dashboard/Graph headers, sidebar clock,
+# public site header) were also using DateTime.Now directly in Razor views — switched to the new
+# PktTimeHelper.NowPkt property (DateTime.UtcNow.ToPkt()) so they stay correct even if the server
+# clock is ever fixed to be truly UTC-labeled instead of just UTC-valued.
 
 ================================================================================
 CORE TABLES (Live Schema)

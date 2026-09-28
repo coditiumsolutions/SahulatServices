@@ -17,9 +17,17 @@ public interface IAdminNotificationService
         string? cancelReason,
         CancellationToken cancellationToken = default);
 
+    Task NotifyProviderRejectedAsync(
+        int bookingUid,
+        string? providerName,
+        string? serviceTitle,
+        string? rejectReason,
+        CancellationToken cancellationToken = default);
+
     Task NotifyProviderCancellationAsync(
         int bookingUid,
         string? providerName,
+        string? serviceTitle,
         string? cancelReason,
         CancellationToken cancellationToken = default);
 

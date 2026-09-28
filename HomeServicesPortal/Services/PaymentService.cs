@@ -220,7 +220,7 @@ public class PaymentService : IPaymentService
             return (false, "Finance entries already exist for this booking.");
         }
 
-        var now = DateTime.Now;
+        var now = DateTime.UtcNow;
         var entries = new List<PaymentLedger>();
 
         // Settlement split from Final Bill (Commission + Provider Earning).
@@ -532,7 +532,7 @@ public class PaymentService : IPaymentService
         // than the sum of pending payouts if the provider also owes cash-job commission).
         var amountToPay = Math.Max(0, balance);
 
-        var now = DateTime.Now;
+        var now = DateTime.UtcNow;
 
         // Atomic conditional claim (WHERE Status = "Pending") instead of read-then-write, so a
         // double-click/resubmit of "Pay Now" can't both pass the pre-check above and both post a
@@ -684,7 +684,7 @@ public class PaymentService : IPaymentService
             EntryType = model.EntryType.Equals("Debit", StringComparison.OrdinalIgnoreCase) ? "Debit" : "Credit",
             Amount = model.Amount,
             Reason = reason,
-            CreatedOn = DateTime.Now
+            CreatedOn = DateTime.UtcNow
         });
 
         await _db.SaveChangesAsync(cancellationToken);

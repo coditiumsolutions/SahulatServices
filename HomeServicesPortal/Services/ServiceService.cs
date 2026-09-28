@@ -144,7 +144,7 @@ public class ServiceService : IServiceService
             Description = model.Description?.Trim(),
             DisplayOrder = model.DisplayOrder,
             IsActive = model.IsActive,
-            CreatedOn = DateTime.Now
+            CreatedOn = DateTime.UtcNow
         });
 
         await _db.SaveChangesAsync(cancellationToken);

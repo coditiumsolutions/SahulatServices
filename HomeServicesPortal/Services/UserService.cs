@@ -199,7 +199,7 @@ public class UserService : IUserService
                     UserType = userType,
                     IsActive = model.IsActive,
                     IsVerified = model.IsVerified,
-                    CreatedOn = DateTime.Now
+                    CreatedOn = DateTime.UtcNow
                 };
 
                 _db.UsersLogins.Add(user);
@@ -213,7 +213,7 @@ public class UserService : IUserService
                         UserUid = user.Uid,
                         FullName = fullName,
                         Cnic = model.Cnic?.Trim(),
-                        CreatedOn = DateTime.Now
+                        CreatedOn = DateTime.UtcNow
                     });
                 }
                 else if (userType == UserTypeConstants.Provider)
@@ -225,7 +225,7 @@ public class UserService : IUserService
                         FullName = fullName,
                         Cnic = model.Cnic!.Trim(),
                         CategoryUid = model.CategoryUid!.Value,
-                        CreatedOn = DateTime.Now,
+                        CreatedOn = DateTime.UtcNow,
                         IsAvailable = true
                     };
                     _db.Providers.Add(newProvider);
@@ -236,7 +236,7 @@ public class UserService : IUserService
                         ProviderUid = newProvider.Uid,
                         CategoryUid = model.CategoryUid!.Value,
                         IsPrimary = true,
-                        CreatedOn = DateTime.Now
+                        CreatedOn = DateTime.UtcNow
                     });
                 }
                 else
@@ -247,7 +247,7 @@ public class UserService : IUserService
                         FullName = fullName,
                         IsAdmin = isAdmin,
                         Designation = model.Role,
-                        CreatedOn = DateTime.Now
+                        CreatedOn = DateTime.UtcNow
                     });
                 }
 
@@ -375,7 +375,7 @@ public class UserService : IUserService
                     ProviderUid = providerUid,
                     CategoryUid = categoryUid,
                     IsPrimary = true,
-                    CreatedOn = DateTime.Now
+                    CreatedOn = DateTime.UtcNow
                 });
                 await _db.SaveChangesAsync(cancellationToken);
             }

@@ -40,7 +40,7 @@ public class PreferencesService : IPreferencesService
             {
                 ConfigKey = TimeFormatPreference.ConfigKey,
                 ConfigValue = configValue,
-                CreatedOn = DateTime.Now
+                CreatedOn = DateTime.UtcNow
             });
         }
         else

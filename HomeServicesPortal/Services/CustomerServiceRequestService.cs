@@ -108,7 +108,7 @@ public class CustomerServiceRequestService : ICustomerServiceRequestService
             EstimatedBudget = estimatedBudget,
             Status = RequestStatusConstants.Initiated,
             Remarks = request.Remarks?.Trim(),
-            CreatedOn = DateTime.Now
+            CreatedOn = DateTime.UtcNow
         };
 
         _db.CustomerServiceRequests.Add(entity);
@@ -349,7 +349,7 @@ public class CustomerServiceRequestService : ICustomerServiceRequestService
             TimeOnly.TryParse(preferredTime, out time);
         }
 
-        return DateTime.Now >= preferredDate.Value.ToDateTime(time);
+        return DateTime.UtcNow >= preferredDate.Value.ToDateTime(time);
     }
 
     private System.Linq.Expressions.Expression<Func<CustomerServiceRequest, ProgressInput>> MapToProgressInputExpression() =>

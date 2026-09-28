@@ -247,7 +247,7 @@ public class ProviderDocumentService : IProviderDocumentService
             CnicBackImagePath = back.RelativePath,
             PoliceVerificationPath = policeVerificationPath,
             IsVerified = false,
-            CreatedOn = DateTime.Now
+            CreatedOn = DateTime.UtcNow
         };
 
         _db.ProviderDocuments.Add(entity);
@@ -317,7 +317,7 @@ public class ProviderDocumentService : IProviderDocumentService
             ? null
             : model.VerificationRemarks.Trim();
 
-        entity.UpdatedOn = DateTime.Now;
+        entity.UpdatedOn = DateTime.UtcNow;
         await _db.SaveChangesAsync(cancellationToken);
         _logger.LogInformation("Admin updated ProviderDocuments UID {Uid}", entity.Uid);
         return (true, null);
@@ -335,9 +335,9 @@ public class ProviderDocumentService : IProviderDocumentService
         if (provider == null) return (false, "Provider not found.");
 
         provider.IsVerified = true;
-        entity.VerifiedOn = DateTime.Now;
+        entity.VerifiedOn = DateTime.UtcNow;
         entity.VerifiedBy = verifiedByUserId;
-        entity.UpdatedOn = DateTime.Now;
+        entity.UpdatedOn = DateTime.UtcNow;
 
         await _db.SaveChangesAsync(cancellationToken);
         _logger.LogInformation("Admin verified provider {ProviderUid} via documents UID {Uid}", entity.ProviderUid, entity.Uid);

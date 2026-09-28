@@ -309,7 +309,7 @@ public class ServiceRequestService : IServiceRequestService
             EstimatedBudget = model.EstimatedBudget,
             Status = model.Status,
             Remarks = model.Remarks?.Trim(),
-            CreatedOn = DateTime.Now
+            CreatedOn = DateTime.UtcNow
         };
 
         _db.CustomerServiceRequests.Add(entity);

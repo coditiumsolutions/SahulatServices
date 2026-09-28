@@ -178,7 +178,7 @@ public class ProviderLocationService : IProviderLocationService
             ProviderUid = model.ProviderUid,
             Latitude = model.Latitude,
             Longitude = model.Longitude,
-            LastUpdated = DateTime.Now
+            LastUpdated = DateTime.UtcNow
         };
 
         await _locationRepo.AddAsync(entity, cancellationToken);
@@ -206,7 +206,7 @@ public class ProviderLocationService : IProviderLocationService
         entity.ProviderUid = model.ProviderUid;
         entity.Latitude = model.Latitude;
         entity.Longitude = model.Longitude;
-        entity.LastUpdated = DateTime.Now;
+        entity.LastUpdated = DateTime.UtcNow;
 
         await _locationRepo.UpdateAsync(entity, cancellationToken);
         return (true, null);

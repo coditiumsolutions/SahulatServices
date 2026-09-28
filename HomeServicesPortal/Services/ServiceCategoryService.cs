@@ -235,7 +235,7 @@ public class ServiceCategoryService : IServiceCategoryService
             CategoryName = name,
             Description = model.Description?.Trim(),
             IsActive = model.IsActive,
-            CreatedOn = DateTime.Now
+            CreatedOn = DateTime.UtcNow
         });
 
         await _db.SaveChangesAsync(cancellationToken);

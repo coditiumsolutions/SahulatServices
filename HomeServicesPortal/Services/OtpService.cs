@@ -70,7 +70,7 @@ public class OtpService : IOtpService
         }
 
         var otpCode = GenerateSixDigitOtp();
-        var expiry = DateTime.Now.AddMinutes(OtpExpiryMinutes);
+        var expiry = DateTime.UtcNow.AddMinutes(OtpExpiryMinutes);
 
         // SERIALIZABLE so a double-tap on "Send OTP" (plausible on a flaky mobile connection) can't
         // have both calls see no pending row and both Add a new UserOTP row (breaking the "latest
@@ -136,7 +136,7 @@ public class OtpService : IOtpService
                 IsVerified = false,
                 AttemptCount = 0,
                 SentCount = 1,
-                CreatedOn = DateTime.Now
+                CreatedOn = DateTime.UtcNow
             });
         }
 
@@ -170,7 +170,7 @@ public class OtpService : IOtpService
             return (false, "Maximum attempts exceeded.", null, StatusCodes.Status429TooManyRequests);
         }
 
-        if (otpRow.ExpiryTime < DateTime.Now)
+        if (otpRow.ExpiryTime < DateTime.UtcNow)
         {
             return (false, "OTP expired.", null, StatusCodes.Status400BadRequest);
         }
@@ -189,7 +189,7 @@ public class OtpService : IOtpService
         }
 
         otpRow.IsVerified = true;
-        otpRow.VerifiedOn = DateTime.Now;
+        otpRow.VerifiedOn = DateTime.UtcNow;
         otpRow.AttemptCount = 0;
 
         var user = await _db.UsersLogins
@@ -281,7 +281,7 @@ public class OtpService : IOtpService
             }
 
             var otpCode = GenerateSixDigitOtp();
-            var expiry = DateTime.Now.AddMinutes(OtpExpiryMinutes);
+            var expiry = DateTime.UtcNow.AddMinutes(OtpExpiryMinutes);
 
             pending.OTPCode = otpCode;
             pending.ExpiryTime = expiry;

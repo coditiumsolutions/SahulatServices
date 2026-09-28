@@ -153,7 +153,7 @@ public class ProviderDocumentsApiService : IProviderDocumentsApiService
             policeVerificationPath = policeResult.RelativePath;
         }
 
-        var now = DateTime.Now;
+        var now = DateTime.UtcNow;
 
         if (existing == null)
         {
@@ -292,8 +292,8 @@ public class ProviderDocumentsApiService : IProviderDocumentsApiService
         document.VerificationRemarks = string.IsNullOrWhiteSpace(request.VerificationRemarks)
             ? null
             : request.VerificationRemarks.Trim();
-        document.VerifiedOn = DateTime.Now;
-        document.UpdatedOn = DateTime.Now;
+        document.VerifiedOn = DateTime.UtcNow;
+        document.UpdatedOn = DateTime.UtcNow;
 
         await _repository.UpdateAsync(document, cancellationToken);
 

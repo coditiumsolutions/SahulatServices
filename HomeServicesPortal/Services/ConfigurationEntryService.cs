@@ -137,7 +137,7 @@ public class ConfigurationEntryService : IConfigurationEntryService
         {
             ConfigKey = key,
             ConfigValue = value,
-            CreatedOn = DateTime.Now
+            CreatedOn = DateTime.UtcNow
         });
 
         await _db.SaveChangesAsync(cancellationToken);

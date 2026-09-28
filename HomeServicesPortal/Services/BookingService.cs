@@ -318,7 +318,7 @@ public class BookingService : IBookingService
             CommissionAmount = model.CommissionAmount ?? 0,
             ProviderEarning = model.ProviderEarning ?? 0,
             Status = model.Status.Trim(),
-            CreatedOn = DateTime.Now
+            CreatedOn = DateTime.UtcNow
         };
 
         _db.ServiceBookings.Add(booking);
@@ -419,14 +419,27 @@ public class BookingService : IBookingService
 
         if (isPostAcceptanceCancel)
         {
-            await PublishProviderCancellationNotificationAsync(entity.Uid, entity.ProviderUid, entity.CancelReason, cancellationToken);
-
             if (requestNeedsReassignment)
             {
+                // Provider-initiated cancel: one merged notification covers both "who cancelled
+                // and why" and "this needs a new provider" — see PublishRequestNeedsReassignmentNotificationAsync's
+                // doc comment for why the generic provider-cancelled notification is skipped here.
+                var providerName = await _db.Providers
+                    .AsNoTracking()
+                    .Where(p => p.Uid == entity.ProviderUid)
+                    .Select(p => p.FullName)
+                    .FirstOrDefaultAsync(cancellationToken);
+                var who = string.IsNullOrWhiteSpace(providerName) ? "the provider" : providerName.Trim();
+                var reasonSuffix = string.IsNullOrWhiteSpace(entity.CancelReason) ? string.Empty : $" (reason: {entity.CancelReason.Trim()})";
+
                 await PublishRequestNeedsReassignmentNotificationAsync(
                     entity.RequestUid,
-                    $"provider cancelled accepted booking #{entity.Uid}",
+                    $"{who} cancelled after accepting{reasonSuffix}",
                     cancellationToken);
+            }
+            else
+            {
+                await PublishStaffCancelledAcceptedBookingNotificationAsync(entity.Uid, entity.ProviderUid, entity.CancelReason, cancellationToken);
             }
         }
 
@@ -460,14 +473,53 @@ public class BookingService : IBookingService
                 Quantity = item.Quantity,
                 UnitPrice = item.UnitPrice,
                 Amount = item.Amount,
-                CreatedOn = DateTime.Now
+                CreatedOn = DateTime.UtcNow
             });
         }
 
         await _db.SaveChangesAsync(cancellationToken);
     }
 
-    private async Task PublishProviderCancellationNotificationAsync(
+    /// <summary>
+    /// Fires for a routine reject of a still-Pending assignment — calm wording, no urgency
+    /// implied (another provider may still be pending, or staff will see it via the separate
+    /// RequestNeedsReassignment notification if this was the last one). Never fired for a
+    /// post-acceptance cancel — see PublishAcceptedBookingCancelledNotificationAsync below,
+    /// which merges into RequestNeedsReassignment instead of duplicating this one.
+    /// </summary>
+    private async Task PublishProviderRejectedNotificationAsync(
+        int bookingUid,
+        int providerUid,
+        string? rejectReason,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            await using var scope = _scopeFactory.CreateAsyncScope();
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var notifications = scope.ServiceProvider.GetRequiredService<IAdminNotificationService>();
+
+            var (providerName, serviceTitle) = await LoadProviderAndRequestTitleAsync(db, bookingUid, providerUid, cancellationToken);
+
+            await notifications.NotifyProviderRejectedAsync(
+                bookingUid,
+                providerName,
+                serviceTitle,
+                rejectReason,
+                cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to publish admin reject notification for booking {BookingUid}.", bookingUid);
+        }
+    }
+
+    /// <summary>
+    /// Fires for a staff-initiated cancel of an already-Accepted booking (admin portal, not the
+    /// provider app) — the request stays terminally Cancelled in this case, so nothing else
+    /// notifies admin about it; this is the only notification for that action.
+    /// </summary>
+    private async Task PublishStaffCancelledAcceptedBookingNotificationAsync(
         int bookingUid,
         int providerUid,
         string? cancelReason,
@@ -479,15 +531,12 @@ public class BookingService : IBookingService
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             var notifications = scope.ServiceProvider.GetRequiredService<IAdminNotificationService>();
 
-            var providerName = await db.Providers
-                .AsNoTracking()
-                .Where(p => p.Uid == providerUid)
-                .Select(p => p.FullName)
-                .FirstOrDefaultAsync(cancellationToken);
+            var (providerName, serviceTitle) = await LoadProviderAndRequestTitleAsync(db, bookingUid, providerUid, cancellationToken);
 
             await notifications.NotifyProviderCancellationAsync(
                 bookingUid,
                 providerName,
+                serviceTitle,
                 cancelReason,
                 cancellationToken);
         }
@@ -497,6 +546,34 @@ public class BookingService : IBookingService
         }
     }
 
+    private static async Task<(string? ProviderName, string? ServiceTitle)> LoadProviderAndRequestTitleAsync(
+        AppDbContext db,
+        int bookingUid,
+        int providerUid,
+        CancellationToken cancellationToken)
+    {
+        var providerName = await db.Providers
+            .AsNoTracking()
+            .Where(p => p.Uid == providerUid)
+            .Select(p => p.FullName)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        var serviceTitle = await db.ServiceBookings
+            .AsNoTracking()
+            .Where(b => b.Uid == bookingUid)
+            .Select(b => b.Request.ServiceTitle)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        return (providerName, serviceTitle);
+    }
+
+    /// <summary>
+    /// Fires when a request needs staff to pick a new provider — either every fanned-out
+    /// provider rejected, or a provider cancelled a job they'd already accepted (see callers).
+    /// For the accepted-cancel case this is the ONLY admin notification for the event — the
+    /// generic provider-cancelled notification is deliberately not also fired, to avoid telling
+    /// staff about the same event twice across two different bells.
+    /// </summary>
     private async Task PublishRequestNeedsReassignmentNotificationAsync(
         int requestUid,
         string reason,
@@ -881,7 +958,7 @@ public class BookingService : IBookingService
                 CommissionAmount = model.CommissionAmount,
                 ProviderEarning = model.ProviderEarning,
                 Status = "Pending",
-                CreatedOn = DateTime.Now
+                CreatedOn = DateTime.UtcNow
             });
         }
 
@@ -929,7 +1006,7 @@ public class BookingService : IBookingService
             }
 
             var passcode = Random.Shared.Next(1000, 10000).ToString();
-            var acceptedOn = DateTime.Now;
+            var acceptedOn = DateTime.UtcNow;
 
             // Atomic conditional claim: only succeeds if still Pending at the DB level,
             // so two concurrent accepts on sibling bookings can't both win (ExecuteUpdateAsync
@@ -993,7 +1070,7 @@ public class BookingService : IBookingService
                     .ExecuteUpdateAsync(s => s.SetProperty(r => r.Status, RequestStatusConstants.Initiated), cancellationToken);
             }
 
-            await PublishProviderCancellationNotificationAsync(bookingUid, providerUid, reason!.Trim(), cancellationToken);
+            await PublishProviderRejectedNotificationAsync(bookingUid, providerUid, reason!.Trim(), cancellationToken);
 
             if (!stillPending)
             {
@@ -1103,7 +1180,7 @@ public class BookingService : IBookingService
         }
 
         booking.Status = "Completed";
-        booking.CompletedOn = DateTime.Now;
+        booking.CompletedOn = DateTime.UtcNow;
 
         await _db.SaveChangesAsync(cancellationToken);
 

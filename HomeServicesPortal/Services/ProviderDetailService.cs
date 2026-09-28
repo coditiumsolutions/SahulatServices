@@ -137,7 +137,7 @@ public class ProviderDetailService : IProviderDetailService
                 ProviderUid = providerUid,
                 CategoryUid = categoryUid,
                 IsPrimary = true,
-                CreatedOn = DateTime.Now
+                CreatedOn = DateTime.UtcNow
             });
             await _db.SaveChangesAsync(cancellationToken);
         }

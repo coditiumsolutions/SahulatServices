@@ -308,7 +308,7 @@ public class ServiceBookingApiService : IServiceBookingApiService
                 Quantity = quantity,
                 UnitPrice = item.UnitPrice,
                 Amount = Math.Round(quantity * item.UnitPrice, 2),
-                CreatedOn = DateTime.Now
+                CreatedOn = DateTime.UtcNow
             });
         }
 

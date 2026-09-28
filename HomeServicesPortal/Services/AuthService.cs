@@ -74,7 +74,7 @@ public class AuthService : IAuthService
                         FullName = request.FullName.Trim(),
                         Cnic = string.IsNullOrWhiteSpace(request.CNIC) ? null : request.CNIC.Trim(),
                         Gender = request.Gender?.Trim(),
-                        CreatedOn = DateTime.Now
+                        CreatedOn = DateTime.UtcNow
                     };
                     await _userRepository.CreateClientAsync(client, cancellationToken);
                 }
@@ -102,7 +102,7 @@ public class AuthService : IAuthService
                 UserType = UserTypeConstants.Client,
                 IsActive = true,
                 IsVerified = false,
-                CreatedOn = DateTime.Now
+                CreatedOn = DateTime.UtcNow
             };
 
             await _userRepository.CreateUserAsync(user, cancellationToken);
@@ -113,7 +113,7 @@ public class AuthService : IAuthService
                 FullName = request.FullName.Trim(),
                 Cnic = string.IsNullOrWhiteSpace(request.CNIC) ? null : request.CNIC.Trim(),
                 Gender = request.Gender?.Trim(),
-                CreatedOn = DateTime.Now
+                CreatedOn = DateTime.UtcNow
             };
 
             await _userRepository.CreateClientAsync(client, cancellationToken);
@@ -249,7 +249,7 @@ public class AuthService : IAuthService
                 TotalReviews = 0,
                 TotalJobsCompleted = 0,
                 IsAvailable = true,
-                CreatedOn = DateTime.Now
+                CreatedOn = DateTime.UtcNow
             };
 
             await _userRepository.CreateProviderAsync(provider, cancellationToken);
@@ -269,7 +269,7 @@ public class AuthService : IAuthService
                     ProviderUid = provider.Uid,
                     CategoryUid = catUid,
                     IsPrimary = catUid == categoryId!.Value,
-                    CreatedOn = DateTime.Now
+                    CreatedOn = DateTime.UtcNow
                 });
             }
             await _db.SaveChangesAsync(cancellationToken);
@@ -356,7 +356,7 @@ public class AuthService : IAuthService
                 UserType = UserTypeConstants.Staff,
                 IsActive = true,
                 IsVerified = true, // Staff accounts are portal-managed; OTP not required
-                CreatedOn = DateTime.Now
+                CreatedOn = DateTime.UtcNow
             };
 
             await _userRepository.CreateUserAsync(user, cancellationToken);
@@ -368,7 +368,7 @@ public class AuthService : IAuthService
                 Designation = request.Designation?.Trim(),
                 Department = request.Department?.Trim(),
                 IsAdmin = request.IsAdmin,
-                CreatedOn = DateTime.Now
+                CreatedOn = DateTime.UtcNow
             };
 
             await _userRepository.CreateStaffAsync(staff, cancellationToken);
@@ -416,7 +416,7 @@ public class AuthService : IAuthService
             return (false, "User profile not found.", null, StatusCodes.Status404NotFound);
         }
 
-        await _userRepository.UpdateLastLoginAsync(user.Uid, DateTime.Now, cancellationToken);
+        await _userRepository.UpdateLastLoginAsync(user.Uid, DateTime.UtcNow, cancellationToken);
 
         return (true, null, new LoginResponse
         {
@@ -598,7 +598,7 @@ public class AuthService : IAuthService
             return (false, "Maximum attempts exceeded.", null, StatusCodes.Status429TooManyRequests);
         }
 
-        if (otpRow.ExpiryTime < DateTime.Now)
+        if (otpRow.ExpiryTime < DateTime.UtcNow)
         {
             return (false, "OTP expired.", null, StatusCodes.Status400BadRequest);
         }
@@ -623,7 +623,7 @@ public class AuthService : IAuthService
         }
 
         otpRow.IsVerified = true;
-        otpRow.VerifiedOn = DateTime.Now;
+        otpRow.VerifiedOn = DateTime.UtcNow;
         otpRow.AttemptCount = 0;
 
         // Invalidate any other pending PasswordReset OTPs for this mobile number so an old

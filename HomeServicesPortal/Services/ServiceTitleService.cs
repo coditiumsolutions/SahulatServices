@@ -250,7 +250,7 @@ public class ServiceTitleService : IServiceTitleService
             BasePrice = model.BasePrice,
             DisplayOrder = model.DisplayOrder,
             IsActive = model.IsActive,
-            CreatedOn = DateTime.Now
+            CreatedOn = DateTime.UtcNow
         });
 
         await _db.SaveChangesAsync(cancellationToken);

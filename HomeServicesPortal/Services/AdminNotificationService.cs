@@ -1,5 +1,6 @@
 using HomeServicesPortal.Data;
 using HomeServicesPortal.Entities;
+using HomeServicesPortal.Helpers;
 using HomeServicesPortal.Hubs;
 using HomeServicesPortal.Models.Api;
 using Microsoft.AspNetCore.SignalR;
@@ -70,19 +71,42 @@ public class AdminNotificationService : IAdminNotificationService
             cancellationToken);
     }
 
+    public async Task NotifyProviderRejectedAsync(
+        int bookingUid,
+        string? providerName,
+        string? serviceTitle,
+        string? rejectReason,
+        CancellationToken cancellationToken = default)
+    {
+        var who = string.IsNullOrWhiteSpace(providerName) ? "A provider" : providerName.Trim();
+        var jobRef = string.IsNullOrWhiteSpace(serviceTitle) ? $"job #{bookingUid}" : $"'{serviceTitle.Trim()}' (#{bookingUid})";
+        var reasonSuffix = string.IsNullOrWhiteSpace(rejectReason) ? string.Empty : $" Reason: {rejectReason.Trim()}.";
+        var message = $"{who} declined {jobRef}.{reasonSuffix}";
+
+        await CreateAndPublishAsync(
+            ProviderBookingCancelled,
+            "Provider declined a job",
+            message,
+            $"/Admin/Bookings/Details/{bookingUid}",
+            bookingUid,
+            cancellationToken);
+    }
+
     public async Task NotifyProviderCancellationAsync(
         int bookingUid,
         string? providerName,
+        string? serviceTitle,
         string? cancelReason,
         CancellationToken cancellationToken = default)
     {
         var who = string.IsNullOrWhiteSpace(providerName) ? "A provider" : providerName.Trim();
+        var jobRef = string.IsNullOrWhiteSpace(serviceTitle) ? $"job #{bookingUid}" : $"'{serviceTitle.Trim()}' (#{bookingUid})";
         var reasonSuffix = string.IsNullOrWhiteSpace(cancelReason) ? string.Empty : $" Reason: {cancelReason.Trim()}.";
-        var message = $"{who} cancelled booking #{bookingUid}.{reasonSuffix}";
+        var message = $"{who} cancelled an accepted job — {jobRef}.{reasonSuffix}";
 
         await CreateAndPublishAsync(
             ProviderBookingCancelled,
-            "Provider cancelled booking",
+            "Provider cancelled an accepted job",
             message,
             $"/Admin/Bookings/Details/{bookingUid}",
             bookingUid,
@@ -96,11 +120,11 @@ public class AdminNotificationService : IAdminNotificationService
         CancellationToken cancellationToken = default)
     {
         var safeTitle = (serviceTitle ?? string.Empty).Trim();
-        var message = $"'{safeTitle}' (#{requestUid}) needs reassignment — {reason}";
+        var message = $"'{safeTitle}' (#{requestUid}) needs a new provider — {reason}.";
 
         await CreateAndPublishAsync(
             RequestNeedsReassignment,
-            "Request needs reassignment",
+            "Request needs a new provider",
             message,
             $"/Admin/ServiceRequests/Details/{requestUid}",
             requestUid,
@@ -128,7 +152,7 @@ public class AdminNotificationService : IAdminNotificationService
             LinkUrl = linkUrl,
             RelatedEntityUid = relatedEntityUid,
             IsRead = false,
-            CreatedOn = DateTime.Now
+            CreatedOn = DateTime.UtcNow
         };
 
         _db.AdminNotifications.Add(entity);
@@ -175,22 +199,13 @@ public class AdminNotificationService : IAdminNotificationService
 
         var unreadCount = await query.CountAsync(n => !n.IsRead, cancellationToken);
 
-        var items = await query
+        var rows = await query
             .OrderByDescending(n => n.CreatedOn)
             .ThenByDescending(n => n.Uid)
             .Take(take)
-            .Select(n => new AdminNotificationDto
-            {
-                Uid = n.Uid,
-                Type = n.Type,
-                Title = n.Title,
-                Message = n.Message,
-                LinkUrl = n.LinkUrl,
-                RelatedEntityUid = n.RelatedEntityUid,
-                IsRead = n.IsRead,
-                CreatedOn = n.CreatedOn
-            })
             .ToListAsync(cancellationToken);
+
+        var items = rows.Select(Map).ToList();
 
         return new AdminNotificationFeedDto
         {
@@ -249,6 +264,7 @@ public class AdminNotificationService : IAdminNotificationService
         LinkUrl = n.LinkUrl,
         RelatedEntityUid = n.RelatedEntityUid,
         IsRead = n.IsRead,
-        CreatedOn = n.CreatedOn
+        CreatedOn = n.CreatedOn,
+        CreatedOnDisplay = n.CreatedOn.ToPktDisplay()
     };
 }

@@ -681,7 +681,7 @@
                         <li>
                             <span class="hs-utility-link d-none d-xl-inline-flex">
                                 <i class="fa-regular fa-calendar"></i>
-                                @DateTime.Now.ToString("dddd, dd-MM-yyyy")
+                                @PktTimeHelper.NowPkt.ToString("dddd, dd-MM-yyyy")
                             </span>
                         </li>
                         <li>
@@ -1009,14 +1009,6 @@
                 return input ? input.value : '';
             }
 
-            function formatTime(value) {
-                try {
-                    return new Date(value).toLocaleString();
-                } catch {
-                    return value;
-                }
-            }
-
             function escapeHtml(value) {
                 return String(value ?? '')
                     .replace(/&/g, '&amp;')
@@ -1075,12 +1067,12 @@
                         const href = escapeHtml(n.linkUrl || n.LinkUrl || '#');
                         const title = escapeHtml(n.title || n.Title || 'Notification');
                         const message = escapeHtml(n.message || n.Message || '');
-                        const created = n.createdOn || n.CreatedOn;
+                        const createdDisplay = n.createdOnDisplay || n.CreatedOnDisplay || '';
                         const isRead = n.isRead === true || n.IsRead === true;
                         return '<a class="hs-notify-item' + (isRead ? '' : ' unread') + '" href="' + href + '">' +
                             '<div class="hs-notify-item-title">' + title + '</div>' +
                             '<div class="hs-notify-item-msg">' + message + '</div>' +
-                            '<div class="hs-notify-item-time">' + escapeHtml(formatTime(created)) + '</div>' +
+                            '<div class="hs-notify-item-time">' + escapeHtml(createdDisplay) + '</div>' +
                             '</a>';
                     }).join('');
                 }

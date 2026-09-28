@@ -175,7 +175,7 @@ public class CommissionRuleService : ICommissionRuleService
             EffectiveFrom = model.EffectiveFrom.Date,
             EffectiveTo = model.EffectiveTo?.Date,
             IsActive = model.IsActive,
-            CreatedOn = DateTime.Now
+            CreatedOn = DateTime.UtcNow
         });
 
         await _db.SaveChangesAsync(cancellationToken);
