@@ -2,6 +2,13 @@
 @{
     var clientUid = (int)(ViewData["ClientUid"] ?? 0);
     var canManage = ViewData["CanManage"] as bool? ?? false;
+
+    // (0,0) is what every currently-published app build sends when no pin was ever set —
+    // a real point in the Gulf of Guinea, not a valid client location. Same convention as
+    // ClientAddressApiDto.HasLocation (ClientAddressService.cs).
+    bool HasValidLocation(HomeServicesPortal.Models.ViewModels.CustomerAddressItemVm item) =>
+        item.Latitude.HasValue && item.Longitude.HasValue
+        && !(item.Latitude == 0 && item.Longitude == 0);
 }
 
 <style>
@@ -66,6 +73,17 @@
                                 @(item.Latitude?.ToString("0.#######") ?? "—")
                                 /
                                 @(item.Longitude?.ToString("0.#######") ?? "—")
+                                @if (HasValidLocation(item))
+                                {
+                                    <button type="button" class="btn btn-outline-primary btn-sm ms-2 hs-address-map-view"
+                                            data-bs-toggle="modal" data-bs-target="#hsAddressMapModal"
+                                            data-lat="@item.Latitude!.Value.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+                                            data-lng="@item.Longitude!.Value.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+                                            data-title="@item.AddressTitle"
+                                            title="View pin location on map">
+                                        <i class="fa-solid fa-map-location-dot"></i> Map View
+                                    </button>
+                                }
                             </td>
                             @if (canManage)
                             {
@@ -85,3 +103,67 @@
         </div>
     </div>
 </div>
+
+@if (Model.Any(HasValidLocation))
+{
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+
+    <div class="modal fade" id="hsAddressMapModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="hsAddressMapModalTitle">Address Location</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="hsAddressMapView" style="height: 380px; border-radius: 8px;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script>
+        (function () {
+            var modalEl = document.getElementById('hsAddressMapModal');
+            if (!modalEl) return;
+
+            var map = null;
+            var marker = null;
+
+            modalEl.addEventListener('show.bs.modal', function (e) {
+                var btn = e.relatedTarget;
+                if (!btn) return;
+
+                var lat = parseFloat(btn.getAttribute('data-lat'));
+                var lng = parseFloat(btn.getAttribute('data-lng'));
+                var title = btn.getAttribute('data-title') || 'Address Location';
+
+                document.getElementById('hsAddressMapModalTitle').textContent = title;
+
+                // Leaflet can't size a map correctly while its container is display:none
+                // (still true mid-transition), so (re)create it once the modal has fully
+                // shown rather than on show.bs.modal.
+                modalEl.addEventListener('shown.bs.modal', function onShown() {
+                    modalEl.removeEventListener('shown.bs.modal', onShown);
+
+                    if (!map) {
+                        map = L.map('hsAddressMapView');
+                        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                            attribution: '&copy; OpenStreetMap contributors',
+                            maxZoom: 19
+                        }).addTo(map);
+                    }
+
+                    map.setView([lat, lng], 16);
+                    if (marker) {
+                        marker.setLatLng([lat, lng]);
+                    } else {
+                        marker = L.marker([lat, lng]).addTo(map);
+                    }
+                    map.invalidateSize();
+                });
+            });
+        })();
+    </script>
+}

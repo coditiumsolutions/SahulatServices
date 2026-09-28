@@ -1036,6 +1036,7 @@
                 let unreadCount = 0;
                 let open = false;
                 let loading = false;
+                let instance;
 
                 function matchesType(notification) {
                     if (!typeSet) return true;
@@ -1151,6 +1152,7 @@
                 }
 
                 async function openPanel() {
+                    closeOtherNotifyPanels(instance);
                     open = true;
                     panel.classList.remove('d-none');
                     toggle.setAttribute('aria-expanded', 'true');
@@ -1187,7 +1189,8 @@
                 loadFeed();
                 setInterval(pollUnreadCount, POLL_MS);
 
-                return {
+                instance = {
+                    close: closePanel,
                     matchesType: matchesType,
                     onReceive: function (notification, unreadCountFromPayload) {
                         if (typeof unreadCountFromPayload === 'number') {
@@ -1221,6 +1224,16 @@
                         render();
                     }
                 };
+
+                return instance;
+            }
+
+            // Closes every notify panel's dropdown except the one being opened, so opening one
+            // bell always dismisses any other bell already open instead of stacking on top of it.
+            function closeOtherNotifyPanels(except) {
+                icons.forEach(function (icon) {
+                    if (icon && icon !== except && icon.close) icon.close();
+                });
             }
 
             const icons = [
