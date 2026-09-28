@@ -261,7 +261,7 @@ public class ServiceRequestService : IServiceRequestService
 
     public async Task<ServiceRequestDeleteVm?> GetForDeleteAsync(int id, CancellationToken cancellationToken = default)
     {
-        return await _db.CustomerServiceRequests
+        var vm = await _db.CustomerServiceRequests
             .AsNoTracking()
             .Where(r => r.Uid == id)
             .Select(r => new ServiceRequestDeleteVm
@@ -275,6 +275,27 @@ public class ServiceRequestService : IServiceRequestService
                 RequestDate = r.CreatedOn
             })
             .FirstOrDefaultAsync(cancellationToken);
+
+        if (vm == null)
+        {
+            return null;
+        }
+
+        var bookingIds = await _db.ServiceBookings
+            .AsNoTracking()
+            .Where(b => b.RequestUid == id)
+            .Select(b => b.Uid)
+            .ToListAsync(cancellationToken);
+
+        vm.BookingCount = bookingIds.Count;
+        if (bookingIds.Count > 0)
+        {
+            vm.PaymentLedgerCount = await _db.PaymentLedgers
+                .AsNoTracking()
+                .CountAsync(p => p.BookingUid != null && bookingIds.Contains(p.BookingUid.Value), cancellationToken);
+        }
+
+        return vm;
     }
 
     public async Task<(bool Success, string? Error)> CreateAsync(
@@ -392,9 +413,56 @@ public class ServiceRequestService : IServiceRequestService
             return (false, "Service request not found.");
         }
 
-        _db.CustomerServiceRequests.Remove(entity);
-        await _db.SaveChangesAsync(cancellationToken);
-        return (true, null);
+        try
+        {
+            var bookingIds = await _db.ServiceBookings
+                .Where(b => b.RequestUid == id)
+                .Select(b => b.Uid)
+                .ToListAsync(cancellationToken);
+
+            if (bookingIds.Count > 0)
+            {
+                var ledgerRows = await _db.PaymentLedgers
+                    .Where(p => p.BookingUid != null && bookingIds.Contains(p.BookingUid.Value))
+                    .ToListAsync(cancellationToken);
+                if (ledgerRows.Count > 0)
+                {
+                    _db.PaymentLedgers.RemoveRange(ledgerRows);
+                }
+
+                // BookingMaterialItems cascade-delete with ServiceBookings.
+                var bookings = await _db.ServiceBookings
+                    .Where(b => b.RequestUid == id)
+                    .ToListAsync(cancellationToken);
+                _db.ServiceBookings.RemoveRange(bookings);
+            }
+
+            var detailsPath = $"/Admin/ServiceRequests/Details/{id}";
+            var notifications = await _db.AdminNotifications
+                .Where(n =>
+                    (n.RelatedEntityUid == id && (
+                        n.Type == AdminNotificationService.ServiceRequestCreated
+                        || n.Type == AdminNotificationService.CustomerRequestCancelled
+                        || n.Type == AdminNotificationService.RequestNeedsReassignment))
+                    || (bookingIds.Count > 0
+                        && n.RelatedEntityUid != null
+                        && bookingIds.Contains(n.RelatedEntityUid.Value)
+                        && n.Type == AdminNotificationService.ProviderBookingCancelled)
+                    || (n.LinkUrl != null && n.LinkUrl == detailsPath))
+                .ToListAsync(cancellationToken);
+            if (notifications.Count > 0)
+            {
+                _db.AdminNotifications.RemoveRange(notifications);
+            }
+
+            _db.CustomerServiceRequests.Remove(entity);
+            await _db.SaveChangesAsync(cancellationToken);
+            return (true, null);
+        }
+        catch (DbUpdateException)
+        {
+            return (false, "Cannot delete this service request because related records still reference it.");
+        }
     }
 
     public async Task<ServiceRequestFormVm> PopulateFormAsync(

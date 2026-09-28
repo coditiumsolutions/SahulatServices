@@ -53,14 +53,13 @@ public class ServiceProviderFormVm : IValidatableObject
     [Display(Name = "City")]
     public string? City { get; set; }
 
-    [Required(ErrorMessage = "Category is required.")]
+    /// <summary>Primary category (ProviderCategories.PrimaryCategory = 1). Must be one of CategoryUids.</summary>
+    [Range(1, int.MaxValue, ErrorMessage = "Primary Category is required.")]
     [Display(Name = "Primary Category")]
     public int CategoryUid { get; set; }
 
-    /// <summary>
-    /// All categories this provider offers (checkboxes). Must include CategoryUid. When empty
-    /// on postback (e.g. legacy form), falls back to a single-item list containing CategoryUid.
-    /// </summary>
+    /// <summary>All categories this provider offers. At least one is required.</summary>
+    [MinLength(1, ErrorMessage = "Select at least one category.")]
     [Display(Name = "Categories")]
     public List<int> CategoryUids { get; set; } = new();
 

@@ -164,7 +164,7 @@ public class AppDbContext : DbContext
             entity.Property(e => e.Uid).HasColumnName("UID");
             entity.Property(e => e.ProviderUid).HasColumnName("ProviderUID");
             entity.Property(e => e.CategoryUid).HasColumnName("CategoryUID");
-            entity.Property(e => e.IsPrimary).HasDefaultValue(false);
+            entity.Property(e => e.PrimaryCategory).HasDefaultValue(0);
             entity.Property(e => e.CreatedOn)
                 .HasColumnType("datetime")
                 .HasDefaultValueSql("(getdate())");

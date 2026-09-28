@@ -21,6 +21,21 @@
         font-size: 0.72rem;
         margin-top: 0.2rem;
     }
+    .sp-form-grid .sp-category-toggle {
+        display: flex;
+        align-items: center;
+        overflow: hidden;
+    }
+    .sp-form-grid .sp-category-toggle::after {
+        margin-left: auto;
+    }
+    .sp-form-grid .sp-category-menu {
+        max-height: 240px;
+        overflow-y: auto;
+    }
+    .sp-form-grid .sp-category-menu .dropdown-item {
+        cursor: pointer;
+    }
 </style>
 
 <div class="sp-form-grid">
@@ -37,59 +52,52 @@
             </div>
         </div>
         <div class="col-md-6">
-            <div class="row g-2">
+            <div class="row g-2 align-items-center">
                 <div class="col-sm-4">
-                    <label class="form-label">Categories</label>
-                    <div class="form-text">Check all that apply; pick one as primary.</div>
+                    <label asp-for="CategoryUids" class="form-label"></label>
                 </div>
-                <div class="col-sm-8" id="spCategoryChecklist">
-                    @foreach (var cat in Model.Categories)
-                    {
-                        var catUid = int.Parse(cat.Value!);
-                        var checkedAttr = Model.CategoryUids.Contains(catUid) ? "checked" : null;
-                        var primaryAttr = catUid == Model.CategoryUid ? "checked" : null;
-                        <div class="d-flex align-items-center gap-2 mb-1 sp-category-row">
-                            <input type="checkbox" class="form-check-input sp-category-check" name="CategoryUids" value="@catUid" checked="@(checkedAttr != null)" />
-                            <label class="form-check-label small flex-grow-1 mb-0">@cat.Text</label>
-                            <label class="small text-muted mb-0 d-flex align-items-center gap-1">
-                                <input type="radio" class="form-check-input sp-category-primary" name="CategoryUid" value="@catUid" checked="@(primaryAttr != null)" /> Primary
-                            </label>
-                        </div>
-                    }
-                    <span asp-validation-for="CategoryUid" class="text-danger small"></span>
+                <div class="col-sm-8">
+                    <div class="dropdown" id="spCategoryDropdown">
+                        <button class="form-select form-select-sm text-start sp-category-toggle" type="button"
+                                data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false"
+                                aria-haspopup="listbox">
+                            <span class="sp-category-summary text-truncate">-- Select Categories --</span>
+                        </button>
+                        <ul class="dropdown-menu w-100 py-1 sp-category-menu" role="listbox" aria-multiselectable="true">
+                            @foreach (var cat in Model.Categories)
+                            {
+                                var catUid = int.Parse(cat.Value!);
+                                var isChecked = Model.CategoryUids.Contains(catUid);
+                                <li>
+                                    <label class="dropdown-item d-flex align-items-center gap-2 py-1">
+                                        <input type="checkbox" class="form-check-input mt-0 sp-category-check"
+                                               name="CategoryUids" value="@catUid" @(isChecked ? "checked" : null) />
+                                        <span class="small">@cat.Text</span>
+                                    </label>
+                                </li>
+                            }
+                        </ul>
+                    </div>
                     <span asp-validation-for="CategoryUids" class="text-danger small"></span>
                 </div>
             </div>
         </div>
     </div>
 
-    <script>
-        (function () {
-            var list = document.getElementById('spCategoryChecklist');
-            if (!list) return;
-            list.addEventListener('change', function (e) {
-                if (!e.target.classList.contains('sp-category-check')) return;
-                var row = e.target.closest('.sp-category-row');
-                var primaryRadio = row.querySelector('.sp-category-primary');
-                if (!e.target.checked && primaryRadio.checked) {
-                    // Unchecking the current primary — fall back to the first still-checked category.
-                    var firstChecked = list.querySelector('.sp-category-check:checked');
-                    if (firstChecked) {
-                        firstChecked.closest('.sp-category-row').querySelector('.sp-category-primary').checked = true;
-                    }
-                }
-                if (e.target.checked) {
-                    // Auto-select as primary if nothing else is currently primary.
-                    var anyPrimary = list.querySelector('.sp-category-primary:checked');
-                    if (!anyPrimary) {
-                        primaryRadio.checked = true;
-                    }
-                }
-            });
-        })();
-    </script>
-
     <div class="row g-2 mb-2">
+        <div class="col-md-6">
+            <div class="row g-2 align-items-center">
+                <div class="col-sm-4">
+                    <label asp-for="CategoryUid" class="form-label"></label>
+                </div>
+                <div class="col-sm-8">
+                    <select asp-for="CategoryUid" class="form-select form-select-sm" id="spPrimaryCategory" asp-items="Model.Categories">
+                        <option value="">-- Select Primary Category --</option>
+                    </select>
+                    <span asp-validation-for="CategoryUid" class="text-danger small"></span>
+                </div>
+            </div>
+        </div>
         <div class="col-md-6">
             <div class="row g-2 align-items-center">
                 <div class="col-sm-4">
@@ -101,6 +109,59 @@
                 </div>
             </div>
         </div>
+    </div>
+
+    <script>
+        (function () {
+            var root = document.getElementById('spCategoryDropdown');
+            var primary = document.getElementById('spPrimaryCategory');
+            if (!root || !primary) return;
+            var summary = root.querySelector('.sp-category-summary');
+            var placeholder = '-- Select Categories --';
+
+            function selectedChecks() {
+                return Array.prototype.slice.call(root.querySelectorAll('.sp-category-check:checked'));
+            }
+
+            function ensurePrimaryChecked() {
+                if (!primary.value) return;
+                var match = root.querySelector('.sp-category-check[value="' + primary.value + '"]');
+                if (match && !match.checked) {
+                    match.checked = true;
+                }
+            }
+
+            function refreshSummary() {
+                var checks = selectedChecks();
+                if (checks.length === 0) {
+                    summary.textContent = placeholder;
+                    summary.classList.add('text-muted');
+                    return;
+                }
+                summary.classList.remove('text-muted');
+                var labels = checks.map(function (c) {
+                    return c.closest('label').querySelector('span').textContent.trim();
+                });
+                summary.textContent = labels.length <= 2 ? labels.join(', ') : (labels.length + ' categories selected');
+            }
+
+            root.addEventListener('change', function (e) {
+                if (!e.target.classList.contains('sp-category-check')) return;
+                if (!e.target.checked && primary.value === e.target.value) {
+                    primary.value = '';
+                }
+                refreshSummary();
+            });
+            primary.addEventListener('change', function () {
+                ensurePrimaryChecked();
+                refreshSummary();
+            });
+            ensurePrimaryChecked();
+            refreshSummary();
+        })();
+    </script>
+
+    <div class="row g-2 mb-2">
         <div class="col-md-6">
             <div class="row g-2 align-items-center">
                 <div class="col-sm-4">
@@ -112,9 +173,6 @@
                 </div>
             </div>
         </div>
-    </div>
-
-    <div class="row g-2 mb-2">
         <div class="col-md-6">
             <div class="row g-2 align-items-center">
                 <div class="col-sm-4">
@@ -128,6 +186,9 @@
                 </div>
             </div>
         </div>
+    </div>
+
+    <div class="row g-2 mb-2">
         <div class="col-md-6">
             <div class="row g-2 align-items-center">
                 <div class="col-sm-4">
@@ -139,9 +200,6 @@
                 </div>
             </div>
         </div>
-    </div>
-
-    <div class="row g-2 mb-2">
         <div class="col-md-6">
             <div class="row g-2 align-items-center">
                 <div class="col-sm-4">
@@ -152,8 +210,6 @@
                     <span asp-validation-for="Rating" class="text-danger small"></span>
                 </div>
             </div>
-        </div>
-        <div class="col-md-6">
         </div>
     </div>
 

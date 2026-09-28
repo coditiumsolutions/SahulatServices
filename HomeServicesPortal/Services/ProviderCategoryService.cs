@@ -19,7 +19,7 @@ public class ProviderCategoryService : IProviderCategoryService
         return await _db.ProviderCategories
             .AsNoTracking()
             .Where(pc => pc.ProviderUid == providerUid)
-            .OrderByDescending(pc => pc.IsPrimary)
+            .OrderByDescending(pc => pc.PrimaryCategory)
             .ThenBy(pc => pc.CategoryUid)
             .Select(pc => pc.CategoryUid)
             .ToListAsync(cancellationToken);
@@ -30,13 +30,13 @@ public class ProviderCategoryService : IProviderCategoryService
         return await _db.ProviderCategories
             .AsNoTracking()
             .Where(pc => pc.ProviderUid == providerUid)
-            .OrderByDescending(pc => pc.IsPrimary)
+            .OrderByDescending(pc => pc.PrimaryCategory)
             .ThenBy(pc => pc.Category.CategoryName)
             .Select(pc => new ProviderCategoryItemDto
             {
                 CategoryUid = pc.CategoryUid,
                 CategoryName = pc.Category.CategoryName,
-                IsPrimary = pc.IsPrimary
+                IsPrimary = pc.PrimaryCategory == 1
             })
             .ToListAsync(cancellationToken);
     }
@@ -94,7 +94,7 @@ public class ProviderCategoryService : IProviderCategoryService
                 {
                     ProviderUid = providerUid,
                     CategoryUid = categoryUid,
-                    IsPrimary = categoryUid == primaryCategoryUid,
+                    PrimaryCategory = categoryUid == primaryCategoryUid ? 1 : 0,
                     CreatedOn = DateTime.UtcNow
                 });
             }
@@ -104,7 +104,7 @@ public class ProviderCategoryService : IProviderCategoryService
         {
             if (distinctUids.Contains(row.CategoryUid))
             {
-                row.IsPrimary = row.CategoryUid == primaryCategoryUid;
+                row.PrimaryCategory = row.CategoryUid == primaryCategoryUid ? 1 : 0;
             }
         }
 

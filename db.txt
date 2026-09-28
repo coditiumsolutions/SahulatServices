@@ -1,4 +1,4 @@
-# Version: 4.10 | UpdatedAt: 24/09/2026
+# Version: 4.11 | UpdatedAt: 28/09/2026
 # Database: SahulatAppDB
 # Server: 34.131.41.192,1433
 #
@@ -127,7 +127,7 @@ Table: Providers
   IsAvailable      bit              NOT NULL  DEFAULT (1)
   CreatedOn        datetime         NOT NULL  DEFAULT (getutcdate())
   CategoryUID      int              NOT NULL
-  -- DEPRECATED (2026-09-21): mirrors the IsPrimary=1 row in ProviderCategories below. Do not
+  -- DEPRECATED (2026-09-21): mirrors the PrimaryCategory=1 row in ProviderCategories below. Do not
   -- add new dependencies on this column for category matching/membership — read/write via
   -- ProviderCategories (ProviderCategoryService.SyncCategoriesAsync is the only writer besides
   -- this note). Kept for backward-compat reads until remaining call sites are migrated and the
@@ -150,14 +150,15 @@ Table: ProviderCategories
   UID              int              NOT NULL  PK  IDENTITY
   ProviderUID      int              NOT NULL  FK -> Providers.UID (cascade delete)
   CategoryUID      int              NOT NULL  FK -> ServiceCategories.UID
-  IsPrimary        bit              NOT NULL  DEFAULT (0)
+  PrimaryCategory  int              NOT NULL  DEFAULT (0)
   CreatedOn        datetime         NOT NULL  DEFAULT (getutcdate())
   -- Source of truth for provider multi-category membership (added 2026-09-21). One row per
   -- (ProviderUID, CategoryUID) pair, unique constraint UQ_ProviderCategories_ProviderUID_CategoryUID.
-  -- Exactly one row per provider should have IsPrimary=1, kept in sync with the deprecated
+  -- Exactly one row per provider should have PrimaryCategory=1, kept in sync with the deprecated
   -- Providers.CategoryUID scalar by ProviderCategoryService.SyncCategoriesAsync (the only
   -- intended writer of Providers.CategoryUID going forward).
-  -- Backfilled from every existing Providers.CategoryUID at migration time (IsPrimary=1).
+  -- Column rename (2026-09-28): IsPrimary (bit) → PrimaryCategory (int); values unchanged (0/1).
+  -- Backfilled from every existing Providers.CategoryUID at migration time (PrimaryCategory=1).
   -- Catch-up (2026-09-23): 6 providers created in the gap between the migration's backfill and
   -- the code deploy that writes this table on create/edit (UIDs 73-78) had zero rows; same
   -- backfill query re-run manually to close the gap. No such gap should recur going forward.

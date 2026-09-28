@@ -127,6 +127,32 @@ public class ServiceRequestsController : Controller
         return RedirectToAction(nameof(Index));
     }
 
+    [HttpGet("/Admin/ServiceRequests/Delete/{id:int}")]
+    public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
+    {
+        var vm = await _service.GetForDeleteAsync(id, cancellationToken);
+        if (vm == null) return NotFound();
+        return View(vm);
+    }
+
+    [HttpPost("/Admin/ServiceRequests/Delete/{id:int}")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeleteConfirmed(int id, CancellationToken cancellationToken)
+    {
+        var vm = await _service.GetForDeleteAsync(id, cancellationToken);
+        if (vm == null) return NotFound();
+
+        var (success, error) = await _service.DeleteAsync(id, cancellationToken);
+        if (!success)
+        {
+            ModelState.AddModelError(string.Empty, error ?? "Failed to delete service request.");
+            return View("Delete", vm);
+        }
+
+        TempData["SuccessMessage"] = $"S-Request #{id} deleted successfully.";
+        return RedirectToAction(nameof(Index));
+    }
+
     [HttpGet("/Admin/ServiceRequests/ResolveCommission")]
     public async Task<IActionResult> ResolveCommission(
         int categoryUid,

@@ -45,6 +45,26 @@ public class ServiceProviderService : IServiceProviderService
             .ToListAsync(cancellationToken);
     }
 
+    private static void ApplySelectedCategories(ServiceProviderFormVm model)
+    {
+        var uids = (model.CategoryUids ?? new List<int>())
+            .Where(id => id > 0)
+            .Distinct()
+            .ToList();
+
+        // Primary category must be part of the multi-select set (maps to PrimaryCategory=1).
+        if (model.CategoryUid > 0 && !uids.Contains(model.CategoryUid))
+        {
+            uids.Add(model.CategoryUid);
+        }
+
+        model.CategoryUids = uids;
+        if (model.CategoryUid <= 0 && uids.Count > 0)
+        {
+            model.CategoryUid = uids[0];
+        }
+    }
+
     public async Task<ServiceProviderFormVm> PopulateFormAsync(
         ServiceProviderFormVm model,
         CancellationToken cancellationToken = default)
@@ -343,6 +363,8 @@ public class ServiceProviderService : IServiceProviderService
             return (false, "CNIC is required.");
         }
 
+        ApplySelectedCategories(model);
+
         var categoryExists = await _db.ServiceCategories
             .AnyAsync(c => c.Uid == model.CategoryUid && c.IsActive, cancellationToken);
 
@@ -422,6 +444,8 @@ public class ServiceProviderService : IServiceProviderService
         {
             return (false, "CNIC is required.");
         }
+
+        ApplySelectedCategories(model);
 
         var categoryExists = await _db.ServiceCategories
             .AnyAsync(c => c.Uid == model.CategoryUid && c.IsActive, cancellationToken);

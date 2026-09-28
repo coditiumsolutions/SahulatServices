@@ -116,17 +116,17 @@ public class ProviderDetailService : IProviderDetailService
             .ExecuteUpdateAsync(s => s.SetProperty(p => p.CategoryUid, categoryUid), cancellationToken);
 
         await _db.ProviderCategories
-            .Where(pc => pc.ProviderUid == providerUid && pc.IsPrimary && pc.CategoryUid != categoryUid)
-            .ExecuteUpdateAsync(s => s.SetProperty(pc => pc.IsPrimary, false), cancellationToken);
+            .Where(pc => pc.ProviderUid == providerUid && pc.PrimaryCategory == 1 && pc.CategoryUid != categoryUid)
+            .ExecuteUpdateAsync(s => s.SetProperty(pc => pc.PrimaryCategory, 0), cancellationToken);
 
         var existingRow = await _db.ProviderCategories
             .FirstOrDefaultAsync(pc => pc.ProviderUid == providerUid && pc.CategoryUid == categoryUid, cancellationToken);
 
         if (existingRow != null)
         {
-            if (!existingRow.IsPrimary)
+            if (existingRow.PrimaryCategory != 1)
             {
-                existingRow.IsPrimary = true;
+                existingRow.PrimaryCategory = 1;
                 await _db.SaveChangesAsync(cancellationToken);
             }
         }
@@ -136,7 +136,7 @@ public class ProviderDetailService : IProviderDetailService
             {
                 ProviderUid = providerUid,
                 CategoryUid = categoryUid,
-                IsPrimary = true,
+                PrimaryCategory = 1,
                 CreatedOn = DateTime.UtcNow
             });
             await _db.SaveChangesAsync(cancellationToken);

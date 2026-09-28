@@ -261,14 +261,14 @@ public class AuthService : IAuthService
 
             // allCategoryIds is [categoryId] for the legacy single-category path, or the full
             // validated set when the app sent CategoryIds — either way, exactly one row is
-            // IsPrimary=1 (categoryId, which is PrimaryCategoryId in the multi-category case).
+            // PrimaryCategory=1 (categoryId, which is PrimaryCategoryId in the multi-category case).
             foreach (var catUid in allCategoryIds)
             {
                 _db.ProviderCategories.Add(new Entities.ProviderCategory
                 {
                     ProviderUid = provider.Uid,
                     CategoryUid = catUid,
-                    IsPrimary = catUid == categoryId!.Value,
+                    PrimaryCategory = catUid == categoryId!.Value ? 1 : 0,
                     CreatedOn = DateTime.UtcNow
                 });
             }

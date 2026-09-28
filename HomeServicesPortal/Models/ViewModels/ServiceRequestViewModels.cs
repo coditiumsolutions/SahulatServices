@@ -124,4 +124,7 @@ public class ServiceRequestDeleteVm
     public string? ServiceAddress { get; set; }
     public string? Status { get; set; }
     public DateTime? RequestDate { get; set; }
+    public int BookingCount { get; set; }
+    public int PaymentLedgerCount { get; set; }
+    public bool HasLinkedData => BookingCount > 0 || PaymentLedgerCount > 0;
 }

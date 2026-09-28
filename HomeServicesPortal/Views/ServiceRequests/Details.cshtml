@@ -108,6 +108,9 @@
                             <i class="fa-solid fa-clipboard-list me-1"></i>Open Booking
                         </a>
                     }
+                    <a asp-action="Delete" asp-route-id="@Model.Uid" class="btn btn-outline-danger">
+                        <i class="fa-solid fa-trash me-1"></i>Delete
+                    </a>
                     <a asp-action="Index" class="btn btn-outline-secondary">Back</a>
                 </div>
             </div>

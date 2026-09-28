@@ -7,7 +7,7 @@ public interface IProviderCategoryService
     /// <summary>List of category UIDs for a provider, most-primary-first.</summary>
     Task<List<int>> GetCategoryUidsAsync(int providerUid, CancellationToken cancellationToken = default);
 
-    /// <summary>Category UID + name + IsPrimary flag for a provider, most-primary-first. Empty list if provider not found.</summary>
+    /// <summary>Category UID + name + isPrimary (API) flag for a provider, most-primary-first. Empty list if provider not found.</summary>
     Task<List<ProviderCategoryItemDto>> GetCategoriesAsync(int providerUid, CancellationToken cancellationToken = default);
 
     /// <summary>
