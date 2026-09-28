@@ -85,7 +85,7 @@
                             <td class="fw-semibold">@item.RequestLabel</td>
                             <td>@item.ClientName</td>
                             <td>@item.ProviderName</td>
-                            <td>@(item.BookingDate?.ToString("dd MMM yyyy HH:mm") ?? "—")</td>
+                            <td>@(item.BookingDate.ToPktDisplay())</td>
                             <td>@item.FinalAmount.ToString("N2")</td>
                             <td>@item.PaymentMode</td>
                             <td><span class="badge bg-@StatusBadgeClass(item.Status)">@(item.Status ?? "—")</span></td>

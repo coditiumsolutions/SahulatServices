@@ -4,12 +4,15 @@ using HomeServicesPortal.Hubs;
 using HomeServicesPortal.Models.Api;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
+using System.Linq;
 
 namespace HomeServicesPortal.Services;
 
 public class AdminNotificationService : IAdminNotificationService
 {
     public const string ServiceRequestCreated = "ServiceRequestCreated";
+    public const string CustomerRequestCancelled = "CustomerRequestCancelled";
+    public const string ProviderBookingCancelled = "ProviderBookingCancelled";
     public const string AdminsGroup = "admins";
 
     private readonly AppDbContext _db;
@@ -32,10 +35,67 @@ public class AdminNotificationService : IAdminNotificationService
         string? clientName,
         CancellationToken cancellationToken = default)
     {
-        var title = "New service request";
         var who = string.IsNullOrWhiteSpace(clientName) ? "a customer" : clientName.Trim();
         var safeTitle = (serviceTitle ?? string.Empty).Trim();
         var message = $"{who} submitted '{safeTitle}' (#{requestUid}).";
+
+        await CreateAndPublishAsync(
+            ServiceRequestCreated,
+            "New service request",
+            message,
+            $"/Admin/ServiceRequests/Details/{requestUid}",
+            requestUid,
+            cancellationToken);
+    }
+
+    public async Task NotifyCustomerCancellationAsync(
+        int requestUid,
+        string serviceTitle,
+        string? clientName,
+        string? cancelReason,
+        CancellationToken cancellationToken = default)
+    {
+        var who = string.IsNullOrWhiteSpace(clientName) ? "A customer" : clientName.Trim();
+        var safeTitle = (serviceTitle ?? string.Empty).Trim();
+        var reasonSuffix = string.IsNullOrWhiteSpace(cancelReason) ? string.Empty : $" Reason: {cancelReason.Trim()}.";
+        var message = $"{who} cancelled '{safeTitle}' (#{requestUid}).{reasonSuffix}";
+
+        await CreateAndPublishAsync(
+            CustomerRequestCancelled,
+            "Customer cancelled request",
+            message,
+            $"/Admin/ServiceRequests/Details/{requestUid}",
+            requestUid,
+            cancellationToken);
+    }
+
+    public async Task NotifyProviderCancellationAsync(
+        int bookingUid,
+        string? providerName,
+        string? cancelReason,
+        CancellationToken cancellationToken = default)
+    {
+        var who = string.IsNullOrWhiteSpace(providerName) ? "A provider" : providerName.Trim();
+        var reasonSuffix = string.IsNullOrWhiteSpace(cancelReason) ? string.Empty : $" Reason: {cancelReason.Trim()}.";
+        var message = $"{who} cancelled booking #{bookingUid}.{reasonSuffix}";
+
+        await CreateAndPublishAsync(
+            ProviderBookingCancelled,
+            "Provider cancelled booking",
+            message,
+            $"/Admin/Bookings/Details/{bookingUid}",
+            bookingUid,
+            cancellationToken);
+    }
+
+    private async Task CreateAndPublishAsync(
+        string type,
+        string title,
+        string message,
+        string? linkUrl,
+        int? relatedEntityUid,
+        CancellationToken cancellationToken)
+    {
         if (message.Length > 500)
         {
             message = message[..497] + "...";
@@ -43,11 +103,11 @@ public class AdminNotificationService : IAdminNotificationService
 
         var entity = new AdminNotification
         {
-            Type = ServiceRequestCreated,
+            Type = type,
             Title = title,
             Message = message,
-            LinkUrl = $"/Admin/ServiceRequests/Details/{requestUid}",
-            RelatedEntityUid = requestUid,
+            LinkUrl = linkUrl,
+            RelatedEntityUid = relatedEntityUid,
             IsRead = false,
             CreatedOn = DateTime.Now
         };
@@ -56,7 +116,7 @@ public class AdminNotificationService : IAdminNotificationService
         await _db.SaveChangesAsync(cancellationToken);
 
         var dto = Map(entity);
-        var unreadCount = await _db.AdminNotifications.CountAsync(n => !n.IsRead, cancellationToken);
+        var unreadCount = await _db.AdminNotifications.CountAsync(n => n.Type == type && !n.IsRead, cancellationToken);
 
         try
         {
@@ -69,27 +129,34 @@ public class AdminNotificationService : IAdminNotificationService
         catch (Exception ex)
         {
             // Persist succeeded; live push is best-effort — clients still poll /feed.
-            _logger.LogWarning(ex, "Saved admin notification for request {RequestUid} but SignalR push failed.", requestUid);
+            _logger.LogWarning(ex, "Saved admin notification {Type} for entity {RelatedEntityUid} but SignalR push failed.", type, relatedEntityUid);
         }
 
         _logger.LogInformation(
-            "Admin notification {NotificationUid} created for service request {RequestUid}. Unread={UnreadCount}",
+            "Admin notification {NotificationUid} ({Type}) created for entity {RelatedEntityUid}. UnreadForType={UnreadCount}",
             entity.Uid,
-            requestUid,
+            type,
+            relatedEntityUid,
             unreadCount);
     }
 
     public async Task<AdminNotificationFeedDto> GetRecentAsync(
         int take = 20,
+        IEnumerable<string>? types = null,
         CancellationToken cancellationToken = default)
     {
         take = take < 1 ? 20 : Math.Min(take, 50);
+        var typeList = types?.ToList();
 
-        var unreadCount = await _db.AdminNotifications
-            .CountAsync(n => !n.IsRead, cancellationToken);
+        var query = _db.AdminNotifications.AsNoTracking().AsQueryable();
+        if (typeList is { Count: > 0 })
+        {
+            query = query.Where(n => typeList.Contains(n.Type));
+        }
 
-        var items = await _db.AdminNotifications
-            .AsNoTracking()
+        var unreadCount = await query.CountAsync(n => !n.IsRead, cancellationToken);
+
+        var items = await query
             .OrderByDescending(n => n.CreatedOn)
             .ThenByDescending(n => n.Uid)
             .Take(take)
@@ -113,11 +180,19 @@ public class AdminNotificationService : IAdminNotificationService
         };
     }
 
-    public async Task<int> MarkAllReadAsync(CancellationToken cancellationToken = default)
+    public async Task<int> MarkAllReadAsync(
+        IEnumerable<string>? types = null,
+        CancellationToken cancellationToken = default)
     {
-        var unread = await _db.AdminNotifications
-            .Where(n => !n.IsRead)
-            .ToListAsync(cancellationToken);
+        var typeList = types?.ToList();
+
+        var query = _db.AdminNotifications.Where(n => !n.IsRead);
+        if (typeList is { Count: > 0 })
+        {
+            query = query.Where(n => typeList.Contains(n.Type));
+        }
+
+        var unread = await query.ToListAsync(cancellationToken);
 
         if (unread.Count == 0)
         {
@@ -135,7 +210,7 @@ public class AdminNotificationService : IAdminNotificationService
         {
             await _hub.Clients.Group(AdminsGroup).SendCoreAsync(
                 "NotificationsMarkedRead",
-                new object[] { new { unreadCount = 0 } },
+                new object[] { new { unreadCount = 0, types = typeList } },
                 cancellationToken);
         }
         catch (Exception ex)

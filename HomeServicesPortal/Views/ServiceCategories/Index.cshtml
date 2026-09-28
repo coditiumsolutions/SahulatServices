@@ -109,7 +109,7 @@
                                     <span class="badge bg-secondary">Inactive</span>
                                 }
                             </td>
-                            <td>@(item.CreatedOn?.ToString("dd MMM yyyy") ?? "—")</td>
+                            <td>@(item.CreatedOn.ToPktDateDisplay())</td>
                             <td class="text-end">
                                 <div class="btn-group btn-group-sm">
                                     <a asp-action="Details" asp-route-id="@item.Uid" class="btn btn-outline-secondary" title="Details"><i class="fa-solid fa-eye"></i></a>

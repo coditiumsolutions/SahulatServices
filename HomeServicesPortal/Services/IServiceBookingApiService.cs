@@ -44,5 +44,16 @@ public interface IServiceBookingApiService
         string passcode,
         decimal actualAmountPaid,
         string? paymentMode,
+        decimal? labourAmount = null,
+        List<VerifyCompletionMaterialItemDto>? materialItems = null,
+        CancellationToken cancellationToken = default);
+
+    Task<(bool Success, string? Error, List<BookingMaterialItemApiDto>? Data)> GetMaterialItemsAsync(
+        int bookingUid,
+        CancellationToken cancellationToken = default);
+
+    Task<(bool Success, string? Error, List<BookingMaterialItemApiDto>? Data)> UpdateMaterialItemsAsync(
+        int bookingUid,
+        List<VerifyCompletionMaterialItemDto> materialItems,
         CancellationToken cancellationToken = default);
 }

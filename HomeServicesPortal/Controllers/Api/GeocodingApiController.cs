@@ -42,4 +42,30 @@ public class GeocodingApiController : ControllerBase
 
         return Ok(ApiResponse<ReverseGeocodeResultDto>.Ok(data, "Address resolved successfully."));
     }
+
+    /// <summary>Forward-geocode a free-text query (e.g. "Gulberg Lahore") into candidate coordinate + address results via OpenStreetMap Nominatim.</summary>
+    [HttpGet("search")]
+    [ProducesResponseType(typeof(ApiResponse<List<GeocodeSearchResultDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<List<GeocodeSearchResultDto>>), StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<ApiResponse<List<GeocodeSearchResultDto>>>> Search(
+        [FromQuery] GeocodeSearchRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        if (!ModelState.IsValid)
+        {
+            var message = ModelState.Values.SelectMany(v => v.Errors).FirstOrDefault()?.ErrorMessage
+                          ?? "Invalid request.";
+            return BadRequest(ApiResponse<List<GeocodeSearchResultDto>>.Fail(message));
+        }
+
+        var (success, error, data) = await _nominatimService.SearchGeocodeAsync(
+            request.Q!, request.Limit, cancellationToken);
+
+        if (!success || data == null)
+        {
+            return BadRequest(ApiResponse<List<GeocodeSearchResultDto>>.Fail(error ?? "Unable to search for the given query."));
+        }
+
+        return Ok(ApiResponse<List<GeocodeSearchResultDto>>.Ok(data, "Search results retrieved successfully."));
+    }
 }

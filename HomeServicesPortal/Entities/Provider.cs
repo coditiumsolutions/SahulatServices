@@ -41,9 +41,14 @@ public class Provider
 
     public DateTime CreatedOn { get; set; }
 
+    /// <summary>DEPRECATED: mirrors the IsPrimary=1 row in ProviderCategories. Do not add new
+    /// dependencies on this column — use ProviderCategories (via ProviderCategoryService) for
+    /// category matching/membership. Scheduled for removal in a fast-follow cleanup.</summary>
     public int CategoryUid { get; set; }
 
     public UsersLogin User { get; set; } = null!;
 
     public ServiceCategory Category { get; set; } = null!;
+
+    public ICollection<ProviderCategory> ProviderCategories { get; set; } = new List<ProviderCategory>();
 }

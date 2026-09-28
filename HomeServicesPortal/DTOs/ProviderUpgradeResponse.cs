@@ -20,6 +20,9 @@ public class ProviderUpgradeResponse
 
     public string? CategoryName { get; set; }
 
+    /// <summary>All category ids this provider was registered with (added 2026-09-21). Contains just [CategoryId] for a single-category registration.</summary>
+    public List<int> CategoryIds { get; set; } = new();
+
     /// <summary>Clients.UID for the account this provider profile was upgraded from — lets the app submit customer service requests immediately after upgrading, without a fresh login.</summary>
     public int? ClientId { get; set; }
 

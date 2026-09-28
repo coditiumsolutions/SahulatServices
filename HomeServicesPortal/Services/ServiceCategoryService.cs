@@ -293,6 +293,7 @@ public class ServiceCategoryService : IServiceCategoryService
         }
 
         var inUse = await _db.Providers.AnyAsync(p => p.CategoryUid == id, cancellationToken)
+                    || await _db.ProviderCategories.AnyAsync(pc => pc.CategoryUid == id, cancellationToken)
                     || await _db.CustomerServiceRequests.AnyAsync(r => r.CategoryUid == id, cancellationToken);
 
         if (inUse)

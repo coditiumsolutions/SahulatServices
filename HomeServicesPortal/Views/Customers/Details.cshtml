@@ -65,7 +65,7 @@
             <div class="col-md-6">
                 <div class="row g-2">
                     <div class="col-sm-4 client-label">Created On</div>
-                    <div class="col-sm-8 client-value">@(Model.CreatedOn?.ToString("dd MMM yyyy HH:mm") ?? "—")</div>
+                    <div class="col-sm-8 client-value">@(Model.CreatedOn.ToPktDisplay())</div>
                 </div>
             </div>
         </div>

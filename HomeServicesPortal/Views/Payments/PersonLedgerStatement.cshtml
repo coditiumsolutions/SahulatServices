@@ -125,7 +125,7 @@
                     {
                         var isPlus = txn.SignedAmount >= 0;
                         <tr>
-                            <td>@txn.CreatedOn.ToString("dd MMM yyyy HH:mm")</td>
+                            <td>@txn.CreatedOn.ToPktDisplay()</td>
                             <td>
                                 @if (txn.BookingUid.HasValue)
                                 {

@@ -44,10 +44,10 @@
                     <dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.CategoryName) ? "—" : Model.CategoryName)</dd>
 
                     <dt class="col-sm-4 text-muted">Created On</dt>
-                    <dd class="col-sm-8">@Model.CreatedOn.ToString("dd MMM yyyy HH:mm")</dd>
+                    <dd class="col-sm-8">@Model.CreatedOn.ToPktDisplay()</dd>
 
                     <dt class="col-sm-4 text-muted">Last Login</dt>
-                    <dd class="col-sm-8">@(Model.LastLogin?.ToString("dd MMM yyyy HH:mm") ?? "—")</dd>
+                    <dd class="col-sm-8">@(Model.LastLogin.ToPktDisplay())</dd>
                 </dl>
 
                 <hr />

@@ -80,7 +80,7 @@
                             <td class="fw-semibold">@item.ProviderName</td>
                             <td>@(item.Latitude?.ToString("0.0000000") ?? "—")</td>
                             <td>@(item.Longitude?.ToString("0.0000000") ?? "—")</td>
-                            <td>@(item.LastUpdated?.ToString("dd MMM yyyy HH:mm") ?? "—")</td>
+                            <td>@(item.LastUpdated.ToPktDisplay())</td>
                             <td class="text-end">
                                 <div class="btn-group btn-group-sm">
                                     <a asp-action="Details" asp-route-id="@item.Uid" class="btn btn-outline-secondary" title="Details"><i class="fa-solid fa-eye"></i></a>

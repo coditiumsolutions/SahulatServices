@@ -17,19 +17,22 @@ public class AuthService : IAuthService
     private readonly IMapper _mapper;
     private readonly IFileStorageService _fileStorageService;
     private readonly IConfigurationEntryService _configurations;
+    private readonly IProviderCategoryService _providerCategories;
 
     public AuthService(
         AppDbContext db,
         IUserRepository userRepository,
         IMapper mapper,
         IFileStorageService fileStorageService,
-        IConfigurationEntryService configurations)
+        IConfigurationEntryService configurations,
+        IProviderCategoryService providerCategories)
     {
         _db = db;
         _userRepository = userRepository;
         _mapper = mapper;
         _fileStorageService = fileStorageService;
         _configurations = configurations;
+        _providerCategories = providerCategories;
     }
 
     public async Task<(bool Success, string? Error, RegistrationResponse? Data)> RegisterClientAsync(
@@ -170,14 +173,33 @@ public class AuthService : IAuthService
             return (false, "Client profile not found.", null, StatusCodes.Status404NotFound);
         }
 
-        var (categoryId, categoryName, categoryError) = await ResolveCategoryAsync(
-            request.CategoryId,
-            request.CategoryName,
-            cancellationToken);
+        // Multi-category path is OPTIONAL: only taken when the app sends CategoryIds (validated
+        // non-empty + PrimaryCategoryId membership already, on RegisterProviderRequest itself).
+        // Omitting CategoryIds keeps today's exact single-category behavior below.
+        // TODO(remove after old app retired): once every live app build always sends CategoryIds,
+        // collapse this branch to always require it and delete the single-category path.
+        var multiCategoryRequested = request.CategoryIds is { Count: > 0 };
+        var (categoryId, categoryName, categoryError) = multiCategoryRequested
+            ? await ResolveCategoryAsync(request.PrimaryCategoryId, null, cancellationToken)
+            : await ResolveCategoryAsync(request.CategoryId, request.CategoryName, cancellationToken);
 
         if (categoryError != null)
         {
             return (false, categoryError, null, StatusCodes.Status400BadRequest);
+        }
+
+        List<int> allCategoryIds = new() { categoryId!.Value };
+        if (multiCategoryRequested)
+        {
+            var distinctIds = request.CategoryIds!.Where(id => id > 0).Distinct().ToList();
+            var validCount = await _db.ServiceCategories
+                .CountAsync(c => distinctIds.Contains(c.Uid) && c.IsActive, cancellationToken);
+            if (validCount != distinctIds.Count)
+            {
+                return (false, "One or more selected categories do not exist or are inactive.", null, StatusCodes.Status400BadRequest);
+            }
+
+            allCategoryIds = distinctIds;
         }
 
         var city = request.City?.Trim();
@@ -227,6 +249,22 @@ public class AuthService : IAuthService
             };
 
             await _userRepository.CreateProviderAsync(provider, cancellationToken);
+
+            // allCategoryIds is [categoryId] for the legacy single-category path, or the full
+            // validated set when the app sent CategoryIds — either way, exactly one row is
+            // IsPrimary=1 (categoryId, which is PrimaryCategoryId in the multi-category case).
+            foreach (var catUid in allCategoryIds)
+            {
+                _db.ProviderCategories.Add(new Entities.ProviderCategory
+                {
+                    ProviderUid = provider.Uid,
+                    CategoryUid = catUid,
+                    IsPrimary = catUid == categoryId!.Value,
+                    CreatedOn = DateTime.Now
+                });
+            }
+            await _db.SaveChangesAsync(cancellationToken);
+
             return (true, null, new ProviderUpgradeResponse
             {
                 UserId = userId,
@@ -237,6 +275,7 @@ public class AuthService : IAuthService
                 MobileNo = user.MobileNo,
                 CategoryId = categoryId,
                 CategoryName = categoryName,
+                CategoryIds = allCategoryIds,
                 ClientId = client.Uid,
                 City = city
             }, StatusCodes.Status200OK);

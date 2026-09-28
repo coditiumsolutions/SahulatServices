@@ -62,7 +62,7 @@
                             <td>@(item.QuoteAmount?.ToString("N2") ?? "—")</td>
                             <td>@(item.EstimatedArrivalMinutes?.ToString() ?? "—")</td>
                             <td>@(item.DistanceKm?.ToString("N2") ?? "—")</td>
-                            <td>@(item.QuoteDate?.ToString("dd MMM yyyy HH:mm") ?? "—")</td>
+                            <td>@(item.QuoteDate.ToPktDisplay())</td>
                             <td class="text-end">
                                 <div class="btn-group btn-group-sm">
                                     <a asp-action="Details" asp-route-id="@item.Uid" class="btn btn-outline-secondary" title="Details"><i class="fa-solid fa-eye"></i></a>

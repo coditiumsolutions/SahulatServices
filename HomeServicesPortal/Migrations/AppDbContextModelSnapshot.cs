@@ -72,6 +72,47 @@ namespace HomeServicesPortal.Migrations
                     b.ToTable("AdminNotifications", (string)null);
                 });
 
+            modelBuilder.Entity("HomeServicesPortal.Entities.BookingMaterialItem", b =>
+                {
+                    b.Property<int>("Uid")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("UID");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Uid"));
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("decimal(10,2)");
+
+                    b.Property<int>("BookingUid")
+                        .HasColumnType("int")
+                        .HasColumnName("BookingUID");
+
+                    b.Property<DateTime>("CreatedOn")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime")
+                        .HasDefaultValueSql("(getdate())");
+
+                    b.Property<string>("ItemName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<decimal>("Quantity")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("decimal(10,2)")
+                        .HasDefaultValue(1m);
+
+                    b.Property<decimal>("UnitPrice")
+                        .HasColumnType("decimal(10,2)");
+
+                    b.HasKey("Uid");
+
+                    b.HasIndex("BookingUid");
+
+                    b.ToTable("BookingMaterialItems", (string)null);
+                });
+
             modelBuilder.Entity("HomeServicesPortal.Entities.Client", b =>
                 {
                     b.Property<int>("Uid")
@@ -500,6 +541,44 @@ namespace HomeServicesPortal.Migrations
                     b.ToTable("Providers", (string)null);
                 });
 
+            modelBuilder.Entity("HomeServicesPortal.Entities.ProviderCategory", b =>
+                {
+                    b.Property<int>("Uid")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("UID");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Uid"));
+
+                    b.Property<int>("CategoryUid")
+                        .HasColumnType("int")
+                        .HasColumnName("CategoryUID");
+
+                    b.Property<DateTime>("CreatedOn")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime")
+                        .HasDefaultValueSql("(getdate())");
+
+                    b.Property<bool>("IsPrimary")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.Property<int>("ProviderUid")
+                        .HasColumnType("int")
+                        .HasColumnName("ProviderUID");
+
+                    b.HasKey("Uid");
+
+                    b.HasIndex("CategoryUid");
+
+                    b.HasIndex("ProviderUid", "CategoryUid")
+                        .IsUnique()
+                        .HasDatabaseName("UQ_ProviderCategories_ProviderUID_CategoryUID");
+
+                    b.ToTable("ProviderCategories", (string)null);
+                });
+
             modelBuilder.Entity("HomeServicesPortal.Entities.ProviderDocument", b =>
                 {
                     b.Property<int>("Uid")
@@ -533,6 +612,10 @@ namespace HomeServicesPortal.Migrations
                         .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("PoliceVerificationPath")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
 
                     b.Property<string>("ProfilePhotoPath")
                         .HasMaxLength(500)
@@ -703,6 +786,9 @@ namespace HomeServicesPortal.Migrations
                         .HasColumnType("decimal(12,2)");
 
                     b.Property<decimal>("FinalAmount")
+                        .HasColumnType("decimal(12,2)");
+
+                    b.Property<decimal?>("LabourAmount")
                         .HasColumnType("decimal(12,2)");
 
                     b.Property<string>("Passcode")
@@ -993,6 +1079,18 @@ namespace HomeServicesPortal.Migrations
                     b.ToTable("UsersLogin", (string)null);
                 });
 
+            modelBuilder.Entity("HomeServicesPortal.Entities.BookingMaterialItem", b =>
+                {
+                    b.HasOne("HomeServicesPortal.Entities.ServiceBooking", "Booking")
+                        .WithMany("MaterialItems")
+                        .HasForeignKey("BookingUid")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("FK_BookingMaterialItems_ServiceBookings");
+
+                    b.Navigation("Booking");
+                });
+
             modelBuilder.Entity("HomeServicesPortal.Entities.Client", b =>
                 {
                     b.HasOne("HomeServicesPortal.Entities.UsersLogin", "User")
@@ -1106,6 +1204,27 @@ namespace HomeServicesPortal.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("HomeServicesPortal.Entities.ProviderCategory", b =>
+                {
+                    b.HasOne("HomeServicesPortal.Entities.ServiceCategory", "Category")
+                        .WithMany()
+                        .HasForeignKey("CategoryUid")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("FK_ProviderCategories_ServiceCategories");
+
+                    b.HasOne("HomeServicesPortal.Entities.Provider", "Provider")
+                        .WithMany("ProviderCategories")
+                        .HasForeignKey("ProviderUid")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("FK_ProviderCategories_Providers");
+
+                    b.Navigation("Category");
+
+                    b.Navigation("Provider");
+                });
+
             modelBuilder.Entity("HomeServicesPortal.Entities.ProviderDocument", b =>
                 {
                     b.HasOne("HomeServicesPortal.Entities.Provider", null)
@@ -1209,9 +1328,19 @@ namespace HomeServicesPortal.Migrations
                     b.Navigation("ServiceRequests");
                 });
 
+            modelBuilder.Entity("HomeServicesPortal.Entities.Provider", b =>
+                {
+                    b.Navigation("ProviderCategories");
+                });
+
             modelBuilder.Entity("HomeServicesPortal.Entities.Service", b =>
                 {
                     b.Navigation("Categories");
+                });
+
+            modelBuilder.Entity("HomeServicesPortal.Entities.ServiceBooking", b =>
+                {
+                    b.Navigation("MaterialItems");
                 });
 
             modelBuilder.Entity("HomeServicesPortal.Entities.ServiceCategory", b =>

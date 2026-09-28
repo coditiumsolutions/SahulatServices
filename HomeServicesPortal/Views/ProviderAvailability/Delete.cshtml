@@ -30,9 +30,9 @@
                         }
                     </dd>
                     <dt class="col-sm-4 text-muted">Available From</dt>
-                    <dd class="col-sm-8">@(Model.AvailableFrom?.ToString("HH:mm") ?? "—")</dd>
+                    <dd class="col-sm-8">@(Model.AvailableFrom.ToDisplay())</dd>
                     <dt class="col-sm-4 text-muted">Available To</dt>
-                    <dd class="col-sm-8">@(Model.AvailableTo?.ToString("HH:mm") ?? "—")</dd>
+                    <dd class="col-sm-8">@(Model.AvailableTo.ToDisplay())</dd>
                 </dl>
                 <form asp-action="DeleteConfirmed" asp-route-id="@Model.Uid" method="post">
                     @Html.AntiForgeryToken()

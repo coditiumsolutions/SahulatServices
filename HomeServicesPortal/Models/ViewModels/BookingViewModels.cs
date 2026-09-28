@@ -63,6 +63,13 @@ public class BookingFormVm
     [Range(0, double.MaxValue)]
     public decimal EstimatedAmount { get; set; }
 
+    [Display(Name = "Labour Amount")]
+    [Range(0, double.MaxValue)]
+    public decimal? LabourAmount { get; set; }
+
+    /// <summary>Itemized material breakdown (name/qty/unit price); posted as parallel arrays from the form.</summary>
+    public List<BookingMaterialItemInputVm> MaterialItems { get; set; } = new();
+
     [Required]
     [Display(Name = "Visit Charges")]
     [Range(0, double.MaxValue)]
@@ -144,6 +151,9 @@ public class BookingDetailsVm
     public string ProviderName { get; set; } = string.Empty;
     public DateTime? BookingDate { get; set; }
     public decimal EstimatedAmount { get; set; }
+    public decimal? LabourAmount { get; set; }
+    public List<BookingMaterialItemInputVm> MaterialItems { get; set; } = new();
+    public decimal MaterialAmount => MaterialItems.Sum(i => i.Amount);
     public decimal VisitCharges { get; set; }
     public decimal AdditionalCharges { get; set; }
     public decimal Deductions { get; set; }
@@ -169,4 +179,19 @@ public class BookingDeleteVm
     public string ProviderName { get; set; } = string.Empty;
     public DateTime? BookingDate { get; set; }
     public string? Status { get; set; }
+}
+
+public class BookingMaterialItemInputVm
+{
+    [Required(ErrorMessage = "Item name is required.")]
+    [StringLength(200)]
+    public string ItemName { get; set; } = string.Empty;
+
+    [Range(0.01, double.MaxValue, ErrorMessage = "Quantity must be greater than 0.")]
+    public decimal Quantity { get; set; } = 1;
+
+    [Range(0, double.MaxValue)]
+    public decimal UnitPrice { get; set; }
+
+    public decimal Amount => Math.Round(Quantity * UnitPrice, 2);
 }

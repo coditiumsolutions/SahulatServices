@@ -157,6 +157,8 @@ public class ClientAddressService : IClientAddressService
             Area = a.Area,
             City = a.City,
             Latitude = a.Latitude,
-            Longitude = a.Longitude
+            Longitude = a.Longitude,
+            HasLocation = a.Latitude.HasValue && a.Longitude.HasValue
+                && !(a.Latitude == 0 && a.Longitude == 0)
         };
 }

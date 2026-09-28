@@ -19,6 +19,10 @@ public class ProviderDocument
 
     public string? CnicBackImagePath { get; set; }
 
+    /// <summary>Added v3.20 — optional, nullable. Old app builds never send this; leave column
+    /// unset for their rows.</summary>
+    public string? PoliceVerificationPath { get; set; }
+
     public bool IsVerified { get; set; }
 
     public DateTime? VerifiedOn { get; set; }

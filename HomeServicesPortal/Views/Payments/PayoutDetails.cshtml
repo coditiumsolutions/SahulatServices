@@ -30,9 +30,9 @@
                     <dt class="col-sm-4 text-muted">Method</dt>
                     <dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.Method) ? "—" : Model.Method)</dd>
                     <dt class="col-sm-4 text-muted">Created On</dt>
-                    <dd class="col-sm-8">@Model.CreatedOn.ToString("dd MMM yyyy HH:mm")</dd>
+                    <dd class="col-sm-8">@Model.CreatedOn.ToPktDisplay()</dd>
                     <dt class="col-sm-4 text-muted">Paid On</dt>
-                    <dd class="col-sm-8">@(Model.PaidOn?.ToString("dd MMM yyyy HH:mm") ?? "—")</dd>
+                    <dd class="col-sm-8">@(Model.PaidOn.ToPktDisplay())</dd>
                 </dl>
             </div>
         </div>

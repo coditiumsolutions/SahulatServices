@@ -41,7 +41,7 @@
                         <dt class="col-sm-4 text-muted">Size</dt>
                         <dd class="col-sm-8">@((Model.SizeBytes / (1024d * 1024d)).ToString("0.0")) MB</dd>
                         <dt class="col-sm-4 text-muted">Last updated</dt>
-                        <dd class="col-sm-8">@Model.LastModifiedUtc.ToLocalTime().ToString("dd MMM yyyy, hh:mm tt")</dd>
+                        <dd class="col-sm-8">@Model.LastModifiedUtc.ToPktDisplay()</dd>
                     </dl>
                     <div class="d-flex gap-2">
                         <a asp-action="Download" class="btn btn-outline-primary">

@@ -75,7 +75,7 @@
                             </td>
                             <td>@item.CategoryName</td>
                             <td><span class="badge bg-@StatusBadgeClass(item.Status)">@item.Status</span></td>
-                            <td>@item.CreatedOn.ToString("dd MMM yyyy HH:mm")</td>
+                            <td>@item.CreatedOn.ToPktDisplay()</td>
                             <td class="text-end">
                                 <div class="btn-group btn-group-sm">
                                     <a href="/Admin/Clients/Details/@item.ClientUid" class="btn btn-outline-secondary" title="Customer"><i class="fa-solid fa-user"></i></a>

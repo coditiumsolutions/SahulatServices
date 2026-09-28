@@ -183,7 +183,14 @@ public class CustomerServiceRequestService : ICustomerServiceRequestService
             ? request.CancelReason?.Trim()
             : entity.CancelReason;
 
+        var isCancelling = string.Equals(entity.Status, RequestStatusConstants.Cancelled, StringComparison.OrdinalIgnoreCase);
+
         await _db.SaveChangesAsync(cancellationToken);
+
+        if (isCancelling)
+        {
+            await PublishCustomerCancellationNotificationAsync(entity.Uid, entity.ServiceTitle, entity.ClientUid, entity.CancelReason, cancellationToken);
+        }
 
         return await GetRequestByIdAsync(entity.Uid, cancellationToken);
     }
@@ -429,6 +436,38 @@ public class CustomerServiceRequestService : ICustomerServiceRequestService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to publish admin notification for service request {RequestUid}.", requestUid);
+        }
+    }
+
+    private async Task PublishCustomerCancellationNotificationAsync(
+        int requestUid,
+        string serviceTitle,
+        int clientUid,
+        string? cancelReason,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            await using var scope = _scopeFactory.CreateAsyncScope();
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var notifications = scope.ServiceProvider.GetRequiredService<IAdminNotificationService>();
+
+            var clientName = await db.Clients
+                .AsNoTracking()
+                .Where(c => c.Uid == clientUid)
+                .Select(c => c.FullName)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            await notifications.NotifyCustomerCancellationAsync(
+                requestUid,
+                serviceTitle,
+                clientName,
+                cancelReason,
+                cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to publish admin cancellation notification for service request {RequestUid}.", requestUid);
         }
     }
 }

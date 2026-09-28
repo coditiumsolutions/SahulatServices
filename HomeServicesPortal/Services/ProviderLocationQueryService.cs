@@ -42,7 +42,7 @@ public class ProviderLocationQueryService : IProviderLocationQueryService
 
         if (request.CategoryUid.HasValue)
         {
-            query = query.Where(p => p.CategoryUid == request.CategoryUid.Value);
+            query = query.Where(p => p.ProviderCategories.Any(pc => pc.CategoryUid == request.CategoryUid.Value));
         }
 
         // Candidate set pulled into memory — Haversine trig can't be translated to SQL, and the

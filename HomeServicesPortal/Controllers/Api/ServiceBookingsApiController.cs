@@ -203,7 +203,8 @@ public class ServiceBookingsApiController : ControllerBase
         CancellationToken cancellationToken)
     {
         var (success, error, data) = await _service.VerifyCompletionAsync(
-            bookingUid, request.ProviderUid, request.Passcode, request.ActualAmountPaid, request.PaymentMode, cancellationToken);
+            bookingUid, request.ProviderUid, request.Passcode, request.ActualAmountPaid, request.PaymentMode,
+            request.LabourAmount, request.MaterialItems, cancellationToken);
 
         if (!success || data == null)
         {
@@ -216,5 +217,40 @@ public class ServiceBookingsApiController : ControllerBase
         }
 
         return Ok(ApiResponse<ServiceBookingApiDto>.Ok(data, "Booking marked as completed successfully."));
+    }
+
+    /// <summary>List a booking's itemized material breakdown.</summary>
+    [HttpGet("{bookingUid:int}/material-items")]
+    [ProducesResponseType(typeof(ApiResponse<List<BookingMaterialItemApiDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<List<BookingMaterialItemApiDto>>), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ApiResponse<List<BookingMaterialItemApiDto>>>> GetMaterialItems(
+        int bookingUid,
+        CancellationToken cancellationToken)
+    {
+        var (success, error, data) = await _service.GetMaterialItemsAsync(bookingUid, cancellationToken);
+        if (!success || data == null)
+        {
+            return NotFound(ApiResponse<List<BookingMaterialItemApiDto>>.Fail(error ?? "Booking not found."));
+        }
+
+        return Ok(ApiResponse<List<BookingMaterialItemApiDto>>.Ok(data, "Material items fetched successfully."));
+    }
+
+    /// <summary>Full-replace a booking's itemized material breakdown.</summary>
+    [HttpPut("{bookingUid:int}/material-items")]
+    [ProducesResponseType(typeof(ApiResponse<List<BookingMaterialItemApiDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse<List<BookingMaterialItemApiDto>>), StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ApiResponse<List<BookingMaterialItemApiDto>>>> UpdateMaterialItems(
+        int bookingUid,
+        [FromBody] UpdateBookingMaterialItemsRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        var (success, error, data) = await _service.UpdateMaterialItemsAsync(bookingUid, request.MaterialItems, cancellationToken);
+        if (!success || data == null)
+        {
+            return NotFound(ApiResponse<List<BookingMaterialItemApiDto>>.Fail(error ?? "Booking not found."));
+        }
+
+        return Ok(ApiResponse<List<BookingMaterialItemApiDto>>.Ok(data, "Material items updated successfully."));
     }
 }

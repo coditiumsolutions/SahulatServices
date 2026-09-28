@@ -14,6 +14,9 @@ public class ServiceBooking
 
     public decimal EstimatedAmount { get; set; }
 
+    /// <summary>Labour-only charge; commission/ledger are computed off this, not FinalAmount.</summary>
+    public decimal? LabourAmount { get; set; }
+
     public decimal VisitCharges { get; set; }
 
     public decimal AdditionalCharges { get; set; }
@@ -55,4 +58,6 @@ public class ServiceBooking
     public Client Client { get; set; } = null!;
 
     public Provider Provider { get; set; } = null!;
+
+    public ICollection<BookingMaterialItem> MaterialItems { get; set; } = new List<BookingMaterialItem>();
 }

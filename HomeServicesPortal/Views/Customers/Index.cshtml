@@ -69,7 +69,7 @@
                             <td>@(string.IsNullOrWhiteSpace(item.MobileNo) ? "—" : item.MobileNo)</td>
                             <td>@(string.IsNullOrWhiteSpace(item.Cnic) ? "—" : item.Cnic)</td>
                             <td>@(string.IsNullOrWhiteSpace(item.Gender) ? "—" : item.Gender)</td>
-                            <td>@(item.CreatedOn?.ToString("dd MMM yyyy") ?? "—")</td>
+                            <td>@(item.CreatedOn.ToPktDateDisplay())</td>
                             <td class="text-end">
                                 <div class="btn-group btn-group-sm">
                                     <a asp-action="Details" asp-route-id="@item.Uid" class="btn btn-outline-secondary" title="Details"><i class="fa-solid fa-eye"></i></a>

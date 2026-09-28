@@ -134,6 +134,25 @@ public class ProviderDocumentsApiService : IProviderDocumentsApiService
                 StatusCodes.Status400BadRequest);
         }
 
+        // Added v3.20 — optional on both first submission and edit. Older app builds never send
+        // this field, so it's simply omitted and the existing path (if any) is left unchanged.
+        var policeVerificationPath = existing?.PoliceVerificationPath;
+        if (request.PoliceVerification != null)
+        {
+            var policeResult = await _fileStorage.SaveProviderImageAsync(
+                request.ProviderUid, request.PoliceVerification, "police_verification.jpg", cancellationToken);
+            if (!policeResult.Success)
+            {
+                _logger.LogWarning(
+                    "Police verification validation/upload failed for provider {ProviderUid}: {Error}",
+                    request.ProviderUid,
+                    policeResult.Error);
+                return (false, policeResult.Error, null, policeResult.StatusCode);
+            }
+
+            policeVerificationPath = policeResult.RelativePath;
+        }
+
         var now = DateTime.Now;
 
         if (existing == null)
@@ -145,6 +164,7 @@ public class ProviderDocumentsApiService : IProviderDocumentsApiService
                 ProfilePhotoPath = profilePath,
                 CnicFrontImagePath = frontPath,
                 CnicBackImagePath = backPath,
+                PoliceVerificationPath = policeVerificationPath,
                 IsVerified = false,
                 VerifiedOn = null,
                 VerifiedBy = null,
@@ -161,6 +181,7 @@ public class ProviderDocumentsApiService : IProviderDocumentsApiService
             existing.ProfilePhotoPath = profilePath;
             existing.CnicFrontImagePath = frontPath;
             existing.CnicBackImagePath = backPath;
+            existing.PoliceVerificationPath = policeVerificationPath;
             existing.MobileNo = mobileNo;
 
             // Replacing a CNIC image resets Providers.IsVerified until admin re-approves.
@@ -291,6 +312,7 @@ public class ProviderDocumentsApiService : IProviderDocumentsApiService
         ProfilePhotoPath = document.ProfilePhotoPath,
         CnicFrontImagePath = document.CnicFrontImagePath,
         CnicBackImagePath = document.CnicBackImagePath,
+        PoliceVerificationPath = document.PoliceVerificationPath,
         IsVerified = providerIsVerified,
         VerifiedOn = document.VerifiedOn,
         VerifiedBy = document.VerifiedBy,

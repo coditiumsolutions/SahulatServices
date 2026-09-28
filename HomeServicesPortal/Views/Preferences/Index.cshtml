@@ -1,0 +1,39 @@
+@model HomeServicesPortal.Models.ViewModels.PreferencesVm
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Preferences";
+}
+
+<div class="d-flex flex-wrap align-items-center justify-content-between mb-4 gap-2">
+    <div>
+        <h2 class="mb-1"><i class="fa-solid fa-gear me-2 text-primary"></i>Preferences</h2>
+        <p class="text-muted mb-0">Portal-wide display preferences, applied everywhere a date or time is shown</p>
+    </div>
+</div>
+
+@if (TempData["SuccessMessage"] is string success)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="fa-solid fa-circle-check me-2"></i>@success
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<div class="card hs-card" style="max-width: 560px;">
+    <div class="card-body">
+        <form method="post" asp-action="Index">
+            <div class="form-check form-switch mb-2">
+                <input asp-for="Use12Hour" class="form-check-input" role="switch" />
+                <label asp-for="Use12Hour" class="form-check-label">Use 12-hour time (AM/PM)</label>
+            </div>
+            <p class="text-muted small mb-3">
+                Off = 24-hour clock (e.g. 14:30). On = 12-hour clock with AM/PM (e.g. 02:30 PM).
+                Dates are always shown as DD-MM-YYYY (or DD-MM-YY where space is tight) regardless
+                of this setting.
+            </p>
+            <button type="submit" class="btn btn-primary">
+                <i class="fa-solid fa-floppy-disk me-1"></i>Save
+            </button>
+        </form>
+    </div>
+</div>

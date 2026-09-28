@@ -23,7 +23,7 @@
                     <dt class="col-sm-4 text-muted">Provider</dt>
                     <dd class="col-sm-8">@Model.ProviderName</dd>
                     <dt class="col-sm-4 text-muted">Created On</dt>
-                    <dd class="col-sm-8">@(Model.BookingDate?.ToString("dd MMM yyyy HH:mm") ?? "—")</dd>
+                    <dd class="col-sm-8">@(Model.BookingDate.ToPktDisplay())</dd>
                     <dt class="col-sm-4 text-muted">Status</dt>
                     <dd class="col-sm-8">@(Model.Status ?? "—")</dd>
                 </dl>

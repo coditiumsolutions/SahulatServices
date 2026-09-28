@@ -65,9 +65,9 @@
                     </div>
                     <div class="row g-3 mb-3">
                         <div class="col-md-3 sr-title">Preferred Date</div>
-                        <div class="col-md-3 sr-field">@(Model.PreferredServiceDate?.ToString("dd MMM yyyy") ?? "—")</div>
+                        <div class="col-md-3 sr-field">@(Model.PreferredServiceDate.ToDisplay("—"))</div>
                         <div class="col-md-3 sr-title">Preferred Time</div>
-                        <div class="col-md-3 sr-field">@(string.IsNullOrWhiteSpace(Model.PreferredServiceTime) ? "—" : Model.PreferredServiceTime)</div>
+                        <div class="col-md-3 sr-field">@(Model.PreferredServiceTime.ToTimeDisplay("—"))</div>
                     </div>
                     <div class="row g-3 mb-3">
                         <div class="col-md-3 sr-title">Contact</div>
@@ -77,7 +77,7 @@
                     </div>
                     <div class="row g-3 mb-3">
                         <div class="col-md-3 sr-title">Created On</div>
-                        <div class="col-md-3 sr-field">@(Model.RequestDate?.ToString("dd MMM yyyy HH:mm") ?? "—")</div>
+                        <div class="col-md-3 sr-field">@(Model.RequestDate.ToPktDisplay())</div>
                         <div class="col-md-3 sr-title">Status</div>
                         <div class="col-md-3 sr-field"><span class="badge bg-@statusClass">@(Model.Status ?? "Initiated")</span></div>
                     </div>

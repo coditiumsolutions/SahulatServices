@@ -45,7 +45,7 @@ public class NominatimService : INominatimService
             {
                 var lat = latitude.ToString(CultureInfo.InvariantCulture);
                 var lng = longitude.ToString(CultureInfo.InvariantCulture);
-                var url = $"reverse?format=jsonv2&lat={lat}&lon={lng}&addressdetails=1";
+                var url = $"reverse?format=jsonv2&lat={lat}&lon={lng}&addressdetails=1&accept-language=en";
 
                 using var response = await _httpClient.GetAsync(url, cancellationToken);
                 if (!response.IsSuccessStatusCode)
@@ -83,6 +83,83 @@ public class NominatimService : INominatimService
             {
                 _logger.LogWarning(ex, "Nominatim reverse geocode request failed");
                 return (false, "Unable to resolve address for the given coordinates.", null);
+            }
+            finally
+            {
+                _lastRequestUtc = DateTime.UtcNow;
+            }
+        }
+        finally
+        {
+            Throttle.Release();
+        }
+    }
+
+    public async Task<(bool Success, string? Error, List<GeocodeSearchResultDto>? Data)> SearchGeocodeAsync(
+        string query, int limit, CancellationToken cancellationToken = default)
+    {
+        await Throttle.WaitAsync(cancellationToken);
+        try
+        {
+            var elapsedMs = (DateTime.UtcNow - _lastRequestUtc).TotalMilliseconds;
+            var waitMs = _options.MinRequestIntervalMs - elapsedMs;
+            if (waitMs > 0)
+            {
+                await Task.Delay(TimeSpan.FromMilliseconds(waitMs), cancellationToken);
+            }
+
+            try
+            {
+                var encodedQuery = Uri.EscapeDataString(query);
+                var url = $"search?format=jsonv2&q={encodedQuery}&addressdetails=1&accept-language=en&countrycodes=pk&limit={limit}";
+
+                using var response = await _httpClient.GetAsync(url, cancellationToken);
+                if (!response.IsSuccessStatusCode)
+                {
+                    _logger.LogWarning("Nominatim search geocode failed with status {Status}", response.StatusCode);
+                    return (false, "Unable to search for the given query.", null);
+                }
+
+                using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+                using var doc = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken);
+
+                if (doc.RootElement.ValueKind != JsonValueKind.Array)
+                {
+                    return (false, "Unable to search for the given query.", null);
+                }
+
+                var results = new List<GeocodeSearchResultDto>();
+                foreach (var item in doc.RootElement.EnumerateArray())
+                {
+                    var address = item.TryGetProperty("address", out var addressElement) ? addressElement : default;
+
+                    var lat = item.TryGetProperty("lat", out var latEl) ? latEl.GetString() : null;
+                    var lon = item.TryGetProperty("lon", out var lonEl) ? lonEl.GetString() : null;
+                    if (!decimal.TryParse(lat, CultureInfo.InvariantCulture, out var latitude) ||
+                        !decimal.TryParse(lon, CultureInfo.InvariantCulture, out var longitude))
+                    {
+                        continue;
+                    }
+
+                    results.Add(new GeocodeSearchResultDto
+                    {
+                        DisplayName = item.TryGetProperty("display_name", out var dn) ? dn.GetString() ?? string.Empty : string.Empty,
+                        Road = GetAddressField(address, "road"),
+                        Area = GetAddressField(address, "suburb") ?? GetAddressField(address, "neighbourhood"),
+                        City = GetAddressField(address, "city") ?? GetAddressField(address, "town") ?? GetAddressField(address, "village"),
+                        State = GetAddressField(address, "state"),
+                        PostalCode = GetAddressField(address, "postcode"),
+                        Latitude = latitude,
+                        Longitude = longitude
+                    });
+                }
+
+                return (true, null, results);
+            }
+            catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or JsonException)
+            {
+                _logger.LogWarning(ex, "Nominatim search geocode request failed");
+                return (false, "Unable to search for the given query.", null);
             }
             finally
             {

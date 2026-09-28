@@ -65,7 +65,7 @@
         activeSection = "finance";
     else if (TabClass("/admin/reports") == "active")
         activeSection = "reports";
-    else if (TabClass("/admin/services", "/admin/servicecategories", "/admin/servicetitles", "/admin/administration", "/admin/apkmanagement", "/admin/configurations") == "active")
+    else if (TabClass("/admin/services", "/admin/servicecategories", "/admin/servicetitles", "/admin/administration", "/admin/apkmanagement", "/admin/configurations", "/admin/preferences") == "active")
         activeSection = "setup";
 }
 
@@ -681,7 +681,7 @@
                         <li>
                             <span class="hs-utility-link d-none d-xl-inline-flex">
                                 <i class="fa-regular fa-calendar"></i>
-                                @DateTime.Now.ToString("dddd, dd MMM yyyy")
+                                @DateTime.Now.ToString("dddd, dd-MM-yyyy")
                             </span>
                         </li>
                         <li>
@@ -760,21 +760,64 @@
                         id="hsNotifyToggle"
                         aria-expanded="false"
                         aria-controls="hsNotifyPanel"
-                        title="Notifications">
+                        title="Job Request notifications">
                     <i class="fa-solid fa-bell"></i>
                     <span class="hs-notify-badge" id="hsNotifyBadge">0</span>
                 </button>
-                <div class="hs-notify-panel d-none" id="hsNotifyPanel" role="menu" aria-label="Notifications">
+                <div class="hs-notify-panel d-none" id="hsNotifyPanel" role="menu" aria-label="Job Request notifications">
                     <div class="hs-notify-panel-header">
-                        <strong>Notifications</strong>
+                        <strong>Job Requests</strong>
                         <span class="hs-notify-panel-sub" id="hsNotifyUnreadLabel">0 unread</span>
                     </div>
                     <div class="hs-notify-list" id="hsNotifyList">
                         <div class="hs-notify-empty">No notifications yet.</div>
                     </div>
                 </div>
-                <form id="hsNotifyAntiForgery" class="d-none">@Html.AntiForgeryToken()</form>
             </div>
+
+            <div class="hs-notify-wrap">
+                <button type="button"
+                        class="hs-notify-toggle"
+                        id="hsCustomerNotifyToggle"
+                        aria-expanded="false"
+                        aria-controls="hsCustomerNotifyPanel"
+                        title="Customer notifications">
+                    <i class="fa-solid fa-user-xmark"></i>
+                    <span class="hs-notify-badge" id="hsCustomerNotifyBadge">0</span>
+                </button>
+                <div class="hs-notify-panel d-none" id="hsCustomerNotifyPanel" role="menu" aria-label="Customer notifications">
+                    <div class="hs-notify-panel-header">
+                        <strong>Customer Notifications</strong>
+                        <span class="hs-notify-panel-sub" id="hsCustomerNotifyUnreadLabel">0 unread</span>
+                    </div>
+                    <div class="hs-notify-list" id="hsCustomerNotifyList">
+                        <div class="hs-notify-empty">No notifications yet.</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="hs-notify-wrap">
+                <button type="button"
+                        class="hs-notify-toggle"
+                        id="hsProviderNotifyToggle"
+                        aria-expanded="false"
+                        aria-controls="hsProviderNotifyPanel"
+                        title="Provider notifications">
+                    <i class="fa-solid fa-user-gear"></i>
+                    <span class="hs-notify-badge" id="hsProviderNotifyBadge">0</span>
+                </button>
+                <div class="hs-notify-panel d-none" id="hsProviderNotifyPanel" role="menu" aria-label="Provider notifications">
+                    <div class="hs-notify-panel-header">
+                        <strong>Provider Notifications</strong>
+                        <span class="hs-notify-panel-sub" id="hsProviderNotifyUnreadLabel">0 unread</span>
+                    </div>
+                    <div class="hs-notify-list" id="hsProviderNotifyList">
+                        <div class="hs-notify-empty">No notifications yet.</div>
+                    </div>
+                </div>
+            </div>
+
+            <form id="hsNotifyAntiForgery" class="d-none">@Html.AntiForgeryToken()</form>
         </div>
     </nav>
 
@@ -887,6 +930,9 @@
                         <a class="hs-nav-link hs-nav-sublink @NavClass("/admin/configurations")" href="/Admin/Configurations">
                             <i class="fa-solid fa-sliders"></i> Configurations
                         </a>
+                        <a class="hs-nav-link hs-nav-sublink @NavClass("/admin/preferences")" href="/Admin/Preferences">
+                            <i class="fa-solid fa-gear"></i> Preferences
+                        </a>
                         <a class="hs-nav-link hs-nav-sublink @NavClass("/admin/administration/users", "/admin/administration/roles")" href="/Admin/Administration/Users">
                             <i class="fa-solid fa-user-shield"></i> Users &amp; Roles
                         </a>
@@ -935,18 +981,7 @@
     </script>
     <script>
         (function () {
-            const toggle = document.getElementById('hsNotifyToggle');
-            const panel = document.getElementById('hsNotifyPanel');
-            const badge = document.getElementById('hsNotifyBadge');
-            const list = document.getElementById('hsNotifyList');
-            const unreadLabel = document.getElementById('hsNotifyUnreadLabel');
-            if (!toggle || !panel || !badge || !list) return;
-
             const POLL_MS = 4000;
-            let items = [];
-            let unreadCount = 0;
-            let open = false;
-            let loading = false;
 
             function antiForgeryToken() {
                 const input = document.querySelector('#hsNotifyAntiForgery input[name="__RequestVerificationToken"]');
@@ -969,192 +1004,256 @@
                     .replace(/"/g, '&quot;');
             }
 
-            function render() {
-                if (unreadLabel) {
-                    unreadLabel.textContent = unreadCount + ' unread';
+            // One instance per notification-type icon: toggleId/panelId/badgeId/listId/unreadLabelId
+            // identify that icon's DOM elements, types is the comma-separated Type filter sent to
+            // /Admin/Notifications/{feed,unread-count,mark-read}?type=..., and typeSet is used to
+            // filter the single shared SignalR push stream down to just this icon's types.
+            function createNotifyIcon(config) {
+                const toggle = document.getElementById(config.toggleId);
+                const panel = document.getElementById(config.panelId);
+                const badge = document.getElementById(config.badgeId);
+                const list = document.getElementById(config.listId);
+                const unreadLabel = document.getElementById(config.unreadLabelId);
+                if (!toggle || !panel || !badge || !list) return null;
+
+                const typeQuery = config.types ? '&type=' + encodeURIComponent(config.types) : '';
+                const typeSet = config.types ? config.types.split(',') : null;
+
+                let items = [];
+                let unreadCount = 0;
+                let open = false;
+                let loading = false;
+
+                function matchesType(notification) {
+                    if (!typeSet) return true;
+                    const t = notification && (notification.type || notification.Type);
+                    return typeSet.indexOf(t) !== -1;
                 }
 
-                const label = unreadCount > 99 ? '99+' : String(unreadCount);
-                badge.textContent = label;
-                badge.setAttribute('data-count', label);
-                if (unreadCount > 0) {
-                    badge.classList.add('is-visible');
-                    badge.style.background = '#dc3545';
-                } else {
-                    badge.classList.remove('is-visible');
-                }
-
-                if (!items.length) {
-                    list.innerHTML = '<div class="hs-notify-empty">No notifications yet.</div>';
-                    return;
-                }
-
-                list.innerHTML = items.map(function (n) {
-                    const href = escapeHtml(n.linkUrl || n.LinkUrl || '#');
-                    const title = escapeHtml(n.title || n.Title || 'Notification');
-                    const message = escapeHtml(n.message || n.Message || '');
-                    const created = n.createdOn || n.CreatedOn;
-                    const isRead = n.isRead === true || n.IsRead === true;
-                    return '<a class="hs-notify-item' + (isRead ? '' : ' unread') + '" href="' + href + '">' +
-                        '<div class="hs-notify-item-title">' + title + '</div>' +
-                        '<div class="hs-notify-item-msg">' + message + '</div>' +
-                        '<div class="hs-notify-item-time">' + escapeHtml(formatTime(created)) + '</div>' +
-                        '</a>';
-                }).join('');
-            }
-
-            function setFeed(feed) {
-                if (!feed || typeof feed !== 'object') return;
-                unreadCount = Number(feed.unreadCount ?? feed.UnreadCount ?? 0) || 0;
-                items = feed.items || feed.Items || items;
-                render();
-            }
-
-            function setUnreadOnly(count) {
-                unreadCount = Number(count) || 0;
-                render();
-            }
-
-            async function loadFeed() {
-                if (loading) return;
-                loading = true;
-                try {
-                    const res = await fetch('/Admin/Notifications/feed?_=' + Date.now(), {
-                        credentials: 'same-origin',
-                        headers: { 'Accept': 'application/json' },
-                        cache: 'no-store'
-                    });
-                    if (!res.ok) return;
-                    const data = await res.json();
-                    setFeed(data);
-                } catch {
-                    // Keep last known badge; next poll / SignalR can recover.
-                } finally {
-                    loading = false;
-                }
-            }
-
-            async function pollUnreadCount() {
-                if (open) return;
-                try {
-                    const res = await fetch('/Admin/Notifications/unread-count?_=' + Date.now(), {
-                        credentials: 'same-origin',
-                        headers: { 'Accept': 'application/json' },
-                        cache: 'no-store'
-                    });
-                    if (!res.ok) return;
-                    const data = await res.json();
-                    const next = Number(data.unreadCount ?? data.UnreadCount ?? 0) || 0;
-                    if (next !== unreadCount) {
-                        // Count changed — refresh full feed so the dropdown stays in sync.
-                        await loadFeed();
+                function render() {
+                    if (unreadLabel) {
+                        unreadLabel.textContent = unreadCount + ' unread';
                     }
-                } catch {
-                    // Ignore transient network errors.
-                }
-            }
 
-            async function markAllRead() {
-                if (unreadCount === 0) return;
-                const body = new URLSearchParams();
-                body.set('__RequestVerificationToken', antiForgeryToken());
-                try {
-                    const res = await fetch('/Admin/Notifications/mark-read', {
-                        method: 'POST',
-                        credentials: 'same-origin',
-                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                        body: body.toString()
-                    });
-                    if (!res.ok) return;
-                    unreadCount = 0;
-                    items = items.map(function (n) {
-                        return Object.assign({}, n, { isRead: true, IsRead: true });
-                    });
+                    const label = unreadCount > 99 ? '99+' : String(unreadCount);
+                    badge.textContent = label;
+                    badge.setAttribute('data-count', label);
+                    if (unreadCount > 0) {
+                        badge.classList.add('is-visible');
+                        badge.style.background = '#dc3545';
+                    } else {
+                        badge.classList.remove('is-visible');
+                    }
+
+                    if (!items.length) {
+                        list.innerHTML = '<div class="hs-notify-empty">No notifications yet.</div>';
+                        return;
+                    }
+
+                    list.innerHTML = items.map(function (n) {
+                        const href = escapeHtml(n.linkUrl || n.LinkUrl || '#');
+                        const title = escapeHtml(n.title || n.Title || 'Notification');
+                        const message = escapeHtml(n.message || n.Message || '');
+                        const created = n.createdOn || n.CreatedOn;
+                        const isRead = n.isRead === true || n.IsRead === true;
+                        return '<a class="hs-notify-item' + (isRead ? '' : ' unread') + '" href="' + href + '">' +
+                            '<div class="hs-notify-item-title">' + title + '</div>' +
+                            '<div class="hs-notify-item-msg">' + message + '</div>' +
+                            '<div class="hs-notify-item-time">' + escapeHtml(formatTime(created)) + '</div>' +
+                            '</a>';
+                    }).join('');
+                }
+
+                function setFeed(feed) {
+                    if (!feed || typeof feed !== 'object') return;
+                    unreadCount = Number(feed.unreadCount ?? feed.UnreadCount ?? 0) || 0;
+                    items = feed.items || feed.Items || items;
                     render();
-                } catch {
-                    // Leave unread state; user can reopen.
                 }
-            }
 
-            async function openPanel() {
-                open = true;
-                panel.classList.remove('d-none');
-                toggle.setAttribute('aria-expanded', 'true');
-                await loadFeed();
-                await markAllRead();
-            }
-
-            function closePanel() {
-                open = false;
-                panel.classList.add('d-none');
-                toggle.setAttribute('aria-expanded', 'false');
-            }
-
-            toggle.addEventListener('click', function (e) {
-                e.preventDefault();
-                e.stopPropagation();
-                if (open) closePanel();
-                else openPanel();
-            });
-
-            document.addEventListener('click', function (e) {
-                if (!open) return;
-                if (panel.contains(e.target) || toggle.contains(e.target)) return;
-                closePanel();
-            });
-
-            document.addEventListener('visibilitychange', function () {
-                if (!document.hidden) {
-                    loadFeed();
+                function setUnreadOnly(count) {
+                    unreadCount = Number(count) || 0;
+                    render();
                 }
-            });
 
-            // Initial load + polling fallback (works even if SignalR fails).
-            loadFeed();
-            setInterval(pollUnreadCount, POLL_MS);
+                async function loadFeed() {
+                    if (loading) return;
+                    loading = true;
+                    try {
+                        const res = await fetch('/Admin/Notifications/feed?_=' + Date.now() + typeQuery, {
+                            credentials: 'same-origin',
+                            headers: { 'Accept': 'application/json' },
+                            cache: 'no-store'
+                        });
+                        if (!res.ok) return;
+                        const data = await res.json();
+                        setFeed(data);
+                    } catch {
+                        // Keep last known badge; next poll / SignalR can recover.
+                    } finally {
+                        loading = false;
+                    }
+                }
 
-            if (window.signalR) {
+                async function pollUnreadCount() {
+                    if (open) return;
+                    try {
+                        const res = await fetch('/Admin/Notifications/unread-count?_=' + Date.now() + typeQuery, {
+                            credentials: 'same-origin',
+                            headers: { 'Accept': 'application/json' },
+                            cache: 'no-store'
+                        });
+                        if (!res.ok) return;
+                        const data = await res.json();
+                        const next = Number(data.unreadCount ?? data.UnreadCount ?? 0) || 0;
+                        if (next !== unreadCount) {
+                            // Count changed — refresh full feed so the dropdown stays in sync.
+                            await loadFeed();
+                        }
+                    } catch {
+                        // Ignore transient network errors.
+                    }
+                }
+
+                async function markAllRead() {
+                    if (unreadCount === 0) return;
+                    const body = new URLSearchParams();
+                    body.set('__RequestVerificationToken', antiForgeryToken());
+                    try {
+                        const res = await fetch('/Admin/Notifications/mark-read?' + typeQuery.replace(/^&/, ''), {
+                            method: 'POST',
+                            credentials: 'same-origin',
+                            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                            body: body.toString()
+                        });
+                        if (!res.ok) return;
+                        unreadCount = 0;
+                        items = items.map(function (n) {
+                            return Object.assign({}, n, { isRead: true, IsRead: true });
+                        });
+                        render();
+                    } catch {
+                        // Leave unread state; user can reopen.
+                    }
+                }
+
+                async function openPanel() {
+                    open = true;
+                    panel.classList.remove('d-none');
+                    toggle.setAttribute('aria-expanded', 'true');
+                    await loadFeed();
+                    await markAllRead();
+                }
+
+                function closePanel() {
+                    open = false;
+                    panel.classList.add('d-none');
+                    toggle.setAttribute('aria-expanded', 'false');
+                }
+
+                toggle.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (open) closePanel();
+                    else openPanel();
+                });
+
+                document.addEventListener('click', function (e) {
+                    if (!open) return;
+                    if (panel.contains(e.target) || toggle.contains(e.target)) return;
+                    closePanel();
+                });
+
+                document.addEventListener('visibilitychange', function () {
+                    if (!document.hidden) {
+                        loadFeed();
+                    }
+                });
+
+                // Initial load + polling fallback (works even if SignalR fails).
+                loadFeed();
+                setInterval(pollUnreadCount, POLL_MS);
+
+                return {
+                    matchesType: matchesType,
+                    onReceive: function (notification, unreadCountFromPayload) {
+                        if (typeof unreadCountFromPayload === 'number') {
+                            setUnreadOnly(unreadCountFromPayload);
+                        } else {
+                            setUnreadOnly(unreadCount + 1);
+                        }
+                        if (notification) {
+                            const id = notification.uid || notification.Uid;
+                            items = items.filter(function (n) {
+                                return (n.uid || n.Uid) !== id;
+                            });
+                            items = [notification].concat(items).slice(0, 20);
+                            render();
+                        } else {
+                            loadFeed();
+                        }
+                    },
+                    onMarkedRead: function (payload) {
+                        // Only clear this icon's badge if the mark-read event was scoped to its
+                        // types (or unscoped, i.e. the legacy "mark everything" path).
+                        const eventTypes = payload && (payload.types || payload.Types);
+                        if (eventTypes && typeSet) {
+                            const overlaps = eventTypes.some(function (t) { return typeSet.indexOf(t) !== -1; });
+                            if (!overlaps) return;
+                        }
+                        setUnreadOnly(0);
+                        items = items.map(function (n) {
+                            return Object.assign({}, n, { isRead: true, IsRead: true });
+                        });
+                        render();
+                    }
+                };
+            }
+
+            const icons = [
+                createNotifyIcon({
+                    toggleId: 'hsNotifyToggle', panelId: 'hsNotifyPanel', badgeId: 'hsNotifyBadge',
+                    listId: 'hsNotifyList', unreadLabelId: 'hsNotifyUnreadLabel',
+                    types: '@HomeServicesPortal.Services.AdminNotificationService.ServiceRequestCreated'
+                }),
+                createNotifyIcon({
+                    toggleId: 'hsCustomerNotifyToggle', panelId: 'hsCustomerNotifyPanel', badgeId: 'hsCustomerNotifyBadge',
+                    listId: 'hsCustomerNotifyList', unreadLabelId: 'hsCustomerNotifyUnreadLabel',
+                    types: '@HomeServicesPortal.Services.AdminNotificationService.CustomerRequestCancelled'
+                }),
+                createNotifyIcon({
+                    toggleId: 'hsProviderNotifyToggle', panelId: 'hsProviderNotifyPanel', badgeId: 'hsProviderNotifyBadge',
+                    listId: 'hsProviderNotifyList', unreadLabelId: 'hsProviderNotifyUnreadLabel',
+                    types: '@HomeServicesPortal.Services.AdminNotificationService.ProviderBookingCancelled'
+                })
+            ].filter(Boolean);
+
+            if (window.signalR && icons.length) {
                 const connection = new signalR.HubConnectionBuilder()
                     .withUrl('/hubs/admin-notifications')
                     .withAutomaticReconnect([0, 2000, 5000, 10000, 30000])
                     .build();
 
                 connection.on('ReceiveNotification', function (payload) {
-                    if (!payload) {
-                        loadFeed();
-                        return;
-                    }
+                    if (!payload) return;
                     const notification = payload.notification || payload.Notification;
-                    const nextCount = payload.unreadCount ?? payload.UnreadCount;
-                    if (typeof nextCount === 'number') {
-                        setUnreadOnly(nextCount);
-                    } else {
-                        setUnreadOnly(unreadCount + 1);
-                    }
-                    if (notification) {
-                        const id = notification.uid || notification.Uid;
-                        items = items.filter(function (n) {
-                            return (n.uid || n.Uid) !== id;
-                        });
-                        items = [notification].concat(items).slice(0, 20);
-                        render();
-                    } else {
-                        loadFeed();
-                    }
+                    const unreadCountFromPayload = payload.unreadCount ?? payload.UnreadCount;
+                    icons.forEach(function (icon) {
+                        if (icon.matchesType(notification)) {
+                            icon.onReceive(notification, unreadCountFromPayload);
+                        }
+                    });
                 });
 
                 connection.on('NotificationsMarkedRead', function (payload) {
-                    setUnreadOnly(payload && (payload.unreadCount ?? payload.UnreadCount) || 0);
-                    items = items.map(function (n) {
-                        return Object.assign({}, n, { isRead: true, IsRead: true });
-                    });
-                    render();
+                    icons.forEach(function (icon) { icon.onMarkedRead(payload); });
                 });
 
-                connection.onreconnected(function () { loadFeed(); });
-                connection.start()
-                    .then(function () { loadFeed(); })
-                    .catch(function () { /* polling keeps badge fresh */ });
+                connection.onreconnected(function () {
+                    // Reconnect: each icon's own initial loadFeed() already ran; a full page
+                    // reload is not needed, polling will resync any missed events shortly.
+                });
+                connection.start().catch(function () { /* polling keeps badges fresh */ });
             }
         })();
     </script>

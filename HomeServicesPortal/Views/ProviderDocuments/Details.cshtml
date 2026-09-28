@@ -81,7 +81,7 @@
             <div class="col-md-6">
                 <div class="row g-2">
                     <div class="col-sm-4 pd-label">Verified On</div>
-                    <div class="col-sm-8 pd-value">@(Model.VerifiedOn?.ToString("dd MMM yyyy HH:mm") ?? "—")</div>
+                    <div class="col-sm-8 pd-value">@(Model.VerifiedOn.ToPktDisplay())</div>
                 </div>
             </div>
             <div class="col-md-6">
@@ -102,7 +102,7 @@
             <div class="col-md-6">
                 <div class="row g-2">
                     <div class="col-sm-4 pd-label">Created</div>
-                    <div class="col-sm-8 pd-value">@Model.CreatedOn.ToString("dd MMM yyyy HH:mm")</div>
+                    <div class="col-sm-8 pd-value">@Model.CreatedOn.ToPktDisplay()</div>
                 </div>
             </div>
         </div>
@@ -111,7 +111,7 @@
             <div class="col-md-6">
                 <div class="row g-2">
                     <div class="col-sm-4 pd-label">Updated</div>
-                    <div class="col-sm-8 pd-value">@(Model.UpdatedOn?.ToString("dd MMM yyyy HH:mm") ?? "—")</div>
+                    <div class="col-sm-8 pd-value">@(Model.UpdatedOn.ToPktDisplay())</div>
                 </div>
             </div>
             <div class="col-md-6"></div>
@@ -169,7 +169,22 @@
                     </div>
                 </div>
             </div>
-            <div class="col-md-6"></div>
+            <div class="col-md-6">
+                <div class="row g-2 align-items-start">
+                    <div class="col-sm-4 pd-label">Police Verification</div>
+                    <div class="col-sm-8 pd-value">
+                        @if (!string.IsNullOrWhiteSpace(Model.PoliceVerificationPath))
+                        {
+                            <img src="@UrlPath(Model.PoliceVerificationPath)" alt="Police Verification" class="img-thumbnail pd-thumb" />
+                            <div><a href="@UrlPath(Model.PoliceVerificationPath)" target="_blank" rel="noopener" class="small">Open</a></div>
+                        }
+                        else
+                        {
+                            <text>—</text>
+                        }
+                    </div>
+                </div>
+            </div>
         </div>
 
         <hr class="my-3" />

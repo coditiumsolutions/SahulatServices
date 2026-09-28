@@ -1,5 +1,6 @@
 using HomeServicesPortal.Data;
 using HomeServicesPortal.Entities;
+using HomeServicesPortal.Helpers;
 using HomeServicesPortal.Models.ViewModels;
 using Microsoft.EntityFrameworkCore;
 
@@ -22,7 +23,11 @@ public class ConfigurationEntryService : IConfigurationEntryService
         const int pageSize = 15;
         page = page < 1 ? 1 : page;
 
-        var query = _db.Configurations.AsNoTracking();
+        // TimeFormatPreference.ConfigKey is managed exclusively via Configurations > Preferences
+        // (its own dedicated toggle UI, see PreferencesController) — hide it from this generic
+        // key/value list so it can't be edited/deleted here into an invalid value.
+        var query = _db.Configurations.AsNoTracking()
+            .Where(c => c.ConfigKey != TimeFormatPreference.ConfigKey);
 
         if (!string.IsNullOrWhiteSpace(search))
         {
@@ -66,7 +71,7 @@ public class ConfigurationEntryService : IConfigurationEntryService
     {
         var row = await _db.Configurations
             .AsNoTracking()
-            .Where(c => c.Uid == id)
+            .Where(c => c.Uid == id && c.ConfigKey != TimeFormatPreference.ConfigKey)
             .Select(c => new ConfigurationDetailsVm
             {
                 Uid = c.Uid,
@@ -85,7 +90,7 @@ public class ConfigurationEntryService : IConfigurationEntryService
     {
         return await _db.Configurations
             .AsNoTracking()
-            .Where(c => c.Uid == id)
+            .Where(c => c.Uid == id && c.ConfigKey != TimeFormatPreference.ConfigKey)
             .Select(c => new ConfigurationFormVm
             {
                 Uid = c.Uid,
@@ -99,7 +104,7 @@ public class ConfigurationEntryService : IConfigurationEntryService
     {
         return await _db.Configurations
             .AsNoTracking()
-            .Where(c => c.Uid == id)
+            .Where(c => c.Uid == id && c.ConfigKey != TimeFormatPreference.ConfigKey)
             .Select(c => new ConfigurationDeleteVm
             {
                 Uid = c.Uid,
@@ -120,6 +125,8 @@ public class ConfigurationEntryService : IConfigurationEntryService
             return (false, "Config key is required.");
         if (string.IsNullOrWhiteSpace(value))
             return (false, "Config value is required.");
+        if (string.Equals(key, TimeFormatPreference.ConfigKey, StringComparison.OrdinalIgnoreCase))
+            return (false, $"'{key}' is a reserved config key — use Configurations > Preferences instead.");
 
         var exists = await _db.Configurations
             .AnyAsync(c => c.ConfigKey == key, cancellationToken);
@@ -142,7 +149,7 @@ public class ConfigurationEntryService : IConfigurationEntryService
         CancellationToken cancellationToken = default)
     {
         var entity = await _db.Configurations
-            .FirstOrDefaultAsync(c => c.Uid == model.Uid, cancellationToken);
+            .FirstOrDefaultAsync(c => c.Uid == model.Uid && c.ConfigKey != TimeFormatPreference.ConfigKey, cancellationToken);
         if (entity == null)
             return (false, "Configuration not found.");
 
@@ -153,6 +160,8 @@ public class ConfigurationEntryService : IConfigurationEntryService
             return (false, "Config key is required.");
         if (string.IsNullOrWhiteSpace(value))
             return (false, "Config value is required.");
+        if (string.Equals(key, TimeFormatPreference.ConfigKey, StringComparison.OrdinalIgnoreCase))
+            return (false, $"'{key}' is a reserved config key — use Configurations > Preferences instead.");
 
         var keyTaken = await _db.Configurations
             .AnyAsync(c => c.ConfigKey == key && c.Uid != model.Uid, cancellationToken);
@@ -169,7 +178,7 @@ public class ConfigurationEntryService : IConfigurationEntryService
     public async Task<(bool Success, string? Error)> DeleteAsync(int id, CancellationToken cancellationToken = default)
     {
         var entity = await _db.Configurations
-            .FirstOrDefaultAsync(c => c.Uid == id, cancellationToken);
+            .FirstOrDefaultAsync(c => c.Uid == id && c.ConfigKey != TimeFormatPreference.ConfigKey, cancellationToken);
         if (entity == null)
             return (false, "Configuration not found.");
 

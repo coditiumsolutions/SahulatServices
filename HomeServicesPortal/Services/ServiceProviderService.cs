@@ -14,17 +14,20 @@ public class ServiceProviderService : IServiceProviderService
     private readonly AppDbContext _db;
     private readonly IFileStorageService _fileStorage;
     private readonly IConfigurationEntryService _configurations;
+    private readonly IProviderCategoryService _providerCategories;
     private readonly ILogger<ServiceProviderService> _logger;
 
     public ServiceProviderService(
         AppDbContext db,
         IFileStorageService fileStorage,
         IConfigurationEntryService configurations,
+        IProviderCategoryService providerCategories,
         ILogger<ServiceProviderService> logger)
     {
         _db = db;
         _fileStorage = fileStorage;
         _configurations = configurations;
+        _providerCategories = providerCategories;
         _logger = logger;
     }
 
@@ -92,6 +95,7 @@ public class ServiceProviderService : IServiceProviderService
                 ProfilePhotoPath = d.ProfilePhotoPath,
                 CnicFrontImagePath = d.CnicFrontImagePath,
                 CnicBackImagePath = d.CnicBackImagePath,
+                PoliceVerificationPath = d.PoliceVerificationPath,
                 IsVerified = false, // display unused; status comes from Providers.IsVerified
                 VerifiedOn = d.VerifiedOn,
                 VerifiedBy = d.VerifiedBy,
@@ -283,6 +287,12 @@ public class ServiceProviderService : IServiceProviderService
 
         if (provider == null) return null;
 
+        provider.CategoryUids = await _providerCategories.GetCategoryUidsAsync(id, cancellationToken);
+        if (provider.CategoryUids.Count == 0)
+        {
+            provider.CategoryUids = new List<int> { provider.CategoryUid };
+        }
+
         return await PopulateFormAsync(provider, cancellationToken);
     }
 
@@ -360,7 +370,7 @@ public class ServiceProviderService : IServiceProviderService
         _db.UsersLogins.Add(user);
         await _db.SaveChangesAsync(cancellationToken);
 
-        _db.Providers.Add(new Provider
+        var provider = new Provider
         {
             UserUid = user.Uid,
             MobileNo = mobile,
@@ -373,9 +383,19 @@ public class ServiceProviderService : IServiceProviderService
             CategoryUid = model.CategoryUid,
             IsAvailable = true,
             CreatedOn = DateTime.Now
-        });
+        };
 
+        _db.Providers.Add(provider);
         await _db.SaveChangesAsync(cancellationToken);
+
+        var categoryUids = model.CategoryUids is { Count: > 0 } ? model.CategoryUids : new List<int> { model.CategoryUid };
+        var (syncSuccess, syncError) = await _providerCategories.SyncCategoriesAsync(
+            provider.Uid, categoryUids, model.CategoryUid, cancellationToken);
+        if (!syncSuccess)
+        {
+            return (false, syncError);
+        }
+
         _logger.LogInformation("Provider {Name} created.", model.FullName);
         return (true, null);
     }
@@ -430,7 +450,6 @@ public class ServiceProviderService : IServiceProviderService
         provider.FullName = model.FullName.Trim();
         provider.Cnic = model.Cnic.Trim();
         provider.City = string.IsNullOrWhiteSpace(model.City) ? null : model.City.Trim();
-        provider.CategoryUid = model.CategoryUid;
         provider.ExperienceYears = model.ExperienceYears ?? 0;
         provider.AverageRating = model.Rating ?? provider.AverageRating;
         provider.IsVerified = model.IsVerified;
@@ -439,6 +458,15 @@ public class ServiceProviderService : IServiceProviderService
         provider.User.IsActive = model.IsActive;
 
         await _db.SaveChangesAsync(cancellationToken);
+
+        var categoryUids = model.CategoryUids is { Count: > 0 } ? model.CategoryUids : new List<int> { model.CategoryUid };
+        var (syncSuccess, syncError) = await _providerCategories.SyncCategoriesAsync(
+            provider.Uid, categoryUids, model.CategoryUid, cancellationToken);
+        if (!syncSuccess)
+        {
+            return (false, syncError);
+        }
+
         _logger.LogInformation("Provider {Uid} updated.", model.Uid);
         return (true, null);
     }

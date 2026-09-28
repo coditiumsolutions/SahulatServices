@@ -15,6 +15,7 @@
         <dt class="col-sm-4 text-muted">Profile</dt><dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.ProfilePhotoPath) ? "—" : Model.ProfilePhotoPath)</dd>
         <dt class="col-sm-4 text-muted">CNIC Front</dt><dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.CnicFrontImagePath) ? "—" : Model.CnicFrontImagePath)</dd>
         <dt class="col-sm-4 text-muted">CNIC Back</dt><dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.CnicBackImagePath) ? "—" : Model.CnicBackImagePath)</dd>
+        <dt class="col-sm-4 text-muted">Police Verification</dt><dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.PoliceVerificationPath) ? "—" : Model.PoliceVerificationPath)</dd>
     </dl>
     <form asp-action="DeleteConfirmed" asp-route-id="@Model.Uid" method="post">@Html.AntiForgeryToken()
         <div class="d-flex gap-2"><button type="submit" class="btn btn-danger"><i class="fa-solid fa-trash me-1"></i>Yes, Delete</button><a asp-action="Index" class="btn btn-outline-secondary">Cancel</a></div>

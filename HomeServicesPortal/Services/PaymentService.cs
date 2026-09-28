@@ -183,16 +183,41 @@ public class PaymentService : IPaymentService
             return (false, "Booking is not completed.");
         }
 
+        if (booking.CommissionAmount < 0 || booking.ProviderEarning < 0 || booking.CustomerPaid < 0)
+        {
+            return (false, "Booking amounts cannot be negative.");
+        }
+
+        // A caller (e.g. ServiceBookingApiService.CreateBookingAsync) may already have an ambient
+        // transaction open on this same scoped AppDbContext/connection — EF Core does not support
+        // nested transactions, so reuse it instead of starting a second one via ExecuteInTransactionAsync.
+        if (_db.Database.CurrentTransaction != null)
+        {
+            return await RecordBookingCompletionCoreAsync(booking, cancellationToken);
+        }
+
+        // SERIALIZABLE so a second concurrent call for the same booking (e.g. a retried
+        // verify-completion racing this one, or SyncCompletedBookingsAsync's sweep) blocks on the
+        // AnyAsync existence check inside RecordBookingCompletionCoreAsync until this transaction
+        // commits/rolls back, instead of both readers seeing "not posted yet" under the default
+        // READ COMMITTED isolation and double-posting ledger entries. Wrapped in
+        // CreateExecutionStrategy().ExecuteAsync (same pattern as AuthService.ExecuteInTransactionAsync)
+        // since EnableRetryOnFailure is on in Development (Program.cs) and a bare BeginTransactionAsync
+        // throws under SqlServerRetryingExecutionStrategy — confirmed by testing this locally.
+        return await ExecuteInTransactionAsync(
+            () => RecordBookingCompletionCoreAsync(booking, cancellationToken),
+            cancellationToken);
+    }
+
+    private async Task<(bool Created, string? Message)> RecordBookingCompletionCoreAsync(
+        ServiceBooking booking,
+        CancellationToken cancellationToken)
+    {
         var alreadyPosted = await _db.PaymentLedgers
             .AnyAsync(l => l.BookingUid == booking.Uid, cancellationToken);
         if (alreadyPosted)
         {
             return (false, "Finance entries already exist for this booking.");
-        }
-
-        if (booking.CommissionAmount < 0 || booking.ProviderEarning < 0 || booking.CustomerPaid < 0)
-        {
-            return (false, "Booking amounts cannot be negative.");
         }
 
         var now = DateTime.Now;
@@ -293,6 +318,30 @@ public class PaymentService : IPaymentService
 
         await _db.SaveChangesAsync(cancellationToken);
         return (true, $"Posted {entries.Count} ledger entr{(entries.Count == 1 ? "y" : "ies")} for booking #{booking.Uid}.");
+    }
+
+    private async Task<T> ExecuteInTransactionAsync<T>(
+        Func<Task<T>> operation,
+        CancellationToken cancellationToken)
+    {
+        var strategy = _db.Database.CreateExecutionStrategy();
+
+        return await strategy.ExecuteAsync(async () =>
+        {
+            await using var transaction = await _db.Database.BeginTransactionAsync(
+                System.Data.IsolationLevel.Serializable, cancellationToken);
+            try
+            {
+                var result = await operation();
+                await transaction.CommitAsync(cancellationToken);
+                return result;
+            }
+            catch
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                throw;
+            }
+        });
     }
 
     public async Task<int> SyncCompletedBookingsAsync(CancellationToken cancellationToken = default)
@@ -469,11 +518,12 @@ public class PaymentService : IPaymentService
             .Where(l => l.ProviderUid == providerUid && l.AccountType == "Provider")
             .SumAsync(l => l.EntryType == "Debit" ? -l.Amount : l.Amount, cancellationToken);
 
-        var pendingPayouts = await _db.ProviderPayouts
+        var pendingPayoutIds = await _db.ProviderPayouts
             .Where(p => p.ProviderUid == providerUid && p.Status == "Pending")
+            .Select(p => p.Uid)
             .ToListAsync(cancellationToken);
 
-        if (pendingPayouts.Count == 0 && balance <= 0)
+        if (pendingPayoutIds.Count == 0 && balance <= 0)
         {
             return (false, "No pending payout and no positive balance to pay out.", 0);
         }
@@ -484,15 +534,36 @@ public class PaymentService : IPaymentService
 
         var now = DateTime.Now;
 
-        foreach (var payout in pendingPayouts)
+        // Atomic conditional claim (WHERE Status = "Pending") instead of read-then-write, so a
+        // double-click/resubmit of "Pay Now" can't both pass the pre-check above and both post a
+        // payout: only the call that actually flips these rows from Pending goes on to post the
+        // ledger debit. No BeginTransactionAsync per this project's SqlServerRetryingExecutionStrategy
+        // constraint — the ExecuteUpdateAsync statement itself is the atomic unit.
+        var claimedCount = 0;
+        if (pendingPayoutIds.Count > 0)
         {
-            payout.Status = "Paid";
-            payout.PaidOn = now;
-            payout.Method = string.IsNullOrWhiteSpace(method) ? payout.Method : method;
+            claimedCount = await _db.ProviderPayouts
+                .Where(p => pendingPayoutIds.Contains(p.Uid) && p.Status == "Pending")
+                .ExecuteUpdateAsync(s => s
+                    .SetProperty(p => p.Status, "Paid")
+                    .SetProperty(p => p.PaidOn, now)
+                    .SetProperty(p => p.Method, p => string.IsNullOrWhiteSpace(method) ? p.Method : method),
+                    cancellationToken);
+
+            if (claimedCount == 0)
+            {
+                // Another concurrent call already claimed these payouts between our read and here.
+                return (false, "Payout already processed.", 0);
+            }
         }
 
         if (amountToPay > 0)
         {
+            // NOTE: when pendingPayoutIds is empty (balance-only payout, no ProviderPayout row to
+            // claim), this insert has no atomic guard the way the claim above does — a near-
+            // simultaneous double-click could still post two debits in that specific case. Not
+            // covered here since it needs a schema-level claim marker; flag if this path sees
+            // real traffic.
             _db.PaymentLedgers.Add(new PaymentLedger
             {
                 BookingUid = null,
@@ -503,9 +574,9 @@ public class PaymentService : IPaymentService
                 Reason = "Payout",
                 CreatedOn = now
             });
-        }
 
-        await _db.SaveChangesAsync(cancellationToken);
+            await _db.SaveChangesAsync(cancellationToken);
+        }
 
         var message = amountToPay > 0
             ? $"Paid out {amountToPay:N2} to provider."

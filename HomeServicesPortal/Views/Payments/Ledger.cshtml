@@ -72,7 +72,7 @@
                             <td>@item.EntryType</td>
                             <td>@item.Reason</td>
                             <td>@item.Amount.ToString("N2")</td>
-                            <td>@item.CreatedOn.ToString("dd MMM yyyy HH:mm")</td>
+                            <td>@item.CreatedOn.ToPktDisplay()</td>
                             <td class="text-end">
                                 <a asp-action="LedgerDetails" asp-route-id="@item.Uid" class="btn btn-sm btn-outline-secondary" title="Details"><i class="fa-solid fa-eye"></i></a>
                             </td>

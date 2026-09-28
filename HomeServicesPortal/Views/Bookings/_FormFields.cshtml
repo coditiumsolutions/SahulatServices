@@ -89,23 +89,63 @@
             <input asp-for="EstimatedAmount" class="form-control calc-input" type="number" step="0.01" min="0" />
             <span asp-validation-for="EstimatedAmount" class="text-danger small"></span>
         </div>
+        <label asp-for="LabourAmount" class="col-md-3 bk-title"></label>
+        <div class="col-md-3 bk-field">
+            <input asp-for="LabourAmount" class="form-control calc-input" type="number" step="0.01" min="0" />
+            <span asp-validation-for="LabourAmount" class="text-danger small"></span>
+            <div class="form-text">Commission/company ledger is computed off this amount only.</div>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-3 align-items-center">
         <label asp-for="VisitCharges" class="col-md-3 bk-title"></label>
         <div class="col-md-3 bk-field">
             <input asp-for="VisitCharges" class="form-control calc-input" type="number" step="0.01" min="0" />
             <span asp-validation-for="VisitCharges" class="text-danger small"></span>
         </div>
-    </div>
-
-    <div class="row g-3 mb-3 align-items-center">
         <label asp-for="AdditionalCharges" class="col-md-3 bk-title"></label>
         <div class="col-md-3 bk-field">
             <input asp-for="AdditionalCharges" class="form-control calc-input" type="number" step="0.01" min="0" />
             <span asp-validation-for="AdditionalCharges" class="text-danger small"></span>
         </div>
+    </div>
+
+    <div class="row g-3 mb-3 align-items-center">
         <label asp-for="Deductions" class="col-md-3 bk-title"></label>
         <div class="col-md-3 bk-field">
             <input asp-for="Deductions" class="form-control calc-input" type="number" step="0.01" min="0" />
             <span asp-validation-for="Deductions" class="text-danger small"></span>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-3">
+        <label class="col-md-3 bk-title">Material Items</label>
+        <div class="col-md-9 bk-field">
+            <table class="table table-sm align-middle" id="materialItemsTable">
+                <thead>
+                    <tr>
+                        <th>Item</th>
+                        <th style="width:110px">Qty</th>
+                        <th style="width:140px">Unit Price</th>
+                        <th style="width:120px">Amount</th>
+                        <th style="width:40px"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (var i = 0; i < Model.MaterialItems.Count; i++)
+                    {
+                        <tr class="material-item-row">
+                            <td><input type="text" class="form-control form-control-sm" name="MaterialItems[@i].ItemName" value="@Model.MaterialItems[i].ItemName" maxlength="200" /></td>
+                            <td><input type="number" class="form-control form-control-sm material-qty" name="MaterialItems[@i].Quantity" value="@Model.MaterialItems[i].Quantity" step="0.01" min="0.01" /></td>
+                            <td><input type="number" class="form-control form-control-sm material-price" name="MaterialItems[@i].UnitPrice" value="@Model.MaterialItems[i].UnitPrice" step="0.01" min="0" /></td>
+                            <td><span class="material-amount">0.00</span></td>
+                            <td><button type="button" class="btn btn-sm btn-outline-danger remove-material-row">&times;</button></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="addMaterialRow">+ Add item</button>
+            <div class="form-text">Passed through to the customer bill (Final Bill) but not commissionable — only Labour Amount above feeds commission.</div>
         </div>
     </div>
 
@@ -172,6 +212,11 @@
         const root = document.getElementById('bookingTotalsFields');
         if (!root) return;
         const form = root.closest('form') || document;
+        const table = document.getElementById('materialItemsTable');
+        const tbody = table ? table.querySelector('tbody') : null;
+        const addRowBtn = document.getElementById('addMaterialRow');
+        let rowIndex = tbody ? tbody.querySelectorAll('tr').length : 0;
+
         const num = (name) => {
             const el = form.querySelector('[name="' + name + '"]');
             if (!el) return 0;
@@ -182,18 +227,70 @@
             const el = form.querySelector('[name="' + name + '"]');
             if (el) el.value = (Math.round(value * 100) / 100).toFixed(2);
         };
+
+        function materialTotal() {
+            let total = 0;
+            if (!tbody) return total;
+            tbody.querySelectorAll('.material-item-row').forEach(row => {
+                const qty = parseFloat(row.querySelector('.material-qty').value) || 0;
+                const price = parseFloat(row.querySelector('.material-price').value) || 0;
+                const amount = Math.round(qty * price * 100) / 100;
+                row.querySelector('.material-amount').textContent = amount.toFixed(2);
+                total += amount;
+            });
+            return Math.round(total * 100) / 100;
+        }
+
         function recalc() {
-            const finalBill = num('EstimatedAmount') + num('VisitCharges') + num('AdditionalCharges') - num('Deductions');
+            const materials = materialTotal();
+            const finalBill = num('EstimatedAmount') + num('LabourAmount') + materials
+                + num('VisitCharges') + num('AdditionalCharges') - num('Deductions');
             const typeEl = form.querySelector('[name="CommissionType"]');
             const type = typeEl ? typeEl.value : 'Percent';
             const rate = num('CommissionValue');
-            let commission = type === 'Fixed' ? rate : finalBill * rate / 100;
+            const labour = num('LabourAmount');
+            let commission = type === 'Fixed' ? rate : labour * rate / 100;
             commission = Math.round(commission * 100) / 100;
             set('FinalAmount', finalBill);
             set('CustomerRemaining', finalBill - num('CustomerPaid'));
             set('CommissionAmount', commission);
-            set('ProviderEarning', finalBill - commission);
+            set('ProviderEarning', labour - commission);
         }
+
+        function addMaterialRow() {
+            if (!tbody) return;
+            const tr = document.createElement('tr');
+            tr.className = 'material-item-row';
+            tr.innerHTML =
+                '<td><input type="text" class="form-control form-control-sm" name="MaterialItems[' + rowIndex + '].ItemName" maxlength="200" /></td>' +
+                '<td><input type="number" class="form-control form-control-sm material-qty" name="MaterialItems[' + rowIndex + '].Quantity" value="1" step="0.01" min="0.01" /></td>' +
+                '<td><input type="number" class="form-control form-control-sm material-price" name="MaterialItems[' + rowIndex + '].UnitPrice" value="0" step="0.01" min="0" /></td>' +
+                '<td><span class="material-amount">0.00</span></td>' +
+                '<td><button type="button" class="btn btn-sm btn-outline-danger remove-material-row">&times;</button></td>';
+            tbody.appendChild(tr);
+            rowIndex++;
+            wireRow(tr);
+            recalc();
+        }
+
+        function wireRow(row) {
+            row.querySelectorAll('input').forEach(el => {
+                el.addEventListener('input', recalc);
+                el.addEventListener('change', recalc);
+            });
+            row.querySelector('.remove-material-row').addEventListener('click', function () {
+                row.remove();
+                recalc();
+            });
+        }
+
+        if (tbody) {
+            tbody.querySelectorAll('.material-item-row').forEach(wireRow);
+        }
+        if (addRowBtn) {
+            addRowBtn.addEventListener('click', addMaterialRow);
+        }
+
         form.querySelectorAll('.calc-input').forEach(el => {
             el.addEventListener('input', recalc);
             el.addEventListener('change', recalc);

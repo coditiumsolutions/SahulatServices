@@ -76,6 +76,10 @@
                                     {
                                         <img src="@UrlPath(item.CnicBackImagePath)" alt="CNIC Back" class="rounded border" style="width:40px;height:40px;object-fit:cover" />
                                     }
+                                    @if (!string.IsNullOrWhiteSpace(item.PoliceVerificationPath))
+                                    {
+                                        <img src="@UrlPath(item.PoliceVerificationPath)" alt="Police Verification" class="rounded border" style="width:40px;height:40px;object-fit:cover" />
+                                    }
                                     @if (!item.HasAllImages)
                                     {
                                         <span class="badge bg-warning text-dark align-self-center">Incomplete</span>
@@ -92,7 +96,7 @@
                                     <span class="badge bg-secondary">Pending</span>
                                 }
                             </td>
-                            <td>@item.CreatedOn.ToString("dd MMM yyyy")</td>
+                            <td>@item.CreatedOn.ToPktDateDisplay()</td>
                             <td class="text-end">
                                 <div class="btn-group btn-group-sm">
                                     <a asp-action="Details" asp-route-id="@item.Uid" class="btn btn-outline-secondary" title="Details"><i class="fa-solid fa-eye"></i></a>

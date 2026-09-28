@@ -54,8 +54,15 @@ public class ServiceProviderFormVm : IValidatableObject
     public string? City { get; set; }
 
     [Required(ErrorMessage = "Category is required.")]
-    [Display(Name = "Category")]
+    [Display(Name = "Primary Category")]
     public int CategoryUid { get; set; }
+
+    /// <summary>
+    /// All categories this provider offers (checkboxes). Must include CategoryUid. When empty
+    /// on postback (e.g. legacy form), falls back to a single-item list containing CategoryUid.
+    /// </summary>
+    [Display(Name = "Categories")]
+    public List<int> CategoryUids { get; set; } = new();
 
     [Display(Name = "Experience Years")]
     [Range(0, 60)]
@@ -134,6 +141,7 @@ public class ServiceProviderDocumentTabVm
     public string? ProfilePhotoPath { get; set; }
     public string? CnicFrontImagePath { get; set; }
     public string? CnicBackImagePath { get; set; }
+    public string? PoliceVerificationPath { get; set; }
     public bool IsVerified { get; set; }
     public DateTime? VerifiedOn { get; set; }
     public int? VerifiedBy { get; set; }

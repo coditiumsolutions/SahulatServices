@@ -80,7 +80,7 @@
                                     <span class="badge bg-info ms-1">Verified</span>
                                 }
                             </td>
-                            <td>@(user.LastLogin?.ToString("dd MMM yyyy HH:mm") ?? "—")</td>
+                            <td>@(user.LastLogin.ToPktDisplay())</td>
                             <td class="text-end">
                                 <div class="btn-group btn-group-sm">
                                     <a asp-action="UserDetails" asp-route-id="@user.Id" class="btn btn-outline-secondary" title="Details">

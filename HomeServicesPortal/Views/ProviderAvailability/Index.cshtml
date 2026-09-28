@@ -88,8 +88,8 @@
                                     <span class="badge bg-secondary">Offline</span>
                                 }
                             </td>
-                            <td>@(item.AvailableFrom?.ToString("HH:mm") ?? "—")</td>
-                            <td>@(item.AvailableTo?.ToString("HH:mm") ?? "—")</td>
+                            <td>@(item.AvailableFrom.ToDisplay())</td>
+                            <td>@(item.AvailableTo.ToDisplay())</td>
                             <td class="text-end">
                                 <div class="btn-group btn-group-sm">
                                     <a asp-action="Details" asp-route-id="@item.Uid" class="btn btn-outline-secondary" title="Details"><i class="fa-solid fa-eye"></i></a>

@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace HomeServicesPortal.Models.Api;
 
 public class ServiceBookingApiDto
@@ -7,6 +9,20 @@ public class ServiceBookingApiDto
     public int RequestUid { get; set; }
 
     public string? RequestTitle { get; set; }
+
+    /// <summary>
+    /// Sourced from the linked CustomerServiceRequests row (via RequestUid). Date-only wall-clock
+    /// value, not a UTC instant — passed through as stored, no "Z" conversion. Null when the
+    /// customer's original request left it blank. Added v3.21.
+    /// </summary>
+    [JsonConverter(typeof(NullableDateOnlyJsonConverter))]
+    public DateOnly? PreferredServiceDate { get; set; }
+
+    /// <summary>
+    /// Sourced from the linked CustomerServiceRequests row (via RequestUid). Free-text time-of-day
+    /// value, not a UTC instant. Null when the customer's original request left it blank. Added v3.21.
+    /// </summary>
+    public string? PreferredServiceTime { get; set; }
 
     public int ClientUid { get; set; }
 

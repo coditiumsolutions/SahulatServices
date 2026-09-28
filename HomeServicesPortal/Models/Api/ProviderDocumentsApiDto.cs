@@ -11,6 +11,9 @@ public class ProviderDocumentsApiDto
 
     public string? CnicBackImagePath { get; set; }
 
+    /// <summary>Added v3.20 — optional; null when not yet uploaded.</summary>
+    public string? PoliceVerificationPath { get; set; }
+
     public bool IsVerified { get; set; }
 
     public DateTime? VerifiedOn { get; set; }

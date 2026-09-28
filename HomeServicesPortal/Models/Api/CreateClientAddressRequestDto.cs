@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace HomeServicesPortal.Models.Api;
 
-public class CreateClientAddressRequestDto
+public class CreateClientAddressRequestDto : IValidatableObject
 {
     [Required]
     [Range(1, int.MaxValue)]
@@ -29,4 +29,14 @@ public class CreateClientAddressRequestDto
 
     [Range(-180, 180, ErrorMessage = "Longitude must be between -180 and 180.")]
     public decimal? Longitude { get; set; }
+
+    public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+    {
+        if (Latitude.HasValue != Longitude.HasValue)
+        {
+            yield return new ValidationResult(
+                "Latitude and Longitude must both be provided or both omitted.",
+                [nameof(Latitude), nameof(Longitude)]);
+        }
+    }
 }

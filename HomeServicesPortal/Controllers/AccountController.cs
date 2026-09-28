@@ -91,7 +91,7 @@ public class AccountController : Controller
         }
 
         var trackedUser = await _db.UsersLogins.FirstAsync(u => u.Uid == user.Uid, cancellationToken);
-        trackedUser.LastLogin = DateTime.Now;
+        trackedUser.LastLogin = DateTime.UtcNow;
         await _db.SaveChangesAsync(cancellationToken);
 
         var role = staff.IsAdmin ? "Super Admin" : "Admin";

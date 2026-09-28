@@ -19,6 +19,8 @@ public class AppDbContext : DbContext
 
     public DbSet<Provider> Providers => Set<Provider>();
 
+    public DbSet<ProviderCategory> ProviderCategories => Set<ProviderCategory>();
+
     public DbSet<Staff> Staff => Set<Staff>();
 
     public DbSet<Service> Services => Set<Service>();
@@ -32,6 +34,8 @@ public class AppDbContext : DbContext
     public DbSet<CustomerServiceRequest> CustomerServiceRequests => Set<CustomerServiceRequest>();
 
     public DbSet<ServiceBooking> ServiceBookings => Set<ServiceBooking>();
+
+    public DbSet<BookingMaterialItem> BookingMaterialItems => Set<BookingMaterialItem>();
 
     public DbSet<PaymentLedger> PaymentLedgers => Set<PaymentLedger>();
 
@@ -150,6 +154,35 @@ public class AppDbContext : DbContext
                 .WithMany(c => c.Providers)
                 .HasForeignKey(e => e.CategoryUid)
                 .HasConstraintName("FK_Providers_ServiceCategories")
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<ProviderCategory>(entity =>
+        {
+            entity.ToTable("ProviderCategories");
+            entity.HasKey(e => e.Uid);
+            entity.Property(e => e.Uid).HasColumnName("UID");
+            entity.Property(e => e.ProviderUid).HasColumnName("ProviderUID");
+            entity.Property(e => e.CategoryUid).HasColumnName("CategoryUID");
+            entity.Property(e => e.IsPrimary).HasDefaultValue(false);
+            entity.Property(e => e.CreatedOn)
+                .HasColumnType("datetime")
+                .HasDefaultValueSql("(getdate())");
+
+            entity.HasIndex(e => new { e.ProviderUid, e.CategoryUid })
+                .IsUnique()
+                .HasDatabaseName("UQ_ProviderCategories_ProviderUID_CategoryUID");
+
+            entity.HasOne(e => e.Provider)
+                .WithMany(p => p.ProviderCategories)
+                .HasForeignKey(e => e.ProviderUid)
+                .HasConstraintName("FK_ProviderCategories_Providers")
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.Category)
+                .WithMany()
+                .HasForeignKey(e => e.CategoryUid)
+                .HasConstraintName("FK_ProviderCategories_ServiceCategories")
                 .OnDelete(DeleteBehavior.Restrict);
         });
 
@@ -302,6 +335,7 @@ public class AppDbContext : DbContext
             entity.Property(e => e.ProviderUid).HasColumnName("ProviderUID");
             entity.Property(e => e.ServiceDetail).HasMaxLength(1000);
             entity.Property(e => e.EstimatedAmount).HasColumnType("decimal(12,2)");
+            entity.Property(e => e.LabourAmount).HasColumnType("decimal(12,2)");
             entity.Property(e => e.VisitCharges).HasColumnType("decimal(12,2)");
             entity.Property(e => e.AdditionalCharges).HasColumnType("decimal(12,2)");
             entity.Property(e => e.Deductions).HasColumnType("decimal(12,2)");
@@ -340,6 +374,27 @@ public class AppDbContext : DbContext
                 .HasForeignKey(e => e.ProviderUid)
                 .HasConstraintName("FK_ServiceBookings_Providers")
                 .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<BookingMaterialItem>(entity =>
+        {
+            entity.ToTable("BookingMaterialItems");
+            entity.HasKey(e => e.Uid);
+            entity.Property(e => e.Uid).HasColumnName("UID");
+            entity.Property(e => e.BookingUid).HasColumnName("BookingUID");
+            entity.Property(e => e.ItemName).HasMaxLength(200).IsRequired();
+            entity.Property(e => e.Quantity).HasColumnType("decimal(10,2)").HasDefaultValue(1m);
+            entity.Property(e => e.UnitPrice).HasColumnType("decimal(10,2)");
+            entity.Property(e => e.Amount).HasColumnType("decimal(10,2)");
+            entity.Property(e => e.CreatedOn)
+                .HasColumnType("datetime")
+                .HasDefaultValueSql("(getdate())");
+
+            entity.HasOne(e => e.Booking)
+                .WithMany(b => b.MaterialItems)
+                .HasForeignKey(e => e.BookingUid)
+                .HasConstraintName("FK_BookingMaterialItems_ServiceBookings")
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<PaymentLedger>(entity =>
@@ -431,6 +486,7 @@ public class AppDbContext : DbContext
             entity.Property(e => e.ProfilePhotoPath).HasMaxLength(500);
             entity.Property(e => e.CnicFrontImagePath).HasColumnName("CNICFrontImagePath").HasMaxLength(500);
             entity.Property(e => e.CnicBackImagePath).HasColumnName("CNICBackImagePath").HasMaxLength(500);
+            entity.Property(e => e.PoliceVerificationPath).HasMaxLength(500);
             entity.Property(e => e.IsVerified).HasDefaultValue(false);
             entity.Property(e => e.VerifiedOn).HasColumnType("datetime");
             entity.Property(e => e.VerifiedBy);

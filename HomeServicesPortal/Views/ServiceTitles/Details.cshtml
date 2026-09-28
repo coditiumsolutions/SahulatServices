@@ -31,7 +31,7 @@
                         <span class="badge bg-@(Model.IsActive ? "success" : "secondary")">@(Model.IsActive ? "Active" : "Inactive")</span>
                     </dd>
                     <dt class="col-sm-4 text-muted">Created On</dt>
-                    <dd class="col-sm-8">@(Model.CreatedOn?.ToString("dd MMM yyyy HH:mm") ?? "—")</dd>
+                    <dd class="col-sm-8">@(Model.CreatedOn.ToPktDisplay())</dd>
                 </dl>
                 <hr />
                 <div class="d-flex gap-2">

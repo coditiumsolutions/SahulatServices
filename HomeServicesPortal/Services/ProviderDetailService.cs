@@ -94,11 +94,50 @@ public class ProviderDetailService : IProviderDetailService
         provider.Gender = request.Gender?.Trim();
         provider.ExperienceYears = request.ExperienceYears ?? 0;
         provider.Description = request.Description?.Trim();
-        provider.CategoryUid = categoryId!.Value;
 
         await _db.SaveChangesAsync(cancellationToken);
 
+        // Keep the deprecated CategoryUid scalar and the ProviderCategories junction table in
+        // sync: this endpoint only lets the provider change their primary category, so add/mark
+        // it as primary here without disturbing any additional categories they hold via the
+        // separate PUT /api/providers/{id}/categories management endpoint.
+        await SyncPrimaryCategoryAsync(provider.Uid, categoryId!.Value, cancellationToken);
+
         return await GetProviderDetailAsync(provider.Uid, cancellationToken);
+    }
+
+    private async Task SyncPrimaryCategoryAsync(int providerUid, int categoryUid, CancellationToken cancellationToken)
+    {
+        await _db.Providers
+            .Where(p => p.Uid == providerUid)
+            .ExecuteUpdateAsync(s => s.SetProperty(p => p.CategoryUid, categoryUid), cancellationToken);
+
+        await _db.ProviderCategories
+            .Where(pc => pc.ProviderUid == providerUid && pc.IsPrimary && pc.CategoryUid != categoryUid)
+            .ExecuteUpdateAsync(s => s.SetProperty(pc => pc.IsPrimary, false), cancellationToken);
+
+        var existingRow = await _db.ProviderCategories
+            .FirstOrDefaultAsync(pc => pc.ProviderUid == providerUid && pc.CategoryUid == categoryUid, cancellationToken);
+
+        if (existingRow != null)
+        {
+            if (!existingRow.IsPrimary)
+            {
+                existingRow.IsPrimary = true;
+                await _db.SaveChangesAsync(cancellationToken);
+            }
+        }
+        else
+        {
+            _db.ProviderCategories.Add(new Entities.ProviderCategory
+            {
+                ProviderUid = providerUid,
+                CategoryUid = categoryUid,
+                IsPrimary = true,
+                CreatedOn = DateTime.Now
+            });
+            await _db.SaveChangesAsync(cancellationToken);
+        }
     }
 
     private async Task<(int? CategoryId, string? Error)> ResolveCategoryAsync(

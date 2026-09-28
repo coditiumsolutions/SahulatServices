@@ -16,12 +16,21 @@ public class BookingService : IBookingService
     private readonly AppDbContext _db;
     private readonly IPaymentService _payments;
     private readonly ICommissionRuleService _commissionRules;
+    private readonly IServiceScopeFactory _scopeFactory;
+    private readonly ILogger<BookingService> _logger;
 
-    public BookingService(AppDbContext db, IPaymentService payments, ICommissionRuleService commissionRules)
+    public BookingService(
+        AppDbContext db,
+        IPaymentService payments,
+        ICommissionRuleService commissionRules,
+        IServiceScopeFactory scopeFactory,
+        ILogger<BookingService> logger)
     {
         _db = db;
         _payments = payments;
         _commissionRules = commissionRules;
+        _scopeFactory = scopeFactory;
+        _logger = logger;
     }
 
     public async Task<List<SelectListItem>> GetRequestOptionsAsync(CancellationToken cancellationToken = default)
@@ -148,7 +157,7 @@ public class BookingService : IBookingService
 
     public async Task<BookingDetailsVm?> GetDetailsAsync(int id, CancellationToken cancellationToken = default)
     {
-        return await _db.ServiceBookings
+        var vm = await _db.ServiceBookings
             .AsNoTracking()
             .Where(b => b.Uid == id)
             .Select(b => new BookingDetailsVm
@@ -165,6 +174,7 @@ public class BookingService : IBookingService
                 ProviderName = b.Provider.FullName,
                 BookingDate = b.CreatedOn,
                 EstimatedAmount = b.EstimatedAmount,
+                LabourAmount = b.LabourAmount,
                 VisitCharges = b.VisitCharges,
                 AdditionalCharges = b.AdditionalCharges,
                 Deductions = b.Deductions,
@@ -182,6 +192,22 @@ public class BookingService : IBookingService
                 LedgerCount = _db.PaymentLedgers.Count(l => l.BookingUid == b.Uid)
             })
             .FirstOrDefaultAsync(cancellationToken);
+
+        if (vm == null) return null;
+
+        vm.MaterialItems = await _db.BookingMaterialItems
+            .AsNoTracking()
+            .Where(i => i.BookingUid == id)
+            .OrderBy(i => i.Uid)
+            .Select(i => new BookingMaterialItemInputVm
+            {
+                ItemName = i.ItemName,
+                Quantity = i.Quantity,
+                UnitPrice = i.UnitPrice
+            })
+            .ToListAsync(cancellationToken);
+
+        return vm;
     }
 
     public async Task<BookingFormVm?> GetForEditAsync(int id, CancellationToken cancellationToken = default)
@@ -200,6 +226,18 @@ public class BookingService : IBookingService
 
         if (entity == null) return null;
 
+        var materialItems = await _db.BookingMaterialItems
+            .AsNoTracking()
+            .Where(i => i.BookingUid == id)
+            .OrderBy(i => i.Uid)
+            .Select(i => new BookingMaterialItemInputVm
+            {
+                ItemName = i.ItemName,
+                Quantity = i.Quantity,
+                UnitPrice = i.UnitPrice
+            })
+            .ToListAsync(cancellationToken);
+
         return await PopulateFormAsync(new BookingFormVm
         {
             Uid = entity.Booking.Uid,
@@ -211,6 +249,8 @@ public class BookingService : IBookingService
             ServiceDetail = entity.Booking.ServiceDetail,
             ProviderUid = entity.Booking.ProviderUid,
             EstimatedAmount = entity.Booking.EstimatedAmount,
+            LabourAmount = entity.Booking.LabourAmount,
+            MaterialItems = materialItems,
             VisitCharges = entity.Booking.VisitCharges,
             AdditionalCharges = entity.Booking.AdditionalCharges,
             Deductions = entity.Booking.Deductions,
@@ -265,6 +305,7 @@ public class BookingService : IBookingService
             ProviderUid = model.ProviderUid,
             ServiceDetail = string.IsNullOrWhiteSpace(model.ServiceDetail) ? null : model.ServiceDetail.Trim(),
             EstimatedAmount = model.EstimatedAmount,
+            LabourAmount = model.LabourAmount,
             VisitCharges = model.VisitCharges,
             AdditionalCharges = model.AdditionalCharges,
             Deductions = model.Deductions,
@@ -282,6 +323,8 @@ public class BookingService : IBookingService
 
         _db.ServiceBookings.Add(booking);
         await _db.SaveChangesAsync(cancellationToken);
+
+        await ReplaceMaterialItemsAsync(booking.Uid, model.MaterialItems, cancellationToken);
 
         if (string.Equals(booking.Status, "Completed", StringComparison.OrdinalIgnoreCase))
         {
@@ -323,6 +366,7 @@ public class BookingService : IBookingService
         entity.ProviderUid = model.ProviderUid;
         entity.ServiceDetail = string.IsNullOrWhiteSpace(model.ServiceDetail) ? null : model.ServiceDetail.Trim();
         entity.EstimatedAmount = model.EstimatedAmount;
+        entity.LabourAmount = model.LabourAmount;
         entity.VisitCharges = model.VisitCharges;
         entity.AdditionalCharges = model.AdditionalCharges;
         entity.Deductions = model.Deductions;
@@ -353,12 +397,78 @@ public class BookingService : IBookingService
 
         await _db.SaveChangesAsync(cancellationToken);
 
+        await ReplaceMaterialItemsAsync(entity.Uid, model.MaterialItems, cancellationToken);
+
+        if (isPostAcceptanceCancel)
+        {
+            await PublishProviderCancellationNotificationAsync(entity.Uid, entity.ProviderUid, entity.CancelReason, cancellationToken);
+        }
+
         if (string.Equals(entity.Status, "Completed", StringComparison.OrdinalIgnoreCase))
         {
             await CompleteBookingSideEffectsAsync(entity, cancellationToken);
         }
 
         return (true, null);
+    }
+
+    private async Task ReplaceMaterialItemsAsync(
+        int bookingUid,
+        List<BookingMaterialItemInputVm> items,
+        CancellationToken cancellationToken)
+    {
+        var existing = await _db.BookingMaterialItems
+            .Where(i => i.BookingUid == bookingUid)
+            .ToListAsync(cancellationToken);
+        if (existing.Count > 0)
+        {
+            _db.BookingMaterialItems.RemoveRange(existing);
+        }
+
+        foreach (var item in items.Where(i => !string.IsNullOrWhiteSpace(i.ItemName)))
+        {
+            _db.BookingMaterialItems.Add(new BookingMaterialItem
+            {
+                BookingUid = bookingUid,
+                ItemName = item.ItemName.Trim(),
+                Quantity = item.Quantity,
+                UnitPrice = item.UnitPrice,
+                Amount = item.Amount,
+                CreatedOn = DateTime.Now
+            });
+        }
+
+        await _db.SaveChangesAsync(cancellationToken);
+    }
+
+    private async Task PublishProviderCancellationNotificationAsync(
+        int bookingUid,
+        int providerUid,
+        string? cancelReason,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            await using var scope = _scopeFactory.CreateAsyncScope();
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var notifications = scope.ServiceProvider.GetRequiredService<IAdminNotificationService>();
+
+            var providerName = await db.Providers
+                .AsNoTracking()
+                .Where(p => p.Uid == providerUid)
+                .Select(p => p.FullName)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            await notifications.NotifyProviderCancellationAsync(
+                bookingUid,
+                providerName,
+                cancelReason,
+                cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to publish admin cancellation notification for booking {BookingUid}.", bookingUid);
+        }
     }
 
     private async Task CompleteBookingSideEffectsAsync(ServiceBooking entity, CancellationToken cancellationToken)
@@ -482,8 +592,8 @@ public class BookingService : IBookingService
 
         var matchingProviders = await _db.Providers
             .AsNoTracking()
-            .Where(p => p.User.IsActive && p.CategoryUid == request.CategoryUid
-                && p.IsVerified)
+            .Where(p => p.User.IsActive && p.IsVerified
+                && p.ProviderCategories.Any(pc => pc.CategoryUid == request.CategoryUid))
             .OrderBy(p => p.FullName)
             .Select(p => new SelectListItem
             {
@@ -618,7 +728,13 @@ public class BookingService : IBookingService
             .AsNoTracking()
             .Where(p => providerUids.Contains(p.Uid)
                 && p.IsVerified)
-            .Select(p => new { p.Uid, p.CategoryUid, p.FullName, p.City })
+            .Select(p => new
+            {
+                p.Uid,
+                p.FullName,
+                p.City,
+                HasCategory = p.ProviderCategories.Any(pc => pc.CategoryUid == request.CategoryUid)
+            })
             .ToListAsync(cancellationToken);
 
         if (providers.Count != providerUids.Count)
@@ -635,7 +751,7 @@ public class BookingService : IBookingService
         if (!model.ShowAllProviders)
         {
             var mismatched = providers
-                .Where(p => p.CategoryUid != request.CategoryUid)
+                .Where(p => !p.HasCategory)
                 .Select(p => p.FullName)
                 .ToList();
             if (mismatched.Count > 0)
@@ -727,21 +843,12 @@ public class BookingService : IBookingService
         CancellationToken cancellationToken = default)
     {
         var booking = await _db.ServiceBookings
+            .AsNoTracking()
             .FirstOrDefaultAsync(b => b.Uid == bookingUid, cancellationToken);
 
-        if (booking == null)
+        if (booking == null || booking.ProviderUid != providerUid)
         {
             return (false, "Booking not found.");
-        }
-
-        if (booking.ProviderUid != providerUid)
-        {
-            return (false, "Booking not found.");
-        }
-
-        if (!string.Equals(booking.Status, "Pending", StringComparison.OrdinalIgnoreCase))
-        {
-            return (false, "This booking is no longer awaiting a response.");
         }
 
         if (!accept && string.IsNullOrWhiteSpace(reason))
@@ -751,27 +858,90 @@ public class BookingService : IBookingService
 
         if (accept)
         {
-            booking.Status = "Accepted";
-            booking.AcceptedOn = DateTime.Now;
-            booking.Passcode = Random.Shared.Next(1000, 10000).ToString();
+            // Idempotent double-tap: this same provider already accepted this booking.
+            if (string.Equals(booking.Status, "Accepted", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(booking.Status, "In Progress", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(booking.Status, "Completed", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(booking.Status, "Closed", StringComparison.OrdinalIgnoreCase))
+            {
+                return (true, null);
+            }
+
+            if (!string.Equals(booking.Status, "Pending", StringComparison.OrdinalIgnoreCase))
+            {
+                // Cancelled/Rejected/Superseded by the time this provider responded.
+                return (false, "This job has already been assigned to another provider.");
+            }
+
+            var passcode = Random.Shared.Next(1000, 10000).ToString();
+            var acceptedOn = DateTime.Now;
+
+            // Atomic conditional claim: only succeeds if still Pending at the DB level,
+            // so two concurrent accepts on sibling bookings can't both win (ExecuteUpdateAsync
+            // is a single atomic statement, compatible with the SqlServerRetryingExecutionStrategy
+            // constraint that rules out explicit BeginTransactionAsync elsewhere in this class).
+            var claimed = await _db.ServiceBookings
+                .Where(b => b.Uid == bookingUid && b.Status == "Pending")
+                .ExecuteUpdateAsync(s => s
+                    .SetProperty(b => b.Status, "Accepted")
+                    .SetProperty(b => b.AcceptedOn, acceptedOn)
+                    .SetProperty(b => b.Passcode, passcode), cancellationToken);
+
+            if (claimed == 0)
+            {
+                // Lost the race between the read above and this update.
+                return (false, "This job has already been assigned to another provider.");
+            }
+
+            // Supersede sibling Pending bookings for the same request — they're no longer
+            // available to the other providers they were fanned out to.
+            await _db.ServiceBookings
+                .Where(b => b.RequestUid == booking.RequestUid && b.Uid != bookingUid && b.Status == "Pending")
+                .ExecuteUpdateAsync(s => s
+                    .SetProperty(b => b.Status, "Cancelled")
+                    .SetProperty(b => b.CancelReason, "Assigned to another provider"), cancellationToken);
+
+            await _db.CustomerServiceRequests
+                .Where(r => r.Uid == booking.RequestUid)
+                .ExecuteUpdateAsync(s => s.SetProperty(r => r.Status, "Accepted"), cancellationToken);
+
+            return (true, null);
         }
         else
         {
-            booking.Status = "Rejected";
-            booking.RejectReason = reason!.Trim();
-
-            var request = await _db.CustomerServiceRequests
-                .FirstOrDefaultAsync(r => r.Uid == booking.RequestUid, cancellationToken);
-            if (request != null)
+            if (!string.Equals(booking.Status, "Pending", StringComparison.OrdinalIgnoreCase))
             {
-                request.Status = RequestStatusConstants.Initiated;
+                return (false, "This booking is no longer awaiting a response.");
             }
-        }
 
-        // Single SaveChanges covers booking status + request status update atomically
-        // (avoids SqlServerRetryingExecutionStrategy transaction restrictions).
-        await _db.SaveChangesAsync(cancellationToken);
-        return (true, null);
+            var rejected = await _db.ServiceBookings
+                .Where(b => b.Uid == bookingUid && b.Status == "Pending")
+                .ExecuteUpdateAsync(s => s
+                    .SetProperty(b => b.Status, "Rejected")
+                    .SetProperty(b => b.RejectReason, reason!.Trim()), cancellationToken);
+
+            if (rejected == 0)
+            {
+                return (false, "This booking is no longer awaiting a response.");
+            }
+
+            // Only reset the request back to Initiated (for staff reassignment) if this was the
+            // last remaining Pending sibling — if other providers are still pending, leave the
+            // request Assigned so they can still respond.
+            var stillPending = await _db.ServiceBookings
+                .AnyAsync(b => b.RequestUid == booking.RequestUid && b.Status == "Pending", cancellationToken);
+
+            if (!stillPending)
+            {
+                await _db.CustomerServiceRequests
+                    .Where(r => r.Uid == booking.RequestUid)
+                    .ExecuteUpdateAsync(s => s.SetProperty(r => r.Status, RequestStatusConstants.Initiated), cancellationToken);
+            }
+
+            await PublishProviderCancellationNotificationAsync(bookingUid, providerUid, reason!.Trim(), cancellationToken);
+
+            return (true, null);
+        }
     }
 
     public async Task<(bool Success, string? Error)> StartJobAsync(
@@ -803,6 +973,8 @@ public class BookingService : IBookingService
         string passcode,
         decimal actualAmountPaid,
         string? paymentMode,
+        decimal? labourAmount = null,
+        List<Models.Api.VerifyCompletionMaterialItemDto>? materialItems = null,
         CancellationToken cancellationToken = default)
     {
         var booking = await _db.ServiceBookings
@@ -847,8 +1019,14 @@ public class BookingService : IBookingService
         booking.FinalAmount = actualAmountPaid;
         booking.CustomerRemaining = ComputeCustomerRemaining(booking.FinalAmount, actualAmountPaid);
 
+        // TODO(remove after old app retired): labourAmount is optional so an old app build
+        // (which never sends it) keeps today's exact legacy behavior — commission computed on
+        // the WHOLE amount collected. Only once the app sends labourAmount does completion
+        // switch to the labour-only commission base. Once every live build always sends it,
+        // collapse this to always use labourAmount ?? 0.
+        var commissionBase = labourAmount ?? booking.FinalAmount;
         var (commissionAmount, providerEarning) = ResolveCommissionAmounts(
-            booking.FinalAmount,
+            commissionBase,
             booking.CommissionType,
             booking.CommissionValue,
             null,
@@ -856,10 +1034,31 @@ public class BookingService : IBookingService
         booking.CommissionAmount = commissionAmount;
         booking.ProviderEarning = providerEarning;
 
+        if (labourAmount.HasValue)
+        {
+            booking.LabourAmount = labourAmount.Value;
+        }
+
         booking.Status = "Completed";
         booking.CompletedOn = DateTime.Now;
 
         await _db.SaveChangesAsync(cancellationToken);
+
+        if (materialItems is { Count: > 0 })
+        {
+            await ReplaceMaterialItemsAsync(
+                booking.Uid,
+                materialItems
+                    .Where(i => !string.IsNullOrWhiteSpace(i.ItemName))
+                    .Select(i => new BookingMaterialItemInputVm
+                    {
+                        ItemName = i.ItemName,
+                        Quantity = i.Quantity,
+                        UnitPrice = i.UnitPrice
+                    })
+                    .ToList(),
+                cancellationToken);
+        }
 
         await CompleteBookingSideEffectsAsync(booking, cancellationToken);
 
@@ -897,8 +1096,10 @@ public class BookingService : IBookingService
             model.Deductions);
         model.CustomerRemaining = ComputeCustomerRemaining(model.FinalAmount, model.CustomerPaid);
 
+        // LabourAmount is not captured at assignment time (set later at completion/edit), so the
+        // commission base here is 0 until an admin fills it in via the booking-edit form.
         var (commissionAmount, providerEarning) = ResolveCommissionAmounts(
-            model.FinalAmount,
+            0,
             model.CommissionType,
             model.CommissionValue,
             null,
@@ -917,15 +1118,21 @@ public class BookingService : IBookingService
             model.EstimatedAmount = model.FinalAmount;
         }
 
+        var materialAmount = model.MaterialItems.Sum(i => i.Amount);
+
         model.FinalAmount = ComputeFinalBill(
             model.EstimatedAmount,
             model.VisitCharges,
             model.AdditionalCharges,
-            model.Deductions);
+            model.Deductions) + materialAmount + (model.LabourAmount ?? 0);
         model.CustomerRemaining = ComputeCustomerRemaining(model.FinalAmount, model.CustomerPaid);
 
+        // Commission/ledger are computed off LabourAmount only — material cost passes through
+        // to the customer bill (FinalAmount above) but is not commissionable company revenue.
+        // LabourAmount unset (null) is treated as a 0 base rather than falling back to the old
+        // whole-amount behavior, so it's visibly $0 commission until an admin fills it in.
         var (commissionAmount, providerEarning) = ResolveCommissionAmounts(
-            model.FinalAmount,
+            model.LabourAmount ?? 0,
             model.CommissionType,
             model.CommissionValue,
             model.CommissionAmount,

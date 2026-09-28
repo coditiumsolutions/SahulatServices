@@ -25,6 +25,7 @@ public class ProviderDocumentItemVm
     public string? ProfilePhotoPath { get; set; }
     public string? CnicFrontImagePath { get; set; }
     public string? CnicBackImagePath { get; set; }
+    public string? PoliceVerificationPath { get; set; }
     public bool IsVerified { get; set; }
     public DateTime CreatedOn { get; set; }
     public DateTime? UpdatedOn { get; set; }
@@ -58,9 +59,13 @@ public class ProviderDocumentFormVm
     [Display(Name = "CNIC Back")]
     public IFormFile? CnicBack { get; set; }
 
+    [Display(Name = "Police Verification")]
+    public IFormFile? PoliceVerification { get; set; }
+
     public string? ExistingProfilePhotoPath { get; set; }
     public string? ExistingCnicFrontPath { get; set; }
     public string? ExistingCnicBackPath { get; set; }
+    public string? ExistingPoliceVerificationPath { get; set; }
 
     [Display(Name = "Verified")]
     public bool IsVerified { get; set; }
@@ -81,6 +86,7 @@ public class ProviderDocumentDetailsVm
     public string? ProfilePhotoPath { get; set; }
     public string? CnicFrontImagePath { get; set; }
     public string? CnicBackImagePath { get; set; }
+    public string? PoliceVerificationPath { get; set; }
     public bool IsVerified { get; set; }
     public DateTime? VerifiedOn { get; set; }
     public int? VerifiedBy { get; set; }
@@ -98,5 +104,6 @@ public class ProviderDocumentDeleteVm
     public string? ProfilePhotoPath { get; set; }
     public string? CnicFrontImagePath { get; set; }
     public string? CnicBackImagePath { get; set; }
+    public string? PoliceVerificationPath { get; set; }
     public bool IsVerified { get; set; }
 }

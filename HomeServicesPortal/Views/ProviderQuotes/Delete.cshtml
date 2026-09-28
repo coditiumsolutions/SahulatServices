@@ -11,7 +11,7 @@
         <dt class="col-sm-4 text-muted">Service Request</dt><dd class="col-sm-8 fw-semibold">@Model.RequestLabel</dd>
         <dt class="col-sm-4 text-muted">Provider</dt><dd class="col-sm-8">@Model.ProviderName</dd>
         <dt class="col-sm-4 text-muted">Quote Amount</dt><dd class="col-sm-8">@(Model.QuoteAmount?.ToString("N2") ?? "—")</dd>
-        <dt class="col-sm-4 text-muted">Quote Date</dt><dd class="col-sm-8">@(Model.QuoteDate?.ToString("dd MMM yyyy HH:mm") ?? "—")</dd>
+        <dt class="col-sm-4 text-muted">Quote Date</dt><dd class="col-sm-8">@(Model.QuoteDate.ToPktDisplay())</dd>
     </dl>
     <form asp-action="DeleteConfirmed" asp-route-id="@Model.Uid" method="post">@Html.AntiForgeryToken()
         <div class="d-flex gap-2"><button type="submit" class="btn btn-danger"><i class="fa-solid fa-trash me-1"></i>Yes, Delete</button><a asp-action="Index" class="btn btn-outline-secondary">Cancel</a></div>

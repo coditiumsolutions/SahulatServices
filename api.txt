@@ -1,12 +1,19 @@
 ================================================================================
 SahulatGharTak API Reference
-Version: 3.15 | Last Updated: 2026-09-17
+Version: 3.21 | Last Updated: 2026-09-24
 Database: SahulatAppDB
 Local Base URL:    https://localhost:7265/api/
 Deployed Base URL:  https://sahulatghartak.com/api/
 DB Server: 34.131.41.192,1433
 Format: REST over HTTPS, JSON request/response bodies
 Auth: None currently — no Authorization header/token required; identity is passed via userId/mobileNo/profileId fields in request bodies
+
+DateTime fields: all DateTime values in API responses are UTC, serialized as ISO-8601 with an
+explicit "Z" suffix (e.g. "2026-09-22T11:29:43.137Z") — added 2026-09-23 via a global
+UtcDateTimeJsonConverter (previously the "Z" was missing, since EF Core returns SQL Server
+datetime columns as Kind=Unspecified). The app is responsible for converting to local/Pakistan
+display time; do not assume these are already Pakistan time. Operations are Pakistan-based (PKT,
+UTC+5, no DST) — recommended client handling: parse as UTC, then convert to local/PKT for display.
 
 Purpose: Authoritative source of truth for this project's backend API contract.
 Read this file before implementing, modifying, or debugging any API integration
@@ -90,7 +97,7 @@ POST Register Provider (upgrade client to provider)
 Local:     https://localhost:7265/api/auth/register-provider
 Deployed:  https://sahulatghartak.com/api/auth/register-provider
 
-Request Body:
+Request Body (current/legacy app — still fully supported, unchanged, single category):
 {
   "mobileNo": "03335191392",
   "password": "ghauri",
@@ -103,8 +110,31 @@ Request Body:
   "categoryId": 1
 }
 
+Request Body (new app, optionally registering multiple categories — added 2026-09-21):
+{
+  "mobileNo": "03335191392",
+  "password": "ghauri",
+  "fullName": "Shahid",
+  "cnic": "37405-1234567-1",
+  "gender": "Male",
+  "experienceYears": 2,
+  "description": "Experienced provider",
+  "city": "Karachi",
+  "categoryIds": [1, 3],
+  "primaryCategoryId": 1
+}
+
 Notes:
-- categoryId OR categoryName is required
+- Two mutually exclusive ways to specify category, both still supported:
+  - legacy: categoryId OR categoryName — single category, becomes the provider's only/primary category
+  - new, OPTIONAL (added 2026-09-21): categoryIds (array, at least 1) + primaryCategoryId (must be
+    one of categoryIds) — registers the provider with ALL of categoryIds; primaryCategoryId is
+    flagged as primary. If categoryIds is present, categoryId/categoryName are ignored.
+  - omitting categoryIds entirely (current/legacy app builds) is exactly today's behavior — no
+    change in outcome, this is purely additive.
+  - TODO(remove after old app retired): once every live app build always sends categoryIds for
+    provider registration, categoryId/categoryName can be retired and categoryIds +
+    primaryCategoryId made the sole required path. Tracked in docs/flutter-changes.md.
 - verifies existing client using mobileNo + password
 - client must be OTP-verified (UsersLogin.IsVerified=true) before upgrade
 - CNIC must be unique across Providers (DB unique constraint)
@@ -124,6 +154,7 @@ Success (200):
     "mobileNo": "03335191392",
     "categoryId": 1,
     "categoryName": "Plumber",
+    "categoryIds": [1, 3],
     "clientId": 1,
     "city": "Karachi"
   }
@@ -135,7 +166,11 @@ Notes (register-provider):
   can be upgraded, and the Clients row is kept (not deleted) after upgrade. Use it to submit
   customer service requests (POST /api/customer-service-requests) even after becoming a provider.
 - city is Providers.City after the upgrade (see request notes above for validation/fallback)
+- categoryIds in the response (added 2026-09-21) lists every category the provider was
+  registered with — [categoryId] for a legacy single-category registration
 - Document upload is a separate API: POST /api/provider/upload-documents
+- Manage additional categories after registration via GET/PUT /api/providers/{providerUid}/categories
+  (see PROVIDERS DETAIL APIs section) — no need to re-register to add more later
 
 Fail (401):
 {
@@ -578,7 +613,8 @@ PROVIDER DOCUMENT APIs
 ================================================================================
 Files are stored under wwwroot/uploads/providers/{ProviderUID}/
 Database stores relative paths only (e.g. uploads/providers/25/profile.jpg)
-Allowed: jpg, jpeg, png | Max 5 MB per image | Fixed names: profile.jpg, cnic_front.jpg, cnic_back.jpg
+Allowed: jpg, jpeg, png | Max 5 MB per image
+Fixed names: profile.jpg, cnic_front.jpg, cnic_back.jpg, police_verification.jpg [v3.20]
 
 --------------------------------------------------------------------------------
 POST Upload Provider Documents
@@ -593,16 +629,23 @@ Form Fields:
 - ProfilePhoto (file, optional*)
 - CNICFront (file, optional*)
 - CNICBack (file, optional*)
+- PoliceVerification (file, optional) [v3.20] — always optional, on both first submission and
+  edit. Old app builds never send this field and are unaffected; new app builds may also omit it
+  (e.g. a provider hasn't obtained the certificate yet). No isFirstSubmission requirement applies
+  to this field, unlike the three above.
 
 * First-time submission (provider has no documents row yet, e.g. during initial
-  registration): all three files are required — omitting any returns 400.
+  registration): ProfilePhoto, CNICFront, and CNICBack are required — omitting any of those
+  three returns 400. PoliceVerification is never required (see above).
   Edit / replace (provider already has a documents row): send only the file(s)
   that changed. Any field present replaces that stored image (same jpg/jpeg/png,
-  5 MB validation, saved as profile.jpg/cnic_front.jpg/cnic_back.jpg). Any field
-  omitted leaves the provider's existing stored image for that slot unchanged.
+  5 MB validation, saved as profile.jpg/cnic_front.jpg/cnic_back.jpg/police_verification.jpg).
+  Any field omitted leaves the provider's existing stored image for that slot unchanged.
   Re-uploading CNICFront and/or CNICBack resets IsVerified to false until an
   admin re-verifies. Re-uploading ProfilePhoto alone does NOT reset IsVerified
   (validated client-side by face detection at capture, not by manual review).
+  Re-uploading PoliceVerification does NOT reset IsVerified either (unrelated to CNIC/provider
+  identity verification).
 
 Success (200):
 {
@@ -613,6 +656,7 @@ Success (200):
     "profilePhotoPath": "uploads/providers/25/profile.jpg",
     "cnicFrontImagePath": "uploads/providers/25/cnic_front.jpg",
     "cnicBackImagePath": "uploads/providers/25/cnic_back.jpg",
+    "policeVerificationPath": null,
     "isVerified": false,
     "verifiedOn": null,
     "verifiedBy": null,
@@ -677,6 +721,7 @@ Success (200):
     "profilePhotoPath": "uploads/providers/25/profile.jpg",
     "cnicFrontImagePath": "uploads/providers/25/cnic_front.jpg",
     "cnicBackImagePath": "uploads/providers/25/cnic_back.jpg",
+    "policeVerificationPath": null,
     "isVerified": false,
     "verifiedOn": null,
     "verifiedBy": null,
@@ -741,6 +786,7 @@ Success (200):
     "profilePhotoPath": "uploads/providers/25/profile.jpg",
     "cnicFrontImagePath": "uploads/providers/25/cnic_front.jpg",
     "cnicBackImagePath": "uploads/providers/25/cnic_back.jpg",
+    "policeVerificationPath": null,
     "isVerified": true,
     "verifiedOn": "2026-07-23T12:00:00",
     "verifiedBy": 1,
@@ -1077,6 +1123,84 @@ Fail (404):
   "data": null
 }
 
+--------------------------------------------------------------------------------
+GET Provider Categories
+--------------------------------------------------------------------------------
+Local:     https://localhost:7265/api/providers/{providerUid}/categories
+Deployed:  https://sahulatghartak.com/api/providers/{providerUid}/categories
+
+Example:
+GET https://localhost:7265/api/providers/4/categories
+
+Request Body: none
+
+Notes:
+- NEW (2026-09-21), additive — a provider can now belong to MULTIPLE service categories
+  (e.g. Electrician + Plumber), not just one. This endpoint lists all of them.
+- exactly one item has isPrimary:true — this mirrors the (now-deprecated) Providers.CategoryUID
+  scalar returned elsewhere (e.g. GET /api/providers-detail/{providerUid}'s categoryId)
+- registration (POST /api/auth/register-provider) can now set multiple categories directly (see
+  AUTH APIs above, categoryIds/primaryCategoryId — optional, added 2026-09-21); use PUT below to
+  add/remove/change categories after registration either way
+
+Success (200):
+{
+  "success": true,
+  "message": "Provider categories fetched successfully.",
+  "data": [
+    { "categoryUid": 1, "categoryName": "Plumber", "isPrimary": true },
+    { "categoryUid": 3, "categoryName": "Electrician", "isPrimary": false }
+  ]
+}
+
+--------------------------------------------------------------------------------
+PUT Provider Categories (Full Replace)
+--------------------------------------------------------------------------------
+Local:     https://localhost:7265/api/providers/{providerUid}/categories
+Deployed:  https://sahulatghartak.com/api/providers/{providerUid}/categories
+
+Example:
+PUT https://localhost:7265/api/providers/4/categories
+
+Request Body:
+{
+  "categoryIds": [1, 3],
+  "primaryCategoryId": 1
+}
+
+Notes:
+- FULL REPLACE — the provider's category set becomes exactly categoryIds; any category not in
+  the list is removed, any new one is added. At least one categoryId is required.
+- primaryCategoryId MUST be one of the values in categoryIds; it becomes the sole isPrimary:true
+  row and is mirrored onto the (deprecated) Providers.CategoryUID scalar, so anything still
+  reading that column (e.g. categoryId in GET /api/providers-detail/{providerUid}) sees it too.
+- this is the endpoint to call for "add another category to an existing provider" — there is no
+  separate add/remove-one-category endpoint, always send the full desired set.
+
+Success (200):
+{
+  "success": true,
+  "message": "Provider categories updated successfully.",
+  "data": [
+    { "categoryUid": 1, "categoryName": "Plumber", "isPrimary": true },
+    { "categoryUid": 3, "categoryName": "Electrician", "isPrimary": false }
+  ]
+}
+
+Fail (400 - empty list):
+{
+  "success": false,
+  "message": "Select at least one category.",
+  "data": null
+}
+
+Fail (400 - primary not in list):
+{
+  "success": false,
+  "message": "The primary category must be one of the selected categories.",
+  "data": null
+}
+
 ================================================================================
 CLIENTS DETAIL APIs
 ================================================================================
@@ -1191,7 +1315,8 @@ Success (200):
       "area": "DHA Phase 2",
       "city": "Karachi",
       "latitude": 24.8607000,
-      "longitude": 67.0011000
+      "longitude": 67.0011000,
+      "hasLocation": true
     }
   ]
 }
@@ -1221,7 +1346,8 @@ Success (200):
     "area": "DHA Phase 2",
     "city": "Karachi",
     "latitude": 24.8607000,
-    "longitude": 67.0011000
+    "longitude": 67.0011000,
+    "hasLocation": true
   }
 }
 
@@ -1249,6 +1375,15 @@ Request Body:
   "longitude": 67.0011
 }
 
+Notes:
+- latitude/longitude are both optional (nullable), but if provided, BOTH must be present together
+  — sending only one triggers a validation Fail (400) below. Omitting both is fine (address has no
+  GPS pin yet); the response's hasLocation will be false.
+- (0, 0) is treated as "no pin set", same as omitting both fields — hasLocation is computed as
+  (latitude != null && longitude != null && !(latitude == 0 && longitude == 0)). This exists
+  because every currently-published app build sends (0, 0) as its default today; that behavior
+  keeps working unchanged, this note is just documenting what hasLocation reports for it.
+
 Success (201):
 {
   "success": true,
@@ -1261,14 +1396,22 @@ Success (201):
     "area": "DHA Phase 2",
     "city": "Karachi",
     "latitude": 24.8607000,
-    "longitude": 67.0011000
+    "longitude": 67.0011000,
+    "hasLocation": true
   }
 }
 
-Fail (400):
+Fail (400 - client not found):
 {
   "success": false,
   "message": "Client not found.",
+  "data": null
+}
+
+Fail (400 - only one of latitude/longitude sent):
+{
+  "success": false,
+  "message": "Latitude and Longitude must both be provided or both omitted.",
   "data": null
 }
 
@@ -1295,6 +1438,7 @@ Request Body:
 
 Notes:
 - addressUid in URL and body must match
+- Same latitude/longitude rules as POST Create above: both-or-neither, (0,0) treated as no pin set.
 
 Success (200):
 {
@@ -1308,7 +1452,8 @@ Success (200):
     "area": "Clifton",
     "city": "Karachi",
     "latitude": 24.8138000,
-    "longitude": 67.0299000
+    "longitude": 67.0299000,
+    "hasLocation": true
   }
 }
 
@@ -1316,6 +1461,13 @@ Fail (404):
 {
   "success": false,
   "message": "Client address not found.",
+  "data": null
+}
+
+Fail (400 - only one of latitude/longitude sent):
+{
+  "success": false,
+  "message": "Latitude and Longitude must both be provided or both omitted.",
   "data": null
 }
 
@@ -1784,6 +1936,13 @@ Notes:
 - rejectReason is set when a provider rejects a Pending booking (see POST .../respond below);
   cancelReason is set when an Accepted/In Progress booking is cancelled (see PUT .../{bookingUid}
   below). Both are null otherwise.
+- preferredServiceDate/preferredServiceTime (added v3.21) are sourced from the linked
+  CustomerServiceRequests row (via requestUid) — not stored on ServiceBookings itself. They let
+  the provider app show the customer's scheduled date/time on Requests/Bookings tab cards. Both
+  are nullable (the original request may have left them blank). preferredServiceDate is date-only
+  ("yyyy-MM-dd"), preferredServiceTime is a free-text "HH:mm"-style string — neither is a UTC
+  instant, both are passed through as stored with no timezone conversion. Same sourcing applies
+  to every endpoint below that returns a booking object.
 
 Success (200):
 {
@@ -1794,6 +1953,8 @@ Success (200):
       "uid": 1,
       "requestUid": 5,
       "requestTitle": "AC Repair",
+      "preferredServiceDate": "2026-07-22",
+      "preferredServiceTime": "14:30",
       "clientUid": 1,
       "clientName": "Shahid",
       "providerUid": 4,
@@ -1859,6 +2020,8 @@ Success (200):
     "uid": 1,
     "requestUid": 5,
     "requestTitle": "AC Repair",
+    "preferredServiceDate": "2026-07-22",
+    "preferredServiceTime": "14:30",
     "clientUid": 1,
     "clientName": "Shahid",
     "providerUid": 4,
@@ -1941,6 +2104,8 @@ Success (201):
     "uid": 1,
     "requestUid": 5,
     "requestTitle": "AC Repair",
+    "preferredServiceDate": "2026-07-22",
+    "preferredServiceTime": "14:30",
     "clientUid": 1,
     "clientName": "Shahid",
     "providerUid": 4,
@@ -2046,6 +2211,8 @@ Success (200):
     "uid": 1,
     "requestUid": 5,
     "requestTitle": "AC Repair",
+    "preferredServiceDate": "2026-07-22",
+    "preferredServiceTime": "14:30",
     "clientUid": 1,
     "clientName": "Shahid",
     "providerUid": 4,
@@ -2158,13 +2325,29 @@ Request Body (reject):
 Notes:
 - booking must belong to providerUid and currently be Status="Pending" (i.e. staff-assigned,
   awaiting provider response)
+- FIRST-ACCEPT-WINS: when a request is fanned out to multiple providers (multiple sibling
+  ServiceBookings rows, same RequestUid, all Status="Pending"), the first provider to call
+  accept:true atomically claims the job. All other sibling Pending bookings for that
+  RequestUid are immediately auto-superseded: Status="Cancelled",
+  CancelReason="Assigned to another provider". They will no longer appear in that provider's
+  GET /api/service-bookings?providerUid= list. The claim is race-safe (atomic conditional
+  DB update) — if two providers accept at nearly the same instant, exactly one succeeds.
 - accept:true -> Status="Accepted", AcceptedOn set, a 4-digit Passcode is generated
   server-side. It is NOT returned in this (or any) /service-bookings response — see
   GET /customer-service-requests below for the client-facing passcode field
+- accept:true is IDEMPOTENT for the winning provider: calling it again on a booking this same
+  provider already accepted (Status="Accepted"/"In Progress"/"Completed"/"Closed") returns
+  200 success again rather than an error (message: "Booking accepted successfully.").
+- accept:true on a booking already lost to another provider (Status="Cancelled" via the
+  supersede path above, or otherwise no longer Pending) returns 400 with message
+  "This job has already been assigned to another provider." — treat this as an expected,
+  non-generic failure case; the app should refresh its pending-jobs list on receiving it.
 - accept:false -> reason is REQUIRED (non-empty), fails with 400 if missing/empty.
   Status="Rejected" (staff-only; hidden from all client/provider-facing GET/list responses),
-  reason is persisted to RejectReason, and the parent CustomerServiceRequest reverts to
-  Status="Initiated" so staff can reassign a different provider
+  reason is persisted to RejectReason. The parent CustomerServiceRequest reverts to
+  Status="Initiated" (so staff can reassign) ONLY if this was the last remaining Pending
+  sibling booking for that request; if other providers are still Pending on the same
+  request, the request stays Status="Assigned" so they can still respond.
 
 Success (200 - accepted):
 {
@@ -2174,6 +2357,8 @@ Success (200 - accepted):
     "uid": 1,
     "requestUid": 5,
     "requestTitle": "AC Repair",
+    "preferredServiceDate": "2026-07-22",
+    "preferredServiceTime": "14:30",
     "clientUid": 1,
     "clientName": "Shahid",
     "providerUid": 4,
@@ -2203,6 +2388,8 @@ Success (200 - rejected):
     "uid": 1,
     "requestUid": 5,
     "requestTitle": "AC Repair",
+    "preferredServiceDate": "2026-07-22",
+    "preferredServiceTime": "14:30",
     "providerUid": 4,
     "providerName": "Ali Electrician",
     "status": "Rejected",
@@ -2223,6 +2410,13 @@ Fail (400 - already responded):
 {
   "success": false,
   "message": "This booking is no longer awaiting a response.",
+  "data": null
+}
+
+Fail (400 - lost the first-accept-wins race to another provider):
+{
+  "success": false,
+  "message": "This job has already been assigned to another provider.",
   "data": null
 }
 
@@ -2291,12 +2485,25 @@ Deployed:  https://sahulatghartak.com/api/service-bookings/{bookingUid}/verify-c
 Example:
 POST https://localhost:7265/api/service-bookings/1/verify-completion
 
-Request Body:
+Request Body (current/legacy app — still fully supported, unchanged):
 {
   "providerUid": 4,
   "passcode": "4821",
   "actualAmountPaid": 3000,
   "paymentMode": null
+}
+
+Request Body (new app, optionally sending the labour/material split — added 2026-09-21):
+{
+  "providerUid": 4,
+  "passcode": "4821",
+  "actualAmountPaid": 3000,
+  "paymentMode": null,
+  "labourAmount": 2500,
+  "materialItems": [
+    { "itemName": "Light bulb", "quantity": 2, "unitPrice": 200 },
+    { "itemName": "Pipe fitting", "quantity": 1, "unitPrice": 100 }
+  ]
 }
 
 Notes:
@@ -2308,6 +2515,21 @@ Notes:
   supports partial payment (CustomerRemaining stays > 0)
 - paymentMode is OPTIONAL; pass CashToProvider or OnlineToCompany only if it changed from
   what staff set at assignment time, otherwise omit/null to keep the existing value
+- labourAmount and materialItems are BOTH OPTIONAL (added 2026-09-21, backward compatible —
+  omitting them is exactly today's request shape and behavior):
+  - omitted/null labourAmount (old app builds): legacy behavior unchanged — commission and
+    provider earning are computed on the WHOLE actualAmountPaid, same as before this field
+    existed. ServiceBookings.LabourAmount stays NULL; an admin can fill it in later via the
+    portal (Bookings edit form) to correct the commission split retroactively.
+  - labourAmount sent (new app builds): commission/provider earning are computed off
+    labourAmount ONLY, not the whole amount — materialItems (if any) are added into the
+    customer-facing FinalAmount/receipt but are not commissionable.
+  - materialItems is a plain array of {itemName, quantity, unitPrice} — quantity defaults to 1
+    if omitted per item; amount is computed server-side (quantity * unitPrice). Sending an
+    empty array or omitting it entirely is valid (no materials used on this job).
+  - TODO(remove after old app retired): once every live app build always sends labourAmount,
+    the omitted-labourAmount legacy fallback described above goes away and this field can be
+    treated as effectively required. Tracked in docs/flutter-changes.md.
 - on success: Status="Completed", CompletedOn set, CustomerServiceRequests.Status synced to
   "Completed", and PaymentLedger/ProviderPayouts entries are posted automatically based on
   the final PaymentMode + CustomerPaid (handles cash-to-provider, online-to-company, and
@@ -2346,6 +2568,64 @@ Fail (404):
   "success": false,
   "message": "Booking not found.",
   "data": null
+}
+
+--------------------------------------------------------------------------------
+GET Booking Material Items
+--------------------------------------------------------------------------------
+Local:     https://localhost:7265/api/service-bookings/{bookingUid}/material-items
+Deployed:  https://sahulatghartak.com/api/service-bookings/{bookingUid}/material-items
+
+Example:
+GET https://localhost:7265/api/service-bookings/1/material-items
+
+Request Body: none
+
+Notes:
+- NEW (2026-09-21), additive — lists the itemized material breakdown for a booking.
+
+Success (200):
+{
+  "success": true,
+  "message": "Material items fetched successfully.",
+  "data": [
+    { "itemName": "Light bulb", "quantity": 2, "unitPrice": 200, "amount": 400 },
+    { "itemName": "Pipe fitting", "quantity": 1, "unitPrice": 100, "amount": 100 }
+  ]
+}
+
+--------------------------------------------------------------------------------
+PUT Booking Material Items (Full Replace)
+--------------------------------------------------------------------------------
+Local:     https://localhost:7265/api/service-bookings/{bookingUid}/material-items
+Deployed:  https://sahulatghartak.com/api/service-bookings/{bookingUid}/material-items
+
+Example:
+PUT https://localhost:7265/api/service-bookings/1/material-items
+
+Request Body:
+{
+  "materialItems": [
+    { "itemName": "Light bulb", "quantity": 2, "unitPrice": 200 }
+  ]
+}
+
+Notes:
+- NEW (2026-09-21), additive, not required for either app version — full-replace of the
+  booking's material item list. An empty array clears all items. Recomputes
+  ServiceBookings.FinalAmount/CustomerRemaining (commission is unaffected, since it's based on
+  LabourAmount only, not materials).
+- Alternative to sending materialItems inline via POST .../verify-completion — useful for
+  correcting the breakdown after the fact (e.g. from the admin portal, or an app "edit
+  receipt" screen).
+
+Success (200):
+{
+  "success": true,
+  "message": "Material items updated successfully.",
+  "data": [
+    { "itemName": "Light bulb", "quantity": 2, "unitPrice": 200, "amount": 400 }
+  ]
 }
 
 ================================================================================
@@ -2596,6 +2876,70 @@ Fail (400):
   "message": "Unable to resolve address for the given coordinates.",
   "data": null
 }
+
+Note (v3.19): responses are now forced to English (Nominatim's accept-language=en is set
+server-side) — previously could return script in the coordinate's local language (e.g. Urdu).
+
+--------------------------------------------------------------------------------
+GET Search Geocode (forward) [v3.19]
+--------------------------------------------------------------------------------
+Local:     https://localhost:7265/api/geocoding/search?q={text}&limit={limit}
+Deployed:  https://sahulatghartak.com/api/geocoding/search?q={text}&limit={limit}
+
+Forward-geocodes a free-text query (e.g. "Gulberg Lahore") into candidate coordinate + address
+results, via the same OpenStreetMap Nominatim instance used by Reverse Geocode above. Soft-biased
+to Pakistan (Nominatim countrycodes=pk) but not hard-filtered. English-only results (accept-language=en).
+
+Query params:
+- q (required) — free-text search query, URL-encoded
+- limit (int, optional, default 5, max 10) — number of candidate results to return
+
+Example:
+GET https://localhost:7265/api/geocoding/search?q=Gulberg%20Lahore
+
+Request Body: none
+
+Success (200):
+{
+  "success": true,
+  "message": "Search results retrieved successfully.",
+  "data": [
+    {
+      "displayName": "Gulberg, Lahore Cant, Lahore District, Punjab, 54660, Pakistan",
+      "road": null,
+      "area": "Gulberg",
+      "city": "Lahore Cant",
+      "state": "Punjab",
+      "postalCode": "54660",
+      "latitude": 31.5119955,
+      "longitude": 74.3430178
+    }
+  ]
+}
+
+Fail (200 - no results found):
+{
+  "success": true,
+  "message": "Search results retrieved successfully.",
+  "data": []
+}
+
+Fail (400 - missing/empty q):
+{
+  "success": false,
+  "message": "Search query is required.",
+  "data": null
+}
+
+Fail (400 - Nominatim unreachable/errors):
+{
+  "success": false,
+  "message": "Unable to search for the given query.",
+  "data": null
+}
+
+This is a new route — no currently-published app build calls it, so no app-version coordination
+was needed to add it.
 
 --------------------------------------------------------------------------------
 GET Nearby Providers

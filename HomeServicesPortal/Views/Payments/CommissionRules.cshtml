@@ -68,8 +68,8 @@
                             <td>@item.RuleType</td>
                             <td>@item.Value.ToString("N2")</td>
                             <td>
-                                @item.EffectiveFrom.ToString("dd MMM yyyy")
-                                @(item.EffectiveTo.HasValue ? " → " + item.EffectiveTo.Value.ToString("dd MMM yyyy") : "")
+                                @item.EffectiveFrom.ToPktDateDisplay()
+                                @(item.EffectiveTo.HasValue ? " → " + item.EffectiveTo.Value.ToPktDateDisplay() : "")
                             </td>
                             <td>
                                 @if (item.IsActive)

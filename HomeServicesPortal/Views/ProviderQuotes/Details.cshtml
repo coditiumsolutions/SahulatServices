@@ -12,7 +12,7 @@
         <dt class="col-sm-4 text-muted">Estimated Arrival</dt><dd class="col-sm-8">@(Model.EstimatedArrivalMinutes?.ToString() ?? "—") min</dd>
         <dt class="col-sm-4 text-muted">Distance</dt><dd class="col-sm-8">@(Model.DistanceKm?.ToString("N2") ?? "—") KM</dd>
         <dt class="col-sm-4 text-muted">Remarks</dt><dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.Remarks) ? "—" : Model.Remarks)</dd>
-        <dt class="col-sm-4 text-muted">Quote Date</dt><dd class="col-sm-8">@(Model.QuoteDate?.ToString("dd MMM yyyy HH:mm") ?? "—")</dd>
+        <dt class="col-sm-4 text-muted">Quote Date</dt><dd class="col-sm-8">@(Model.QuoteDate.ToPktDisplay())</dd>
     </dl>
     <hr /><div class="d-flex gap-2">
         <a asp-action="Edit" asp-route-id="@Model.Uid" class="btn btn-primary"><i class="fa-solid fa-pen me-1"></i>Edit</a>

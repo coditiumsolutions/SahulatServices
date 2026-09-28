@@ -37,19 +37,57 @@
             </div>
         </div>
         <div class="col-md-6">
-            <div class="row g-2 align-items-center">
+            <div class="row g-2">
                 <div class="col-sm-4">
-                    <label asp-for="CategoryUid" class="form-label"></label>
+                    <label class="form-label">Categories</label>
+                    <div class="form-text">Check all that apply; pick one as primary.</div>
                 </div>
-                <div class="col-sm-8">
-                    <select asp-for="CategoryUid" class="form-select form-select-sm" asp-items="Model.Categories">
-                        <option value="">-- Select S-Category --</option>
-                    </select>
+                <div class="col-sm-8" id="spCategoryChecklist">
+                    @foreach (var cat in Model.Categories)
+                    {
+                        var catUid = int.Parse(cat.Value!);
+                        var checkedAttr = Model.CategoryUids.Contains(catUid) ? "checked" : null;
+                        var primaryAttr = catUid == Model.CategoryUid ? "checked" : null;
+                        <div class="d-flex align-items-center gap-2 mb-1 sp-category-row">
+                            <input type="checkbox" class="form-check-input sp-category-check" name="CategoryUids" value="@catUid" checked="@(checkedAttr != null)" />
+                            <label class="form-check-label small flex-grow-1 mb-0">@cat.Text</label>
+                            <label class="small text-muted mb-0 d-flex align-items-center gap-1">
+                                <input type="radio" class="form-check-input sp-category-primary" name="CategoryUid" value="@catUid" checked="@(primaryAttr != null)" /> Primary
+                            </label>
+                        </div>
+                    }
                     <span asp-validation-for="CategoryUid" class="text-danger small"></span>
+                    <span asp-validation-for="CategoryUids" class="text-danger small"></span>
                 </div>
             </div>
         </div>
     </div>
+
+    <script>
+        (function () {
+            var list = document.getElementById('spCategoryChecklist');
+            if (!list) return;
+            list.addEventListener('change', function (e) {
+                if (!e.target.classList.contains('sp-category-check')) return;
+                var row = e.target.closest('.sp-category-row');
+                var primaryRadio = row.querySelector('.sp-category-primary');
+                if (!e.target.checked && primaryRadio.checked) {
+                    // Unchecking the current primary — fall back to the first still-checked category.
+                    var firstChecked = list.querySelector('.sp-category-check:checked');
+                    if (firstChecked) {
+                        firstChecked.closest('.sp-category-row').querySelector('.sp-category-primary').checked = true;
+                    }
+                }
+                if (e.target.checked) {
+                    // Auto-select as primary if nothing else is currently primary.
+                    var anyPrimary = list.querySelector('.sp-category-primary:checked');
+                    if (!anyPrimary) {
+                        primaryRadio.checked = true;
+                    }
+                }
+            });
+        })();
+    </script>
 
     <div class="row g-2 mb-2">
         <div class="col-md-6">

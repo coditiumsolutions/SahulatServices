@@ -36,7 +36,7 @@
                     <dt class="col-sm-4 text-muted">Amount</dt>
                     <dd class="col-sm-8 fw-semibold">@Model.Amount.ToString("N2")</dd>
                     <dt class="col-sm-4 text-muted">Created On</dt>
-                    <dd class="col-sm-8">@Model.CreatedOn.ToString("dd MMM yyyy HH:mm")</dd>
+                    <dd class="col-sm-8">@Model.CreatedOn.ToPktDisplay()</dd>
                 </dl>
             </div>
         </div>

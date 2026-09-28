@@ -38,7 +38,7 @@
                         <div class="col-md-3 bk-title">Service Request</div>
                         <div class="col-md-3 bk-field">@Model.ServiceTitle</div>
                         <div class="col-md-3 bk-title">Created On</div>
-                        <div class="col-md-3 bk-field">@(Model.BookingDate?.ToString("dd MMM yyyy HH:mm") ?? "—")</div>
+                        <div class="col-md-3 bk-field">@(Model.BookingDate.ToPktDisplay())</div>
                     </div>
                     <div class="row g-3 mb-3">
                         <div class="col-md-3 bk-title">Client</div>

@@ -15,7 +15,8 @@ public class FileStorageService : IFileStorageService
     {
         "profile.jpg",
         "cnic_front.jpg",
-        "cnic_back.jpg"
+        "cnic_back.jpg",
+        "police_verification.jpg"
     };
 
     private readonly FileStorageOptions _options;

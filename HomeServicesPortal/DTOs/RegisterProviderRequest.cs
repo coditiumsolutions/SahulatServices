@@ -37,8 +37,43 @@ public class RegisterProviderRequest : IValidatableObject
     [StringLength(100)]
     public string? CategoryName { get; set; }
 
+    // --- Added for provider multi-category support (2026-09-21) ---
+    // OPTIONAL and additive: an app build that omits CategoryIds keeps today's exact behavior
+    // (single category, from CategoryId/CategoryName above, becomes the provider's primary and
+    // only category). Only when CategoryIds is sent does registration seed multiple
+    // ProviderCategories rows in one step.
+    // TODO(remove after old app retired): once every live app build always sends CategoryIds
+    // for provider registration, CategoryId/CategoryName above can be retired in favor of always
+    // requiring CategoryIds + PrimaryCategoryId, and this optional-list branch in
+    // AuthService.RegisterProviderAsync can be simplified to the single required path.
+
+    /// <summary>Optional multi-category selection. If provided, must include PrimaryCategoryId. If omitted, CategoryId/CategoryName (single category) is used as before.</summary>
+    public List<int>? CategoryIds { get; set; }
+
+    /// <summary>Required when CategoryIds is provided; must be one of the values in CategoryIds.</summary>
+    [Range(1, int.MaxValue, ErrorMessage = "Primary category id must be greater than 0.")]
+    public int? PrimaryCategoryId { get; set; }
+
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {
+        if (CategoryIds is { Count: > 0 })
+        {
+            if (!PrimaryCategoryId.HasValue)
+            {
+                yield return new ValidationResult(
+                    "PrimaryCategoryId is required when CategoryIds is provided.",
+                    [nameof(PrimaryCategoryId)]);
+            }
+            else if (!CategoryIds.Contains(PrimaryCategoryId.Value))
+            {
+                yield return new ValidationResult(
+                    "PrimaryCategoryId must be one of the values in CategoryIds.",
+                    [nameof(PrimaryCategoryId)]);
+            }
+
+            yield break;
+        }
+
         if (!CategoryId.HasValue && string.IsNullOrWhiteSpace(CategoryName))
         {
             yield return new ValidationResult(

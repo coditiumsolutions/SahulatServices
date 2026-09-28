@@ -17,4 +17,8 @@ public class ClientAddressApiDto
     public decimal? Latitude { get; set; }
 
     public decimal? Longitude { get; set; }
+
+    /// <summary>True when a real GPS pin is set. False for null coordinates and for (0,0), which every
+    /// currently-published app build sends as its default and is not a valid real-world address location.</summary>
+    public bool HasLocation { get; set; }
 }

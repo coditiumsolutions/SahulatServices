@@ -34,4 +34,12 @@ public class UploadProviderDocumentsRequestDto
     /// </summary>
     [FromForm(Name = "CNICBack")]
     public IFormFile? CnicBack { get; set; }
+
+    /// <summary>
+    /// Police verification certificate image (jpg/jpeg/png, max 5 MB). Added v3.20 — optional on
+    /// both first submission and edit; older app builds that never send this simply omit it and
+    /// nothing about the existing three-image flow changes.
+    /// </summary>
+    [FromForm(Name = "PoliceVerification")]
+    public IFormFile? PoliceVerification { get; set; }
 }

@@ -161,7 +161,7 @@
                     <div class="col-md-6">
                         <div class="row g-2">
                             <div class="col-sm-4 sp-label">Created On</div>
-                            <div class="col-sm-8 sp-value">@(Model.CreatedOn?.ToString("dd MMM yyyy HH:mm") ?? "—")</div>
+                            <div class="col-sm-8 sp-value">@(Model.CreatedOn.ToPktDisplay())</div>
                         </div>
                     </div>
                 </div>
@@ -217,7 +217,7 @@
                         <div class="col-md-6">
                             <div class="row g-2">
                                 <div class="col-sm-4 sp-label">Verified On</div>
-                                <div class="col-sm-8 sp-value">@(docs.VerifiedOn?.ToString("dd MMM yyyy HH:mm") ?? "—")</div>
+                                <div class="col-sm-8 sp-value">@(docs.VerifiedOn.ToPktDisplay())</div>
                             </div>
                         </div>
                     </div>
@@ -241,13 +241,13 @@
                         <div class="col-md-6">
                             <div class="row g-2">
                                 <div class="col-sm-4 sp-label">Created</div>
-                                <div class="col-sm-8 sp-value">@docs.CreatedOn.ToString("dd MMM yyyy HH:mm")</div>
+                                <div class="col-sm-8 sp-value">@docs.CreatedOn.ToPktDisplay()</div>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="row g-2">
                                 <div class="col-sm-4 sp-label">Updated</div>
-                                <div class="col-sm-8 sp-value">@(docs.UpdatedOn?.ToString("dd MMM yyyy HH:mm") ?? "—")</div>
+                                <div class="col-sm-8 sp-value">@(docs.UpdatedOn.ToPktDisplay())</div>
                             </div>
                         </div>
                     </div>
@@ -283,6 +283,21 @@
                             {
                                 <img src="@UrlPath(docs.CnicBackImagePath)" alt="CNIC Back" class="img-thumbnail sp-thumb" />
                                 <div><a href="@UrlPath(docs.CnicBackImagePath)" target="_blank" rel="noopener" class="small">Open</a></div>
+                            }
+                            else
+                            {
+                                <span class="sp-value">—</span>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="row g-2 mb-2">
+                        <div class="col-md-4">
+                            <div class="sp-label mb-1">Police Verification</div>
+                            @if (!string.IsNullOrWhiteSpace(docs.PoliceVerificationPath))
+                            {
+                                <img src="@UrlPath(docs.PoliceVerificationPath)" alt="Police Verification" class="img-thumbnail sp-thumb" />
+                                <div><a href="@UrlPath(docs.PoliceVerificationPath)" target="_blank" rel="noopener" class="small">Open</a></div>
                             }
                             else
                             {

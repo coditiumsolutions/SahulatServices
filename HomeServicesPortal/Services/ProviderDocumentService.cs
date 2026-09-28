@@ -102,6 +102,7 @@ public class ProviderDocumentService : IProviderDocumentService
                 ProfilePhotoPath = x.Document.ProfilePhotoPath,
                 CnicFrontImagePath = x.Document.CnicFrontImagePath,
                 CnicBackImagePath = x.Document.CnicBackImagePath,
+                PoliceVerificationPath = x.Document.PoliceVerificationPath,
                 IsVerified = x.Provider.IsVerified,
                 CreatedOn = x.Document.CreatedOn,
                 UpdatedOn = x.Document.UpdatedOn
@@ -135,6 +136,7 @@ public class ProviderDocumentService : IProviderDocumentService
                 ProfilePhotoPath = d.ProfilePhotoPath,
                 CnicFrontImagePath = d.CnicFrontImagePath,
                 CnicBackImagePath = d.CnicBackImagePath,
+                PoliceVerificationPath = d.PoliceVerificationPath,
                 IsVerified = p.IsVerified,
                 VerifiedOn = d.VerifiedOn,
                 VerifiedBy = d.VerifiedBy,
@@ -163,6 +165,7 @@ public class ProviderDocumentService : IProviderDocumentService
             ExistingProfilePhotoPath = entity.ProfilePhotoPath,
             ExistingCnicFrontPath = entity.CnicFrontImagePath,
             ExistingCnicBackPath = entity.CnicBackImagePath,
+            ExistingPoliceVerificationPath = entity.PoliceVerificationPath,
             IsVerified = providerVerified,
             VerificationRemarks = entity.VerificationRemarks
         }, cancellationToken);
@@ -183,6 +186,7 @@ public class ProviderDocumentService : IProviderDocumentService
                 ProfilePhotoPath = d.ProfilePhotoPath,
                 CnicFrontImagePath = d.CnicFrontImagePath,
                 CnicBackImagePath = d.CnicBackImagePath,
+                PoliceVerificationPath = d.PoliceVerificationPath,
                 IsVerified = p.IsVerified
             }).FirstOrDefaultAsync(cancellationToken);
     }
@@ -224,6 +228,16 @@ public class ProviderDocumentService : IProviderDocumentService
             model.ProviderUid, model.CnicBack, "cnic_back.jpg", cancellationToken);
         if (!back.Success) return (false, back.Error);
 
+        // Added v3.20 — optional, unlike the three images above.
+        string? policeVerificationPath = null;
+        if (model.PoliceVerification is { Length: > 0 })
+        {
+            var police = await _fileStorage.SaveProviderImageAsync(
+                model.ProviderUid, model.PoliceVerification, "police_verification.jpg", cancellationToken);
+            if (!police.Success) return (false, police.Error);
+            policeVerificationPath = police.RelativePath;
+        }
+
         var entity = new ProviderDocument
         {
             ProviderUid = model.ProviderUid,
@@ -231,6 +245,7 @@ public class ProviderDocumentService : IProviderDocumentService
             ProfilePhotoPath = profile.RelativePath,
             CnicFrontImagePath = front.RelativePath,
             CnicBackImagePath = back.RelativePath,
+            PoliceVerificationPath = policeVerificationPath,
             IsVerified = false,
             CreatedOn = DateTime.Now
         };
@@ -280,6 +295,14 @@ public class ProviderDocumentService : IProviderDocumentService
                 entity.ProviderUid, model.CnicBack, "cnic_back.jpg", cancellationToken);
             if (!result.Success) return (false, result.Error);
             entity.CnicBackImagePath = result.RelativePath;
+        }
+
+        if (model.PoliceVerification is { Length: > 0 })
+        {
+            var result = await _fileStorage.SaveProviderImageAsync(
+                entity.ProviderUid, model.PoliceVerification, "police_verification.jpg", cancellationToken);
+            if (!result.Success) return (false, result.Error);
+            entity.PoliceVerificationPath = result.RelativePath;
         }
 
         if (string.IsNullOrWhiteSpace(entity.ProfilePhotoPath)
