@@ -48,7 +48,9 @@ Table: Clients
   UserUID          int              NOT NULL  FK -> UsersLogin.UID
   FullName         nvarchar(150)    NOT NULL
   CNIC             nvarchar(15)     NULL
-  Gender           nvarchar(20)     NULL
+  Gender           nvarchar(20)     NULL  -- kept in sync with Providers.Gender for the same
+                                           -- UserUID by GenderSyncService (dual-role accounts
+                                           -- share one Gender value; last write from either side wins)
   CustomerAlert    nvarchar(500)    NULL  -- staff alert note for this customer
   Comments         nvarchar(1000)   NULL  -- internal comments
   City             nvarchar(100)    NULL  -- primary city
@@ -96,7 +98,9 @@ Table: Providers
   MobileNo         nvarchar(20)     NOT NULL  UNIQUE  AK_Providers_MobileNo  -- denormalized from UsersLogin
   FullName         nvarchar(150)    NOT NULL
   CNIC             nvarchar(15)     NOT NULL  UNIQUE
-  Gender           nvarchar(20)     NULL
+  Gender           nvarchar(20)     NULL  -- kept in sync with Clients.Gender for the same
+                                           -- UserUID by GenderSyncService (dual-role accounts
+                                           -- share one Gender value; last write from either side wins)
   City             nvarchar(100)    NULL  -- primary city (from Configurations Cities)
   ExperienceYears  int              NULL      DEFAULT (0)
   Description      nvarchar(MAX)    NULL

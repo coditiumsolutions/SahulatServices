@@ -15,11 +15,13 @@ public class CustomerService : ICustomerService
 
     private readonly AppDbContext _db;
     private readonly IConfigurationEntryService _configurations;
+    private readonly IGenderSyncService _genderSync;
 
-    public CustomerService(AppDbContext db, IConfigurationEntryService configurations)
+    public CustomerService(AppDbContext db, IConfigurationEntryService configurations, IGenderSyncService genderSync)
     {
         _db = db;
         _configurations = configurations;
+        _genderSync = genderSync;
     }
 
     public async Task<CustomerListVm> GetListAsync(
@@ -363,6 +365,7 @@ public class CustomerService : ICustomerService
         client.User.MobileNo = mobile;
 
         await _db.SaveChangesAsync(cancellationToken);
+        await _genderSync.SyncGenderAsync(client.UserUid, client.Gender, cancellationToken);
         return (true, null);
     }
 

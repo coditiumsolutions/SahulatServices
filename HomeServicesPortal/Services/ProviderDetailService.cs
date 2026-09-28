@@ -10,11 +10,13 @@ public class ProviderDetailService : IProviderDetailService
 
     private readonly AppDbContext _db;
     private readonly IConfigurationEntryService _configurations;
+    private readonly IGenderSyncService _genderSync;
 
-    public ProviderDetailService(AppDbContext db, IConfigurationEntryService configurations)
+    public ProviderDetailService(AppDbContext db, IConfigurationEntryService configurations, IGenderSyncService genderSync)
     {
         _db = db;
         _configurations = configurations;
+        _genderSync = genderSync;
     }
 
     public async Task<(bool Success, string? Error, ProviderDetailApiDto? Data)> GetProviderDetailAsync(
@@ -96,6 +98,7 @@ public class ProviderDetailService : IProviderDetailService
         provider.Description = request.Description?.Trim();
 
         await _db.SaveChangesAsync(cancellationToken);
+        await _genderSync.SyncGenderAsync(provider.UserUid, provider.Gender, cancellationToken);
 
         // Keep the deprecated CategoryUid scalar and the ProviderCategories junction table in
         // sync: this endpoint only lets the provider change their primary category, so add/mark

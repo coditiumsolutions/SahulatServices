@@ -64,6 +64,7 @@ builder.Services.AddScoped<IProviderLocationService, ProviderLocationService>();
 builder.Services.AddScoped<IProviderAvailabilityService, ProviderAvailabilityService>();
 builder.Services.AddScoped<IProviderDetailService, ProviderDetailService>();
 builder.Services.AddScoped<IClientDetailService, ClientDetailService>();
+builder.Services.AddScoped<IGenderSyncService, GenderSyncService>();
 builder.Services.AddScoped<IClientAddressService, ClientAddressService>();
 builder.Services.AddScoped<ICustomerServiceRequestService, CustomerServiceRequestService>();
 builder.Services.AddScoped<IAdminNotificationService, AdminNotificationService>();

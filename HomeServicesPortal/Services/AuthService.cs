@@ -18,6 +18,7 @@ public class AuthService : IAuthService
     private readonly IFileStorageService _fileStorageService;
     private readonly IConfigurationEntryService _configurations;
     private readonly IProviderCategoryService _providerCategories;
+    private readonly IGenderSyncService _genderSync;
 
     public AuthService(
         AppDbContext db,
@@ -25,7 +26,8 @@ public class AuthService : IAuthService
         IMapper mapper,
         IFileStorageService fileStorageService,
         IConfigurationEntryService configurations,
-        IProviderCategoryService providerCategories)
+        IProviderCategoryService providerCategories,
+        IGenderSyncService genderSync)
     {
         _db = db;
         _userRepository = userRepository;
@@ -33,6 +35,7 @@ public class AuthService : IAuthService
         _fileStorageService = fileStorageService;
         _configurations = configurations;
         _providerCategories = providerCategories;
+        _genderSync = genderSync;
     }
 
     public async Task<(bool Success, string? Error, RegistrationResponse? Data)> RegisterClientAsync(
@@ -82,6 +85,7 @@ public class AuthService : IAuthService
                     tracked.Cnic = string.IsNullOrWhiteSpace(request.CNIC) ? null : request.CNIC.Trim();
                     tracked.Gender = request.Gender?.Trim();
                     await _db.SaveChangesAsync(cancellationToken);
+                    await _genderSync.SyncGenderAsync(existing.Uid, tracked.Gender, cancellationToken);
                     client = tracked;
                 }
 
@@ -249,6 +253,11 @@ public class AuthService : IAuthService
             };
 
             await _userRepository.CreateProviderAsync(provider, cancellationToken);
+
+            if (!string.IsNullOrWhiteSpace(request.Gender))
+            {
+                await _genderSync.SyncGenderAsync(userId, provider.Gender, cancellationToken);
+            }
 
             // allCategoryIds is [categoryId] for the legacy single-category path, or the full
             // validated set when the app sent CategoryIds — either way, exactly one row is

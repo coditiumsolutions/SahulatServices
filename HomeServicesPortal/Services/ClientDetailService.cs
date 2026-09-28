@@ -7,10 +7,12 @@ namespace HomeServicesPortal.Services;
 public class ClientDetailService : IClientDetailService
 {
     private readonly AppDbContext _db;
+    private readonly IGenderSyncService _genderSync;
 
-    public ClientDetailService(AppDbContext db)
+    public ClientDetailService(AppDbContext db, IGenderSyncService genderSync)
     {
         _db = db;
+        _genderSync = genderSync;
     }
 
     public async Task<(bool Success, string? Error, ClientDetailApiDto? Data)> GetClientDetailAsync(
@@ -56,6 +58,7 @@ public class ClientDetailService : IClientDetailService
         client.Gender = request.Gender?.Trim();
 
         await _db.SaveChangesAsync(cancellationToken);
+        await _genderSync.SyncGenderAsync(client.UserUid, client.Gender, cancellationToken);
 
         return await GetClientDetailAsync(client.Uid, cancellationToken);
     }
