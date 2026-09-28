@@ -13,6 +13,7 @@ public class AdminNotificationService : IAdminNotificationService
     public const string ServiceRequestCreated = "ServiceRequestCreated";
     public const string CustomerRequestCancelled = "CustomerRequestCancelled";
     public const string ProviderBookingCancelled = "ProviderBookingCancelled";
+    public const string RequestNeedsReassignment = "RequestNeedsReassignment";
     public const string AdminsGroup = "admins";
 
     private readonly AppDbContext _db;
@@ -85,6 +86,24 @@ public class AdminNotificationService : IAdminNotificationService
             message,
             $"/Admin/Bookings/Details/{bookingUid}",
             bookingUid,
+            cancellationToken);
+    }
+
+    public async Task NotifyRequestNeedsReassignmentAsync(
+        int requestUid,
+        string serviceTitle,
+        string reason,
+        CancellationToken cancellationToken = default)
+    {
+        var safeTitle = (serviceTitle ?? string.Empty).Trim();
+        var message = $"'{safeTitle}' (#{requestUid}) needs reassignment — {reason}";
+
+        await CreateAndPublishAsync(
+            RequestNeedsReassignment,
+            "Request needs reassignment",
+            message,
+            $"/Admin/ServiceRequests/Details/{requestUid}",
+            requestUid,
             cancellationToken);
     }
 

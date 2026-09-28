@@ -45,7 +45,7 @@ Canonical values (whitelisted, shared constant — see Implementation notes):
 ```
 Pending -> Accepted -> In Progress -> Completed -> Closed
         -> Rejected
-Accepted / In Progress -> Cancelled   (staff-only, post-acceptance cancel)
+Accepted / In Progress -> Cancelled   (staff OR provider, post-acceptance cancel — see below)
 ```
 
 | Status | Set by | Trigger |
@@ -56,7 +56,7 @@ Accepted / In Progress -> Cancelled   (staff-only, post-acceptance cancel)
 | `In Progress` | provider | **new:** `POST /service-bookings/{id}/start` (precondition: current status `Accepted`) |
 | `Completed` | provider | `POST /service-bookings/{id}/verify-completion` (passcode match). Posts `PaymentLedger`/`ProviderPayout` entries automatically (`RecordBookingCompletionAsync`) and syncs the parent request to `Completed`. |
 | `Closed` | staff | manual, via admin portal, after reviewing/reconciling the completed job. **No automatic ledger action is tied to this today** — ledger posting already happened at `Completed`. Confirmed by reading `PaymentService.cs`; if `Closed` should trigger something additional, that logic doesn't exist yet and needs to be specified separately. |
-| `Cancelled` | staff | manual, admin-only, only reachable from `Accepted`/`In Progress` (requires a `CancelReason`) |
+| `Cancelled` | staff or provider | `PUT /service-bookings/{id}` with `status: "Cancelled"` (provider app) or admin portal Edit (staff), only reachable from `Accepted`/`In Progress` (requires a `CancelReason`). The `ServiceBookings` row always ends up `Cancelled` either way — admin history for this specific booking is identical regardless of who cancelled. **v3.22:** what differs is the *parent request's* resulting status — see the `CustomerServiceRequests.Status` section below. |
 
 No orphan values remain in this table now that `/start` exists — every status has a real,
 reachable code path.
@@ -76,25 +76,49 @@ text, see Implementation status):
 Initiated -> Assigned -> Completed
 Initiated -> Cancelled     (client-driven, pre-assignment)
 Assigned -> Cancelled    (staff-driven, post-assignment — see note below)
+Assigned -> Initiated    (all providers rejected, OR provider cancelled an accepted booking — v3.22)
 ```
 
-- `Initiated` — request created by client/customer, no booking yet, or a provider just rejected
-  (reverted here by the reject flow so staff can reassign). Replaces the former `Pending`
-  label on this table (booking rows still use `Pending` = awaiting provider response).
+- `Initiated` — request created by client/customer, no booking yet, **or reset back here after
+  losing its assignment** (either every fanned-out provider rejected, or a provider who had
+  already accepted then cancelled — see below). Replaces the former `Pending` label on this
+  table (booking rows still use `Pending` = awaiting provider response).
 - `Assigned` — staff created a booking for this request (booking `Pending`, `Accepted`, or
   `In Progress`/`Completed`/`Closed` — this column does not track the fine-grained booking
   states, see `progressStatus` below).
 - `Completed` — synced automatically when the booking reaches `Completed` (see above).
-- `Cancelled` — reachable two ways:
+- `Cancelled` — **staff-driven only, pre- or post-assignment**:
   - **Client-driven, pre-assignment:** `PUT /customer-service-requests/{id}` with
     `status: "Cancelled"` + required `cancelReason`.
   - **Staff-driven, post-assignment:** when staff cancels an `Accepted`/`In Progress` booking
-    (admin portal), the *same* admin action also sets `request.Status = "Cancelled"` in the
-    same save — mirroring the existing pattern in `AssignProviderAsync` (assign) and the
+    via the admin portal, the *same* admin action also sets `request.Status = "Cancelled"` in
+    the same save — mirroring the existing pattern in `AssignProviderAsync` (assign) and the
     reject branch of `RespondToAssignmentAsync` (both already write both tables atomically
     from one staff/provider action). This is a deliberate, single-transaction write driven by
     one explicit action, not an implicit background sync — see Flutter Q2 below for why this
     doesn't reintroduce the drift problem this doc otherwise avoids.
+- `Initiated` (reset, not `Cancelled`) — **v3.22, edge-case fix:** two distinct triggers reset
+  the request back to `Initiated` instead of ending it, so staff can re-dispatch without the
+  client submitting a new request:
+  - **All fanned-out providers rejected** (`RespondToAssignmentAsync` reject branch, already
+    existed): the last sibling `ServiceBookings` row to reject flips the request back to
+    `Initiated`.
+  - **A provider cancels a booking they'd already accepted** (`BookingService.UpdateAsync`,
+    `PUT /service-bookings/{id}` called from the provider app — `BookingFormVm.InitiatedByProvider
+    = true`): the `ServiceBookings` row still becomes `Cancelled` (full history preserved,
+    visible to admin exactly as before), but the *parent request* now resets to `Initiated`
+    instead of `Cancelled`. This was the actual gap being fixed: previously this case dead-ended
+    the request at `Cancelled` with no way back — asymmetric with the "all rejected" case, which
+    stayed alive for reassignment. The same booking-cancel code path, when triggered from the
+    **admin portal** instead (staff manually cancelling, `InitiatedByProvider` defaults to
+    `false`), keeps the pre-existing behavior: request goes to terminal `Cancelled`, since that's
+    a deliberate staff decision to end it, not something to auto-redispatch.
+  - Both triggers also fire a new, distinct admin notification
+    (`AdminNotificationService.RequestNeedsReassignment`) so staff can find these without having
+    to distinguish them from a routine single-provider reject or a staff-initiated cancel, both
+    of which still separately fire the existing `ProviderBookingCancelled` type. See
+    `docs/flutter-changes.md` for the client-facing implication (a request the app previously
+    would have shown as terminally cancelled can now bounce back to "Requested"/no-provider-yet).
 
 This column is **not** where `In Progress` lives — no automated flow ever writes that value
 here; that distinction exists only in the computed client-facing field. Staff retain their
@@ -221,6 +245,20 @@ below each item (or edit the sections above directly and note it here).
    > the reject branch of `RespondToAssignmentAsync` — doesn't have that failure mode, because
    > there's only one call site and one save. See the updated `CustomerServiceRequests.Status`
    > section and Implementation note #6.
+   >
+   > _v3.22 addendum:_ this answer's premise — "only a staff-initiated action should write the
+   > request row" — turned out to be half right. The real invariant that avoids drift isn't
+   > "only staff may trigger it," it's "exactly one call site, one save, both rows written
+   > together, no separate background/async sync." `BookingService.UpdateAsync` is still that
+   > single call site regardless of who invoked it — the provider app and the admin portal both
+   > funnel into it (`ServiceBookingApiService.UpdateBookingAsync` and `BookingsController`'s
+   > Edit action respectively). So it was safe to let a provider-initiated cancel also write the
+   > request row from that same method, as long as it stays one save with no separate sync step.
+   > What actually changed in v3.22 is *which* value it writes when the caller is the provider
+   > app specifically (`Initiated`, for reassignment) versus the admin portal (`Cancelled`,
+   > terminal) — see the new `BookingFormVm.InitiatedByProvider` flag and the updated
+   > `CustomerServiceRequests.Status` section above for why that distinction exists and why it's
+   > safe.
 
 3. **Naming: collapse `"In Progress"` / `"InProgress"` to one spelling.** The booking-side
    literal is `"In Progress"` (with a space) and the computed `progressStatus` value is

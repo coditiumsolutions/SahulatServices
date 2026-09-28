@@ -817,6 +817,27 @@
                 </div>
             </div>
 
+            <div class="hs-notify-wrap">
+                <button type="button"
+                        class="hs-notify-toggle"
+                        id="hsReassignNotifyToggle"
+                        aria-expanded="false"
+                        aria-controls="hsReassignNotifyPanel"
+                        title="Reassignment notifications">
+                    <i class="fa-solid fa-rotate-left"></i>
+                    <span class="hs-notify-badge" id="hsReassignNotifyBadge">0</span>
+                </button>
+                <div class="hs-notify-panel d-none" id="hsReassignNotifyPanel" role="menu" aria-label="Reassignment notifications">
+                    <div class="hs-notify-panel-header">
+                        <strong>Needs Reassignment</strong>
+                        <span class="hs-notify-panel-sub" id="hsReassignNotifyUnreadLabel">0 unread</span>
+                    </div>
+                    <div class="hs-notify-list" id="hsReassignNotifyList">
+                        <div class="hs-notify-empty">No notifications yet.</div>
+                    </div>
+                </div>
+            </div>
+
             <form id="hsNotifyAntiForgery" class="d-none">@Html.AntiForgeryToken()</form>
         </div>
     </nav>
@@ -1225,6 +1246,11 @@
                     toggleId: 'hsProviderNotifyToggle', panelId: 'hsProviderNotifyPanel', badgeId: 'hsProviderNotifyBadge',
                     listId: 'hsProviderNotifyList', unreadLabelId: 'hsProviderNotifyUnreadLabel',
                     types: '@HomeServicesPortal.Services.AdminNotificationService.ProviderBookingCancelled'
+                }),
+                createNotifyIcon({
+                    toggleId: 'hsReassignNotifyToggle', panelId: 'hsReassignNotifyPanel', badgeId: 'hsReassignNotifyBadge',
+                    listId: 'hsReassignNotifyList', unreadLabelId: 'hsReassignNotifyUnreadLabel',
+                    types: '@HomeServicesPortal.Services.AdminNotificationService.RequestNeedsReassignment'
                 })
             ].filter(Boolean);
 

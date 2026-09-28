@@ -379,6 +379,7 @@ public class BookingService : IBookingService
         entity.CommissionAmount = model.CommissionAmount ?? 0;
         entity.ProviderEarning = model.ProviderEarning ?? 0;
         entity.Status = model.Status.Trim();
+        var requestNeedsReassignment = false;
         if (isPostAcceptanceCancel)
         {
             entity.CancelReason = model.CancelReason!.Trim();
@@ -386,12 +387,29 @@ public class BookingService : IBookingService
             // Same staff action, same save — mirrors AssignProviderAsync/RespondToAssignmentAsync
             // (reject branch), which also update both tables atomically from one call site.
             // See docs/status-workflow.md.
+            //
+            // The ServiceBookings row (entity, above) always ends up Cancelled either way —
+            // that history is never touched here, only the parent request's fate differs:
+            //   - Provider cancelled their own accepted job (InitiatedByProvider): the CLIENT
+            //     didn't do anything wrong and still wants the service, so reset the request to
+            //     Initiated so staff can re-dispatch to new providers, same as the "all rejected"
+            //     path in RespondToAssignmentAsync — instead of dead-ending the client's request.
+            //   - Staff cancelled via the admin portal: unchanged pre-existing behavior, request
+            //     goes terminally Cancelled (that was a deliberate staff decision to end it).
             var linkedRequest = await _db.CustomerServiceRequests
                 .FirstOrDefaultAsync(r => r.Uid == entity.RequestUid, cancellationToken);
             if (linkedRequest != null)
             {
-                linkedRequest.Status = "Cancelled";
-                linkedRequest.CancelReason = model.CancelReason!.Trim();
+                if (model.InitiatedByProvider)
+                {
+                    linkedRequest.Status = RequestStatusConstants.Initiated;
+                    requestNeedsReassignment = true;
+                }
+                else
+                {
+                    linkedRequest.Status = "Cancelled";
+                    linkedRequest.CancelReason = model.CancelReason!.Trim();
+                }
             }
         }
 
@@ -402,6 +420,14 @@ public class BookingService : IBookingService
         if (isPostAcceptanceCancel)
         {
             await PublishProviderCancellationNotificationAsync(entity.Uid, entity.ProviderUid, entity.CancelReason, cancellationToken);
+
+            if (requestNeedsReassignment)
+            {
+                await PublishRequestNeedsReassignmentNotificationAsync(
+                    entity.RequestUid,
+                    $"provider cancelled accepted booking #{entity.Uid}",
+                    cancellationToken);
+            }
         }
 
         if (string.Equals(entity.Status, "Completed", StringComparison.OrdinalIgnoreCase))
@@ -468,6 +494,35 @@ public class BookingService : IBookingService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to publish admin cancellation notification for booking {BookingUid}.", bookingUid);
+        }
+    }
+
+    private async Task PublishRequestNeedsReassignmentNotificationAsync(
+        int requestUid,
+        string reason,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            await using var scope = _scopeFactory.CreateAsyncScope();
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var notifications = scope.ServiceProvider.GetRequiredService<IAdminNotificationService>();
+
+            var serviceTitle = await db.CustomerServiceRequests
+                .AsNoTracking()
+                .Where(r => r.Uid == requestUid)
+                .Select(r => r.ServiceTitle)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            await notifications.NotifyRequestNeedsReassignmentAsync(
+                requestUid,
+                serviceTitle ?? string.Empty,
+                reason,
+                cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to publish reassignment-needed notification for request {RequestUid}.", requestUid);
         }
     }
 
@@ -939,6 +994,14 @@ public class BookingService : IBookingService
             }
 
             await PublishProviderCancellationNotificationAsync(bookingUid, providerUid, reason!.Trim(), cancellationToken);
+
+            if (!stillPending)
+            {
+                await PublishRequestNeedsReassignmentNotificationAsync(
+                    booking.RequestUid,
+                    "all assigned providers rejected",
+                    cancellationToken);
+            }
 
             return (true, null);
         }

@@ -157,7 +157,8 @@ public class ServiceBookingApiService : IServiceBookingApiService
             CommissionType = request.CommissionType,
             CommissionValue = request.CommissionValue,
             Status = request.Status,
-            CancelReason = request.CancelReason
+            CancelReason = request.CancelReason,
+            InitiatedByProvider = true
         };
 
         var (success, error) = await _bookingService.UpdateAsync(form, cancellationToken);

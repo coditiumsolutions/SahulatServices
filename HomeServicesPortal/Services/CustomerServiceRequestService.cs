@@ -403,8 +403,15 @@ public class CustomerServiceRequestService : ICustomerServiceRequestService
                 .Select(b => b.Passcode)
                 .FirstOrDefault()
             },
+            // Excludes Rejected (superseded-by-reject, pre-existing) and, as of v3.22, Cancelled
+            // too: a provider cancelling an accepted booking now resets the PARENT REQUEST back
+            // to Initiated for reassignment (see BookingService.UpdateAsync/InitiatedByProvider)
+            // while the ServiceBookings row itself stays Cancelled (admin history preserved).
+            // Without this exclusion, that stale Cancelled row would still be picked as "the"
+            // linked booking here and wrongly null out progressStatus below even though the
+            // request itself is alive again — same class of bug as leaving Rejected in.
             _db.ServiceBookings
-                .Where(b => b.RequestUid == r.Uid && b.Status != "Rejected")
+                .Where(b => b.RequestUid == r.Uid && b.Status != "Rejected" && b.Status != "Cancelled")
                 .OrderByDescending(b => b.Uid)
                 .Select(b => b.Status)
                 .FirstOrDefault());

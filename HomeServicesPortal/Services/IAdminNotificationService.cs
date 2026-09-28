@@ -23,6 +23,12 @@ public interface IAdminNotificationService
         string? cancelReason,
         CancellationToken cancellationToken = default);
 
+    Task NotifyRequestNeedsReassignmentAsync(
+        int requestUid,
+        string serviceTitle,
+        string reason,
+        CancellationToken cancellationToken = default);
+
     Task<AdminNotificationFeedDto> GetRecentAsync(
         int take = 20,
         IEnumerable<string>? types = null,

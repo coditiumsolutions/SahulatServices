@@ -1,6 +1,6 @@
 ================================================================================
 SahulatGharTak API Reference
-Version: 3.21 | Last Updated: 2026-09-24
+Version: 3.22 | Last Updated: 2026-09-28
 Database: SahulatAppDB
 Local Base URL:    https://localhost:7265/api/
 Deployed Base URL:  https://sahulatghartak.com/api/
@@ -2182,10 +2182,21 @@ Notes:
   provider cancellation. Fails with 400 if that condition holds and cancelReason is missing/empty.
   For any other status transition, cancelReason is optional/ignored (existing stored value is
   preserved). To reject a still-Pending booking instead, use POST .../respond below.
-- this same post-acceptance cancel ALSO sets the parent CustomerServiceRequest's Status to
-  "Cancelled" (with the same cancelReason), in the same save — see GET /customer-service-requests
-  above and docs/status-workflow.md. Before this, a post-acceptance cancel only touched
-  ServiceBookings, leaving the request stuck at "Assigned" indefinitely.
+- (v3.22) this same post-acceptance cancel ALSO updates the parent CustomerServiceRequest's
+  Status in the same save — but WHICH status it becomes now depends on who cancelled:
+    - Provider cancels their own accepted booking (this endpoint, called from the app): the
+      ServiceBooking row still becomes "Cancelled" (full history preserved for admin), but the
+      PARENT REQUEST resets to "Initiated" instead of "Cancelled" — the client didn't do
+      anything wrong and still wants the service, so staff can re-assign new providers without
+      the client having to submit a brand-new request. GET /customer-service-requests for this
+      request will show Status "Initiated" and progressStatus "Requested" again once this
+      happens — the app should treat that exactly like a fresh, not-yet-assigned request.
+    - Staff cancels via the admin portal (not this endpoint): unchanged — the parent request
+      still becomes "Cancelled" (terminal), since that's a deliberate staff decision to end it.
+  See docs/status-workflow.md. Before v3.21, a post-acceptance cancel only touched
+  ServiceBookings, leaving the request stuck at "Assigned" indefinitely — v3.21 fixed that by
+  always cancelling the request too; v3.22 refines it further so a provider-initiated cancel
+  reopens the request for reassignment instead of ending it.
 
 Example (provider cancelling an accepted booking):
 {
