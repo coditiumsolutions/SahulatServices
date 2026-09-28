@@ -30,6 +30,15 @@ public class AssignProviderVm
 
     public bool HasCategoryMatch { get; set; }
 
+    /// <summary>
+    /// True when ServiceTitle text matched a predefined ServiceTitles row for this request's
+    /// category AND at least one eligible provider had that title, so Providers below was
+    /// narrowed by title (not just category). False means category-only filtering applied —
+    /// either because ServiceTitle is free text with no predefined match, or because no
+    /// provider had the matched title (falls back to the category list rather than showing empty).
+    /// </summary>
+    public bool TitleFiltered { get; set; }
+
     [Required]
     [Display(Name = "Estimated Amount")]
     [Range(0, double.MaxValue)]

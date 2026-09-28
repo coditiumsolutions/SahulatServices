@@ -1,6 +1,6 @@
 ================================================================================
 SahulatGharTak API Reference
-Version: 3.23 | Last Updated: 2026-09-28
+Version: 3.24 | Last Updated: 2026-09-28
 Database: SahulatAppDB
 Local Base URL:    https://localhost:7265/api/
 Deployed Base URL:  https://sahulatghartak.com/api/
@@ -1198,6 +1198,110 @@ Fail (400 - primary not in list):
 {
   "success": false,
   "message": "The primary category must be one of the selected categories.",
+  "data": null
+}
+
+--------------------------------------------------------------------------------
+GET Provider Service Titles
+--------------------------------------------------------------------------------
+Local:     https://localhost:7265/api/providers/{providerUid}/service-titles
+Deployed:  https://sahulatghartak.com/api/providers/{providerUid}/service-titles
+
+Example:
+GET https://localhost:7265/api/providers/4/service-titles
+
+Request Body: none
+
+Notes:
+- NEW (2026-09-28), additive — a provider can optionally declare which predefined ServiceTitles
+  they offer, within the categories they already have (see GET/PUT .../categories above). This
+  is a further refinement on top of multi-category support, not a replacement for it.
+- FULLY OPTIONAL — unlike categories, a provider can have ZERO service titles (this is the
+  default/normal state for every provider until an admin opts them in) with no restriction
+  implied; this endpoint returns an empty array in that case, not an error.
+- to discover which titles are pickable for a given category, use the existing
+  GET /api/service-titles?categoryUid={id} (see SERVICE TITLES APIs below).
+
+Success (200):
+{
+  "success": true,
+  "message": "Provider service titles fetched successfully.",
+  "data": [
+    { "serviceTitleUid": 5, "title": "Pipe Repair", "categoryUid": 1, "categoryName": "Plumber" },
+    { "serviceTitleUid": 9, "title": "Tap Installation", "categoryUid": 1, "categoryName": "Plumber" }
+  ]
+}
+
+Success (200 - no titles set, the default):
+{
+  "success": true,
+  "message": "Provider service titles fetched successfully.",
+  "data": []
+}
+
+--------------------------------------------------------------------------------
+PUT Provider Service Titles (Full Replace)
+--------------------------------------------------------------------------------
+Local:     https://localhost:7265/api/providers/{providerUid}/service-titles
+Deployed:  https://sahulatghartak.com/api/providers/{providerUid}/service-titles
+
+Example:
+PUT https://localhost:7265/api/providers/4/service-titles
+
+Request Body:
+{
+  "serviceTitleIds": [5, 9]
+}
+
+Notes:
+- FULL REPLACE — the provider's service-title set becomes exactly serviceTitleIds; any title not
+  in the list is removed, any new one is added.
+- UNLIKE PUT .../categories, an EMPTY serviceTitleIds list is valid and simply removes all titles
+  — there is no "at least one" requirement, since titles are optional.
+- every id in serviceTitleIds must: exist, be active, AND belong (via ServiceTitles.CategoryUid)
+  to a category the provider currently has (see GET .../categories) — otherwise 400, naming the
+  offending title. Assigning a title outside the provider's categories first requires adding that
+  category via PUT .../categories.
+- this is the endpoint to call for "add/remove a service title for an existing provider" — there
+  is no separate add/remove-one-title endpoint, always send the full desired set.
+- removing a category via PUT .../categories does NOT automatically remove titles the provider
+  had under that category — the orphaned rows persist until the next PUT here. Not a bug.
+
+Success (200):
+{
+  "success": true,
+  "message": "Provider service titles updated successfully.",
+  "data": [
+    { "serviceTitleUid": 5, "title": "Pipe Repair", "categoryUid": 1, "categoryName": "Plumber" },
+    { "serviceTitleUid": 9, "title": "Tap Installation", "categoryUid": 1, "categoryName": "Plumber" }
+  ]
+}
+
+Success (200 - empty list, all titles removed):
+{
+  "success": true,
+  "message": "Provider service titles updated successfully.",
+  "data": []
+}
+
+Fail (400 - provider not found):
+{
+  "success": false,
+  "message": "Provider not found.",
+  "data": null
+}
+
+Fail (400 - title id doesn't exist):
+{
+  "success": false,
+  "message": "One or more selected service titles do not exist.",
+  "data": null
+}
+
+Fail (400 - title's category not one of the provider's categories):
+{
+  "success": false,
+  "message": "Service title 'Pipe Repair' belongs to a category this provider is not assigned to.",
   "data": null
 }
 

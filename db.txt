@@ -1,4 +1,4 @@
-# Version: 4.11 | UpdatedAt: 28/09/2026
+# Version: 4.12 | UpdatedAt: 28/09/2026
 # Database: SahulatAppDB
 # Server: 34.131.41.192,1433
 #
@@ -105,6 +105,12 @@ Table: ServiceTitles
   DisplayOrder     int              NOT NULL  DEFAULT (0)
   IsActive         bit              NOT NULL  DEFAULT (1)
   CreatedOn        datetime         NOT NULL  DEFAULT (getutcdate())
+  -- (v4.11) A provider can optionally offer a specific title via ProviderServiceTitles below.
+  -- Separately, the admin "Assign Provider" screen matches CustomerServiceRequests.ServiceTitle
+  -- (free text the customer typed, not a FK) against this table's Title case-insensitively,
+  -- scoped to CategoryUID, to conditionally narrow eligible providers by title. Falls back to
+  -- category-only filtering silently when no match is found (free text) or when a match exists
+  -- but no provider has that title yet — see BookingService.GetAssignProviderFormAsync.
 
 --------------------------------------------------------------------------------
 Table: Providers
@@ -166,6 +172,28 @@ Table: ProviderCategories
   -- matching, nearby-provider search, and the category-delete in-use check all read this
   -- table (Any() match against ANY of a provider's categories) rather than the scalar.
   -- Index: IX_ProviderCategories_CategoryUID; UQ_ProviderCategories_ProviderUID_CategoryUID
+
+--------------------------------------------------------------------------------
+Table: ProviderServiceTitles
+--------------------------------------------------------------------------------
+  UID              int              NOT NULL  PK  IDENTITY
+  ProviderUID      int              NOT NULL  FK -> Providers.UID (cascade delete)
+  ServiceTitleUID  int              NOT NULL  FK -> ServiceTitles.UID (restrict delete)
+  CreatedOn        datetime         NOT NULL  DEFAULT (getutcdate())
+  -- Source of truth for provider service-title membership (added 2026-09-28). One row per
+  -- (ProviderUID, ServiceTitleUID) pair, unique constraint
+  -- UQ_ProviderServiceTitles_ProviderUID_ServiceTitleUID. Fully OPTIONAL, unlike
+  -- ProviderCategories above — a provider with zero rows here is a normal, unrestricted
+  -- provider, not an incomplete profile; an empty PUT payload is valid and removes all titles.
+  -- A title's ServiceTitles.CategoryUID must be one of the provider's current ProviderCategories
+  -- rows — enforced server-side in ProviderServiceTitleService.SyncServiceTitlesAsync, not just
+  -- in the admin UI. This is NOT auto-cleaned when a provider's category is later removed (via
+  -- PUT /api/providers/{providerUid}/categories) — an orphaned title row can persist until the
+  -- next write to this table; this is accepted/expected, not a bug.
+  -- Managed via GET/PUT /api/providers/{providerUid}/service-titles (see api.txt). Also read by
+  -- the admin "Assign Provider" screen's conditional title filter (see the ServiceTitles note
+  -- above).
+  -- Index: IX_ProviderServiceTitles_ServiceTitleUID; UQ_ProviderServiceTitles_ProviderUID_ServiceTitleUID
 
 --------------------------------------------------------------------------------
 Table: ProviderDocuments

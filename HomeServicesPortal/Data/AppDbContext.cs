@@ -21,6 +21,8 @@ public class AppDbContext : DbContext
 
     public DbSet<ProviderCategory> ProviderCategories => Set<ProviderCategory>();
 
+    public DbSet<ProviderServiceTitle> ProviderServiceTitles => Set<ProviderServiceTitle>();
+
     public DbSet<Staff> Staff => Set<Staff>();
 
     public DbSet<Service> Services => Set<Service>();
@@ -183,6 +185,34 @@ public class AppDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(e => e.CategoryUid)
                 .HasConstraintName("FK_ProviderCategories_ServiceCategories")
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<ProviderServiceTitle>(entity =>
+        {
+            entity.ToTable("ProviderServiceTitles");
+            entity.HasKey(e => e.Uid);
+            entity.Property(e => e.Uid).HasColumnName("UID");
+            entity.Property(e => e.ProviderUid).HasColumnName("ProviderUID");
+            entity.Property(e => e.ServiceTitleUid).HasColumnName("ServiceTitleUID");
+            entity.Property(e => e.CreatedOn)
+                .HasColumnType("datetime")
+                .HasDefaultValueSql("(getdate())");
+
+            entity.HasIndex(e => new { e.ProviderUid, e.ServiceTitleUid })
+                .IsUnique()
+                .HasDatabaseName("UQ_ProviderServiceTitles_ProviderUID_ServiceTitleUID");
+
+            entity.HasOne(e => e.Provider)
+                .WithMany(p => p.ProviderServiceTitles)
+                .HasForeignKey(e => e.ProviderUid)
+                .HasConstraintName("FK_ProviderServiceTitles_Providers")
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.ServiceTitle)
+                .WithMany()
+                .HasForeignKey(e => e.ServiceTitleUid)
+                .HasConstraintName("FK_ProviderServiceTitles_ServiceTitles")
                 .OnDelete(DeleteBehavior.Restrict);
         });
 

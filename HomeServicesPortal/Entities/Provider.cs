@@ -51,4 +51,6 @@ public class Provider
     public ServiceCategory Category { get; set; } = null!;
 
     public ICollection<ProviderCategory> ProviderCategories { get; set; } = new List<ProviderCategory>();
+
+    public ICollection<ProviderServiceTitle> ProviderServiceTitles { get; set; } = new List<ProviderServiceTitle>();
 }

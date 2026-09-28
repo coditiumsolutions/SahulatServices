@@ -85,6 +85,58 @@
     </div>
 
     <div class="row g-2 mb-2">
+        <div class="col-md-12">
+            <div class="row g-2">
+                <div class="col-sm-2">
+                    <label class="form-label">Service Titles</label>
+                    <div class="form-text">Optional. Shown per selected category.</div>
+                </div>
+                <div class="col-sm-10" id="spTitleChecklist">
+                    @foreach (var group in Model.ServiceTitleOptions.GroupBy(t => t.CategoryUid))
+                    {
+                        var categorySelected = Model.CategoryUids.Contains(group.Key);
+                        <div class="sp-title-group mb-2" data-category-uid="@group.Key" style="@(categorySelected ? "" : "display:none;")">
+                            @foreach (var title in group)
+                            {
+                                var checkedAttr = Model.ServiceTitleUids.Contains(title.Uid) ? "checked" : null;
+                                <div class="form-check form-check-inline">
+                                    <input type="checkbox" class="form-check-input sp-title-check" name="ServiceTitleUids" value="@title.Uid" checked="@(checkedAttr != null)" />
+                                    <label class="form-check-label small">@title.Title</label>
+                                </div>
+                            }
+                        </div>
+                    }
+                    <span asp-validation-for="ServiceTitleUids" class="text-danger small"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function () {
+            var categoryRoot = document.getElementById('spCategoryDropdown');
+            var titleList = document.getElementById('spTitleChecklist');
+            if (!categoryRoot || !titleList) return;
+            categoryRoot.addEventListener('change', function (e) {
+                if (!e.target.classList.contains('sp-category-check')) return;
+                var categoryUid = e.target.value;
+                var group = titleList.querySelector('.sp-title-group[data-category-uid="' + categoryUid + '"]');
+                if (!group) return;
+                if (e.target.checked) {
+                    group.style.display = '';
+                } else {
+                    group.style.display = 'none';
+                    // Un-check any titles under a category that's no longer selected, so a
+                    // stale hidden selection can't silently persist to the next save.
+                    group.querySelectorAll('.sp-title-check:checked').forEach(function (cb) {
+                        cb.checked = false;
+                    });
+                }
+            });
+        })();
+    </script>
+
+    <div class="row g-2 mb-2">
         <div class="col-md-6">
             <div class="row g-2 align-items-center">
                 <div class="col-sm-4">

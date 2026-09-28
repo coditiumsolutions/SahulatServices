@@ -63,6 +63,15 @@ public class ServiceProviderFormVm : IValidatableObject
     [Display(Name = "Categories")]
     public List<int> CategoryUids { get; set; } = new();
 
+    /// <summary>
+    /// Optional. Predefined ServiceTitles this provider offers, within the categories they have
+    /// (CategoryUids). Fully optional — unlike categories, an empty list is a normal state.
+    /// </summary>
+    [Display(Name = "Service Titles")]
+    public List<int> ServiceTitleUids { get; set; } = new();
+
+    public List<ServiceTitleOptionVm> ServiceTitleOptions { get; set; } = new();
+
     [Display(Name = "Experience Years")]
     [Range(0, 60)]
     public int? ExperienceYears { get; set; }
@@ -112,6 +121,13 @@ public class ServiceProviderFormVm : IValidatableObject
             yield return new ValidationResult("Password must be at least 4 characters.", [nameof(Password)]);
         }
     }
+}
+
+public class ServiceTitleOptionVm
+{
+    public int Uid { get; set; }
+    public string Title { get; set; } = string.Empty;
+    public int CategoryUid { get; set; }
 }
 
 public class ServiceProviderDetailsVm

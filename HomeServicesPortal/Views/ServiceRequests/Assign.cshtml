@@ -115,6 +115,13 @@
                             <div class="mt-1"><span class="badge bg-primary" id="selectedProviderCount">0 selected</span></div>
                         </div>
                         <div class="col-sm-8">
+                            @if (Model.TitleFiltered)
+                            {
+                                <div class="alert alert-info py-2 px-3 small mb-2">
+                                    <i class="fa-solid fa-filter me-1"></i>
+                                    Pre-filtered by Service Title "@Model.ServiceTitle" — only providers offering this exact title are shown.
+                                </div>
+                            }
                             @if (!Model.HasCategoryMatch)
                             {
                                 <div class="alert alert-warning py-2 px-3 small mb-2">

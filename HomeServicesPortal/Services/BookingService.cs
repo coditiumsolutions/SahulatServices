@@ -735,6 +735,42 @@ public class BookingService : IBookingService
             })
             .ToListAsync(cancellationToken);
 
+        // Conditionally narrow by Service Title: the customer's ServiceTitle is free text, not a
+        // FK, so first check whether it happens to match a predefined ServiceTitles row for this
+        // request's category. If it does, and at least one category-matching provider has that
+        // exact title, narrow to those providers; otherwise fall back to the category-only list
+        // above unchanged (free text, or a known title nobody has yet).
+        var titleFiltered = false;
+        var matchedTitleUid = await _db.ServiceTitles
+            .Where(t => t.CategoryUid == request.CategoryUid
+                && t.IsActive
+                && t.Title.Trim().ToLower() == request.ServiceTitle.Trim().ToLower())
+            .Select(t => t.Uid)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (matchedTitleUid > 0)
+        {
+            var titleFilteredProviders = await _db.Providers
+                .AsNoTracking()
+                .Where(p => p.User.IsActive && p.IsVerified
+                    && p.ProviderCategories.Any(pc => pc.CategoryUid == request.CategoryUid)
+                    && p.ProviderServiceTitles.Any(pt => pt.ServiceTitleUid == matchedTitleUid))
+                .OrderBy(p => p.FullName)
+                .Select(p => new SelectListItem
+                {
+                    Value = p.Uid.ToString(),
+                    Text = p.FullName + " (" + p.Category.CategoryName + ")"
+                        + (p.City != null && p.City != "" ? " — " + p.City : "")
+                })
+                .ToListAsync(cancellationToken);
+
+            if (titleFilteredProviders.Count > 0)
+            {
+                matchingProviders = titleFilteredProviders;
+                titleFiltered = true;
+            }
+        }
+
         // Override list: same client city (category ignored). Empty if client has no city.
         var clientCity = (request.ClientCity ?? string.Empty).Trim();
         List<SelectListItem> cityProviders;
@@ -790,6 +826,7 @@ public class BookingService : IBookingService
             PaymentMode = "CashToProvider",
             HasCategoryMatch = matchingProviders.Count > 0,
             ShowAllProviders = matchingProviders.Count == 0,
+            TitleFiltered = titleFiltered,
             Providers = matchingProviders,
             AllProviders = cityProviders,
             PaymentModeOptions = ValidPaymentModes

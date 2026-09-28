@@ -15,6 +15,7 @@ public class ServiceProviderService : IServiceProviderService
     private readonly IFileStorageService _fileStorage;
     private readonly IConfigurationEntryService _configurations;
     private readonly IProviderCategoryService _providerCategories;
+    private readonly IProviderServiceTitleService _providerServiceTitles;
     private readonly ILogger<ServiceProviderService> _logger;
 
     public ServiceProviderService(
@@ -22,12 +23,14 @@ public class ServiceProviderService : IServiceProviderService
         IFileStorageService fileStorage,
         IConfigurationEntryService configurations,
         IProviderCategoryService providerCategories,
+        IProviderServiceTitleService providerServiceTitles,
         ILogger<ServiceProviderService> logger)
     {
         _db = db;
         _fileStorage = fileStorage;
         _configurations = configurations;
         _providerCategories = providerCategories;
+        _providerServiceTitles = providerServiceTitles;
         _logger = logger;
     }
 
@@ -70,12 +73,29 @@ public class ServiceProviderService : IServiceProviderService
         CancellationToken cancellationToken = default)
     {
         model.Categories = await GetCategoryOptionsAsync(cancellationToken);
+        model.ServiceTitleOptions = await GetServiceTitleOptionsAsync(cancellationToken);
         model.CityOptions = await BuildCityOptionsAsync(model.City, cancellationToken);
         if (model.Uid > 0)
         {
             await PopulateDocumentFormAsync(model, cancellationToken);
         }
         return model;
+    }
+
+    private async Task<List<ServiceTitleOptionVm>> GetServiceTitleOptionsAsync(CancellationToken cancellationToken)
+    {
+        return await _db.ServiceTitles
+            .AsNoTracking()
+            .Where(t => t.IsActive)
+            .OrderBy(t => t.CategoryUid)
+            .ThenBy(t => t.DisplayOrder)
+            .Select(t => new ServiceTitleOptionVm
+            {
+                Uid = t.Uid,
+                Title = t.Title,
+                CategoryUid = t.CategoryUid
+            })
+            .ToListAsync(cancellationToken);
     }
 
     private async Task PopulateDocumentFormAsync(
@@ -313,6 +333,8 @@ public class ServiceProviderService : IServiceProviderService
             provider.CategoryUids = new List<int> { provider.CategoryUid };
         }
 
+        provider.ServiceTitleUids = await _providerServiceTitles.GetServiceTitleUidsAsync(id, cancellationToken);
+
         return await PopulateFormAsync(provider, cancellationToken);
     }
 
@@ -418,6 +440,13 @@ public class ServiceProviderService : IServiceProviderService
             return (false, syncError);
         }
 
+        var (titleSuccess, titleError) = await _providerServiceTitles.SyncServiceTitlesAsync(
+            provider.Uid, model.ServiceTitleUids, cancellationToken);
+        if (!titleSuccess)
+        {
+            return (false, titleError);
+        }
+
         _logger.LogInformation("Provider {Name} created.", model.FullName);
         return (true, null);
     }
@@ -489,6 +518,13 @@ public class ServiceProviderService : IServiceProviderService
         if (!syncSuccess)
         {
             return (false, syncError);
+        }
+
+        var (titleSuccess, titleError) = await _providerServiceTitles.SyncServiceTitlesAsync(
+            provider.Uid, model.ServiceTitleUids, cancellationToken);
+        if (!titleSuccess)
+        {
+            return (false, titleError);
         }
 
         _logger.LogInformation("Provider {Uid} updated.", model.Uid);
