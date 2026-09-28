@@ -1,6 +1,6 @@
 ================================================================================
 SahulatGharTak API Reference
-Version: 3.22 | Last Updated: 2026-09-28
+Version: 3.23 | Last Updated: 2026-09-28
 Database: SahulatAppDB
 Local Base URL:    https://localhost:7265/api/
 Deployed Base URL:  https://sahulatghartak.com/api/
@@ -1932,7 +1932,14 @@ Notes:
   populated UNCONDITIONALLY, including while status="Pending" (shipped 2026-09-04) — a provider
   needs the address to decide whether to accept an incoming booking. The Flutter app's "WIP"
   placeholder badge for Pending bookings (RequestsTab incoming-request card, BookingDetailScreen)
-  can be removed. Same for GET By Id, POST Create, and PUT Update — they share the same mapping.
+  can be removed. Same for GET By Id, POST Create, PUT Update, and POST .../respond — they all
+  share the same mapping.
+- clientLatitude/clientLongitude (added v3.23) are sourced from the same linked ClientAddresses
+  row as clientFullAddress/clientArea/clientCity. Both null when the client never dropped a pin
+  for that address (null-both-or-neither, same convention as GET /client-addresses) — never one
+  set without the other. Lets the provider app render a read-only map pin on the booking detail
+  screen. Same sourcing/unconditional visibility applies to every endpoint below that returns a
+  booking object, including POST .../respond.
 - rejectReason is set when a provider rejects a Pending booking (see POST .../respond below);
   cancelReason is set when an Accepted/In Progress booking is cancelled (see PUT .../{bookingUid}
   below). Both are null otherwise.
@@ -1985,7 +1992,9 @@ Success (200):
       "clientAddressTitle": "Home",
       "clientFullAddress": "House 12, Street 5",
       "clientArea": "DHA Phase 2",
-      "clientCity": "Karachi"
+      "clientCity": "Karachi",
+      "clientLatitude": 24.8607000,
+      "clientLongitude": 67.0011000
     }
   ]
 }
@@ -2052,7 +2061,9 @@ Success (200):
     "clientAddressTitle": "Home",
     "clientFullAddress": "House 12, Street 5",
     "clientArea": "DHA Phase 2",
-    "clientCity": "Karachi"
+    "clientCity": "Karachi",
+    "clientLatitude": 24.8607000,
+    "clientLongitude": 67.0011000
   }
 }
 
@@ -2136,7 +2147,9 @@ Success (201):
     "clientAddressTitle": "Home",
     "clientFullAddress": "House 12, Street 5",
     "clientArea": "DHA Phase 2",
-    "clientCity": "Karachi"
+    "clientCity": "Karachi",
+    "clientLatitude": 24.8607000,
+    "clientLongitude": 67.0011000
   }
 }
 
@@ -2254,7 +2267,9 @@ Success (200):
     "clientAddressTitle": "Home",
     "clientFullAddress": "House 12, Street 5",
     "clientArea": "DHA Phase 2",
-    "clientCity": "Karachi"
+    "clientCity": "Karachi",
+    "clientLatitude": 24.8607000,
+    "clientLongitude": 67.0011000
   }
 }
 
@@ -2387,6 +2402,8 @@ Success (200 - accepted):
     "clientFullAddress": "House 12, Street 5",
     "clientArea": "DHA Phase 2",
     "clientCity": "Karachi",
+    "clientLatitude": 24.8607000,
+    "clientLongitude": 67.0011000,
     "...": "remaining fields same shape as GET Booking By Id"
   }
 }

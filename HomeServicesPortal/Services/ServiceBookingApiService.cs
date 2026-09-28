@@ -374,6 +374,8 @@ public class ServiceBookingApiService : IServiceBookingApiService
             ClientAddressTitle = b.Request.ClientAddress.AddressTitle,
             ClientFullAddress = b.Request.ClientAddress.FullAddress,
             ClientArea = b.Request.ClientAddress.Area,
-            ClientCity = b.Request.ClientAddress.City
+            ClientCity = b.Request.ClientAddress.City,
+            ClientLatitude = b.Request.ClientAddress.Latitude,
+            ClientLongitude = b.Request.ClientAddress.Longitude
         };
 }

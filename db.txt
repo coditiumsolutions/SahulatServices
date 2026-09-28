@@ -249,6 +249,9 @@ Table: ClientAddresses
   -- set". API responses expose this via ClientAddressApiDto.HasLocation (true only when both
   -- columns are non-null and not both zero) so consumers don't need to re-derive the convention.
   -- No backfill needed for pre-existing NULL/zero rows; a client can set the pin later via PUT.
+  -- (v4.10) Also surfaced read-only as clientLatitude/clientLongitude on ServiceBookingApiDto
+  -- (provider-facing booking/request endpoints), same null-both-or-neither convention, so the
+  -- provider app can render a map pin without a separate lookup.
 
 --------------------------------------------------------------------------------
 Table: CustomerServiceRequests

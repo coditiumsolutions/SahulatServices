@@ -85,4 +85,17 @@ public class ServiceBookingApiDto
     public string? ClientArea { get; set; }
 
     public string? ClientCity { get; set; }
+
+    /// <summary>
+    /// Sourced from the linked ClientAddresses row (same address as ClientFullAddress/ClientArea/
+    /// ClientCity, via CustomerServiceRequests.ClientAddress). Null when the client never dropped
+    /// a pin for that address — both Latitude and Longitude are null-or-set together, never one
+    /// without the other. Added v3.23.
+    /// </summary>
+    public decimal? ClientLatitude { get; set; }
+
+    /// <summary>
+    /// See ClientLatitude — same address, same null-both-or-neither convention. Added v3.23.
+    /// </summary>
+    public decimal? ClientLongitude { get; set; }
 }
