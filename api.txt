@@ -1,6 +1,6 @@
 ================================================================================
 SahulatGharTak API Reference
-Version: 3.25 | Last Updated: 2026-09-29
+Version: 3.26 | Last Updated: 2026-09-29
 Database: SahulatAppDB
 Local Base URL:    https://localhost:7265/api/
 Deployed Base URL:  https://sahulatghartak.com/api/
@@ -340,11 +340,40 @@ Fail (404):
   "data": null
 }
 
+Fail (400 - client has pending dues):
+{
+  "success": false,
+  "message": "Cannot delete account: you have an active or unpaid booking. Please settle it before deleting your account.",
+  "data": null
+}
+
+Fail (400 - provider has pending dues):
+{
+  "success": false,
+  "message": "Cannot delete account: you have an active booking or a pending payout. Please resolve it before deleting your account.",
+  "data": null
+}
+
 Notes:
 - Permanently and irreversibly deletes the account (Client and/or Provider — a client
   upgraded to provider has both rows deleted/anonymized together, since both are keyed
   off the same UsersLogin). This is NOT a freeze/deactivation. Re-verifies password
   the same way as Login before proceeding.
+- BEHAVIOR CHANGE (2026-09-29): deletion is now BLOCKED (400) if the account has pending
+  financial dues, checked BEFORE any anonymization occurs (nothing is touched on a 400):
+  - Client: blocked if any ServiceBookings row for this client has CustomerRemaining > 0
+    (money still owed), OR has Status in Pending/Accepted/In Progress (an open job).
+  - Provider: blocked if any ServiceBookings row for this provider has Status in
+    Pending/Accepted/In Progress (an open job), OR any ProviderPayouts row has
+    Status = Pending (the company still owes them a payout).
+  - A dual-role (Client+Provider) account is blocked if EITHER side has pending dues.
+  - Resolve the booking/payout first (complete it, pay it out, cancel it), then retry.
+- BEHAVIOR CHANGE (2026-09-29): FullName is now PRESERVED (no longer replaced with
+  "Deleted User {id}") on both Clients and Providers — financial/audit records
+  (PaymentLedger, ProviderPayouts, old ServiceBookings) need a human-identifiable name
+  even after the account is deleted. This is a same-shape, non-breaking response change
+  (no new/removed fields) — only the resulting FullName value server-side differs from
+  before.
 - Hard-deleted (rows physically removed): ProviderDocuments row + the provider's uploaded
   files under wwwroot/uploads/providers/{ProviderUID}/ (profile photo, CNIC front/back);
   UserOTP rows for this mobile number; ClientAddresses rows that have no
@@ -353,11 +382,11 @@ Notes:
   hard-deleting would break other users' booking/financial records): UsersLogin
   (MobileNo -> "deleted-{userId}", PasswordHash randomized, IsActive=false,
   IsVerified=false — mobile number becomes eligible for re-registration since it no
-  longer matches the original); Clients (FullName -> "Deleted User {id}", Cnic/Gender
-  cleared); Providers (FullName -> "Deleted User {id}", Cnic -> "DEL{id}", Gender/
-  Description cleared, IsAvailable=false); any ClientAddresses still referenced by a
-  CustomerServiceRequest are left in place (address text only, no direct PII beyond
-  what the request itself already retains).
+  longer matches the original); Clients (Cnic/Gender cleared, FullName preserved);
+  Providers (Cnic -> "DEL{id}", Gender/Description cleared, IsAvailable=false, FullName
+  preserved); any ClientAddresses still referenced by a CustomerServiceRequest are left
+  in place (address text only, no direct PII beyond what the request itself already
+  retains).
 - Untouched (out of scope — belongs to the other party or to platform financial
   records, not solely to this user): CustomerServiceRequests, ServiceBookings,
   PaymentLedger, ProviderPayouts, CommissionRules rows.

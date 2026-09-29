@@ -1,4 +1,4 @@
-# Version: 4.13 | UpdatedAt: 29/09/2026
+# Version: 4.14 | UpdatedAt: 29/09/2026
 # Database: SahulatAppDB
 # Server: 34.131.41.192,1433
 #
@@ -424,6 +424,17 @@ Table: ProviderPayouts
   Method               nvarchar(20)     NULL
   CreatedOn            datetime         NOT NULL  DEFAULT (getutcdate())
   PaidOn               datetime         NULL
+  -- ACCOUNT DELETION (2026-09-29): POST /api/auth/delete-account (AuthService.DeleteAccountAsync)
+  -- blocks a provider's self-delete (400) while any row here has Status='Pending' — the company
+  -- still owes that payout, and Providers/ServiceBookings/PaymentLedger/CommissionRules are all
+  -- Restrict-delete FKs so this data cannot simply disappear with the account. Same method also
+  -- blocks a client/provider self-delete while they have a ServiceBookings row in an open state
+  -- (Pending/Accepted/In Progress) or, for a client, CustomerRemaining > 0 (money still owed).
+  -- On successful deletion, Clients.FullName/Providers.FullName are now PRESERVED (previously
+  -- overwritten to "Deleted User {id}") specifically so PaymentLedger/ProviderPayouts/
+  -- ServiceBookings rows tied to a deleted account remain human-identifiable for financial/audit
+  -- purposes; Cnic/MobileNo/Gender/Description are still scrubbed. See api.txt for the exact
+  -- error messages and response shape.
 
 
 ================================================================================

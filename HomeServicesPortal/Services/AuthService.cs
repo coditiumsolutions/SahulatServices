@@ -468,6 +468,11 @@ public class AuthService : IAuthService
     /// booking/financial history, so their PII columns are anonymized instead. Rows with no such
     /// dependents (ClientAddresses with no requests, ProviderDocuments, UserOTP) are hard-deleted,
     /// along with the provider's uploaded document files on disk.
+    /// FullName is deliberately PRESERVED (not anonymized) on both Clients and Providers — staff
+    /// reviewing PaymentLedger/ProviderPayouts/ServiceBookings history for a deleted account still
+    /// need a human-identifiable name for financial/audit/dispute purposes. CNIC, mobile, gender,
+    /// and description are still scrubbed for privacy.
+    /// Deletion is blocked (400) if the account has pending dues — see the dues checks below.
     /// </summary>
     public async Task<(bool Success, string? Error, DeleteAccountResponse? Data, int StatusCode)> DeleteAccountAsync(
         DeleteAccountRequest request,
@@ -495,9 +500,39 @@ public class AuthService : IAuthService
             return (false, "Account not found.", null, StatusCodes.Status404NotFound);
         }
 
+        var openBookingStatuses = new[] { "Pending", "Accepted", "In Progress" };
+
+        if (client != null)
+        {
+            var hasClientDues = await _db.ServiceBookings.AnyAsync(
+                b => b.ClientUid == client.Uid
+                    && (b.CustomerRemaining > 0 || openBookingStatuses.Contains(b.Status)),
+                cancellationToken);
+
+            if (hasClientDues)
+            {
+                return (false, "Cannot delete account: you have an active or unpaid booking. Please settle it before deleting your account.", null, StatusCodes.Status400BadRequest);
+            }
+        }
+
+        if (provider != null)
+        {
+            var hasOpenBooking = await _db.ServiceBookings.AnyAsync(
+                b => b.ProviderUid == provider.Uid && openBookingStatuses.Contains(b.Status),
+                cancellationToken);
+
+            var hasPendingPayout = await _db.ProviderPayouts.AnyAsync(
+                p => p.ProviderUid == provider.Uid && p.Status == "Pending",
+                cancellationToken);
+
+            if (hasOpenBooking || hasPendingPayout)
+            {
+                return (false, "Cannot delete account: you have an active booking or a pending payout. Please resolve it before deleting your account.", null, StatusCodes.Status400BadRequest);
+            }
+        }
+
         return await ExecuteInTransactionAsync<(bool Success, string? Error, DeleteAccountResponse? Data, int StatusCode)>(async () =>
         {
-            var anonymizedName = $"Deleted User {userId}";
             // MobileNo column is nvarchar(20) and unique. userId alone guarantees uniqueness
             // (UsersLogin.Uid is the PK), so it is sufficient without a timestamp suffix.
             var anonymizedMobile = $"deleted-{userId}";
@@ -519,7 +554,6 @@ public class AuthService : IAuthService
                 }
 
                 var trackedClient = await _db.Clients.FirstAsync(c => c.Uid == client.Uid, cancellationToken);
-                trackedClient.FullName = anonymizedName;
                 trackedClient.Cnic = null;
                 trackedClient.Gender = null;
             }
@@ -534,7 +568,6 @@ public class AuthService : IAuthService
                 }
 
                 var trackedProvider = await _db.Providers.FirstAsync(p => p.Uid == provider.Uid, cancellationToken);
-                trackedProvider.FullName = anonymizedName;
                 // Cnic column is nvarchar(15) and required (not nullable) — keep this short.
                 trackedProvider.Cnic = $"DEL{provider.Uid}";
                 trackedProvider.MobileNo = anonymizedMobile;
