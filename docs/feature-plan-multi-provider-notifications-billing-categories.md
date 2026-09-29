@@ -1,3 +1,18 @@
+---
+status: stale
+reason: >-
+  Implementation plan written 2026-09-22 for four features (first-accept-wins assignment, admin
+  notification icons, labour/material billing split, provider multi-category). All four have
+  since been implemented and are live in the code (ProviderCategories junction table,
+  AdminNotifications with typed icons, LabourAmount/BookingMaterialItems, etc.) — this is a
+  historical design record, not a pending-work tracker. For current schema/API shape see db.txt
+  and api.txt; for any still-open Flutter follow-up see docs/flutter-changes.md.
+superseded_by:
+  - api.txt
+  - db.txt
+  - docs/flutter-changes.md
+---
+
 # Client Feature Breakdown: Multi-Provider Assign, Admin Notifications, Labour/Material Billing, Provider Multi-Category
 
 ## Context

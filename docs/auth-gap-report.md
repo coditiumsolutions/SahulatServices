@@ -1,3 +1,12 @@
+---
+status: active
+reason: >-
+  Dated 2026-08-27, but its core findings (plaintext password storage, no JWT issuance despite
+  a JWT pipeline existing in code) were verified still true against the current codebase on
+  2026-09-29 — this is an active, unresolved security audit, not a stale report. Re-verify
+  against HomeServicesPortal/Helpers/PasswordHasher.cs and AuthService.cs before assuming fixed.
+---
+
 # Authentication Gap Report
 
 **Scope:** HomeServicesPortal backend (ASP.NET Core 8) and mobile API, production database

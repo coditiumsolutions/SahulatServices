@@ -1,3 +1,16 @@
+---
+status: stale
+reason: >-
+  Point-in-time test report from 2026-08-04 — a one-off manual test session against the payment/
+  ledger/payout code as it existed then. The bug found (commission/earning desync) was fixed and
+  re-verified during that session. Historical record only; the payment/booking code has changed
+  since (see git log on PaymentService.cs, BookingService.cs) — do not use as current behavior
+  documentation.
+superseded_by:
+  - api.txt
+  - db.txt
+---
+
 # Payment Module Test Report
 
 Date: 2026-08-04

@@ -1,3 +1,16 @@
+---
+status: partially-stale
+reason: >-
+  Written 2026-09-23; Phase 1 (backend) and Phase 2 (admin web test harness) sections are
+  accurate historical records of what was built. The "Next steps"/Phase 3 (Flutter mobile
+  integration) framing may be outdated — GPS/location fields (clientLatitude/clientLongitude)
+  have since shipped on provider-facing booking endpoints per api.txt/db.txt v4.10. Verify
+  against api.txt and docs/flutter-changes.md before treating Phase 3 as still not started.
+superseded_by:
+  - api.txt
+  - docs/flutter-changes.md
+---
+
 # Maps / GPS Implementation — Current State & Next Steps
 
 Status as of 2026-09-23. Covers Phase 1 (ASP.NET Core API & DB) and Phase 2

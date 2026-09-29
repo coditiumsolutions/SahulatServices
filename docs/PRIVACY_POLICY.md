@@ -1,3 +1,8 @@
+---
+status: current
+type: legal
+---
+
 # Privacy Policy for Sahulat Ghar Tak
 
 **Last Updated: September 8, 2026**

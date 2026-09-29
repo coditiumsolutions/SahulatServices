@@ -1,3 +1,15 @@
+---
+status: stale
+reason: >-
+  Point-in-time test report from 08/04/2026 — a one-off manual test session, not a living
+  reference. The bugs found were fixed and re-verified during that session; the codebase has
+  changed substantially since (booking/status workflow, labour/material billing, multi-category
+  providers, etc.). Historical record only — do not use as current behavior documentation.
+superseded_by:
+  - api.txt
+  - docs/status-workflow.md
+---
+
 # Provider Job Workflow — End-to-End Test Report
 
 <!-- Version: 1.0 | UpdatedAt: 08/04/2026 -->

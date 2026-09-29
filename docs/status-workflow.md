@@ -1,3 +1,7 @@
+---
+status: current
+---
+
 # Request & Booking Status Workflow
 
 **Status: implemented.** Design reference for the `CustomerServiceRequests.Status` /

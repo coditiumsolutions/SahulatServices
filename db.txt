@@ -1,33 +1,43 @@
-# Version: 4.14 | UpdatedAt: 29/09/2026
-# Database: SahulatAppDB
-# Server: 34.131.41.192,1433
-#
-# TIMEZONE STANDARD (2026-09-23): All 18 CreatedOn DEFAULT constraints now use getutcdate(), not
-# getdate() (was a latent bug — only correct before because server OS clock is UTC). No data
-# changed. Storage stays UTC everywhere. Display conversion to PKT (UTC+5) happens at the admin
-# portal via Helpers/PktTimeHelper.cs (ToPkt/ToPktString extension methods); API responses carry
-# explicit UTC "Z"-suffixed timestamps (UtcDateTimeJsonConverter, registered globally in
-# Program.cs) for the Flutter app to convert client-side. See api.txt for the API-side note.
-#
-# TIMEZONE STANDARD, PART 2 (2026-09-28): the same latent bug existed in app code — every
-# CreatedOn/UpdatedOn/AcceptedOn/CompletedOn/etc. write used DateTime.Now, not DateTime.UtcNow,
-# again only correct today because the server OS clock happens to be UTC. Swept to DateTime.UtcNow
-# everywhere in Services/*.cs so storage no longer silently depends on that clock assumption. Also
-# fixed one real, live bug this caused: Controllers/AdminNotificationsController.cs builds its own
-# JsonResult/JsonSerializerOptions instead of going through the pipeline that has
-# UtcDateTimeJsonConverter registered, so the admin notification bell was serializing a naive
-# DateTime.Now value with no "Z" suffix — the browser's `new Date(value)` then silently
-# misinterpreted it as already-local time instead of UTC, so admins saw wrong times. Fixed by
-# adding AdminNotificationDto.CreatedOnDisplay, a server-formatted PKT string (via
-# PktTimeHelper.ToPktDisplay()) that the bell now renders directly instead of parsing a raw
-# DateTime client-side. Admin-portal "today" displays (Dashboard/Graph headers, sidebar clock,
-# public site header) were also using DateTime.Now directly in Razor views — switched to the new
-# PktTimeHelper.NowPkt property (DateTime.UtcNow.ToPkt()) so they stay correct even if the server
-# clock is ever fixed to be truly UTC-labeled instead of just UTC-valued.
+================================================================================
+SahulatGharTak Database Schema
+Version: 4.15 | Last Updated: 2026-09-29
+Database: SahulatAppDB
+Server: 34.131.41.192,1433
+
+DateTime columns: all CreatedOn/UpdatedOn/etc. DEFAULT constraints use getutcdate(), and all app
+writes use DateTime.UtcNow — storage is UTC everywhere (fixed 2026-09-23/2026-09-28, see the
+"UTC timezone fix" note under CORE TABLES below for the history/rationale). Display conversion to
+PKT (UTC+5, no DST) happens at the admin portal via Helpers/PktTimeHelper.cs; API responses carry
+explicit UTC "Z"-suffixed timestamps for the Flutter app to convert client-side — see api.txt.
+
+Purpose: Authoritative source of truth for the live database schema, kept in sync with
+migrations under HomeServicesPortal/Migrations. Read this file before writing any EF Core
+query/migration or debugging data — some legacy code still queries tables marked [REMOVED] below,
+which are dead/non-live and will not reflect reality.
+
+MAINTENANCE RULES:
+1. Bump Version and Last Updated above whenever this file changes
+2. Every table's dated inline notes explain WHY a column/table exists or changed — keep new
+   notes dated (YYYY-MM-DD) and specific, don't just describe the column type
+3. A table marked [REMOVED] stays in this file as a historical/legacy record — do not delete
+   those sections, they document what old code may still (incorrectly) reference
+4. Cross-reference api.txt wherever a table is directly exposed/managed via a REST endpoint
+================================================================================
 
 ================================================================================
 CORE TABLES (Live Schema)
 ================================================================================
+-- UTC timezone fix (2026-09-23 + 2026-09-28): all 18 CreatedOn DEFAULT constraints switched from
+-- getdate() to getutcdate() (latent bug — only correct before because the server OS clock happens
+-- to be UTC), and every app-side CreatedOn/UpdatedOn/AcceptedOn/CompletedOn/etc. write swept from
+-- DateTime.Now to DateTime.UtcNow across Services/*.cs for the same reason. This also fixed one
+-- live bug it caused: Controllers/AdminNotificationsController.cs built its own JsonResult/
+-- JsonSerializerOptions instead of going through the pipeline's UtcDateTimeJsonConverter, so the
+-- admin notification bell serialized a naive DateTime.Now with no "Z" suffix — the browser's
+-- `new Date(value)` silently misread it as already-local time, showing admins the wrong time.
+-- Fixed via AdminNotificationDto.CreatedOnDisplay (a server-formatted PKT string, PktTimeHelper.
+-- ToPktDisplay()) that the bell now renders directly instead of parsing a raw DateTime
+-- client-side; admin-portal "today" displays also switched to PktTimeHelper.NowPkt.
 
 --------------------------------------------------------------------------------
 Table: UsersLogin

@@ -1,3 +1,14 @@
+---
+status: stale
+reason: >-
+  Point-in-time audit from 08/07/2026 against api.txt v1.5 / db.txt v1.9, both long since
+  superseded. Per standing project instruction, this file is not updated for new endpoint
+  work — treat api.txt and db.txt (repo root) as the current source of truth instead.
+superseded_by:
+  - api.txt
+  - db.txt
+---
+
 # API Audit Report — Redundant & Non-Functional Endpoints
 
 <!-- Version: 1.1 | UpdatedAt: 08/07/2026 -->
