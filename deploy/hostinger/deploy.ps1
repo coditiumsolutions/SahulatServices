@@ -1,3 +1,5 @@
+# STATUS: LEGACY — Hostinger VPS is no longer the deploy target (superseded by deploy/gcp/,
+# see AGENTS.md). Kept for reference only; do not run against production.
 param(
     [string]$ConfigPath = "$PSScriptRoot\deploy.config.psd1"
 )

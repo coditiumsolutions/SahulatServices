@@ -1,6 +1,9 @@
 /*
 ================================================================================
   Script   : create-provider-documents.sql
+  Status   : APPLIED — already run against the live DB (dbo.ProviderDocuments exists,
+             see db.txt). Kept for historical reference only; safe to re-run (idempotent)
+             but there is nothing left for it to do.
   Purpose  : Create dbo.ProviderDocuments for provider profile / CNIC image paths
   Database : SQL Server 2022
   Notes    :

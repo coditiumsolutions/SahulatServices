@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# STATUS: LEGACY — Hostinger VPS is no longer the deploy target (superseded by deploy/gcp/,
+# see AGENTS.md). Kept for reference only.
+#
 # Run on Hostinger VPS (hPanel -> VPS -> Browser terminal OR SSH as root)
 # Fixes nginx 404 by installing .NET, deploying app folder, nginx proxy, systemd service.
 

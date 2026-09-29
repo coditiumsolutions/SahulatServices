@@ -1,3 +1,6 @@
+-- STATUS: ACTIVE — reusable dev-data seeder, not a one-off migration. Safe to re-run against a
+-- local/dev DB whenever you want sample CustomerServiceRequests rows to test against.
+--
 -- Seed 10 ServiceRequests per active ServiceCategory
 SET NOCOUNT ON;
 

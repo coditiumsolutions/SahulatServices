@@ -1,4 +1,7 @@
 /*
+  STATUS: APPLIED — already run (db.txt confirms "Legacy 'Pending' was renamed to Initiated,
+  2026-09-07"). Historical reference only.
+
   Rename CustomerServiceRequests pre-assignment status: Pending -> Initiated.
   Also updates the live CHECK constraint and column default.
   Safe / idempotent for SQL Server (SahulatAppDB).

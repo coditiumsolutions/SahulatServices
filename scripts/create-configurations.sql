@@ -1,4 +1,7 @@
 /*
+  STATUS: APPLIED — dbo.Configurations already exists and is seeded (see db.txt). Historical
+  reference only.
+
   Create dbo.Configurations and seed Cities (idempotent).
 */
 IF OBJECT_ID(N'dbo.Configurations', N'U') IS NULL

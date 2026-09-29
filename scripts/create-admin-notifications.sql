@@ -1,4 +1,6 @@
 /*
+  STATUS: APPLIED — dbo.AdminNotifications already exists (see db.txt). Historical reference only.
+
   Idempotent create for dbo.AdminNotifications — admin portal notification bell.
 */
 IF OBJECT_ID(N'dbo.AdminNotifications', N'U') IS NULL

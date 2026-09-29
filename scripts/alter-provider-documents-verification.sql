@@ -1,6 +1,8 @@
 /*
 ================================================================================
   Script   : alter-provider-documents-verification.sql
+  Status   : APPLIED — already run (VerifiedOn/VerifiedBy/VerificationRemarks exist on
+             dbo.ProviderDocuments, see db.txt). Historical reference only.
   Purpose  : Add verification columns to dbo.ProviderDocuments
   Safe     : Idempotent (checks COL_LENGTH before ALTER)
 ================================================================================

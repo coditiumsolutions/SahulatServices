@@ -1,4 +1,6 @@
 /*
+  STATUS: APPLIED — Providers.City already exists (see db.txt). Historical reference only.
+
   Add Providers.City (idempotent).
 */
 IF COL_LENGTH(N'dbo.Providers', N'City') IS NULL

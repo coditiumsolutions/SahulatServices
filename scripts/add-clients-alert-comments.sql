@@ -1,4 +1,7 @@
 /*
+  STATUS: APPLIED — Clients.CustomerAlert/Comments already exist (see db.txt). Historical
+  reference only.
+
   Add Clients.CustomerAlert and Clients.Comments (idempotent).
 */
 IF COL_LENGTH(N'dbo.Clients', N'CustomerAlert') IS NULL

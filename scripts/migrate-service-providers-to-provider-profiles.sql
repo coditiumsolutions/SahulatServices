@@ -1,3 +1,7 @@
+-- STATUS: STALE — targets ServiceProviders/ProviderProfiles, both marked [REMOVED] in db.txt
+-- today (superseded by the Providers/Clients live schema). Do not run against the current DB.
+-- Kept for historical reference only.
+--
 -- Migrates provider FKs from ServiceProviders to ProviderProfiles, then drops ServiceProviders.
 -- Run against SahulatAppDB before deploying the updated application.
 -- BACK UP THE DATABASE BEFORE RUNNING.

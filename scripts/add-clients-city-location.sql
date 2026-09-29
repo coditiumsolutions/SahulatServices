@@ -1,4 +1,6 @@
 /*
+  STATUS: APPLIED — Clients.City/Location already exist (see db.txt). Historical reference only.
+
   Add Clients.City and Clients.Location (idempotent).
 */
 IF COL_LENGTH(N'dbo.Clients', N'City') IS NULL

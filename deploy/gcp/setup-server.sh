@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# STATUS: ACTIVE — one-time setup for the live GCP VM (the production deploy target). Already
+# run against the current server; re-run only if provisioning a replacement/new VM.
+#
 # One-time GCP VM setup for api.sahulatghartak.com (Ubuntu 22.04).
 # Run on the server: sudo bash setup-server.sh
 

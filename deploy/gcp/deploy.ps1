@@ -1,3 +1,6 @@
+# STATUS: ACTIVE — manual/alternative deploy path for the GCP VM. The primary deploy path is
+# .github/workflows/deploy.yml (push to main -> auto-deploy via CI). Use this script only when
+# deploying manually outside CI (e.g. testing a change before merging, or CI is unavailable).
 param(
     [string]$ConfigPath = "$PSScriptRoot\deploy.config.psd1",
     [switch]$SetupServer

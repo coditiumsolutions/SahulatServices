@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# STATUS: LEGACY — Hostinger VPS is no longer the deploy target (superseded by deploy/gcp/,
+# see AGENTS.md). Kept for reference only.
+#
 # One-time server setup for Hostinger VPS (Ubuntu/Debian).
 # Run on the server as root: bash setup-server.sh
 
