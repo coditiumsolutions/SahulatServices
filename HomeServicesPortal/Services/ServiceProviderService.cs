@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using HomeServicesPortal.Data;
 using HomeServicesPortal.Entities;
 using HomeServicesPortal.Helpers;
@@ -66,6 +67,24 @@ public class ServiceProviderService : IServiceProviderService
         {
             model.CategoryUid = uids[0];
         }
+    }
+
+    private static readonly Regex PakistaniMobileRegex = new(@"^03\d{9}$", RegexOptions.Compiled);
+    private static readonly Regex CnicRegex = new(@"^\d{5}-\d{7}-\d{1}$", RegexOptions.Compiled);
+
+    private static string? ValidateMobileAndCnic(string mobileNo, string cnic)
+    {
+        if (!PakistaniMobileRegex.IsMatch(mobileNo))
+        {
+            return "Enter a valid mobile number in the format 03XXXXXXXXX (11 digits).";
+        }
+
+        if (!CnicRegex.IsMatch(cnic))
+        {
+            return "Enter a valid CNIC in the format XXXXX-XXXXXXX-X.";
+        }
+
+        return null;
     }
 
     public async Task<ServiceProviderFormVm> PopulateFormAsync(
@@ -385,6 +404,12 @@ public class ServiceProviderService : IServiceProviderService
             return (false, "CNIC is required.");
         }
 
+        var formatError = ValidateMobileAndCnic(model.MobileNo.Trim(), model.Cnic.Trim());
+        if (formatError != null)
+        {
+            return (false, formatError);
+        }
+
         ApplySelectedCategories(model);
 
         var categoryExists = await _db.ServiceCategories
@@ -472,6 +497,12 @@ public class ServiceProviderService : IServiceProviderService
         if (string.IsNullOrWhiteSpace(model.Cnic))
         {
             return (false, "CNIC is required.");
+        }
+
+        var formatError = ValidateMobileAndCnic(model.MobileNo.Trim(), model.Cnic.Trim());
+        if (formatError != null)
+        {
+            return (false, formatError);
         }
 
         ApplySelectedCategories(model);

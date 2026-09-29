@@ -1,6 +1,6 @@
 ================================================================================
 SahulatGharTak API Reference
-Version: 3.24 | Last Updated: 2026-09-28
+Version: 3.25 | Last Updated: 2026-09-29
 Database: SahulatAppDB
 Local Base URL:    https://localhost:7265/api/
 Deployed Base URL:  https://sahulatghartak.com/api/
@@ -1170,7 +1170,11 @@ Request Body:
 
 Notes:
 - FULL REPLACE — the provider's category set becomes exactly categoryIds; any category not in
-  the list is removed, any new one is added. At least one categoryId is required.
+  the list is removed, any new one is added. Between 1 and 3 categoryIds are required.
+- BREAKING CHANGE (2026-09-29): categoryIds is now capped at 3. A provider may have 1-3
+  categories, never more. This intentionally breaks any unpublished test build that sends more
+  than 3 — acceptable since those builds are not live; the published app has never exposed a way
+  to pick more than a few categories at once regardless.
 - primaryCategoryId MUST be one of the values in categoryIds; it becomes the sole isPrimary:true
   row and is mirrored onto the (deprecated) Providers.CategoryUID scalar, so anything still
   reading that column (e.g. categoryId in GET /api/providers-detail/{providerUid}) sees it too.
@@ -1198,6 +1202,13 @@ Fail (400 - primary not in list):
 {
   "success": false,
   "message": "The primary category must be one of the selected categories.",
+  "data": null
+}
+
+Fail (400 - more than 3 categories):
+{
+  "success": false,
+  "message": "A provider can have at most 3 categories.",
   "data": null
 }
 

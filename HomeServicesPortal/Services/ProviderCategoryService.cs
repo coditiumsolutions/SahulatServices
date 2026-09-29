@@ -57,6 +57,11 @@ public class ProviderCategoryService : IProviderCategoryService
             return (false, "Select at least one category.");
         }
 
+        if (distinctUids.Count > 3)
+        {
+            return (false, "A provider can have at most 3 categories.");
+        }
+
         if (!distinctUids.Contains(primaryCategoryUid))
         {
             return (false, "The primary category must be one of the selected categories.");

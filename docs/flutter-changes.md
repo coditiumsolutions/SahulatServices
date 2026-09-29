@@ -1,6 +1,6 @@
 # Flutter App Changes Tracker
 
-Running checklist of backend changes that the Flutter app needs to adopt to complete a feature's integration, or that are being deliberately held back as breaking changes pending approval. Updated incrementally as each backend feature lands — **`api.txt` (repo root, currently v3.22) is the exact, authoritative request/response contract of every endpoint referenced below**; read the cited `api.txt` section before implementing, since this file only summarizes.
+Running checklist of backend changes that the Flutter app needs to adopt to complete a feature's integration, or that are being deliberately held back as breaking changes pending approval. Updated incrementally as each backend feature lands — **`api.txt` (repo root, currently v3.25) is the exact, authoritative request/response contract of every endpoint referenced below**; read the cited `api.txt` section before implementing, since this file only summarizes.
 
 Sections are removed once the Flutter app has fully adopted them — this file tracks *pending/active* work, not a history of everything ever shipped. Completed feature history lives in git log and `api.txt`'s own version notes, not here.
 
@@ -13,49 +13,19 @@ Legend:
 
 ---
 
-## Available now
+## Held for approval
 
-### Provider Service Titles (per-category)
+### Provider category cap: max 3 categories per provider (2026-09-29)
 
-**Status: backend ready and live (2026-09-28); purely additive, no existing endpoint's shape
-changed. Nothing required from the app.**
+**This is a breaking change to `PUT /api/providers/{providerUid}/categories`** — see `api.txt` v3.25, "PUT Provider Categories (Full Replace)" section.
 
-Providers can already belong to multiple `ServiceCategories` (`GET`/`PUT
-api/providers/{providerUid}/categories`, see `api.txt`). This adds one level of granularity on
-top: a provider can now *optionally* declare which predefined `ServiceTitles` they offer, scoped
-to categories they already have.
-
-What's new:
-- `GET api/providers/{providerUid}/service-titles` — list a provider's current service titles.
-  Returns an empty array by default (every provider starts with zero titles — this is normal,
-  not an incomplete profile).
-- `PUT api/providers/{providerUid}/service-titles` — full-replace the set, body
-  `{ "serviceTitleIds": [5, 9] }`. Same full-replace convention as the categories endpoint, with
-  one difference: an **empty** `serviceTitleIds` list is valid here (it removes all titles) —
-  categories require at least one, titles don't.
-- Every id sent must belong (via `ServiceTitles.CategoryUid`) to a category the provider already
-  has — otherwise a 400 naming the offending title. Add the category first via the existing
-  `PUT .../categories` if needed.
-- Full request/response shapes, examples, and error cases: see `api.txt`'s "GET/PUT Provider
-  Service Titles" sections (immediately after "PUT Provider Categories (Full Replace)").
-
-Nothing required: if the Flutter app never calls these two endpoints, provider registration and
-every existing screen behave exactly as before — this is purely an *additional*, optional
-profile refinement, same additive posture as the multi-category feature before it.
-
-If/when a Flutter provider-profile screen wants to adopt it, the natural flow (no new concepts
-beyond what the categories feature already introduced):
-1. `GET api/providers/{providerUid}/categories` (existing) — the provider's current categories.
-2. For each category, `GET api/service-titles?categoryUid={id}` (existing) — the pickable titles
-   under it.
-3. Let the provider check/uncheck titles per category, then `PUT
-   api/providers/{providerUid}/service-titles` with the full chosen set (existing full-replace
-   convention).
-
-One behavior change, admin-portal-only, no API contract implication for this app: the admin
-"Assign Provider" screen now silently narrows its eligible-provider list by title when a
-customer's free-text service title happens to exactly match one of these predefined titles (and
-at least one eligible provider has it) — falls back to the existing category-only behavior
-otherwise. Listed here only for completeness; there is nothing for the Flutter app to change.
-
----
+- `categoryIds` in the request body is now capped at 3. A provider may have 1–3 categories, never more.
+- A request sending more than 3 `categoryIds` now gets a clean `400`:
+  ```json
+  { "success": false, "message": "A provider can have at most 3 categories.", "data": null }
+  ```
+  previously this would have succeeded.
+- If the Flutter app has (or plans) any UI letting a provider or admin pick more than 3 categories at once (e.g. during registration via `categoryIds`/`primaryCategoryId` on `POST /api/auth/register-provider`, or a multi-category picker on a provider-profile screen), it must enforce the same 1–3 cap client-side — ideally before hitting the API, so the user gets an inline validation message rather than a server error.
+- Existing DB rows were migrated one-time (2026-09-29) — any provider that had more than 3 categories was trimmed down to 3 (kept their primary category + 2 others). No further action needed on existing data, this is purely a going-forward contract change.
+- `GET /api/providers/{providerUid}/categories` response shape is unchanged — this only affects the `PUT` (write) side.
+- Unaffected: `GET`/`PUT /api/providers/{providerUid}/service-titles` — Service Titles remain **unlimited** per provider (any number of predefined titles across the provider's up-to-3 categories).

@@ -41,11 +41,15 @@ public class ServiceProviderFormVm : IValidatableObject
     [Display(Name = "Name")]
     public string FullName { get; set; } = string.Empty;
 
+    [Required(ErrorMessage = "Mobile number is required.")]
     [StringLength(20)]
+    [RegularExpression(@"^03\d{9}$", ErrorMessage = "Enter a valid mobile number in the format 03XXXXXXXXX (11 digits).")]
     [Display(Name = "Mobile No")]
     public string? MobileNo { get; set; }
 
-    [StringLength(20)]
+    [Required(ErrorMessage = "CNIC is required.")]
+    [StringLength(15)]
+    [RegularExpression(@"^\d{5}-\d{7}-\d{1}$", ErrorMessage = "Enter a valid CNIC in the format XXXXX-XXXXXXX-X.")]
     [Display(Name = "CNIC")]
     public string? Cnic { get; set; }
 
@@ -58,8 +62,9 @@ public class ServiceProviderFormVm : IValidatableObject
     [Display(Name = "Primary Category")]
     public int CategoryUid { get; set; }
 
-    /// <summary>All categories this provider offers. At least one is required.</summary>
+    /// <summary>All categories this provider offers. Between 1 and 3, inclusive.</summary>
     [MinLength(1, ErrorMessage = "Select at least one category.")]
+    [MaxLength(3, ErrorMessage = "Select at most 3 categories.")]
     [Display(Name = "Categories")]
     public List<int> CategoryUids { get; set; } = new();
 

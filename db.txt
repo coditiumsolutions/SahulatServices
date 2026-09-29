@@ -1,4 +1,4 @@
-# Version: 4.12 | UpdatedAt: 28/09/2026
+# Version: 4.13 | UpdatedAt: 29/09/2026
 # Database: SahulatAppDB
 # Server: 34.131.41.192,1433
 #
@@ -171,6 +171,25 @@ Table: ProviderCategories
   -- Managed via GET/PUT /api/providers/{providerUid}/categories (see api.txt). Job-inbox
   -- matching, nearby-provider search, and the category-delete in-use check all read this
   -- table (Any() match against ANY of a provider's categories) rather than the scalar.
+  -- CAP (2026-09-29, BREAKING): a provider may have between 1 and 3 rows, never more —
+  -- enforced in ProviderCategoryService.SyncCategoriesAsync (the API/admin-form choke point)
+  -- and mirrored client-side via [MaxLength(3)] on ServiceProviderFormVm.CategoryUids.
+  -- Existing providers with >3 categories were migrated down to 3 one-time on this date
+  -- (kept PrimaryCategory=1 row + the 2 lowest-UID remaining rows, deleted the rest via a
+  -- one-off sqlcmd script — 33 rows removed). No limit on ProviderServiceTitles below.
+  -- WHY PrimaryCategory STILL EXISTS (2026-09-29, in case it looks removable): it is NOT a
+  -- leftover from the pre-multi-category days — it's the mechanism that lets a provider have
+  -- several categories while still exposing a single "main" one to code/consumers that only
+  -- understand one:
+  --   1. It's the only signal SyncCategoriesAsync uses to decide which category to mirror onto
+  --      the deprecated Providers.CategoryUID scalar (line ~136), which other code (e.g.
+  --      categoryId in GET /api/providers-detail/{providerUid}) still reads directly.
+  --   2. It's part of the documented public contract — GET /api/providers/{providerUid}/categories
+  --      returns isPrimary:true/false per row (api.txt) — and the admin provider-edit/"Assign
+  --      Provider" screens use it to preselect a default category in dropdowns.
+  -- Keep it at least until Providers.CategoryUID is actually dropped; even after that, "which
+  -- category is primary" is likely still wanted for sorting/display, just without the
+  -- legacy-scalar-sync responsibility.
   -- Index: IX_ProviderCategories_CategoryUID; UQ_ProviderCategories_ProviderUID_CategoryUID
 
 --------------------------------------------------------------------------------

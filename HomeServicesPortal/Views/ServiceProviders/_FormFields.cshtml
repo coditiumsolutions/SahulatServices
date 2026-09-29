@@ -51,6 +51,18 @@
     .sp-form-grid .sp-title-menu .dropdown-item {
         cursor: pointer;
     }
+    .sp-form-grid .sp-title-group-header {
+        font-size: 0.68rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        color: #adb5bd;
+        padding: 0.35rem 1rem 0.15rem;
+    }
+    .sp-form-grid .sp-title-group + .sp-title-group-header {
+        border-top: 1px solid #eee;
+        margin-top: 0.25rem;
+    }
 </style>
 
 <div class="sp-form-grid">
@@ -93,6 +105,7 @@
                             }
                         </ul>
                     </div>
+                    <div class="form-text" id="spCategoryLimitHint">Maximum 3 categories per provider.</div>
                     <span asp-validation-for="CategoryUids" class="text-danger small"></span>
                 </div>
             </div>
@@ -121,8 +134,8 @@
                 <div class="col-sm-8">
                     <div class="dropdown" id="spTitleDropdown">
                         <button class="form-select form-select-sm text-start sp-title-toggle" type="button"
-                                data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false"
-                                aria-haspopup="listbox">
+                                data-bs-toggle="dropdown" data-bs-auto-close="outside" data-bs-display="static"
+                                aria-expanded="false" aria-haspopup="listbox">
                             <span class="sp-title-summary text-truncate">-- Select Service Titles --</span>
                         </button>
                         <ul class="dropdown-menu w-100 py-1 sp-title-menu" role="listbox" aria-multiselectable="true">
@@ -130,25 +143,32 @@
                                 var categoryNameByUid = Model.Categories
                                     .Where(c => int.TryParse(c.Value, out _))
                                     .ToDictionary(c => int.Parse(c.Value!), c => c.Text);
+                                var titleGroups = Model.ServiceTitleOptions
+                                    .GroupBy(t => t.CategoryUid)
+                                    .Select(g => new
+                                    {
+                                        CategoryUid = g.Key,
+                                        CategoryName = categoryNameByUid.TryGetValue(g.Key, out var n) ? n : $"Category {g.Key}",
+                                        Titles = g.OrderBy(t => t.Title).ToList()
+                                    })
+                                    .OrderBy(g => g.CategoryName);
                             }
-                            @foreach (var title in Model.ServiceTitleOptions)
+                            @foreach (var group in titleGroups)
                             {
-                                var isChecked = Model.ServiceTitleUids.Contains(title.Uid);
-                                var categoryLabel = categoryNameByUid.TryGetValue(title.CategoryUid, out var catName)
-                                    ? catName
-                                    : $"Category {title.CategoryUid}";
-                                <li>
-                                    <label class="dropdown-item d-flex align-items-start gap-2 py-1">
-                                        <input type="checkbox" class="form-check-input mt-1 sp-title-check"
-                                               name="ServiceTitleUids" value="@title.Uid"
-                                               data-category-uid="@title.CategoryUid"
-                                               @(isChecked ? "checked" : null) />
-                                        <span class="small">
-                                            <span class="d-block">@title.Title</span>
-                                            <span class="text-muted">@categoryLabel</span>
-                                        </span>
-                                    </label>
-                                </li>
+                                <li class="sp-title-group-header">@group.CategoryName</li>
+                                @foreach (var title in group.Titles)
+                                {
+                                    var isChecked = Model.ServiceTitleUids.Contains(title.Uid);
+                                    <li class="sp-title-group" data-category-uid="@group.CategoryUid">
+                                        <label class="dropdown-item d-flex align-items-center gap-2 py-1">
+                                            <input type="checkbox" class="form-check-input mt-0 sp-title-check"
+                                                   name="ServiceTitleUids" value="@title.Uid"
+                                                   data-category-uid="@group.CategoryUid"
+                                                   @(isChecked ? "checked" : null) />
+                                            <span class="small">@title.Title</span>
+                                        </label>
+                                    </li>
+                                }
                             }
                         </ul>
                     </div>
@@ -167,11 +187,40 @@
 
             var categorySummary = categoryRoot.querySelector('.sp-category-summary');
             var titleSummary = titleRoot.querySelector('.sp-title-summary');
+            var categoryLimitHint = document.getElementById('spCategoryLimitHint');
             var categoryPlaceholder = '-- Select Categories --';
             var titlePlaceholder = '-- Select Service Titles --';
+            var CATEGORY_LIMIT = 3;
 
             function selectedCategoryChecks() {
                 return Array.prototype.slice.call(categoryRoot.querySelectorAll('.sp-category-check:checked'));
+            }
+
+            function enforceCategoryLimit() {
+                var allChecks = Array.prototype.slice.call(categoryRoot.querySelectorAll('.sp-category-check'));
+                var checkedCount = allChecks.filter(function (c) { return c.checked; }).length;
+                var atLimit = checkedCount >= CATEGORY_LIMIT;
+
+                allChecks.forEach(function (c) {
+                    var label = c.closest('label');
+                    var disable = atLimit && !c.checked;
+                    c.disabled = disable;
+                    if (label) {
+                        label.classList.toggle('text-muted', disable);
+                        label.style.cursor = disable ? 'not-allowed' : '';
+                    }
+                });
+
+                if (categoryLimitHint) {
+                    if (atLimit) {
+                        categoryLimitHint.textContent = 'Maximum of ' + CATEGORY_LIMIT + ' categories reached.';
+                        categoryLimitHint.classList.add('text-danger');
+                        categoryLimitHint.classList.remove('text-muted');
+                    } else {
+                        categoryLimitHint.textContent = 'Maximum ' + CATEGORY_LIMIT + ' categories per provider (' + checkedCount + '/' + CATEGORY_LIMIT + ' selected).';
+                        categoryLimitHint.classList.remove('text-danger');
+                    }
+                }
             }
 
             function selectedTitleChecks() {
@@ -201,8 +250,7 @@
                 }
                 titleSummary.classList.remove('text-muted');
                 var labels = checks.map(function (c) {
-                    var titleSpan = c.closest('label').querySelector('span > span');
-                    return titleSpan ? titleSpan.textContent.trim() : c.closest('label').textContent.trim();
+                    return c.closest('label').querySelector('span').textContent.trim();
                 });
                 titleSummary.textContent = labels.length <= 2 ? labels.join(', ') : (labels.length + ' titles selected');
             }
@@ -215,15 +263,44 @@
                 }
             }
 
+            function refreshPrimaryOptions() {
+                if (!primary) return;
+                var checks = selectedCategoryChecks();
+                var currentValue = primary.value;
+
+                primary.innerHTML = '';
+
+                var placeholderOption = document.createElement('option');
+                placeholderOption.value = '';
+                placeholderOption.textContent = '-- Select Primary Category --';
+                primary.appendChild(placeholderOption);
+
+                checks.forEach(function (c) {
+                    var label = c.closest('label');
+                    var text = label ? label.querySelector('span').textContent.trim() : c.value;
+                    var option = document.createElement('option');
+                    option.value = c.value;
+                    option.textContent = text;
+                    primary.appendChild(option);
+                });
+
+                var stillValid = checks.some(function (c) { return c.value === currentValue; });
+                primary.value = stillValid ? currentValue : (checks.length === 1 ? checks[0].value : '');
+            }
+
             function ensureCategoryForTitle(categoryUid) {
-                if (!categoryUid) return;
+                if (!categoryUid) return true;
                 var match = categoryRoot.querySelector('.sp-category-check[value="' + categoryUid + '"]');
                 if (match && !match.checked) {
+                    if (match.disabled) return false;
                     match.checked = true;
+                    enforceCategoryLimit();
+                    refreshPrimaryOptions();
                     if (primary && !primary.value) {
                         primary.value = categoryUid;
                     }
                 }
+                return true;
             }
 
             function clearTitlesForCategory(categoryUid) {
@@ -235,10 +312,9 @@
                 if (!e.target.classList.contains('sp-category-check')) return;
                 if (!e.target.checked) {
                     clearTitlesForCategory(e.target.value);
-                    if (primary && primary.value === e.target.value) {
-                        primary.value = '';
-                    }
                 }
+                enforceCategoryLimit();
+                refreshPrimaryOptions();
                 refreshCategorySummary();
                 refreshTitleSummary();
             });
@@ -246,7 +322,11 @@
             titleRoot.addEventListener('change', function (e) {
                 if (!e.target.classList.contains('sp-title-check')) return;
                 if (e.target.checked) {
-                    ensureCategoryForTitle(e.target.getAttribute('data-category-uid'));
+                    var ok = ensureCategoryForTitle(e.target.getAttribute('data-category-uid'));
+                    if (!ok) {
+                        e.target.checked = false;
+                        alert('This title belongs to a category you have not selected, and the ' + CATEGORY_LIMIT + '-category limit has been reached. Remove a category first.');
+                    }
                     refreshCategorySummary();
                 }
                 refreshTitleSummary();
@@ -260,6 +340,8 @@
             }
 
             ensurePrimaryChecked();
+            enforceCategoryLimit();
+            refreshPrimaryOptions();
             refreshCategorySummary();
             refreshTitleSummary();
         })();
@@ -272,7 +354,7 @@
                     <label asp-for="MobileNo" class="form-label"></label>
                 </div>
                 <div class="col-sm-8">
-                    <input asp-for="MobileNo" class="form-control form-control-sm" placeholder="03xx-xxxxxxx" />
+                    <input asp-for="MobileNo" class="form-control form-control-sm" placeholder="03XXXXXXXXX" maxlength="11" />
                     <span asp-validation-for="MobileNo" class="text-danger small"></span>
                 </div>
             </div>
@@ -283,7 +365,7 @@
                     <label asp-for="Cnic" class="form-label"></label>
                 </div>
                 <div class="col-sm-8">
-                    <input asp-for="Cnic" class="form-control form-control-sm" placeholder="xxxxx-xxxxxxx-x" />
+                    <input asp-for="Cnic" class="form-control form-control-sm" placeholder="XXXXX-XXXXXXX-X" maxlength="15" />
                     <span asp-validation-for="Cnic" class="text-danger small"></span>
                 </div>
             </div>
