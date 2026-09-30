@@ -5,7 +5,7 @@ type: legal
 
 # Privacy Policy for Sahulat Ghar Tak
 
-**Last Updated: September 8, 2026**
+**Last Updated: August 24, 2026**
 
 Sahulat Ghar Tak ("we," "us," "our," or the "App") is a home services marketplace mobile application operated by Coditum Solutions ("Company") that connects Customers seeking home services with independent Service Providers who offer those services. This Privacy Policy explains how we collect, use, disclose, and protect information when you use our mobile application.
 
@@ -24,25 +24,28 @@ We collect different types of information depending on whether you use the App a
 - Mobile phone number (used as your primary account identifier and for OTP verification)
 - Password (stored securely; never stored or transmitted in plain text)
 - Gender
+- National Identity Card number (CNIC)
 
 **Service Providers additionally provide:**
 - Years of experience and service category/skills
 - Description of services offered
 - Profile photograph
-- National Identity Card number (CNIC) and CNIC front and back images (used solely for identity verification and provider vetting)
+- CNIC front and back images (used solely for identity verification and provider vetting)
 
 **Customers additionally provide:**
 - Saved service addresses, including address label, full address, area, city, and the geographic coordinates (latitude/longitude) of each saved address
 - Service request details (e.g., service type, description, preferred schedule)
 
 ### 1.2 Information Collected Automatically
-- **Device permissions:** With your consent, the App requests access to your device **Camera** and **Photo Library/Gallery** solely to let you capture or select your profile photo and, for Providers, CNIC verification images.
+- **Device permissions:** With your consent, the App requests access to your device **Camera** and **Photo Library/Gallery** solely to let you capture or select your profile photo and, for Providers, CNIC verification images, and to your device **Location** (only while the App is open) solely to center the map and help you drop an accurate pin when saving an address. You can decline or revoke any of these in your device settings.
 - **Booking and transaction records:** Details of service requests, bookings, job status, cancellation/rejection reasons, and provider earnings/wallet activity within the App.
 - **Ratings and reviews:** Feedback and star ratings exchanged between Customers and Providers after a completed service.
 - **In-app notifications:** Booking status updates and alerts delivered within the App.
 
 ### 1.3 Information We Do Not Collect
-We do not collect precise, continuous, or background GPS/location data from your device. Location data is limited to the coordinates of addresses you manually save within the App. We do not integrate third-party advertising, analytics, or social media SDKs, and we do not process payment card details within the App — the App does not integrate any third-party payment gateway.
+We do not collect continuous or background location data. Your device location is read once, only while the App is open and only when you use the address map, to position the pin; what we store is the coordinates of the addresses you choose to save. We do not integrate third-party advertising, analytics, or social media SDKs, and we do not process payment card details within the App — the App does not integrate any third-party payment gateway.
+
+**Third-party components the App uses:** Google Maps (displays the address map and, like any map service, receives your device's IP address and map-usage data under [Google's Privacy Policy](https://policies.google.com/privacy)); Google ML Kit (on-device face/text/card detection that guides photo and CNIC capture — images are analysed on your device and are not sent to Google by this component). Address search/pin lookups are handled through our own servers.
 
 ---
 
@@ -113,17 +116,19 @@ You can permanently delete your account in either of the following ways:
 
 **On the Web:** Visit [https://sahulatghartak.com/delete-account](https://sahulatghartak.com/delete-account) and enter your registered mobile number and password to submit a deletion request.
 
-Account deletion is immediate and irreversible — it is not a temporary freeze or deactivation. When you delete your account:
+Account deletion is immediate and irreversible — it is not a temporary freeze or deactivation, except where you have an active booking or an unpaid balance (see below). When you delete your account:
 
-- Your profile information (full name, gender, description) is permanently removed or anonymized.
-- For Service Providers, your CNIC number, uploaded profile photo, and CNIC verification images are permanently deleted from our servers.
+- Your CNIC, gender, and (for Service Providers) description are permanently removed or anonymized.
+- For Service Providers, your uploaded profile photo and CNIC verification images are permanently deleted from our servers.
 - Your saved addresses are permanently deleted, except where an address is still referenced by a past service request (see below).
-- Your mobile number is released and becomes available for re-registration.
+- Your mobile number is anonymized and released, becoming available for re-registration.
 - Login credentials (password) and OTP records tied to your account are permanently deleted.
 
-**What is retained after deletion:** Records of past service requests, bookings, and payment/commission ledger entries are retained in anonymized form. This is because these records are shared with the other party to the transaction (e.g., the Customer or Provider you transacted with) and are part of our financial and dispute-resolution history. We do not retain any information that personally identifies you within these records beyond what is necessary for accounting and legal compliance.
+**What is retained after deletion:** Records of past service requests, bookings, and payment/commission ledger entries are retained in anonymized form. Your full name is deliberately retained on these records — even though your account is deleted — because it is part of our financial and dispute-resolution history and is needed to identify you in connection with past transactions, payments, or amounts owed. We do not retain any other information that personally identifies you (CNIC, mobile number, gender) within these records beyond what is necessary for accounting and legal compliance.
 
-Requests submitted via the web deletion page are processed immediately upon successful verification of your mobile number and password, in the same manner as an in-app deletion.
+**Deletion may be blocked if you have pending dues:** To protect our financial and dispute-resolution records, you cannot delete your account while you have an active/unpaid booking (as a Customer) or an active booking or unpaid payout (as a Service Provider). If this applies to you, the App or web deletion page will tell you to settle or resolve the pending item first before your deletion request can proceed.
+
+Requests submitted via the web deletion page are processed immediately upon successful verification of your mobile number and password, in the same manner as an in-app deletion, subject to the pending-dues check above.
 
 ---
 
@@ -146,4 +151,4 @@ If you have any questions, concerns, or requests regarding this Privacy Policy o
 **Sahulat Ghar Tak / Coditum Solutions**
 Email: [privacy@sahulatghartak.com](mailto:privacy@sahulatghartak.com)
 
-*(Replace the contact email above with your official support/privacy email before publishing this policy. Host this document at a publicly accessible URL — e.g. https://sahulatghartak.com/privacy-policy — to link from the Google Play Store listing and within the App, and ensure the account-deletion page referenced in Section 7 is live at https://sahulatghartak.com/delete-account before submission.)*
+*(Replace the contact email above with your official support/privacy email before publishing this policy. This policy is now live at [https://sahulatghartak.com/privacy-policy](https://sahulatghartak.com/privacy-policy), and the account-deletion page referenced in Section 7 is now live at [https://sahulatghartak.com/delete-account](https://sahulatghartak.com/delete-account) — both are confirmed reachable, link to the policy from the Google Play Store listing and within the App.)*
