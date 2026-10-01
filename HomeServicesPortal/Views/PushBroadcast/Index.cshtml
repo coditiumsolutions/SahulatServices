@@ -1,0 +1,80 @@
+@model HomeServicesPortal.Models.ViewModels.PushBroadcastFormVm
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Push Broadcast";
+}
+
+<div class="mb-4">
+    <h2 class="mb-0"><i class="fa-solid fa-bullhorn me-2 text-primary"></i>Push Broadcast</h2>
+    <p class="text-muted mb-0">Send a push notification to every device registered for the Sahulat Ghar Tak app, e.g. to announce a new version.</p>
+</div>
+
+@if (TempData["SuccessMessage"] is string success)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="fa-solid fa-circle-check me-2"></i>@success
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (TempData["ErrorMessage"] is string error)
+{
+    <div class="alert alert-warning alert-dismissible fade show" role="alert">
+        <i class="fa-solid fa-triangle-exclamation me-2"></i>@error
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+@if (!Model.FirebaseConfigured)
+{
+    <div class="alert alert-danger">
+        <i class="fa-solid fa-circle-xmark me-2"></i>Firebase is not configured on this server, so broadcasts cannot be sent.
+    </div>
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-7">
+        <div class="card hs-card">
+            <div class="card-body p-4">
+                <p class="small text-muted">
+                    Registered devices: <strong>@Model.AndroidDevices</strong> Android, <strong>@Model.IosDevices</strong> iOS.
+                    Tapping the notification opens the app's update prompt (the store link comes from the app-config settings).
+                </p>
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+                <form asp-action="Send" method="post"
+                      onsubmit="return confirm('Send this push notification to the selected devices now? This cannot be undone.');">
+                    @Html.AntiForgeryToken()
+
+                    <div class="mb-3">
+                        <label asp-for="Platform" class="form-label"></label>
+                        <select asp-for="Platform" class="form-select">
+                            <option value="all">All devices</option>
+                            <option value="android">Android only</option>
+                            <option value="ios">iOS only</option>
+                        </select>
+                        <span asp-validation-for="Platform" class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Title" class="form-label"></label>
+                        <input asp-for="Title" class="form-control" maxlength="60" />
+                        <span asp-validation-for="Title" class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Message" class="form-label"></label>
+                        <textarea asp-for="Message" class="form-control" rows="3" maxlength="200"></textarea>
+                        <span asp-validation-for="Message" class="text-danger small"></span>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary" disabled="@(!Model.FirebaseConfigured)">
+                        <i class="fa-solid fa-paper-plane me-1"></i>Send broadcast
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

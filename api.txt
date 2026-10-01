@@ -1,6 +1,6 @@
 ================================================================================
 SahulatGharTak API Reference
-Version: 3.27 | Last Updated: 2026-10-01
+Version: 3.29 | Last Updated: 2026-10-01
 Database: SahulatAppDB
 Local Base URL:    https://localhost:7265/api/
 Deployed Base URL:  https://sahulatghartak.com/api/
@@ -3013,10 +3013,9 @@ PUSH NOTIFICATIONS (FCM) & APP VERSION CHECK
 The backend sends push notifications through Firebase Cloud Messaging. After login the app
 registers its FCM registration token (FirebaseMessaging.instance.getToken()) so the server can
 target the user's device(s). Every push carries a high-priority notification banner plus a data
-payload with these keys: click_action (defaults to "FLUTTER_NOTIFICATION_CLICK"), booking_id,
-screen (empty string when not applicable). Tokens that FCM reports as unregistered/expired are
-deleted server-side automatically. All of a user's tokens are also deleted by
-POST /api/auth/delete-account.
+payload (full contract and the list of events below). Tokens that FCM reports as
+unregistered/expired are deleted server-side automatically. All of a user's tokens and their
+notification inbox are also deleted by POST /api/auth/delete-account.
 
 --------------------------------------------------------------------------------
 POST Register Device Token
@@ -3024,9 +3023,10 @@ POST Register Device Token
 Local:     https://localhost:7265/api/notifications/register-token
 Deployed:  https://sahulatghartak.com/api/notifications/register-token
 
-Auth: Bearer JWT required. userId and userType in the body must match the JWT's UserId /
-UserType claims (a caller can only register a token for itself). userId is the login id returned
-by login (UsersLogin.UID), not clientUid/providerUid.
+Auth: none currently (like the rest of the API) — no Authorization header needed. It will move to
+Bearer JWT with userId/userType matched against the token claims when the endpoints are secured; until
+then anyone who knows a userId could register a device under it. userId is the login id returned by
+login (LoginResponse.userId = UsersLogin.UID), not clientUid/providerUid.
 
 Request Body:
 {
@@ -3051,12 +3051,10 @@ Fail (400):
 (other 400 messages: "platform must be 'android' or 'ios'.", "userId is required.",
  "deviceToken is required.", "deviceToken is too long.")
 
-Fail (401): missing/invalid Bearer token — "Authentication required. Provide a valid Bearer token."
-
-Fail (403):
+Fail (400 — no active login with that userId + userType):
 {
   "success": false,
-  "message": "userId/userType do not match the authenticated user."
+  "message": "Unknown or inactive user."
 }
 
 Idempotency: DeviceToken is unique. Calling again with the same token is safe — it refreshes
@@ -3064,6 +3062,167 @@ UpdatedAt/platform and returns the same 200. If the same device token is registe
 different user (e.g. a second account logs in on the same phone) the row is re-assigned to the
 new user, so the previous user stops receiving that device's notifications. Call this on every
 login and whenever FirebaseMessaging.onTokenRefresh fires.
+
+--------------------------------------------------------------------------------
+POST Unregister Device Token (call on logout)
+--------------------------------------------------------------------------------
+Local:     https://localhost:7265/api/notifications/unregister-token
+Deployed:  https://sahulatghartak.com/api/notifications/unregister-token
+
+Auth: none currently (same note as register-token).
+
+Request Body:
+{
+  "deviceToken": "fcm-registration-token"
+}
+
+Success (200):
+{
+  "success": true,
+  "message": "Device token removed.",
+  "data": {}
+}
+
+Fail (400):
+{
+  "success": false,
+  "message": "deviceToken is required."
+}
+
+Idempotency: deletes the row for that token; an unknown/already-removed token is a no-op and still
+returns 200. Call it on logout so the next person using the phone does not receive this user's pushes.
+
+--------------------------------------------------------------------------------
+Push payload contract + booking events (what the app receives)
+--------------------------------------------------------------------------------
+Every push has a visible notification (title + body) and this FCM data map (all values strings,
+empty string when not applicable):
+  type             one of the types below
+  screen           route hint: request_details | provider_job_requests | my_bookings | app_update
+  booking_id       ServiceBookings.UID (use for deep links), "" if none
+  request_id       CustomerServiceRequests.UID, "" if none
+  notification_id  UserNotifications.Id of the inbox copy ("" for broadcasts)
+  click_action     "FLUTTER_NOTIFICATION_CLICK"
+The pushes are only sent to devices registered with the matching role (userType) — a dual-role
+account gets client pushes on its Client registration and provider pushes on its Provider one.
+Each booking push is ALSO saved to the user's inbox (endpoints below), so a missed push is still
+visible in the app. Both are sent only when the state change really happens: a retried /respond,
+/start or /verify-completion that returns the idempotent/400 result does not send anything again.
+
+Event                                                        Recipient           type                   screen
+Staff assigns provider(s) (new job request)                  each provider       job_assigned           provider_job_requests
+Provider accepts                                             client              booking_accepted       request_details
+  ...same accept, other providers who were offered the job   each other provider job_unavailable        provider_job_requests
+Last offered provider rejects (request back to Initiated)    client              provider_reassigning   request_details
+Accepted provider cancels (request back to Initiated)        client              provider_reassigning   request_details
+Staff cancels an Accepted / In Progress booking              client + provider   booking_cancelled      request_details / my_bookings
+Provider starts the job (/start)                             client              job_started            request_details
+Job completed (/verify-completion or staff sets Completed)   client + provider   job_completed          request_details / my_bookings
+Staff "Push Broadcast" from the admin portal (new version)   all / one platform  app_update            app_update
+
+type app_update is a broadcast (no inbox row): open the store_url from GET /api/v1/app/config.
+Backend kill switch: appsettings Notifications:BookingPushEnabled=false stops all booking
+pushes AND inbox rows (broadcasts and the version check are unaffected).
+
+--------------------------------------------------------------------------------
+GET Notification Inbox
+--------------------------------------------------------------------------------
+Local:     https://localhost:7265/api/notifications?userId=12&userType=Client&page=1&pageSize=20
+Deployed:  https://sahulatghartak.com/api/notifications?userId=12&userType=Client&page=1&pageSize=20
+
+Auth: none currently (same note as register-token — will move to Bearer JWT with the claim match).
+Query: userId (required, login id), userType (optional Client|Provider — pass the role the app is
+currently in so a dual-role account sees only that role's inbox), page (default 1), pageSize
+(default 20, max 100). Newest first.
+
+Request Body: none
+
+Success (200):
+{
+  "success": true,
+  "message": "Notifications fetched successfully.",
+  "data": {
+    "items": [
+      {
+        "id": 31,
+        "userType": "Client",
+        "type": "booking_accepted",
+        "title": "Provider accepted your request",
+        "body": "Ali Khan will handle your AC Repair request.",
+        "screen": "request_details",
+        "bookingUid": 88,
+        "requestUid": 54,
+        "isRead": false,
+        "createdAt": "2026-10-01T09:30:12.1Z"
+      }
+    ],
+    "page": 1,
+    "pageSize": 20,
+    "totalCount": 1,
+    "unreadCount": 1
+  }
+}
+
+Fail (400): { "success": false, "message": "userId is required." }
+            { "success": false, "message": "userType must be 'Client' or 'Provider'." }
+
+--------------------------------------------------------------------------------
+GET Unread Notification Count (app badge)
+--------------------------------------------------------------------------------
+Local:     https://localhost:7265/api/notifications/unread-count?userId=12&userType=Client
+Deployed:  https://sahulatghartak.com/api/notifications/unread-count?userId=12&userType=Client
+
+Auth: none currently. Request Body: none
+
+Success (200):
+{
+  "success": true,
+  "message": "Unread count fetched successfully.",
+  "data": { "unreadCount": 3 }
+}
+
+Fail (400): same two messages as the inbox list.
+
+--------------------------------------------------------------------------------
+POST Mark Notification Read
+--------------------------------------------------------------------------------
+Local:     https://localhost:7265/api/notifications/{id}/read
+Deployed:  https://sahulatghartak.com/api/notifications/{id}/read
+
+Auth: none currently.
+
+Request Body:
+{
+  "userId": 12
+}
+
+Success (200): { "success": true, "message": "Notification marked as read.", "data": {} }
+
+Fail (400): { "success": false, "message": "userId is required." }
+Fail (404): { "success": false, "message": "Notification not found." }
+  (also returned when the notification belongs to a different userId)
+
+Idempotency: marking an already-read notification returns the same 200.
+
+--------------------------------------------------------------------------------
+POST Mark All Notifications Read
+--------------------------------------------------------------------------------
+Local:     https://localhost:7265/api/notifications/read-all
+Deployed:  https://sahulatghartak.com/api/notifications/read-all
+
+Auth: none currently.
+
+Request Body:
+{
+  "userId": 12,
+  "userType": "Client"          // optional: omit to mark every role's notifications
+}
+
+Success (200): { "success": true, "message": "Notifications marked as read.", "data": { "updated": 3 } }
+
+Fail (400): { "success": false, "message": "userType must be 'Client' or 'Provider'." }
+
+Idempotency: a second call returns 200 with "updated": 0.
 
 --------------------------------------------------------------------------------
 GET App Config (version / force-update check)

@@ -5,7 +5,7 @@ type: legal
 
 # Privacy Policy for Sahulat Ghar Tak
 
-**Last Updated: August 24, 2026**
+**Last Updated: October 1, 2026**
 
 Sahulat Ghar Tak ("we," "us," "our," or the "App") is a home services marketplace mobile application operated by Coditum Solutions ("Company") that connects Customers seeking home services with independent Service Providers who offer those services. This Privacy Policy explains how we collect, use, disclose, and protect information when you use our mobile application.
 
@@ -40,12 +40,13 @@ We collect different types of information depending on whether you use the App a
 - **Device permissions:** With your consent, the App requests access to your device **Camera** and **Photo Library/Gallery** solely to let you capture or select your profile photo and, for Providers, CNIC verification images, and to your device **Location** (only while the App is open) solely to center the map and help you drop an accurate pin when saving an address. You can decline or revoke any of these in your device settings.
 - **Booking and transaction records:** Details of service requests, bookings, job status, cancellation/rejection reasons, and provider earnings/wallet activity within the App.
 - **Ratings and reviews:** Feedback and star ratings exchanged between Customers and Providers after a completed service.
-- **In-app notifications:** Booking status updates and alerts delivered within the App.
+- **Push notifications and device token:** If you allow notifications, the App obtains a push notification token (a device identifier issued by Google's Firebase Cloud Messaging) and your device platform (Android or iOS), and links it to your account so we can deliver booking and account notifications to your device. We also keep a copy of the notifications we send you in an in-app notification inbox. You can turn notifications off at any time in your device settings.
+- **In-app notifications:** Booking status updates and alerts delivered as push notifications and shown in your in-app notification inbox.
 
 ### 1.3 Information We Do Not Collect
 We do not collect continuous or background location data. Your device location is read once, only while the App is open and only when you use the address map, to position the pin; what we store is the coordinates of the addresses you choose to save. We do not integrate third-party advertising, analytics, or social media SDKs, and we do not process payment card details within the App — the App does not integrate any third-party payment gateway.
 
-**Third-party components the App uses:** Google Maps (displays the address map and, like any map service, receives your device's IP address and map-usage data under [Google's Privacy Policy](https://policies.google.com/privacy)); Google ML Kit (on-device face/text/card detection that guides photo and CNIC capture — images are analysed on your device and are not sent to Google by this component). Address search/pin lookups are handled through our own servers.
+**Third-party components the App uses:** Google Maps (displays the address map and, like any map service, receives your device's IP address and map-usage data under [Google's Privacy Policy](https://policies.google.com/privacy)); Google ML Kit (on-device face/text/card detection that guides photo and CNIC capture — images are analysed on your device and are not sent to Google by this component); Firebase Cloud Messaging (FCM) by Google, which delivers push notifications — FCM receives your push token and the content of the notifications we send you, and processes them under [Google's Privacy Policy](https://policies.google.com/privacy) and [Firebase's privacy information](https://firebase.google.com/support/privacy). Address search/pin lookups are handled through our own servers.
 
 ---
 
@@ -60,7 +61,7 @@ We use the information we collect to:
 - Process and manage service bookings, requests, cancellations, and rejections
 - Calculate and display Provider earnings/wallet balances within the App
 - Enable ratings and reviews between Customers and Providers
-- Send in-app notifications about the status of bookings and account activity
+- Send push notifications and in-app notifications about the status of bookings and account activity, and occasional service announcements such as the availability of a new version of the App
 - Maintain the security of the App and prevent fraud or misuse
 - Respond to customer support inquiries
 - Comply with applicable legal obligations
@@ -73,6 +74,7 @@ We do not sell your personal information. We share information only in the follo
 
 - **Between Customers and Providers:** To facilitate a service booking, a Customer's name, saved address, and request details are shared with the assigned Provider, and a Provider's name, profile, verification status, category, and rating are shared with Customers.
 - **Service providers to us:** We may use third-party infrastructure providers (such as cloud hosting providers) solely to host our backend servers and databases. These providers process data only on our behalf and are contractually obligated to protect it.
+- **Push notification delivery:** To deliver push notifications we send your push token and the notification text (for example, "Your provider has started your job") to Google's Firebase Cloud Messaging service, which relays it to your device.
 - **Legal requirements:** We may disclose information if required to do so by law, regulation, legal process, or governmental request, or to protect the rights, property, or safety of our users, the public, or the Company.
 - **Business transfers:** If the Company is involved in a merger, acquisition, or sale of assets, user information may be transferred as part of that transaction, subject to this Privacy Policy or a policy at least as protective.
 
@@ -103,6 +105,7 @@ Depending on your location, you may have rights regarding your personal informat
 - Correct inaccurate or incomplete information (via the Edit Profile screen in the App)
 - Request deletion of your account and associated personal data, either in-app or via our website (see Section 7)
 - Withdraw consent to camera/photo library access at any time via your device settings (note: this may limit your ability to use certain features, such as profile photo or CNIC upload)
+- Turn off push notifications at any time via your device settings (note: you may then miss time-sensitive booking updates, although they will still appear in your in-app notification inbox)
 
 To exercise any of these rights, please contact us using the details in Section 10.
 
@@ -123,6 +126,7 @@ Account deletion is immediate and irreversible — it is not a temporary freeze 
 - Your saved addresses are permanently deleted, except where an address is still referenced by a past service request (see below).
 - Your mobile number is anonymized and released, becoming available for re-registration.
 - Login credentials (password) and OTP records tied to your account are permanently deleted.
+- Your push notification tokens and in-app notification inbox are permanently deleted.
 
 **What is retained after deletion:** Records of past service requests, bookings, and payment/commission ledger entries are retained in anonymized form. Your full name is deliberately retained on these records — even though your account is deleted — because it is part of our financial and dispute-resolution history and is needed to identify you in connection with past transactions, payments, or amounts owed. We do not retain any other information that personally identifies you (CNIC, mobile number, gender) within these records beyond what is necessary for accounting and legal compliance.
 

@@ -65,7 +65,7 @@
         activeSection = "finance";
     else if (TabClass("/admin/reports") == "active")
         activeSection = "reports";
-    else if (TabClass("/admin/services", "/admin/servicecategories", "/admin/servicetitles", "/admin/administration", "/admin/apkmanagement", "/admin/configurations", "/admin/preferences") == "active")
+    else if (TabClass("/admin/services", "/admin/servicecategories", "/admin/servicetitles", "/admin/administration", "/admin/apkmanagement", "/admin/pushbroadcast", "/admin/configurations", "/admin/preferences") == "active")
         activeSection = "setup";
 }
 
@@ -767,7 +767,7 @@
                            href="#" data-hs-section="reports">Reports</a>
                     </li>
                     <li>
-                        <a class="hs-tab-link @TabClass("/admin/services", "/admin/servicecategories", "/admin/servicetitles", "/admin/administration", "/admin/apkmanagement")"
+                        <a class="hs-tab-link @TabClass("/admin/services", "/admin/servicecategories", "/admin/servicetitles", "/admin/administration", "/admin/apkmanagement", "/admin/pushbroadcast")"
                            href="#" data-hs-section="setup">Setup</a>
                     </li>
                 </ul>
@@ -978,6 +978,9 @@
                         </a>
                         <a class="hs-nav-link hs-nav-sublink @NavClass("/admin/apkmanagement")" href="/Admin/ApkManagement">
                             <i class="fa-solid fa-mobile-screen-button"></i> APK Management
+                        </a>
+                        <a class="hs-nav-link hs-nav-sublink @NavClass("/admin/pushbroadcast")" href="/Admin/PushBroadcast">
+                            <i class="fa-solid fa-bullhorn"></i> Push Broadcast
                         </a>
                     </div>
 

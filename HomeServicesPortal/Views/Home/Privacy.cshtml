@@ -10,7 +10,7 @@
             Sahulat Ghar Tak
         </p>
         <h1>Privacy Policy</h1>
-        <p class="lead mb-0">Last Updated: September 8, 2026</p>
+        <p class="lead mb-0">Last Updated: October 1, 2026</p>
     </div>
 </section>
 
@@ -45,13 +45,14 @@
                 <li>Mobile phone number (used as your primary account identifier and for OTP verification)</li>
                 <li>Password (stored securely; never stored or transmitted in plain text)</li>
                 <li>Gender</li>
+                <li>National Identity Card number (CNIC)</li>
             </ul>
             <p><strong>Service Providers additionally provide:</strong></p>
             <ul>
                 <li>Years of experience and service category/skills</li>
                 <li>Description of services offered</li>
                 <li>Profile photograph</li>
-                <li>National Identity Card number (CNIC) and CNIC front and back images (used solely for identity verification and provider vetting)</li>
+                <li>CNIC front and back images (used solely for identity verification and provider vetting)</li>
             </ul>
             <p><strong>Customers additionally provide:</strong></p>
             <ul>
@@ -61,19 +62,32 @@
 
             <h3>1.2 Information Collected Automatically</h3>
             <ul>
-                <li><strong>Device permissions:</strong> With your consent, the App requests access to your device <strong>Camera</strong> and <strong>Photo Library/Gallery</strong> solely to let you capture or select your profile photo and, for Providers, CNIC verification images.</li>
+                <li><strong>Device permissions:</strong> With your consent, the App requests access to your device <strong>Camera</strong> and <strong>Photo Library/Gallery</strong> solely to let you capture or select your profile photo and, for Providers, CNIC verification images, and to your device <strong>Location</strong> (only while the App is open) solely to center the map and help you drop an accurate pin when saving an address. You can decline or revoke any of these in your device settings.</li>
                 <li><strong>Booking and transaction records:</strong> Details of service requests, bookings, job status, cancellation/rejection reasons, and provider earnings/wallet activity within the App.</li>
                 <li><strong>Ratings and reviews:</strong> Feedback and star ratings exchanged between Customers and Providers after a completed service.</li>
-                <li><strong>In-app notifications:</strong> Booking status updates and alerts delivered within the App.</li>
+                <li><strong>Push notifications and device token:</strong> If you allow notifications, the App obtains a push notification token (a device identifier issued by Google's Firebase Cloud Messaging) and your device platform (Android or iOS), and links it to your account so we can deliver booking and account notifications to your device. We also keep a copy of the notifications we send you in an in-app notification inbox. You can turn notifications off at any time in your device settings.</li>
+                <li><strong>In-app notifications:</strong> Booking status updates and alerts delivered as push notifications and shown in your in-app notification inbox.</li>
             </ul>
 
             <h3>1.3 Information We Do Not Collect</h3>
             <p>
-                We do not collect precise, continuous, or background GPS/location data from your device.
-                Location data is limited to the coordinates of addresses you manually save within the App.
-                We do not integrate third-party advertising, analytics, or social media SDKs, and we do not
-                process payment card details within the App — the App does not integrate any third-party
-                payment gateway.
+                We do not collect continuous or background location data. Your device location is read once,
+                only while the App is open and only when you use the address map, to position the pin; what we
+                store is the coordinates of the addresses you choose to save. We do not integrate third-party
+                advertising, analytics, or social media SDKs, and we do not process payment card details within
+                the App — the App does not integrate any third-party payment gateway.
+            </p>
+            <p>
+                <strong>Third-party components the App uses:</strong> Google Maps (displays the address map and,
+                like any map service, receives your device's IP address and map-usage data under
+                <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Google's Privacy Policy</a>);
+                Google ML Kit (on-device face/text/card detection that guides photo and CNIC capture — images are
+                analysed on your device and are not sent to Google by this component); Firebase Cloud Messaging
+                (FCM) by Google, which delivers push notifications — FCM receives your push token and the content
+                of the notifications we send you, and processes them under
+                <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Google's Privacy Policy</a> and
+                <a href="https://firebase.google.com/support/privacy" target="_blank" rel="noopener">Firebase's privacy information</a>.
+                Address search/pin lookups are handled through our own servers.
             </p>
 
             <hr />
@@ -88,7 +102,7 @@
                 <li>Process and manage service bookings, requests, cancellations, and rejections</li>
                 <li>Calculate and display Provider earnings/wallet balances within the App</li>
                 <li>Enable ratings and reviews between Customers and Providers</li>
-                <li>Send in-app notifications about the status of bookings and account activity</li>
+                <li>Send push notifications and in-app notifications about the status of bookings and account activity, and occasional service announcements such as the availability of a new version of the App</li>
                 <li>Maintain the security of the App and prevent fraud or misuse</li>
                 <li>Respond to customer support inquiries</li>
                 <li>Comply with applicable legal obligations</li>
@@ -101,6 +115,7 @@
             <ul>
                 <li><strong>Between Customers and Providers:</strong> To facilitate a service booking, a Customer's name, saved address, and request details are shared with the assigned Provider, and a Provider's name, profile, verification status, category, and rating are shared with Customers.</li>
                 <li><strong>Service providers to us:</strong> We may use third-party infrastructure providers (such as cloud hosting providers) solely to host our backend servers and databases. These providers process data only on our behalf and are contractually obligated to protect it.</li>
+                <li><strong>Push notification delivery:</strong> To deliver push notifications we send your push token and the notification text (for example, "Your provider has started your job") to Google's Firebase Cloud Messaging service, which relays it to your device.</li>
                 <li><strong>Legal requirements:</strong> We may disclose information if required to do so by law, regulation, legal process, or governmental request, or to protect the rights, property, or safety of our users, the public, or the Company.</li>
                 <li><strong>Business transfers:</strong> If the Company is involved in a merger, acquisition, or sale of assets, user information may be transferred as part of that transaction, subject to this Privacy Policy or a policy at least as protective.</li>
             </ul>
@@ -136,6 +151,7 @@
                 <li>Correct inaccurate or incomplete information (via the Edit Profile screen in the App)</li>
                 <li>Request deletion of your account and associated personal data, either in-app or via our website (see Section 7)</li>
                 <li>Withdraw consent to camera/photo library access at any time via your device settings (note: this may limit your ability to use certain features, such as profile photo or CNIC upload)</li>
+                <li>Turn off push notifications at any time via your device settings (note: you may then miss time-sensitive booking updates, although they will still appear in your in-app notification inbox)</li>
             </ul>
             <p>To exercise any of these rights, please contact us using the details in Section 10.</p>
 
@@ -145,25 +161,35 @@
             <p>You can permanently delete your account in either of the following ways:</p>
             <p><strong>In the App:</strong> Go to <strong>Profile &gt; Delete Account</strong>, enter your password to confirm, and your account will be deleted immediately.</p>
             <p><strong>On the Web:</strong> Visit <a href="/delete-account">https://sahulatghartak.com/delete-account</a> and enter your registered mobile number and password to submit a deletion request.</p>
-            <p>Account deletion is immediate and irreversible — it is not a temporary freeze or deactivation. When you delete your account:</p>
+            <p>Account deletion is immediate and irreversible — it is not a temporary freeze or deactivation, except where you have an active booking or an unpaid balance (see below). When you delete your account:</p>
             <ul>
-                <li>Your profile information (full name, gender, description) is permanently removed or anonymized.</li>
-                <li>For Service Providers, your CNIC number, uploaded profile photo, and CNIC verification images are permanently deleted from our servers.</li>
+                <li>Your CNIC, gender, and (for Service Providers) description are permanently removed or anonymized.</li>
+                <li>For Service Providers, your uploaded profile photo and CNIC verification images are permanently deleted from our servers.</li>
                 <li>Your saved addresses are permanently deleted, except where an address is still referenced by a past service request (see below).</li>
-                <li>Your mobile number is released and becomes available for re-registration.</li>
+                <li>Your mobile number is anonymized and released, becoming available for re-registration.</li>
                 <li>Login credentials (password) and OTP records tied to your account are permanently deleted.</li>
+                <li>Your push notification tokens and in-app notification inbox are permanently deleted.</li>
             </ul>
             <p>
                 <strong>What is retained after deletion:</strong> Records of past service requests, bookings,
-                and payment/commission ledger entries are retained in anonymized form. This is because these
-                records are shared with the other party to the transaction (e.g., the Customer or Provider
-                you transacted with) and are part of our financial and dispute-resolution history. We do not
-                retain any information that personally identifies you within these records beyond what is
-                necessary for accounting and legal compliance.
+                and payment/commission ledger entries are retained in anonymized form. Your full name is
+                deliberately retained on these records — even though your account is deleted — because it is
+                part of our financial and dispute-resolution history and is needed to identify you in
+                connection with past transactions, payments, or amounts owed. We do not retain any other
+                information that personally identifies you (CNIC, mobile number, gender) within these records
+                beyond what is necessary for accounting and legal compliance.
+            </p>
+            <p>
+                <strong>Deletion may be blocked if you have pending dues:</strong> To protect our financial and
+                dispute-resolution records, you cannot delete your account while you have an active/unpaid
+                booking (as a Customer) or an active booking or unpaid payout (as a Service Provider). If this
+                applies to you, the App or web deletion page will tell you to settle or resolve the pending
+                item first before your deletion request can proceed.
             </p>
             <p>
                 Requests submitted via the web deletion page are processed immediately upon successful
-                verification of your mobile number and password, in the same manner as an in-app deletion.
+                verification of your mobile number and password, in the same manner as an in-app deletion,
+                subject to the pending-dues check above.
             </p>
 
             <hr />

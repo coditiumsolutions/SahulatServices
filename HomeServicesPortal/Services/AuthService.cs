@@ -586,6 +586,11 @@ public class AuthService : IAuthService
                 .ToListAsync(cancellationToken);
             _db.UserDeviceTokens.RemoveRange(deviceTokens);
 
+            var inboxRows = await _db.UserNotifications
+                .Where(n => n.UserId == userId)
+                .ToListAsync(cancellationToken);
+            _db.UserNotifications.RemoveRange(inboxRows);
+
             var trackedUser = await _db.UsersLogins.FirstAsync(u => u.Uid == userId, cancellationToken);
             trackedUser.MobileNo = anonymizedMobile;
             trackedUser.PasswordHash = PasswordHasher.Hash(Guid.NewGuid().ToString("N"));

@@ -33,6 +33,27 @@ public class BookingService : IBookingService
         _logger = logger;
     }
 
+    /// <summary>
+    /// Fire-and-forget booking push/inbox notification. Runs on its own scope (the request scope is gone by
+    /// the time FCM answers) and swallows failures so a notification problem can never fail or slow the
+    /// booking action. Call only after the state change has been applied and never on an idempotent retry.
+    /// </summary>
+    private void FirePush(string what, Func<IBookingPushNotifier, Task> send)
+    {
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await using var scope = _scopeFactory.CreateAsyncScope();
+                await send(scope.ServiceProvider.GetRequiredService<IBookingPushNotifier>());
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to send {What} notification.", what);
+            }
+        });
+    }
+
     public async Task<List<SelectListItem>> GetRequestOptionsAsync(CancellationToken cancellationToken = default)
     {
         return await _db.CustomerServiceRequests
@@ -343,6 +364,8 @@ public class BookingService : IBookingService
 
         if (entity == null) return (false, "Booking not found.");
 
+        var previousStatus = entity.Status;
+
         // Preserve original request link on update.
         model.RequestUid = entity.RequestUid;
 
@@ -436,16 +459,29 @@ public class BookingService : IBookingService
                     entity.RequestUid,
                     $"{who} cancelled after accepting{reasonSuffix}",
                     cancellationToken);
+
+                var reassignRequestUid = entity.RequestUid;
+                FirePush("provider reassigning", n => n.ProviderReassigningAsync(reassignRequestUid));
             }
             else
             {
                 await PublishStaffCancelledAcceptedBookingNotificationAsync(entity.Uid, entity.ProviderUid, entity.CancelReason, cancellationToken);
+
+                var cancelledBookingUid = entity.Uid;
+                FirePush("booking cancelled", n => n.BookingCancelledByStaffAsync(cancelledBookingUid));
             }
         }
 
         if (string.Equals(entity.Status, "Completed", StringComparison.OrdinalIgnoreCase))
         {
             await CompleteBookingSideEffectsAsync(entity, cancellationToken);
+
+            // Re-saving an already-Completed booking from the admin form must not re-notify.
+            if (!string.Equals(previousStatus, "Completed", StringComparison.OrdinalIgnoreCase))
+            {
+                var completedBookingUid = entity.Uid;
+                FirePush("job completed", n => n.JobCompletedAsync(completedBookingUid));
+            }
         }
 
         return (true, null);
@@ -718,6 +754,8 @@ public class BookingService : IBookingService
             return null;
         }
 
+        // Rejected and Cancelled bookings are dead: a provider cancel (or reject-all) resets the request to
+        // Initiated precisely so staff can assign someone else, so they must not block reassignment.
         var alreadyBooked = await _db.ServiceBookings
             .AnyAsync(b => b.RequestUid == requestUid && b.Status != "Rejected" && b.Status != "Cancelled", cancellationToken);
         if (alreadyBooked) return null;
@@ -754,8 +792,6 @@ public class BookingService : IBookingService
                 .AsNoTracking()
                 .Where(p => p.User.IsActive && p.IsVerified
                     && p.ProviderCategories.Any(pc => pc.CategoryUid == request.CategoryUid)
-        // Rejected and Cancelled bookings are dead: a provider cancel (or reject-all) resets the request to
-        // Initiated precisely so staff can assign someone else, so they must not block reassignment.
                     && p.ProviderServiceTitles.Any(pt => pt.ServiceTitleUid == matchedTitleUid))
                 .OrderBy(p => p.FullName)
                 .Select(p => new SelectListItem
@@ -878,6 +914,7 @@ public class BookingService : IBookingService
             return (false, "Only initiated requests can be assigned to a provider.");
         }
 
+        // Same rule as GetAssignProviderFormAsync: dead (Rejected/Cancelled) bookings do not block reassignment.
         var alreadyBooked = await _db.ServiceBookings
             .AnyAsync(b => b.RequestUid == model.RequestUid && b.Status != "Rejected" && b.Status != "Cancelled", cancellationToken);
         if (alreadyBooked)
@@ -914,7 +951,6 @@ public class BookingService : IBookingService
         }
 
         var clientCity = await _db.Clients
-        // Same rule as GetAssignProviderFormAsync: dead (Rejected/Cancelled) bookings do not block reassignment.
             .AsNoTracking()
             .Where(c => c.Uid == request.ClientUid)
             .Select(c => c.City)
@@ -1004,6 +1040,9 @@ public class BookingService : IBookingService
 
         request.Status = "Assigned";
         await _db.SaveChangesAsync(cancellationToken);
+
+        var assignedRequestUid = request.Uid;
+        FirePush("job assigned", n => n.JobAssignedAsync(assignedRequestUid));
         return (true, null);
     }
 
@@ -1065,6 +1104,15 @@ public class BookingService : IBookingService
                 return (false, "This job has already been assigned to another provider.");
             }
 
+            // Capture the losing siblings before they are cancelled so they can be told.
+            var losingSiblings = (await _db.ServiceBookings
+                    .AsNoTracking()
+                    .Where(b => b.RequestUid == booking.RequestUid && b.Uid != bookingUid && b.Status == "Pending")
+                    .Select(b => new { b.Uid, b.ProviderUid })
+                    .ToListAsync(cancellationToken))
+                .Select(b => (b.Uid, b.ProviderUid))
+                .ToList();
+
             // Supersede sibling Pending bookings for the same request — they're no longer
             // available to the other providers they were fanned out to.
             await _db.ServiceBookings
@@ -1077,6 +1125,9 @@ public class BookingService : IBookingService
                 .Where(r => r.Uid == booking.RequestUid)
                 .ExecuteUpdateAsync(s => s.SetProperty(r => r.Status, "Accepted"), cancellationToken);
 
+            // Only reached by the caller whose conditional claim above won (claimed > 0), so a
+            // double-tap / retry takes the idempotent early return and never re-sends this.
+            FirePush("booking accepted", n => n.BookingAcceptedAsync(bookingUid, losingSiblings));
             return (true, null);
         }
         else
@@ -1118,6 +1169,9 @@ public class BookingService : IBookingService
                     booking.RequestUid,
                     "all assigned providers rejected",
                     cancellationToken);
+
+                var reassignRequestUid = booking.RequestUid;
+                FirePush("provider reassigning", n => n.ProviderReassigningAsync(reassignRequestUid));
             }
 
             return (true, null);
@@ -1144,6 +1198,11 @@ public class BookingService : IBookingService
 
         booking.Status = "In Progress";
         await _db.SaveChangesAsync(cancellationToken);
+
+        // The Accepted-only guard above means a repeat call fails with "not awaiting start",
+        // so this fires once per real transition.
+        var startedBookingUid = booking.Uid;
+        FirePush("job started", n => n.JobStartedAsync(startedBookingUid));
         return (true, null);
     }
 
@@ -1241,6 +1300,10 @@ public class BookingService : IBookingService
         }
 
         await CompleteBookingSideEffectsAsync(booking, cancellationToken);
+
+        // The Accepted / In Progress guard above means a repeat call fails, so this fires once.
+        var verifiedBookingUid = booking.Uid;
+        FirePush("job completed", n => n.JobCompletedAsync(verifiedBookingUid));
 
         return (true, null);
     }

@@ -11,7 +11,7 @@ reason: >-
 
 **Scope:** HomeServicesPortal backend (ASP.NET Core 8) and mobile API, production database
 **Accounts audited:** 57
-**Date:** 2026-08-27
+**Date:** 2026-08-27 (addendum 2026-10-01: FCM device-token endpoints, finding 9)
 
 ## Summary
 
@@ -19,7 +19,7 @@ The mobile API has no real authentication layer. Every write endpoint accepts an
 
 This isn't a single bug to patch — it's the absence of a session model. The recommendations below build one in the order requested: hashing and tokens first, secure client-side storage second, then OAuth once the foundation holds weight.
 
-**Findings at a glance:** 2 critical, 2 high, 2 medium, 2 already solid.
+**Findings at a glance:** 2 critical, 2 high, 3 medium, 2 already solid.
 
 ---
 
@@ -95,13 +95,33 @@ builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();  // registered
 
 A fixed-window limiter (5 requests/minute) is already applied to `delete-account`. Worth extending the same pattern to `login`, `send-otp`, and `verify-otp` once those become real attack surfaces under a proper auth model — but the mechanism is already in place and working.
 
+### 9. Interim anonymous endpoints added with FCM push support — Medium (2026-10-01)
+
+Push notifications added two endpoints that are deliberately left unauthenticated for now, consistent with the rest of the mobile API (finding 2), so the Flutter app can adopt them before JWT issuance exists (finding 3):
+
+- `POST /api/notifications/register-token` — stores `{ userId, userType, deviceToken, platform }` in `dbo.UserDeviceTokens` (`NotificationsApiController`).
+- `POST /api/notifications/unregister-token` — deletes a token row by `deviceToken` (called on logout).
+- `GET /api/notifications`, `GET /api/notifications/unread-count`, `POST /api/notifications/{id}/read`, `POST /api/notifications/read-all` — the in-app inbox (`dbo.UserNotifications`), keyed by a caller-supplied `userId`.
+- `GET /api/v1/app/config?platform=` (`AppConfigApiController`) is anonymous by design (version check before login) and exposes no user data, so it stays public even after the other endpoints are secured.
+
+Mitigation in place: `register-token` checks that `userId` is an active `UsersLogin` row whose `UserType` matches, so junk rows are rejected. This does **not** prove the caller owns that account.
+
+**Impact:** Anyone who knows a numeric `userId` can (a) register their own device under it and receive that user's push notifications (booking updates: provider names, job titles, cancellation reasons), and (b) read that user's inbox through `GET /api/notifications`, which returns the same text. `mark-read` / `read-all` can also be called for another user's inbox. `unregister-token` can be called for any token the caller knows, but FCM tokens are long and unguessable, so that risk is low. **Update 2026-10-01:** booking-lifecycle pushes and inbox rows are now live in code (`BookingPushNotifier`, hooked from `BookingService`), so this exposure is real as soon as it is deployed — it is the same trust model as the other anonymous endpoints (e.g. `GET /customer-service-requests` by `clientUid`), but it should be closed together with them. The kill switch `Notifications:BookingPushEnabled=false` stops new pushes and inbox rows without a deploy.
+
+**Restore checklist (when JWT is issued, finding 3):**
+1. `NotificationsApiController`: replace `[AllowAnonymous]` with `[Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]` (a `TODO(auth)` comment marks the spot).
+2. In `register-token`, require `request.UserId` / `request.UserType` to equal the `UserId` / `UserType` claims that `JwtTokenService.CreateToken` already emits; return 403 on mismatch. Optionally drop `userId`/`userType` from the body and read them from the claims.
+3. Bind `unregister-token` to the caller: only delete rows where `UserId` equals the claim. Do the same for the inbox endpoints: take `userId` from the claims (drop it from the query/body) and scope every read / mark-read to it.
+4. Update `api.txt` (Auth line, 401/403 examples) and mirror it to the Flutter copy; tell the app to send the Bearer header.
+5. Re-verify with the test cases in the 2026-10-01 verification (no header → 401, mismatched user → 403).
+
 ---
 
 ## Requirements — current state
 
 | # | Requirement | State | Notes |
 |---|---|---|---|
-| 1 | JWT | Partially built | Pipeline configured and validated in `Program.cs`; never issued by `Login()`. Wiring this up is the single highest-leverage fix — it turns every `[AllowAnonymous]` mobile endpoint into something that *can* require `[Authorize]` and read the caller's own `clientUid`/`providerUid` from claims instead of trusting the request body. |
+| 1 | JWT | Partially built | Pipeline configured and validated in `Program.cs`; never issued by `Login()` (re-verified 2026-10-01: still zero `CreateToken()` call sites). Wiring this up is the single highest-leverage fix — it turns every `[AllowAnonymous]` mobile endpoint into something that *can* require `[Authorize]` and read the caller's own `clientUid`/`providerUid` from claims instead of trusting the request body. |
 | 2 | Password hashing | Not implemented | BCrypt is already a dependency and `Verify()` already knows how to check a bcrypt hash — `Hash()` just never calls it. Needs a hash of every existing plaintext password on next login (or a forced reset) alongside the code fix, since the 57 existing rows are unusable as bcrypt hashes today. |
 | 3 | Web: HttpOnly / SameSite / Secure cookies | Partially covered by defaults | Admin portal cookie relies on framework defaults for two of three flags. Needs `Cookie.HttpOnly = true`, `Cookie.SecurePolicy = CookieSecurePolicy.Always`, and `Cookie.SameSite = SameSiteMode.Strict` (or `Lax` if any cross-site POST flows are needed) set explicitly rather than inherited. |
 | 4 | Android: EncryptedSharedPreferences / Keystore | Depends on #1 | Backend has nothing to do here directly, but it's the natural home for the JWT once issued — the Flutter app's `flutter_secure_storage` package (already in use per a prior Flutter audit) backs onto EncryptedSharedPreferences on Android and Keychain on iOS automatically, so this mostly falls out of finishing #1. |
@@ -117,6 +137,7 @@ A fixed-window limiter (5 requests/minute) is already applied to `delete-account
 - **Issue the JWT on login.** Call `_jwtTokenService.CreateToken(...)` from `AuthController.Login()` and return it in `LoginResponse`. This is largely plumbing — the token pipeline already exists.
 - **Require the token on write endpoints.** Replace `[AllowAnonymous]` with `[Authorize]` on the mutating actions in `CustomerServiceRequestsApiController` and `ServiceBookingsApiController`, and derive `clientUid`/`providerUid` from the authenticated claims rather than trusting the request body — this is what actually closes the impersonation gap, not just adding a login screen.
 - **Set cookie flags explicitly** on the admin portal's `AddCookie(...)` block.
+- **Re-secure the FCM token endpoints** (finding 9) in the same pass as the other write endpoints, and do it before any booking-triggered push notifications are enabled.
 
 ### Phase 2 — Client-side storage
 
@@ -140,7 +161,8 @@ A fixed-window limiter (5 requests/minute) is already applied to `delete-account
 |---|---|---|
 | Password hash format across all accounts | SQL: LEN/prefix scan, `UsersLogin` | 0 / 57 bcrypt |
 | JWT issuance on login | Code search: `CreateToken()` call sites | 0 call sites |
-| `[AllowAnonymous]` on mobile API controllers | Code search: `Controllers/Api/*.cs` | 13 / 14 controllers |
+| `[AllowAnonymous]` on mobile API controllers | Code search: `Controllers/Api/*.cs` | 13 / 14 controllers (2026-08-27); 18 / 18 controller files reference it (2026-10-01, includes the two new FCM/app-config controllers) |
+| FCM token + inbox endpoints unauthenticated, user-exists check only on register | Code + local test 2026-10-01: register/unregister/inbox with no `Authorization` header | 200 OK; unknown or mismatched user → 400; inbox readable by any `userId` |
 | Unverified account with real request history | SQL: `UsersLogin` ⋈ `CustomerServiceRequests` | Confirmed, UID 18 |
 | Cookie `SecurePolicy` / `SameSite` set explicitly | Code search: `Program.cs` `AddCookie` block | Not set |
 | Anti-forgery tokens on admin mutations | Code search: `[ValidateAntiForgeryToken]` | Present, consistent |

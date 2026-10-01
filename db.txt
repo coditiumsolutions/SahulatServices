@@ -1,6 +1,6 @@
 ================================================================================
 SahulatGharTak Database Schema
-Version: 4.16 | Last Updated: 2026-10-01
+Version: 4.17 | Last Updated: 2026-10-01
 Database: SahulatAppDB
 Server: 34.131.41.192,1433
 
@@ -79,6 +79,24 @@ Table: UserDeviceTokens
   -- FCM registration tokens (POST /api/notifications/register-token). No FK to UsersLogin;
   -- rows are deleted by AuthService.DeleteAccountAsync and when FCM reports a token Unregistered.
   -- Create script: scripts/create-user-device-tokens.sql
+
+--------------------------------------------------------------------------------
+Table: UserNotifications
+--------------------------------------------------------------------------------
+  Id               int              NOT NULL  PK  IDENTITY(1,1)
+  UserId           int              NOT NULL  (UsersLogin.UID)  INDEX IX_UserNotifications_UserId_IsRead_CreatedAt (UserId, IsRead, CreatedAt DESC)
+  UserType         nvarchar(20)     NOT NULL  (Client | Provider — the role the notification was addressed to)
+  Type             nvarchar(40)     NOT NULL  (job_assigned | booking_accepted | job_unavailable | provider_reassigning | booking_cancelled | job_started | job_completed)
+  Title            nvarchar(200)    NOT NULL
+  Body             nvarchar(500)    NOT NULL
+  Screen           nvarchar(40)     NOT NULL  (request_details | provider_job_requests | my_bookings | app_update)
+  BookingUid       int              NULL      (ServiceBookings.UID, no FK)
+  RequestUid       int              NULL      (CustomerServiceRequests.UID, no FK)
+  IsRead           bit              NOT NULL  DEFAULT (0)
+  CreatedAt        datetime         NOT NULL  DEFAULT (getutcdate())
+  -- In-app notification inbox; every booking push also writes one row (BookingPushNotifier).
+  -- No FK to UsersLogin; rows are deleted by AuthService.DeleteAccountAsync.
+  -- Create script: scripts/create-user-notifications.sql
 
 --------------------------------------------------------------------------------
 Table: Clients

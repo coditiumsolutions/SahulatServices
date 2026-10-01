@@ -38,6 +38,8 @@ task list.
 - **[add-clients-city-location.sql](add-clients-city-location.sql)** — added `Clients.City`/`Location`.
 - **[add-providers-city.sql](add-providers-city.sql)** — added `Providers.City`.
 - **[create-configurations.sql](create-configurations.sql)** — created and seeded `Configurations`.
+- **[create-user-device-tokens.sql](create-user-device-tokens.sql)** — created `UserDeviceTokens` (FCM tokens, 2026-10-01).
+- **[create-user-notifications.sql](create-user-notifications.sql)** — created `UserNotifications` (in-app inbox, 2026-10-01).
 
 ## Stale — do not run against the current database
 
