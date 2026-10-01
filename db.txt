@@ -1,6 +1,6 @@
 ================================================================================
 SahulatGharTak Database Schema
-Version: 4.15 | Last Updated: 2026-09-29
+Version: 4.16 | Last Updated: 2026-10-01
 Database: SahulatAppDB
 Server: 34.131.41.192,1433
 
@@ -66,6 +66,19 @@ Table: UserOTP
   VerifiedOn       datetime         NULL
   -- No FK to UsersLogin: Registration OTP is issued before a UsersLogin row exists.
   -- MobileNo is the natural lookup key for all OTP flows (API owns generation/expiry/limits).
+
+--------------------------------------------------------------------------------
+Table: UserDeviceTokens
+--------------------------------------------------------------------------------
+  Id               int              NOT NULL  PK  IDENTITY(1,1)
+  UserId           int              NOT NULL  INDEX IX_UserDeviceTokens_UserId  (UsersLogin.UID)
+  UserType         nvarchar(20)     NOT NULL  (Client | Provider)
+  DeviceToken      nvarchar(512)    NOT NULL  UNIQUE INDEX UX_UserDeviceTokens_DeviceToken
+  Platform         nvarchar(10)     NOT NULL  (android | ios)
+  UpdatedAt        datetime         NOT NULL  DEFAULT (getutcdate())
+  -- FCM registration tokens (POST /api/notifications/register-token). No FK to UsersLogin;
+  -- rows are deleted by AuthService.DeleteAccountAsync and when FCM reports a token Unregistered.
+  -- Create script: scripts/create-user-device-tokens.sql
 
 --------------------------------------------------------------------------------
 Table: Clients

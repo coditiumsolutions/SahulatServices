@@ -1,6 +1,6 @@
 ================================================================================
 SahulatGharTak API Reference
-Version: 3.26 | Last Updated: 2026-09-29
+Version: 3.27 | Last Updated: 2026-10-01
 Database: SahulatAppDB
 Local Base URL:    https://localhost:7265/api/
 Deployed Base URL:  https://sahulatghartak.com/api/
@@ -3006,6 +3006,95 @@ Success (200):
 ]
 
 Fail: returns empty array [] if the "Cities" config key has no values
+
+================================================================================
+PUSH NOTIFICATIONS (FCM) & APP VERSION CHECK
+================================================================================
+The backend sends push notifications through Firebase Cloud Messaging. After login the app
+registers its FCM registration token (FirebaseMessaging.instance.getToken()) so the server can
+target the user's device(s). Every push carries a high-priority notification banner plus a data
+payload with these keys: click_action (defaults to "FLUTTER_NOTIFICATION_CLICK"), booking_id,
+screen (empty string when not applicable). Tokens that FCM reports as unregistered/expired are
+deleted server-side automatically. All of a user's tokens are also deleted by
+POST /api/auth/delete-account.
+
+--------------------------------------------------------------------------------
+POST Register Device Token
+--------------------------------------------------------------------------------
+Local:     https://localhost:7265/api/notifications/register-token
+Deployed:  https://sahulatghartak.com/api/notifications/register-token
+
+Auth: Bearer JWT required. userId and userType in the body must match the JWT's UserId /
+UserType claims (a caller can only register a token for itself). userId is the login id returned
+by login (UsersLogin.UID), not clientUid/providerUid.
+
+Request Body:
+{
+  "userId": 12,
+  "userType": "Client",          // "Client" or "Provider" (case-insensitive)
+  "deviceToken": "fcm-registration-token",
+  "platform": "android"          // "android" or "ios" (case-insensitive)
+}
+
+Success (200):
+{
+  "success": true,
+  "message": "Device token registered successfully.",
+  "data": {}
+}
+
+Fail (400):
+{
+  "success": false,
+  "message": "userType must be 'Client' or 'Provider'."
+}
+(other 400 messages: "platform must be 'android' or 'ios'.", "userId is required.",
+ "deviceToken is required.", "deviceToken is too long.")
+
+Fail (401): missing/invalid Bearer token — "Authentication required. Provide a valid Bearer token."
+
+Fail (403):
+{
+  "success": false,
+  "message": "userId/userType do not match the authenticated user."
+}
+
+Idempotency: DeviceToken is unique. Calling again with the same token is safe — it refreshes
+UpdatedAt/platform and returns the same 200. If the same device token is registered by a
+different user (e.g. a second account logs in on the same phone) the row is re-assigned to the
+new user, so the previous user stops receiving that device's notifications. Call this on every
+login and whenever FirebaseMessaging.onTokenRefresh fires.
+
+--------------------------------------------------------------------------------
+GET App Config (version / force-update check)
+--------------------------------------------------------------------------------
+Local:     https://localhost:7265/api/v1/app/config?platform=android
+Deployed:  https://sahulatghartak.com/api/v1/app/config?platform=android
+
+Auth: none (call at app start, before login).
+Query: platform = "android" or "ios" (case-insensitive). Values come from the server's
+appsettings "AppConfig" section and can be changed without redeploying code.
+
+Request Body: none
+
+Success (200) — NOTE: bare snake_case object, NOT wrapped in the ApiResponse envelope:
+{
+  "minimum_required_version": "1.0.3",
+  "latest_version": "1.0.3",
+  "force_update": false,
+  "store_url": "https://...",
+  "update_message": "A new version of Sahulat Ghar Tak is available."
+}
+
+Client rule: if installed version < minimum_required_version, or force_update is true while
+installed < latest_version, block the app with a non-dismissable update dialog; if only
+installed < latest_version, show a dismissable prompt. Open store_url to update.
+
+Fail (400):
+{
+  "success": false,
+  "message": "platform must be 'android' or 'ios'."
+}
 
 ================================================================================
 MAPS / GPS APIs (Reverse Geocoding, Nearby Providers, Live Tracking)
