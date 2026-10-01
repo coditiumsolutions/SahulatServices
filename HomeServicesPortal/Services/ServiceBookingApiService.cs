@@ -80,8 +80,9 @@ public class ServiceBookingApiService : IServiceBookingApiService
             await using var transaction = await _db.Database.BeginTransactionAsync(
                 System.Data.IsolationLevel.Serializable, cancellationToken);
 
+            // A Cancelled booking (e.g. the provider cancelled and the request was reopened) does not count.
             var alreadyBooked = await _db.ServiceBookings
-                .AnyAsync(b => b.RequestUid == request.RequestUid, cancellationToken);
+                .AnyAsync(b => b.RequestUid == request.RequestUid && b.Status != "Cancelled", cancellationToken);
 
             if (alreadyBooked)
             {

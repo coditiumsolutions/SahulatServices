@@ -719,7 +719,7 @@ public class BookingService : IBookingService
         }
 
         var alreadyBooked = await _db.ServiceBookings
-            .AnyAsync(b => b.RequestUid == requestUid && b.Status != "Rejected", cancellationToken);
+            .AnyAsync(b => b.RequestUid == requestUid && b.Status != "Rejected" && b.Status != "Cancelled", cancellationToken);
         if (alreadyBooked) return null;
 
         var matchingProviders = await _db.Providers
@@ -754,6 +754,8 @@ public class BookingService : IBookingService
                 .AsNoTracking()
                 .Where(p => p.User.IsActive && p.IsVerified
                     && p.ProviderCategories.Any(pc => pc.CategoryUid == request.CategoryUid)
+        // Rejected and Cancelled bookings are dead: a provider cancel (or reject-all) resets the request to
+        // Initiated precisely so staff can assign someone else, so they must not block reassignment.
                     && p.ProviderServiceTitles.Any(pt => pt.ServiceTitleUid == matchedTitleUid))
                 .OrderBy(p => p.FullName)
                 .Select(p => new SelectListItem
@@ -877,7 +879,7 @@ public class BookingService : IBookingService
         }
 
         var alreadyBooked = await _db.ServiceBookings
-            .AnyAsync(b => b.RequestUid == model.RequestUid && b.Status != "Rejected", cancellationToken);
+            .AnyAsync(b => b.RequestUid == model.RequestUid && b.Status != "Rejected" && b.Status != "Cancelled", cancellationToken);
         if (alreadyBooked)
         {
             return (false, "This request already has a booking.");
@@ -912,6 +914,7 @@ public class BookingService : IBookingService
         }
 
         var clientCity = await _db.Clients
+        // Same rule as GetAssignProviderFormAsync: dead (Rejected/Cancelled) bookings do not block reassignment.
             .AsNoTracking()
             .Where(c => c.Uid == request.ClientUid)
             .Select(c => c.City)
