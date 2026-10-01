@@ -7,6 +7,8 @@ using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System.Security.Claims;
 using System.Text;
+using FirebaseAdmin;
+using Google.Apis.Auth.OAuth2;
 using HomeServicesPortal.Data;
 // using HomeServicesPortal.Infrastructure; // DevSqlTunnelBootstrap disabled
 using HomeServicesPortal.Hubs;
@@ -80,6 +82,9 @@ builder.Services.AddScoped<ICommissionRuleService, CommissionRuleService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.Configure<FirebaseOptions>(builder.Configuration.GetSection(FirebaseOptions.SectionName));
+builder.Services.Configure<AppConfigOptions>(builder.Configuration.GetSection(AppConfigOptions.SectionName));
 builder.Services.Configure<OtpOptions>(builder.Configuration.GetSection(OtpOptions.SectionName));
 builder.Services.Configure<FileStorageOptions>(builder.Configuration.GetSection(FileStorageOptions.SectionName));
 builder.Services.AddScoped<IOtpService, OtpService>();
@@ -254,6 +259,37 @@ builder.Services.AddSwaggerGen(options =>
 });
 
 var app = builder.Build();
+
+// Firebase Admin SDK (FCM). Missing/invalid credentials must not stop the portal from starting —
+// push sends are skipped (and logged) until Firebase:ServiceAccountPath is fixed.
+if (FirebaseApp.DefaultInstance == null)
+{
+    var startupLogger = app.Services.GetRequiredService<ILoggerFactory>().CreateLogger("Firebase");
+    var firebasePath = builder.Configuration[$"{FirebaseOptions.SectionName}:ServiceAccountPath"];
+    if (string.IsNullOrWhiteSpace(firebasePath))
+    {
+        firebasePath = Environment.GetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS");
+    }
+
+    if (string.IsNullOrWhiteSpace(firebasePath))
+    {
+        startupLogger.LogWarning("Firebase service account not configured; FCM push notifications are disabled.");
+    }
+    else
+    {
+        var resolvedPath = Path.IsPathRooted(firebasePath)
+            ? firebasePath
+            : Path.Combine(app.Environment.ContentRootPath, firebasePath);
+        try
+        {
+            FirebaseApp.Create(new AppOptions { Credential = CredentialFactory.FromFile<ServiceAccountCredential>(resolvedPath).ToGoogleCredential() });
+        }
+        catch (Exception ex)
+        {
+            startupLogger.LogError(ex, "Failed to initialize Firebase from {Path}; FCM push notifications are disabled.", resolvedPath);
+        }
+    }
+}
 
 // Seed the in-process TimeFormatPreference cache from the DB so every view/helper reads the
 // admin's saved 12h/24h choice from process start, not just after someone opens the Preferences

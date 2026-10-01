@@ -581,6 +581,11 @@ public class AuthService : IAuthService
                 .ToListAsync(cancellationToken);
             _db.UserOTPs.RemoveRange(otpRows);
 
+            var deviceTokens = await _db.UserDeviceTokens
+                .Where(t => t.UserId == userId)
+                .ToListAsync(cancellationToken);
+            _db.UserDeviceTokens.RemoveRange(deviceTokens);
+
             var trackedUser = await _db.UsersLogins.FirstAsync(u => u.Uid == userId, cancellationToken);
             trackedUser.MobileNo = anonymizedMobile;
             trackedUser.PasswordHash = PasswordHasher.Hash(Guid.NewGuid().ToString("N"));

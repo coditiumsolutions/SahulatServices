@@ -15,6 +15,8 @@ public class AppDbContext : DbContext
 
     public DbSet<UserOTP> UserOTPs => Set<UserOTP>();
 
+    public DbSet<UserDeviceToken> UserDeviceTokens => Set<UserDeviceToken>();
+
     public DbSet<Client> Clients => Set<Client>();
 
     public DbSet<Provider> Providers => Set<Provider>();
@@ -88,6 +90,20 @@ public class AppDbContext : DbContext
             entity.Property(e => e.VerifiedOn).HasColumnType("datetime");
             entity.HasIndex(e => e.MobileNo);
             entity.HasIndex(e => e.IsVerified);
+        });
+
+        modelBuilder.Entity<UserDeviceToken>(entity =>
+        {
+            entity.ToTable("UserDeviceTokens");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.UserType).HasMaxLength(20).IsRequired();
+            entity.Property(e => e.DeviceToken).HasMaxLength(512).IsRequired();
+            entity.Property(e => e.Platform).HasMaxLength(10).IsRequired();
+            entity.Property(e => e.UpdatedAt)
+                .HasColumnType("datetime")
+                .HasDefaultValueSql("(getutcdate())");
+            entity.HasIndex(e => e.DeviceToken).IsUnique();
+            entity.HasIndex(e => e.UserId);
         });
 
         modelBuilder.Entity<Client>(entity =>
