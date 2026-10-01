@@ -10,6 +10,7 @@ deploy/gcp/appsettings.Production.json
 *.local.json
 **/secrets.json
 **/credentials.json
+*firebase-adminsdk*.json
 
 # .NET
 bin/
@@ -34,3 +35,6 @@ HomeServicesPortal/wwwroot/downloads/**
 .DS_Store
 Thumbs.db
 *.swp
+
+# Local Firebase service-account key
+HomeServicesPortal/secrets/
