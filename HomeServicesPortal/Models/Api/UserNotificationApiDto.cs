@@ -20,7 +20,15 @@ public class UserNotificationApiDto
 
     public bool IsRead { get; set; }
 
-    public DateTime CreatedAt { get; set; }
+    // Stored as UTC but read back with Kind=Unspecified, which serialises without a "Z" and which clients parse
+    // as local time. Mark it UTC so the JSON carries the "Z" api.txt documents.
+    private DateTime _createdAt;
+
+    public DateTime CreatedAt
+    {
+        get => _createdAt;
+        set => _createdAt = DateTime.SpecifyKind(value, DateTimeKind.Utc);
+    }
 }
 
 public class UserNotificationListDto

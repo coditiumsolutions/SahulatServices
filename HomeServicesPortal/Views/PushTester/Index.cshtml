@@ -1,0 +1,249 @@
+@using HomeServicesPortal.Services
+@model HomeServicesPortal.Models.ViewModels.PushTesterFormVm
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Push Tester";
+}
+
+<div class="mb-4">
+    <h2 class="mb-0"><i class="fa-solid fa-vial me-2 text-primary"></i>Push Tester</h2>
+    <p class="text-muted mb-0">Fire any booking notification, or a custom one, at a user, a single device, or every Client/Provider device. These are real pushes to real devices.</p>
+</div>
+
+@if (TempData["ErrorMessage"] is string error)
+{
+    <div class="alert alert-warning alert-dismissible fade show" role="alert">
+        <i class="fa-solid fa-triangle-exclamation me-2"></i>@error
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+@if (!Model.FirebaseConfigured)
+{
+    <div class="alert alert-danger">
+        <i class="fa-solid fa-circle-xmark me-2"></i>Firebase is not configured on this server, so nothing can be sent.
+    </div>
+}
+
+@if (Model.Result is { } r)
+{
+    <div class="alert @(r.Sent > 0 || r.InboxSaved ? "alert-success" : "alert-secondary")">
+        <div class="fw-semibold mb-1"><i class="fa-solid fa-paper-plane me-2"></i>@r.Title</div>
+        <div>@r.Body</div>
+        <div class="small text-muted mt-1">
+            type <code>@r.Type</code>, screen <code>@(string.IsNullOrEmpty(r.Screen) ? "(none)" : r.Screen)</code> &middot;
+            @r.Recipients device(s): <strong>@r.Sent</strong> delivered to FCM, @r.Failed failed@(r.RemovedStale > 0 ? $", {r.RemovedStale} expired token(s) removed" : "")
+            @(r.InboxSaved ? "· saved to inbox" : "")
+        </div>
+    </div>
+}
+
+<div class="row g-4">
+    <div class="col-lg-7">
+        <div class="card hs-card">
+            <div class="card-body p-4">
+                <div asp-validation-summary="All" class="alert alert-danger"></div>
+                <form asp-action="Send" method="post" id="testerForm">
+                    @Html.AntiForgeryToken()
+
+                    <h6 class="text-uppercase text-muted small">1. Who</h6>
+                    <div class="mb-2">
+                        <select asp-for="TargetMode" class="form-select" id="targetMode">
+                            <option value="user">One user (all their devices)</option>
+                            <option value="device">One registered device</option>
+                            <option value="role">Everyone of a role (Client or Provider devices)</option>
+                        </select>
+                    </div>
+                    <div class="mb-3" data-target="user">
+                        <label asp-for="UserId" class="form-label"></label>
+                        <input asp-for="UserId" class="form-control" type="number" min="1" placeholder="UsersLogin id, e.g. 76" />
+                    </div>
+                    <div class="mb-3" data-target="device">
+                        <label asp-for="TokenId" class="form-label"></label>
+                        <select asp-for="TokenId" class="form-select">
+                            <option value="">Choose a device...</option>
+                            @foreach (var d in Model.Devices)
+                            {
+                                <option value="@d.Id" data-search="@(d.UserId + " " + d.Name)">#@d.Id &middot; user @d.UserId @(string.IsNullOrEmpty(d.Name) ? "" : "(" + d.Name + ")") &middot; @d.UserType &middot; @d.Platform</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-sm-6" data-target="user device role">
+                            <label class="form-label">Role (for inbox, and events with no fixed role)</label>
+                            <select name="Role" class="form-select" id="roleSelect">
+                                <option value="Client" selected="@(Model.Role == "Client")">Client</option>
+                                <option value="Provider" selected="@(Model.Role == "Provider")">Provider</option>
+                            </select>
+                        </div>
+                        <div class="col-sm-6" data-target="role">
+                            <label class="form-label">Platform</label>
+                            <select asp-for="Platform" class="form-select">
+                                <option value="all">All</option>
+                                <option value="android">Android</option>
+                                <option value="ios">iOS</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-check mb-1" data-target="user device">
+                        <input asp-for="IgnoreRole" class="form-check-input" />
+                        <label asp-for="IgnoreRole" class="form-check-label"></label>
+                        <div class="form-text">Untick to test the real behaviour: a token registered under the other role gets no banner.</div>
+                    </div>
+                    <div class="form-check mb-3" data-target="user device">
+                        <input asp-for="SaveToInbox" class="form-check-input" />
+                        <label asp-for="SaveToInbox" class="form-check-label"></label>
+                    </div>
+
+                    <h6 class="text-uppercase text-muted small mt-4">2. What</h6>
+                    <div class="mb-3">
+                        <select asp-for="EventKey" class="form-select" id="eventKey">
+                            @foreach (var e in NotificationTestCatalog.Entries)
+                            {
+                                <option value="@e.Key">@e.Label</option>
+                            }
+                            <option value="@NotificationTestCatalog.CustomKey">Custom notification</option>
+                        </select>
+                    </div>
+
+                    <div id="eventFields">
+                        <div class="row g-2 mb-3">
+                            <div class="col-sm-6">
+                                <label asp-for="ServiceName" class="form-label"></label>
+                                <input asp-for="ServiceName" class="form-control" />
+                            </div>
+                            <div class="col-sm-6">
+                                <label asp-for="ProviderName" class="form-label"></label>
+                                <input asp-for="ProviderName" class="form-control" />
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="Reason" class="form-label"></label>
+                            <input asp-for="Reason" class="form-control" placeholder="Only used by the cancelled events" />
+                        </div>
+                    </div>
+
+                    <div id="customFields" class="d-none">
+                        <div class="mb-3">
+                            <label asp-for="CustomTitle" class="form-label"></label>
+                            <input asp-for="CustomTitle" class="form-control" maxlength="60" />
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="CustomBody" class="form-label"></label>
+                            <textarea asp-for="CustomBody" class="form-control" rows="2" maxlength="200"></textarea>
+                        </div>
+                        <div class="row g-2 mb-3">
+                            <div class="col-sm-6">
+                                <label asp-for="CustomType" class="form-label"></label>
+                                <input asp-for="CustomType" class="form-control" maxlength="40" />
+                            </div>
+                            <div class="col-sm-6">
+                                <label asp-for="CustomScreen" class="form-label"></label>
+                                <input asp-for="CustomScreen" class="form-control" maxlength="40" placeholder="request_details, my_bookings ..." />
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="ExtraData" class="form-label"></label>
+                            <textarea asp-for="ExtraData" class="form-control" rows="2" placeholder="promo_code=EID25"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-sm-6">
+                            <label asp-for="BookingId" class="form-label"></label>
+                            <input asp-for="BookingId" class="form-control" type="number" min="1" placeholder="optional deep-link id" />
+                        </div>
+                        <div class="col-sm-6">
+                            <label asp-for="RequestId" class="form-label"></label>
+                            <input asp-for="RequestId" class="form-control" type="number" min="1" placeholder="optional deep-link id" />
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary" disabled="@(!Model.FirebaseConfigured)">
+                        <i class="fa-solid fa-paper-plane me-1"></i>Send test notification
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-5">
+        <div class="card hs-card">
+            <div class="card-body p-3">
+                <h6 class="mb-2">Registered devices <span class="text-muted small">(latest @Model.Devices.Count)</span></h6>
+                <input type="search" id="deviceFilter" class="form-control form-control-sm mb-2"
+                       placeholder="Filter by user id or name" />
+                <div class="table-responsive" style="max-height: 480px;">
+                    <table class="table table-sm align-middle mb-0">
+                        <thead><tr><th>#</th><th>User</th><th>Role</th><th>OS</th><th></th></tr></thead>
+                        <tbody>
+                        @foreach (var d in Model.Devices)
+                        {
+                            <tr data-search="@(d.UserId + " " + d.Name)">
+                                <td>@d.Id</td>
+                                <td>@d.UserId<div class="small text-muted">@d.Name</div></td>
+                                <td>@d.UserType</td>
+                                <td>@d.Platform</td>
+                                <td><button type="button" class="btn btn-outline-primary btn-sm use-device" data-token="@d.Id" data-role="@d.UserType">Use</button></td>
+                            </tr>
+                        }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        (function () {
+            const mode = document.getElementById('targetMode');
+            const eventKey = document.getElementById('eventKey');
+            const form = document.getElementById('testerForm');
+
+            function sync() {
+                document.querySelectorAll('[data-target]').forEach(el =>
+                    el.classList.toggle('d-none', !el.dataset.target.split(' ').includes(mode.value)));
+                const custom = eventKey.value === 'custom';
+                document.getElementById('customFields').classList.toggle('d-none', !custom);
+                document.getElementById('eventFields').classList.toggle('d-none', custom);
+            }
+            // Filter the device table and the device dropdown by user id or name. A bare number matches the
+            // user id exactly (76 must not also match 176); anything else is a name substring.
+            const filterBox = document.getElementById('deviceFilter');
+            const userIdBox = form.querySelector('[name="UserId"]');
+            function applyFilter(text) {
+                const q = text.trim().toLowerCase();
+                const matches = el => {
+                    if (!q) return true;
+                    const s = (el.dataset.search || '').toLowerCase();
+                    return /^\d+$/.test(q) ? s.split(' ')[0] === q : s.includes(q);
+                };
+                document.querySelectorAll('tr[data-search]').forEach(r => r.classList.toggle('d-none', !matches(r)));
+                document.querySelectorAll('select[name="TokenId"] option[data-search]').forEach(o => o.hidden = !matches(o));
+            }
+            filterBox.addEventListener('input', () => applyFilter(filterBox.value));
+            userIdBox.addEventListener('input', () => { filterBox.value = userIdBox.value; applyFilter(userIdBox.value); });
+            if (userIdBox.value) { filterBox.value = userIdBox.value; applyFilter(userIdBox.value); }
+
+            mode.addEventListener('change', sync);
+            eventKey.addEventListener('change', sync);
+            sync();
+
+            document.querySelectorAll('.use-device').forEach(btn => btn.addEventListener('click', () => {
+                mode.value = 'device';
+                form.querySelector('[name="TokenId"]').value = btn.dataset.token;
+                sync();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }));
+
+            form.addEventListener('submit', e => {
+                if (mode.value === 'role') {
+                    const role = form.querySelector('[name="Role"]').value;
+                    if (!confirm('This sends a real push to EVERY ' + role + ' device. Continue?')) e.preventDefault();
+                }
+            });
+        })();
+    </script>
+}

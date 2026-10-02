@@ -197,6 +197,19 @@ public class NotificationService : INotificationService
         }
 
         var tokens = await query.Select(t => t.DeviceToken).Distinct().ToListAsync(cancellationToken);
+        return await SendToDevicesAsync(tokens, title, body, dataPayload, cancellationToken);
+    }
+
+    public async Task<BroadcastResult> SendToDevicesAsync(IReadOnlyCollection<string> deviceTokens, string title,
+        string body, Dictionary<string, string>? dataPayload = null, CancellationToken cancellationToken = default)
+    {
+        if (FirebaseApp.DefaultInstance == null)
+        {
+            _logger.LogWarning("FCM is not configured (Firebase:ServiceAccountPath); send skipped.");
+            return new BroadcastResult(false, 0, 0, 0, 0);
+        }
+
+        var tokens = deviceTokens.Distinct().ToList();
         var data = BuildData(dataPayload);
         int sent = 0, failed = 0;
         var stale = new List<string>();
@@ -335,6 +348,7 @@ public class NotificationService : INotificationService
             }
         }
 
+        data.TryAdd("sent_at", DateTime.UtcNow.ToString("O"));
         data.TryAdd("click_action", DefaultClickAction);
         data.TryAdd("booking_id", string.Empty);
         data.TryAdd("screen", string.Empty);
@@ -349,7 +363,9 @@ public class NotificationService : INotificationService
         Priority = Priority.High,
         Notification = new AndroidNotification
         {
-            Sound = "default"
+            Sound = "default",
+            // Explicit event time (server UTC) so the banner's "2m ago" doesn't depend on the device's own stamp.
+            EventTimestamp = DateTime.UtcNow
         }
     };
 

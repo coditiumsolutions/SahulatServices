@@ -39,6 +39,10 @@ public interface INotificationService
     Task<BroadcastResult> SendBroadcastAsync(string? platform, string title, string body,
         Dictionary<string, string>? dataPayload = null, CancellationToken cancellationToken = default);
 
+    /// <summary>Push one message to an explicit set of device tokens (staff test tool). No inbox rows are written.</summary>
+    Task<BroadcastResult> SendToDevicesAsync(IReadOnlyCollection<string> deviceTokens, string title, string body,
+        Dictionary<string, string>? dataPayload = null, CancellationToken cancellationToken = default);
+
     Task<UserNotificationListDto> GetInboxAsync(int userId, string? userType, int page, int pageSize,
         CancellationToken cancellationToken = default);
 

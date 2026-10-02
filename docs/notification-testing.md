@@ -37,6 +37,15 @@ Flip it (if the app has not):  POST /api/notifications/register-token {userId, u
 The app re-registers on login and on a role switch ("switch to customer" in the app moved the row to Client).
 Check the row's `UserType` before each group of tests; do not print the token itself.
 
+### Push Tester page (on-demand sends)
+
+`/Admin/PushTester` (Setup menu, Admin / Super Admin) fires any booking notification without driving the whole flow:
+pick one user, one registered device, or every Client/Provider device, then a booking event (real template wording,
+with editable service/provider/reason text) or a fully custom title, message, type, screen and extra `key=value`
+data. "Deliver to any role" (on by default) ignores the token's role; untick it to test the real role filtering.
+"Also save to inbox" writes the inbox row too. Use it for quick banner, tap and wording checks; the matrix in section 5
+is still the way to test the real state transitions.
+
 ## 3. Baseline and cleanup
 
 Everything runs on the shared live database, so record counts first and delete only what the tests created.
@@ -122,6 +131,12 @@ the matching role at each step. Steps that notify the other role still write the
    `ServiceBookings` has no unique constraint on `RequestUID`, so a second booking row on the same request is allowed.
    Verified after the fix: a provider-cancelled request (booking Cancelled, request Initiated) opened the assign form and
    took a second booking alongside the cancelled one.
+
+4. **Banner showed "2032y" (backend, fixed).** The Android payload had no event time, so the device-derived stamp was
+   wrong (seen on a physical phone too). `BuildAndroid` now sets `EventTimestamp` to the server UTC time; the banner
+   reads "Now". Every push also carries `sent_at` (ISO UTC) in its data for any in-app timestamp.
+5. **Inbox `CreatedAt` had no `Z` (backend, fixed).** The value is UTC but was read back as Unspecified, so clients
+   parsed it as local time. `UserNotificationApiDto.CreatedAt` is now marked UTC.
 
 ## 7. Not covered
 
