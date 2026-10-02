@@ -40,6 +40,7 @@ task list.
 - **[create-configurations.sql](create-configurations.sql)** — created and seeded `Configurations`.
 - **[create-user-device-tokens.sql](create-user-device-tokens.sql)** — created `UserDeviceTokens` (FCM tokens, 2026-10-01).
 - **[create-user-notifications.sql](create-user-notifications.sql)** — created `UserNotifications` (in-app inbox, 2026-10-01).
+- **[seed-inbox-retention-config.sql](seed-inbox-retention-config.sql)** — seeded the `Inbox.RetentionDays` (90) and `Inbox.MaxPerRole` (200) rows in `Configurations` (applied 2026-10-02).
 
 ## Stale — do not run against the current database
 

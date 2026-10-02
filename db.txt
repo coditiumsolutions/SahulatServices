@@ -1,6 +1,6 @@
 ================================================================================
 SahulatGharTak Database Schema
-Version: 4.17 | Last Updated: 2026-10-01
+Version: 4.18 | Last Updated: 2026-10-02
 Database: SahulatAppDB
 Server: 34.131.41.192,1433
 
@@ -309,6 +309,10 @@ Table: Configurations
   ConfigValue      nvarchar(MAX)    NOT NULL  -- comma-separated multi-values
   CreatedOn        datetime         NOT NULL  DEFAULT (getutcdate())
   -- Example: ConfigKey=Cities, ConfigValue=Karachi, Islamabad, Faisalabad, Lahore, ...
+  -- In-app inbox limits (seeded by scripts/seed-inbox-retention-config.sql, edited in Admin > Configurations):
+  --   Inbox.RetentionDays = 90   (UserNotifications older than this are deleted; allowed 7-365)
+  --   Inbox.MaxPerRole    = 200  (newest rows kept per UserId + UserType; allowed 20-1000)
+  --   A missing/invalid row falls back to these defaults.
 
 --------------------------------------------------------------------------------
 Table: Staff

@@ -1,6 +1,6 @@
 ================================================================================
 SahulatGharTak API Reference
-Version: 3.30 | Last Updated: 2026-10-02
+Version: 3.31 | Last Updated: 2026-10-02
 Database: SahulatAppDB
 Local Base URL:    https://localhost:7265/api/
 Deployed Base URL:  https://sahulatghartak.com/api/
@@ -3137,6 +3137,10 @@ Auth: none currently (same note as register-token — will move to Bearer JWT wi
 Query: userId (required, login id), userType (optional Client|Provider — pass the role the app is
 currently in so a dual-role account sees only that role's inbox), page (default 1), pageSize
 (default 20, max 100). Newest first.
+Retention: the inbox is limited per user and role. Rows older than Inbox.RetentionDays (default 90) are
+deleted, and only the newest Inbox.MaxPerRole (default 200) are kept. Staff change both under Admin >
+Configurations. Pruning runs when a new notification is saved, so an old row can linger until that user's
+next notification; the app should not assume a fixed history length (totalCount/unreadCount can drop).
 
 Request Body: none
 

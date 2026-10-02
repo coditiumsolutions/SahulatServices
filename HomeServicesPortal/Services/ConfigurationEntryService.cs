@@ -128,6 +128,10 @@ public class ConfigurationEntryService : IConfigurationEntryService
         if (string.Equals(key, TimeFormatPreference.ConfigKey, StringComparison.OrdinalIgnoreCase))
             return (false, $"'{key}' is a reserved config key — use Configurations > Preferences instead.");
 
+        var inboxError = InboxRetention.Validate(key, value);
+        if (inboxError != null)
+            return (false, inboxError);
+
         var exists = await _db.Configurations
             .AnyAsync(c => c.ConfigKey == key, cancellationToken);
         if (exists)
@@ -162,6 +166,10 @@ public class ConfigurationEntryService : IConfigurationEntryService
             return (false, "Config value is required.");
         if (string.Equals(key, TimeFormatPreference.ConfigKey, StringComparison.OrdinalIgnoreCase))
             return (false, $"'{key}' is a reserved config key — use Configurations > Preferences instead.");
+
+        var inboxError = InboxRetention.Validate(key, value);
+        if (inboxError != null)
+            return (false, inboxError);
 
         var keyTaken = await _db.Configurations
             .AnyAsync(c => c.ConfigKey == key && c.Uid != model.Uid, cancellationToken);

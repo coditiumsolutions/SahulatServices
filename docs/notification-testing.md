@@ -16,8 +16,10 @@ findings: `docs/flutter-changes.md`.
 - Local API running (`https://localhost:7265`) with `Firebase:ServiceAccountPath` pointing at the service-account key
   (`HomeServicesPortal/secrets/`, git-ignored) and `Notifications:BookingPushEnabled = true`.
 - Android emulator with a **Google Play** system image, app installed and logged in, `POST_NOTIFICATIONS` allowed.
-  Test backgrounded banners with **Home** or screen lock. Do not swipe the app away: Android does not deliver FCM to a
-  force-stopped app. iOS cannot be tested on a simulator (needs a physical device and an APNs key).
+  Test backgrounded banners with **Home** or screen lock. Swiping the app away from recents (cold start) still receives
+  pushes; only a **Force stop** from Android settings blocks FCM until the app is opened again. Cold-start checks need
+  the app launched outside `flutter run` (or a physical device), since killing the run session drops the debugger.
+  iOS cannot be tested on a simulator (needs a physical device and an APNs key).
 - A test account that is both a client and a provider (here user 76 = Client 74 + Provider 35), so one device can play
   both roles. A second provider (here 64) is only needed for the "taken by another provider" test.
 - Admin portal login for the staff-only steps (assign, staff cancel). Credentials live in
@@ -115,6 +117,10 @@ row per recipient and that repeating an accept/start/complete adds none (idempot
 Accept and start notify the client only, and "new job" notifies the provider only, so the same flow needs the token on
 the matching role at each step. Steps that notify the other role still write their inbox row but show no banner.
 
+**Cold start (app swiped away from recents, 2026-10-02, physical Android device, sent from the Push Tester):** the push
+is delivered and the banner shows, and works correctly. Not separately confirmed: that tapping it from this state
+routes to the screen named in `screen` / `booking_id` (the Flutter agent's `getInitialMessage` handling).
+
 ## 6. Findings from this run
 
 1. **Tap did nothing (backend, fixed).** Android pushes carried `AndroidNotification.ClickAction =
@@ -131,12 +137,17 @@ the matching role at each step. Steps that notify the other role still write the
    `ServiceBookings` has no unique constraint on `RequestUID`, so a second booking row on the same request is allowed.
    Verified after the fix: a provider-cancelled request (booking Cancelled, request Initiated) opened the assign form and
    took a second booking alongside the cancelled one.
-
 4. **Banner showed "2032y" (backend, fixed).** The Android payload had no event time, so the device-derived stamp was
    wrong (seen on a physical phone too). `BuildAndroid` now sets `EventTimestamp` to the server UTC time; the banner
    reads "Now". Every push also carries `sent_at` (ISO UTC) in its data for any in-app timestamp.
 5. **Inbox `CreatedAt` had no `Z` (backend, fixed).** The value is UTC but was read back as Unspecified, so clients
    parsed it as local time. `UserNotificationApiDto.CreatedAt` is now marked UTC.
+
+6. **Inbox limits added (backend).** Per user and role, rows older than `Inbox.RetentionDays` (90) are deleted and
+   only the newest `Inbox.MaxPerRole` (200) are kept; both are editable under Admin > Configurations (validated 7-365
+   and 20-1000). Pruning runs after each new inbox row is saved. To check it, lower the values in Configurations,
+   send enough notifications to one user (Push Tester with "save to inbox" does not prune; real booking events do) and
+   confirm `UserNotifications` shrinks for that user and role only.
 
 ## 7. Not covered
 
@@ -146,5 +157,6 @@ the matching role at each step. Steps that notify the other role still write the
   (`GET /api/v1/app/config`: update prompt, forced update, `minimum_required_version`). Only the booking-lifecycle
   pushes were exercised on the emulator.
 - The admin "Push Broadcast" page (`/Admin/PushBroadcast`) sending to real devices.
-- Cold-start tap routing (`getInitialMessage`): the Flutter `run` session cannot be killed without losing the debugger.
+- Cold-start tap **routing** (`getInitialMessage`): cold-start delivery works (section 5), but the tap landing on the
+  right screen was not confirmed.
 - Scheduled reminders and payout notifications are not built.

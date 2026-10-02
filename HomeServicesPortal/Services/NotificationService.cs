@@ -178,6 +178,49 @@ public class NotificationService : INotificationService
         };
 
         await SendPushNotificationToUserAsync(userId, row.Title, row.Body, data, userType, cancellationToken);
+        await PruneInboxAsync(userId, userType, cancellationToken);
+    }
+
+    /// <summary>
+    /// Enforces the inbox limits (Configurations: Inbox.RetentionDays, Inbox.MaxPerRole) for one user and role.
+    /// Runs after each new row so there is no background job; failure is logged and never fails the notification.
+    /// </summary>
+    private async Task PruneInboxAsync(int userId, string userType, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var settings = await _db.Configurations.AsNoTracking()
+                .Where(c => c.ConfigKey == Helpers.InboxRetention.DaysKey || c.ConfigKey == Helpers.InboxRetention.MaxPerRoleKey)
+                .ToDictionaryAsync(c => c.ConfigKey, c => c.ConfigValue, StringComparer.OrdinalIgnoreCase, cancellationToken);
+
+            settings.TryGetValue(Helpers.InboxRetention.DaysKey, out var daysRaw);
+            settings.TryGetValue(Helpers.InboxRetention.MaxPerRoleKey, out var maxRaw);
+            var days = Helpers.InboxRetention.ParseOrDefault(daysRaw, Helpers.InboxRetention.DefaultDays,
+                Helpers.InboxRetention.MinDays, Helpers.InboxRetention.MaxDays);
+            var max = Helpers.InboxRetention.ParseOrDefault(maxRaw, Helpers.InboxRetention.DefaultMaxPerRole,
+                Helpers.InboxRetention.MinMaxPerRole, Helpers.InboxRetention.MaxMaxPerRole);
+
+            var cutoff = DateTime.UtcNow.AddDays(-days);
+            await _db.UserNotifications
+                .Where(n => n.UserId == userId && n.UserType == userType && n.CreatedAt < cutoff)
+                .ExecuteDeleteAsync(cancellationToken);
+
+            // Everything past the newest `max` rows. Pruned on every write, so this is a handful of ids at most.
+            var overflow = await _db.UserNotifications.AsNoTracking()
+                .Where(n => n.UserId == userId && n.UserType == userType)
+                .OrderByDescending(n => n.CreatedAt).ThenByDescending(n => n.Id)
+                .Skip(max)
+                .Select(n => n.Id)
+                .ToListAsync(cancellationToken);
+            if (overflow.Count > 0)
+            {
+                await _db.UserNotifications.Where(n => overflow.Contains(n.Id)).ExecuteDeleteAsync(cancellationToken);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Inbox pruning failed for user {UserId} ({UserType}).", userId, userType);
+        }
     }
 
     public async Task<BroadcastResult> SendBroadcastAsync(string? platform, string title, string body,
