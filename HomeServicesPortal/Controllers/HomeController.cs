@@ -10,16 +10,13 @@ namespace HomeServicesPortal.Controllers;
 public class HomeController : Controller
 {
     private readonly ILogger<HomeController> _logger;
-    private readonly IApkManagementService _apkManagementService;
     private readonly IAuthService _authService;
 
     public HomeController(
         ILogger<HomeController> logger,
-        IApkManagementService apkManagementService,
         IAuthService authService)
     {
         _logger = logger;
-        _apkManagementService = apkManagementService;
         _authService = authService;
     }
 
@@ -80,24 +77,7 @@ public class HomeController : Controller
 
     public IActionResult DownloadApp()
     {
-        return View(_apkManagementService.GetCurrentApk());
-    }
-
-    public IActionResult DownloadApkFile()
-    {
-        var current = _apkManagementService.GetCurrentApk();
-        if (current == null)
-        {
-            return NotFound();
-        }
-
-        var path = _apkManagementService.GetPhysicalPath(current.FileName);
-        if (path == null)
-        {
-            return NotFound();
-        }
-
-        return PhysicalFile(path, "application/vnd.android.package-archive", current.FileName);
+        return View();
     }
 
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]

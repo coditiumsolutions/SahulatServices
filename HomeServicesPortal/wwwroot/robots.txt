@@ -24,7 +24,6 @@ Disallow: /ServiceRequests
 Disallow: /ServiceTitles
 Disallow: /Services
 Disallow: /api/
-Disallow: /Home/DownloadApkFile
 Disallow: /Home/Error
 
 Sitemap: https://sahulatghartak.com/sitemap.xml
