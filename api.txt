@@ -1,6 +1,6 @@
 ================================================================================
 SahulatGharTak API Reference
-Version: 3.32 | Last Updated: 2026-10-02
+Version: 3.33 | Last Updated: 2026-10-02
 Database: SahulatAppDB
 Local Base URL:    https://localhost:7265/api/
 Deployed Base URL:  https://sahulatghartak.com/api/
@@ -3106,9 +3106,12 @@ empty string when not applicable):
   sent_at          server send time, ISO 8601 UTC (e.g. 2026-10-02T05:30:00.0000000Z). Show this (converted to
                    local time) if the app renders its own timestamp; do not use the device receive time.
   channel_id       Android notification channel the push belongs to (the app must create these channels):
-                     job_requests    type job_assigned (new job for a provider)
-                     booking_updates every other booking event (default)
-                     announcements   type app_update
+                     job_requests_v2    type job_assigned (new job for a provider)
+                     booking_updates_v2 every other booking event (default)
+                     announcements_v2   type app_update
+                   (v2 because a channel's sound is fixed once created; the app deletes the older silent
+                   job_requests / booking_updates / announcements. The app also tolerates the ids without
+                   the _v2 suffix in foreground banners, for compatibility only. Always send the _v2 ids.)
                    Sound and importance are channel settings on Android 8+, so the app chooses them when it
                    creates the channel. For a foreground (local) notification, show it on this channel.
 The Android banner also carries an explicit event time, so the system's "2m ago" label is the server time, and

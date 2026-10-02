@@ -17,67 +17,46 @@ Legend:
 
 ---
 
-## Notification appearance, channels and sounds (Available now, channels gated)
+## Notification appearance, channels and sounds - remaining verification
 
-Backend is done (api.txt v3.32, "Push payload contract"). The Flutter app needs the following. Items 1-3 are safe to
-ship at any time; the backend will not name the new Android channels until `Notifications:AndroidChannelsEnabled` is
-switched on (see the note at the end).
+Implemented in the app (2026-10-02): the `ic_notification` small icon and accent colour, the `job_requests` /
+`booking_updates` / `announcements` channels (now the `_v2` ids with sounds, see below, next to `high_importance_channel`), foreground banners that use
+`data['channel_id']`, show the title/body as received with `BigTextStyle`, and replace the earlier banner for the same
+booking or request, event times taken from `sent_at` / the inbox `createdAt` in local time, and a live,
+colour-coded inbox with clear unread styling. Still to confirm on a device:
+- The white house glyph looks right in the status bar and banner (it is a simplified drawing of the logo; swap
+  `ic_notification.png` in the five `drawable-*` folders if design wants a different mark).
+- Two pushes for the same booking leave one banner in the shade (foreground), and a leading emoji renders in both the
+  banner and the inbox.
+- Foreground banner time reads the event time, not the receive time.
+- Pushes land on the new `_v2` channels once `Notifications:AndroidChannelsEnabled` is on (use the Push Tester to force a
+  channel for one send first).
+- iOS: nothing to build (thread-id grouping and default sound are backend-side); confirm on a physical device.
 
-### 1. Small notification icon (the "app icon not showing" fix)
-Android draws the small status-bar/banner icon as a flat one-colour silhouette. With no icon set it falls back to the
-full-colour launcher icon, which turns into a blank or grey blob (seen on the emulator). Fix:
-- Add `ic_notification` as a **white glyph on a transparent background** (the Sahulat mark, simplified, no colour, no
-  gradient) to `android/app/src/main/res/drawable-mdpi` 24px, `-hdpi` 36px, `-xhdpi` 48px, `-xxhdpi` 72px,
-  `-xxxhdpi` 96px.
-- `android/app/src/main/res/values/colors.xml`: add `<color name="notification_accent">#003366</color>`.
-- `AndroidManifest.xml`, inside `<application>`, next to the existing channel-id meta-data:
-  `com.google.firebase.messaging.default_notification_icon` = `@drawable/ic_notification` and
-  `com.google.firebase.messaging.default_notification_color` = `@color/notification_accent`.
-- `push_notification_service.dart`: initialise `AndroidInitializationSettings('ic_notification')` instead of
-  `'@mipmap/launcher_icon'`, and pass `color: const Color(0xFF003366)` in the foreground `AndroidNotificationDetails`.
+### Sounds: bundled, needs device verification
+Implemented (2026-10-02): the three `.ogg` files are in `android/app/src/main/res/raw/`, the three `.wav` files are in
+`ios/Runner/` and registered in the Runner target (Copy Bundle Resources, edited in `project.pbxproj` by hand: open the
+project in Xcode once and confirm they show under Build Phases > Copy Bundle Resources). The source copies stay in
+`assets/notification-sounds/` (not a declared Flutter asset, so they are not bundled twice).
 
-### 2. Android channels (needed for sounds and for per-type importance)
-Sound and importance are channel settings on Android 8+, so they cannot vary per push. Create these in `init()`, next to
-the existing `high_importance_channel` (keep that one: it is the manifest default and the fallback):
+Channels now carry their sounds, under **new ids** because a channel's sound is fixed once it exists on a device:
+`job_requests_v2` (`job_request`), `booking_updates_v2` (`booking_update`), `announcements_v2` (`announcement`).
+`init()` deletes the earlier silent `job_requests` / `booking_updates` / `announcements`. The foreground banner accepts
+`data['channel_id']` with or without the `_v2` suffix, falling back to `booking_updates_v2`.
 
-| id | Name shown in system settings | Importance | Used for |
-|---|---|---|---|
-| `job_requests` | Job requests | `Importance.high` | new job for a provider |
-| `booking_updates` | Booking updates | `Importance.high` | accepted, started, completed, cancelled, reassigning |
-| `announcements` | Announcements | `Importance.defaultImportance` | app update broadcast |
-
-Each push carries `data['channel_id']` with one of those ids (api.txt). Do not set a custom sound yet (see item 6).
-
-### 3. Foreground notifications must match the background ones
-In `_onForegroundMessage`, when showing the local notification:
-- use the channel `data['channel_id']` (fall back to `booking_updates`);
-- show `notification.title` / `notification.body` exactly as received (titles can start with one emoji, which is
-  intended; do not strip it) with `BigTextStyle` so long bodies can expand;
-- use a **stable notification id** derived from the stacking key: `booking-{booking_id}` if `booking_id` is not empty,
-  else `request-{request_id}`, else a counter. A newer push for the same booking then replaces the earlier banner
-  instead of stacking, which is what the system does for background pushes (the backend sends the same key as the
-  Android tag and the iOS thread id);
-- keep `payload: jsonEncode(data)` so taps still route.
-
-### 4. Times shown inside the app
-Use `data['sent_at']` (ISO 8601 UTC) for any notification time you render, and the inbox `createdAt` (now sent with a
-`Z`, so it parses as UTC), converted to local time. Never use the time the device received the message.
-
-### 5. iOS
-Nothing visual to build: the backend sends a `thread-id` per booking (iOS groups the notifications) and the default
-sound. Custom sounds come later (item 6).
-
-### 6. Sounds: not yet, but prepared
-No sounds are chosen yet, so do nothing for sounds now. When the files exist, follow `docs/notification-sounds.md`
-(put the Android files in `res/raw/`, the iOS files in the Runner bundle, then give each channel a `sound`). Remember an
-Android channel's sound is fixed once it exists on a device: if a sound ever changes, create a new channel id.
+- **Backend owner:** the `NotificationChannels` constants and the Push Tester must send the `_v2` ids (without it,
+  background pushes naming the old ids fall onto a generic channel with no sound and no pop-up).
+- iOS foreground banners need no app code: the app does not draw local notifications on iOS, so the system plays the
+  sound named in the push itself.
+- **Verify:** each channel plays its own sound in foreground, background and cold start, and the three sound different.
+  Existing test devices keep the old silent channels until the new build runs once (they are deleted then).
 
 ### Rollout note (backend side, for the owner)
 `Notifications:AndroidChannelsEnabled` is **off**. If it were on before this build is installed, an older app build would
 receive pushes naming channels it does not have, and Android would drop them on a generic channel with no pop-up banner.
 Switch it on only after this build is live, accepting that anyone still on an older build loses the pop-up until they
 update (or after the version gate has forced the update). Until then pushes arrive on `high_importance_channel` exactly
-as today. The Push Tester page can force a channel for one test send to try the new build first.
+as today.
 
 ---
 

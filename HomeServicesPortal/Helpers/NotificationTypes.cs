@@ -24,13 +24,13 @@ public static class NotificationScreens
 
 /// <summary>
 /// Android notification channel ids. The app creates these channels (sound and importance are channel settings on
-/// Android 8+, so the backend can only say which channel a push belongs to). Part of the app contract, see api.txt.
+/// Android 8+, so the backend can only say which channel a push belongs to). Part of the app contract, see api.txt. The _v2 ids exist because an Android channel's sound is fixed once created, so the sound-carrying channels got new ids.
 /// </summary>
 public static class NotificationChannels
 {
-    public const string JobRequests = "job_requests";
-    public const string BookingUpdates = "booking_updates";
-    public const string Announcements = "announcements";
+    public const string JobRequests = "job_requests_v2";
+    public const string BookingUpdates = "booking_updates_v2";
+    public const string Announcements = "announcements_v2";
 
     public static string For(string? type) => type switch
     {

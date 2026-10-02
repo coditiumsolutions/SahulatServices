@@ -4,9 +4,20 @@ status: current
 
 # Notification sounds: spec and how to add them
 
-Status: **no custom sounds yet.** Pushes use the device's default sound. The backend and the app are prepared so adding
-sounds later is a file drop plus a few lines (below). Do not ship this half-done: sounds only work when the files are in
-the app build **and** the names are set on the backend.
+Status: **sounds chosen (Pixabay) and named on the backend** (`NotificationSounds.cs`). The files are **not stored in this repo**: they
+are bundled in the Flutter app (`res/raw/*.ogg` for Android, `ios/Runner/*.wav` for iOS) as `job_request`,
+`booking_update` and `announcement`. The backend only sends their names. They only play once the Flutter build
+contains them and the channels are created with a `sound` (see `docs/flutter-changes.md`). Builds without the files
+fall back to the device default sound.
+
+Sources (all Pixabay Sound Effects, pixabay.com/sound-effects, Pixabay Content License; re-check the licence before
+release):
+
+| Sound | Channel | Pixabay file |
+|---|---|---|
+| `job_request` | `job_requests_v2` | universfield, "new-notification-033" (id 480571) |
+| `booking_update` | `booking_updates_v2` | universfield, "new-notification-018" (id 363746) |
+| `announcement` | `announcements_v2` | soundshelfstudio, "ui-chime-confirm" (id 567486) |
 
 ## 1. Sounds to pick
 
@@ -14,9 +25,9 @@ One per channel. Each is a short, single clean sound (a chime or soft "ding"), n
 
 | Channel (`channel_id`) | Used for | What to look for | Length |
 |---|---|---|---|
-| `job_requests` | New job for a provider (`job_assigned`) | The most attention-grabbing of the three: a bright double chime or a short two-note "ding-dong". Providers need to notice it when the phone is in a pocket. | 1.5 to 3 s |
-| `booking_updates` | Accepted, started, completed, cancelled, reassigning | A soft, pleasant single pop or chime. Heard often, so gentle. | 0.5 to 1.5 s |
-| `announcements` | App update / staff broadcast | Calm and neutral, quieter than the other two. | 0.5 to 1.5 s |
+| `job_requests_v2` | New job for a provider (`job_assigned`) | The most attention-grabbing of the three: a bright double chime or a short two-note "ding-dong". Providers need to notice it when the phone is in a pocket. | 1.5 to 3 s |
+| `booking_updates_v2` | Accepted, started, completed, cancelled, reassigning | A soft, pleasant single pop or chime. Heard often, so gentle. | 0.5 to 1.5 s |
+| `announcements_v2` | App update / staff broadcast | Calm and neutral, quieter than the other two. | 0.5 to 1.5 s |
 
 Quality checklist: starts immediately (no silent lead-in), no long reverb tail, not clipped at the end, peak level
 around -3 dB (not distorted, not whisper quiet), no vocals or music that gets annoying, and the three are clearly
@@ -51,8 +62,9 @@ Suggested names: `job_request`, `booking_update`, `announcement` (same base name
 
 1. **Flutter** (steps are in `docs/flutter-changes.md`, section "Notification appearance, channels and sounds"):
    put the files in `res/raw/` and the iOS bundle, and create the channels with a `sound`. Android channel sound is fixed
-   once a channel exists on a device, so use new channel ids if you ever change a sound (for example `job_requests_v2`).
+   once a channel exists on a device, so a changed sound needs new channel ids. The current ids are already the `_v2` ones (the first channels had no sound).
+   The app also accepts the ids without `_v2` in foreground banners, for compatibility only; the backend sends `_v2`.
 2. **Backend:** set the names in `HomeServicesPortal/Services/NotificationSounds.cs`
-   (`job_request` for Android, `job_request.caf` for iOS, and so on for each channel). Nothing else changes.
+   (done: `job_request` for Android, `job_request.wav` for iOS, and so on for each channel). The Android name only matters on Android 7 and older; on 8+ the channel plays its own sound.
 3. Test each channel with `/Admin/PushTester` using "Send on the type's Android channel" on a build that has the files.
 4. Make sure `Notifications:AndroidChannelsEnabled` is on in production once that build is live.
