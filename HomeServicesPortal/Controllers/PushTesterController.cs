@@ -3,10 +3,12 @@ using HomeServicesPortal.Data;
 using HomeServicesPortal.Entities;
 using HomeServicesPortal.Helpers;
 using HomeServicesPortal.Models.ViewModels;
+using HomeServicesPortal.Options;
 using HomeServicesPortal.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace HomeServicesPortal.Controllers;
 
@@ -23,12 +25,15 @@ public class PushTesterController : Controller
     private readonly INotificationService _notifications;
     private readonly AppDbContext _db;
     private readonly ILogger<PushTesterController> _logger;
+    private readonly IOptionsMonitor<NotificationOptions> _channelsSetting;
 
-    public PushTesterController(INotificationService notifications, AppDbContext db, ILogger<PushTesterController> logger)
+    public PushTesterController(INotificationService notifications, AppDbContext db, ILogger<PushTesterController> logger,
+        IOptionsMonitor<NotificationOptions> channelsSetting)
     {
         _notifications = notifications;
         _db = db;
         _logger = logger;
+        _channelsSetting = channelsSetting;
     }
 
     [HttpGet("/Admin/PushTester")]
@@ -155,7 +160,10 @@ public class PushTesterController : Controller
             inboxSaved = true;
         }
 
-        var result = await _notifications.SendToDevicesAsync(tokens, title, body, data, cancellationToken);
+        // Unticked = follow Notifications:AndroidChannelsEnabled; ticked = force the channel for this send, to try
+        // a new app build's channels before the setting is switched on for everyone.
+        var result = await _notifications.SendToDevicesAsync(
+            tokens, title, body, data, model.UseAndroidChannel ? true : null, cancellationToken);
 
         _logger.LogInformation(
             "Push tester by {User}: mode={Mode}, type={Type}, role={Role}, recipients={Recipients}, sent={Sent}, failed={Failed}, inbox={Inbox}.",
@@ -170,6 +178,8 @@ public class PushTesterController : Controller
         model.Result = new PushTesterResult
         {
             Title = title, Body = body, Type = type, Screen = screen,
+            ChannelId = NotificationChannels.For(type),
+            ChannelSent = model.UseAndroidChannel || _channelsSetting.CurrentValue.AndroidChannelsEnabled,
             Recipients = result.Recipients, Sent = result.Sent, Failed = result.Failed,
             RemovedStale = result.RemovedStale, InboxSaved = inboxSaved
         };

@@ -10,4 +10,12 @@ public class NotificationOptions
     /// admin broadcast or the app-config version check.
     /// </summary>
     public bool BookingPushEnabled { get; set; } = true;
+
+    /// <summary>
+    /// When true, Android pushes name a notification channel (job_requests / booking_updates / announcements).
+    /// Keep false until an app build that creates those channels is live: Android sends a push naming an
+    /// unknown channel to the generic fallback channel (no heads-up banner), which would downgrade the
+    /// currently published builds. Read through IOptionsMonitor, so it flips without a restart.
+    /// </summary>
+    public bool AndroidChannelsEnabled { get; set; } = false;
 }

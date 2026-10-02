@@ -2,8 +2,11 @@ using FirebaseAdmin;
 using FirebaseAdmin.Messaging;
 using HomeServicesPortal.Data;
 using HomeServicesPortal.Entities;
+using HomeServicesPortal.Helpers;
 using HomeServicesPortal.Models.Api;
+using HomeServicesPortal.Options;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace HomeServicesPortal.Services;
 
@@ -12,13 +15,19 @@ public class NotificationService : INotificationService
     private const string DefaultClickAction = "FLUTTER_NOTIFICATION_CLICK";
     private const int MulticastBatchSize = 500; // FCM limit per multicast call.
 
+    // Brand navy (--hs-navy): tints the small icon and the app-name line of the Android notification.
+    private const string AccentColor = "#003366";
+
     private readonly AppDbContext _db;
     private readonly ILogger<NotificationService> _logger;
+    private readonly IOptionsMonitor<NotificationOptions> _options;
 
-    public NotificationService(AppDbContext db, ILogger<NotificationService> logger)
+    public NotificationService(AppDbContext db, ILogger<NotificationService> logger,
+        IOptionsMonitor<NotificationOptions> options)
     {
         _db = db;
         _logger = logger;
+        _options = options;
     }
 
     // ---- device tokens ------------------------------------------------------------------------
@@ -94,6 +103,7 @@ public class NotificationService : INotificationService
         }
 
         var data = BuildData(dataPayload);
+        var channelsEnabled = _options.CurrentValue.AndroidChannelsEnabled;
 
         // Message.Token is flagged obsolete in favour of Fid (Firebase Installation ID), but the Flutter
         // app registers FCM registration tokens (getToken()), which is exactly what Token carries.
@@ -103,8 +113,8 @@ public class NotificationService : INotificationService
             Token = deviceToken,
             Notification = new Notification { Title = title, Body = body },
             Data = data,
-            Android = BuildAndroid(),
-            Apns = BuildApns()
+            Android = BuildAndroid(data, channelsEnabled),
+            Apns = BuildApns(data)
         };
 #pragma warning restore CS0618
 
@@ -240,11 +250,12 @@ public class NotificationService : INotificationService
         }
 
         var tokens = await query.Select(t => t.DeviceToken).Distinct().ToListAsync(cancellationToken);
-        return await SendToDevicesAsync(tokens, title, body, dataPayload, cancellationToken);
+        return await SendToDevicesAsync(tokens, title, body, dataPayload, null, cancellationToken);
     }
 
     public async Task<BroadcastResult> SendToDevicesAsync(IReadOnlyCollection<string> deviceTokens, string title,
-        string body, Dictionary<string, string>? dataPayload = null, CancellationToken cancellationToken = default)
+        string body, Dictionary<string, string>? dataPayload = null, bool? androidChannels = null,
+        CancellationToken cancellationToken = default)
     {
         if (FirebaseApp.DefaultInstance == null)
         {
@@ -254,6 +265,7 @@ public class NotificationService : INotificationService
 
         var tokens = deviceTokens.Distinct().ToList();
         var data = BuildData(dataPayload);
+        var channelsEnabled = androidChannels ?? _options.CurrentValue.AndroidChannelsEnabled;
         int sent = 0, failed = 0;
         var stale = new List<string>();
 
@@ -267,8 +279,8 @@ public class NotificationService : INotificationService
                 Tokens = batch,
                 Notification = new Notification { Title = title, Body = body },
                 Data = data,
-                Android = BuildAndroid(),
-                Apns = BuildApns()
+                Android = BuildAndroid(data, channelsEnabled),
+                Apns = BuildApns(data)
             };
 #pragma warning restore CS0618
 
@@ -392,6 +404,7 @@ public class NotificationService : INotificationService
         }
 
         data.TryAdd("sent_at", DateTime.UtcNow.ToString("O"));
+        data.TryAdd("channel_id", NotificationChannels.For(data.GetValueOrDefault("type")));
         data.TryAdd("click_action", DefaultClickAction);
         data.TryAdd("booking_id", string.Empty);
         data.TryAdd("screen", string.Empty);
@@ -401,26 +414,52 @@ public class NotificationService : INotificationService
     // No AndroidNotification.ClickAction on purpose: a click action makes Android launch an intent with that
     // action name, and the app has no activity filtering for it, so the tap would do nothing. Without it a tap
     // opens the launcher activity and Flutter's onMessageOpenedApp / getInitialMessage receive the data payload.
-    private static AndroidConfig BuildAndroid() => new()
+    private static AndroidConfig BuildAndroid(Dictionary<string, string> data, bool channelsEnabled)
     {
-        Priority = Priority.High,
-        Notification = new AndroidNotification
+        var channelId = data.GetValueOrDefault("channel_id") ?? NotificationChannels.BookingUpdates;
+        var notification = new AndroidNotification
         {
-            Sound = "default",
+            Sound = NotificationSounds.Android(channelId) ?? "default",
+            Color = AccentColor,
+            // Same tag: a newer push for the same booking/request replaces the old banner instead of stacking.
+            Tag = ThreadKey(data),
             // Explicit event time (server UTC) so the banner's "2m ago" doesn't depend on the device's own stamp.
             EventTimestamp = DateTime.UtcNow
-        }
-    };
+        };
 
-    private static ApnsConfig BuildApns() => new()
+        // Only name a channel once an app build that creates it is live (NotificationOptions.AndroidChannelsEnabled):
+        // an unknown channel id sends the push to Android's generic fallback channel and loses the heads-up banner.
+        if (channelsEnabled)
+        {
+            notification.ChannelId = channelId;
+        }
+
+        return new AndroidConfig { Priority = Priority.High, Notification = notification };
+    }
+
+    private static ApnsConfig BuildApns(Dictionary<string, string> data) => new()
     {
         Headers = new Dictionary<string, string>
         {
             ["apns-priority"] = "10",
             ["apns-push-type"] = "alert"
         },
-        Aps = new Aps { Sound = "default" }
+        Aps = new Aps
+        {
+            Sound = NotificationSounds.Ios(data.GetValueOrDefault("channel_id") ?? NotificationChannels.BookingUpdates)
+                ?? "default",
+            // Groups a booking's notifications together in the iOS notification centre.
+            ThreadId = ThreadKey(data)
+        }
     };
+
+    /// <summary>"booking-{id}" / "request-{id}" so updates for one job stack and replace together; null for broadcasts.</summary>
+    private static string? ThreadKey(Dictionary<string, string> data)
+    {
+        if (data.TryGetValue("booking_id", out var booking) && !string.IsNullOrEmpty(booking)) return $"booking-{booking}";
+        if (data.TryGetValue("request_id", out var request) && !string.IsNullOrEmpty(request)) return $"request-{request}";
+        return null;
+    }
 
     private static string Truncate(string value, int max) =>
         value.Length <= max ? value : value[..(max - 1)] + "…";

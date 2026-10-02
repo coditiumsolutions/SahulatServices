@@ -149,6 +149,13 @@ routes to the screen named in `screen` / `booking_id` (the Flutter agent's `getI
    send enough notifications to one user (Push Tester with "save to inbox" does not prune; real booking events do) and
    confirm `UserNotifications` shrinks for that user and role only.
 
+7. **Appearance changes (backend, built, not yet tested on a device).** Titles/bodies reworded (one emoji only on new
+   job, accepted, cancelled, completed), Android accent colour, a per-booking tag so a newer push replaces the earlier
+   banner (iOS: thread id), and `channel_id` in the data payload. Android channels (`job_requests`, `booking_updates`,
+   `announcements`) are only named in the push when `Notifications:AndroidChannelsEnabled` is on (default off), because
+   an app build without those channels would drop the pop-up banner. Test with the Push Tester's "Send on the type's
+   Android channel" box on a build that creates them. Sounds are prepared but not chosen: `docs/notification-sounds.md`.
+
 ## 7. Not covered
 
 - Real delivery on iOS (needs a physical device, APNs key uploaded to Firebase).

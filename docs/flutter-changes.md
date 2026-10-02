@@ -4,7 +4,7 @@ status: current
 
 # Flutter App Changes Tracker
 
-Running checklist of backend changes that the Flutter app needs to adopt to complete a feature's integration, or that are being deliberately held back as breaking changes pending approval. Updated incrementally as each backend feature lands — **`api.txt` (repo root, currently v3.29) is the exact, authoritative request/response contract of every endpoint referenced below**; read the cited `api.txt` section before implementing, since this file only summarizes.
+Running checklist of backend changes that the Flutter app needs to adopt to complete a feature's integration, or that are being deliberately held back as breaking changes pending approval. Updated incrementally as each backend feature lands — **`api.txt` (repo root, currently v3.32) is the exact, authoritative request/response contract of every endpoint referenced below**; read the cited `api.txt` section before implementing, since this file only summarizes.
 
 Sections are removed once the Flutter app has fully adopted them — this file tracks *pending/active* work, not a history of everything ever shipped. Completed feature history lives in git log and `api.txt`'s own version notes, not here.
 
@@ -17,91 +17,88 @@ Legend:
 
 ---
 
-## Available now
+## Notification appearance, channels and sounds (Available now, channels gated)
 
-### Push notifications, notification inbox and app version check
+Backend is done (api.txt v3.32, "Push payload contract"). The Flutter app needs the following. Items 1-3 are safe to
+ship at any time; the backend will not name the new Android channels until `Notifications:AndroidChannelsEnabled` is
+switched on (see the note at the end).
 
-Backend status: **built and tested locally; deployed once the server release is pushed.** The exact contract is
-`api.txt` v3.29, section "PUSH NOTIFICATIONS (FCM) & APP VERSION CHECK" (payload keys, event table, inbox
-endpoints) - read it before implementing; this list is the to-do.
+### 1. Small notification icon (the "app icon not showing" fix)
+Android draws the small status-bar/banner icon as a flat one-colour silhouette. With no icon set it falls back to the
+full-colour launcher icon, which turns into a blank or grey blob (seen on the emulator). Fix:
+- Add `ic_notification` as a **white glyph on a transparent background** (the Sahulat mark, simplified, no colour, no
+  gradient) to `android/app/src/main/res/drawable-mdpi` 24px, `-hdpi` 36px, `-xhdpi` 48px, `-xxhdpi` 72px,
+  `-xxxhdpi` 96px.
+- `android/app/src/main/res/values/colors.xml`: add `<color name="notification_accent">#003366</color>`.
+- `AndroidManifest.xml`, inside `<application>`, next to the existing channel-id meta-data:
+  `com.google.firebase.messaging.default_notification_icon` = `@drawable/ic_notification` and
+  `com.google.firebase.messaging.default_notification_color` = `@color/notification_accent`.
+- `push_notification_service.dart`: initialise `AndroidInitializationSettings('ic_notification')` instead of
+  `'@mipmap/launcher_icon'`, and pass `color: const Color(0xFF003366)` in the foreground `AndroidNotificationDetails`.
 
-**1. Firebase setup (both apps / flavors)**
-- Add `firebase_core` + `firebase_messaging`. Firebase project: `sahulatghartak-ef6ed`.
-- Android package `com.coditiumsols.sahulatghartak`: add `google-services.json` (Firebase console -> Project settings).
-  Android 13+ needs the runtime `POST_NOTIFICATIONS` permission (request it, e.g. after login).
-- iOS bundle `com.coditiumsols.sahulatghartak.ios`: add `GoogleService-Info.plist`, enable Push Notifications +
-  Background Modes (remote notifications) capabilities, and upload an APNs auth key in the Firebase console
-  (needed before any iOS push can arrive). iOS is only testable on a physical device; test Android on an emulator
-  with a Google Play system image.
-- Do **not** add Firebase Analytics / Crashlytics / other Firebase SDKs without telling the backend owner: the
-  privacy policy says the app uses FCM only (no analytics SDKs).
+### 2. Android channels (needed for sounds and for per-type importance)
+Sound and importance are channel settings on Android 8+, so they cannot vary per push. Create these in `init()`, next to
+the existing `high_importance_channel` (keep that one: it is the manifest default and the fallback):
 
-**2. Register / unregister the device token** (no auth header needed yet)
-- After a successful login, and again on every `FirebaseMessaging.instance.onTokenRefresh`:
-  `POST /api/notifications/register-token` `{ userId, userType, deviceToken, platform }` where `userId` is
-  `LoginResponse.userId`, `userType` is `"Client"` or `"Provider"` (the role the app is currently in), `deviceToken`
-  is `FirebaseMessaging.instance.getToken()`, `platform` is `"android"` or `"ios"`. Idempotent; safe to call every
-  launch. If the user switches role in a dual-role account, register again for the new role.
-- On logout: `POST /api/notifications/unregister-token` `{ deviceToken }` (before clearing the session) so the next
-  person on the phone does not receive this user's pushes.
+| id | Name shown in system settings | Importance | Used for |
+|---|---|---|---|
+| `job_requests` | Job requests | `Importance.high` | new job for a provider |
+| `booking_updates` | Booking updates | `Importance.high` | accepted, started, completed, cancelled, reassigning |
+| `announcements` | Announcements | `Importance.defaultImportance` | app update broadcast |
 
-**3. Handle incoming pushes**
-- Foreground: `FirebaseMessaging.onMessage` does not show a banner by itself - show an in-app banner / local
-  notification, and refresh the inbox badge.
-- Background / terminated: the OS shows the notification. Handle taps with `FirebaseMessaging.onMessageOpenedApp`
-  and `FirebaseMessaging.instance.getInitialMessage()` (app launched from a notification).
-- Routing: read `message.data['screen']` and ids `booking_id` / `request_id` (strings, may be empty). Please map these
-  proposed values to the real routes (tell the backend owner if a name should change):
-  | `screen` | Who gets it | Suggested destination |
-  |---|---|---|
-  | `request_details` | client | the request/booking details screen for `request_id` (show progress) |
-  | `provider_job_requests` | provider | the incoming job requests list (highlight `booking_id`) |
-  | `my_bookings` | provider | "my bookings" (open `booking_id`) |
-  | `app_update` | everyone | the update prompt / open the store link from `/api/v1/app/config` |
-- Notification `type` values: `job_assigned`, `booking_accepted`, `job_unavailable`, `provider_reassigning`,
-  `booking_cancelled`, `job_started`, `job_completed`, `app_update`. A `job_unavailable` or `provider_reassigning`
-  push means the lists should be refreshed (a request can go back to "Requested").
-- Register a top-level `FirebaseMessaging.onBackgroundMessage` handler (data processing only).
+Each push carries `data['channel_id']` with one of those ids (api.txt). Do not set a custom sound yet (see item 6).
 
-**4. Notification inbox screen** (the backend keeps a copy of every booking push)
-- `GET /api/notifications?userId=&userType=&page=&pageSize=` (newest first; pass the current role as `userType`).
-- Badge: `GET /api/notifications/unread-count?userId=&userType=` on launch / resume / after each push.
-- Tap an item: `POST /api/notifications/{id}/read` `{ userId }`, then route using the item's `screen` + `bookingUid` /
-  `requestUid`. "Mark all read": `POST /api/notifications/read-all` `{ userId, userType }`.
-- Timestamps are UTC with a `Z` suffix - convert to local time like the other endpoints.
+### 3. Foreground notifications must match the background ones
+In `_onForegroundMessage`, when showing the local notification:
+- use the channel `data['channel_id']` (fall back to `booking_updates`);
+- show `notification.title` / `notification.body` exactly as received (titles can start with one emoji, which is
+  intended; do not strip it) with `BigTextStyle` so long bodies can expand;
+- use a **stable notification id** derived from the stacking key: `booking-{booking_id}` if `booking_id` is not empty,
+  else `request-{request_id}`, else a counter. A newer push for the same booking then replaces the earlier banner
+  instead of stacking, which is what the system does for background pushes (the backend sends the same key as the
+  Android tag and the iOS thread id);
+- keep `payload: jsonEncode(data)` so taps still route.
 
-**5. Version enforcement at app start**
-- `GET /api/v1/app/config?platform=android|ios` (bare snake_case JSON, **not** the `ApiResponse` envelope; no auth).
-  If installed version < `minimum_required_version` -> block the app with a non-dismissable update screen; else if
-  `force_update` is true and installed < `latest_version` -> same; else if installed < `latest_version` -> dismissable
-  prompt. Open `store_url` to update. Compare versions numerically per segment (1.0.10 > 1.0.9). Fail open (let the
-  app run) if the call fails.
+### 4. Times shown inside the app
+Use `data['sent_at']` (ISO 8601 UTC) for any notification time you render, and the inbox `createdAt` (now sent with a
+`Z`, so it parses as UTC), converted to local time. Never use the time the device received the message.
 
-**Notes**
-- The backend sends pushes only for: new job (provider), accepted (client), job taken by another provider (provider),
-  finding another provider (client), cancelled (client/provider), job started (client), job completed (client +
-  provider), and staff broadcasts. Scheduled reminders and payout notifications are not built yet.
-- Endpoints are anonymous for now (identity in the body/query) like the rest of the API; they will move to Bearer JWT
-  later - see `docs/auth-gap-report.md` finding 9. Keep the `userId` handling in one place so the header is easy to add.
+### 5. iOS
+Nothing visual to build: the backend sends a `thread-id` per booking (iOS groups the notifications) and the default
+sound. Custom sounds come later (item 6).
+
+### 6. Sounds: not yet, but prepared
+No sounds are chosen yet, so do nothing for sounds now. When the files exist, follow `docs/notification-sounds.md`
+(put the Android files in `res/raw/`, the iOS files in the Runner bundle, then give each channel a `sound`). Remember an
+Android channel's sound is fixed once it exists on a device: if a sound ever changes, create a new channel id.
+
+### Rollout note (backend side, for the owner)
+`Notifications:AndroidChannelsEnabled` is **off**. If it were on before this build is installed, an older app build would
+receive pushes naming channels it does not have, and Android would drop them on a generic channel with no pop-up banner.
+Switch it on only after this build is live, accepting that anyone still on an older build loses the pop-up until they
+update (or after the version gate has forced the update). Until then pushes arrive on `high_importance_channel` exactly
+as today. The Push Tester page can force a channel for one test send to try the new build first.
 
 ---
 
 ## Testing findings
 
-Issues found while testing the notification system end to end on the Android emulator (2026-10-01). Things the Flutter app must fix or confirm.
+Issues found while testing the notification system end to end (2026-10-01 and 2026-10-02). Things the Flutter app must
+fix or confirm.
 
 ### 1. Role switch re-registers the device token (RESOLVED - no Flutter change needed)
 The first test appeared to show the token staying on the old role after "switch to customer". It was a backend bug,
-not a Flutter gap: egister-token rejected userType = "Client" for upgraded (dual-role) accounts with 400
-"Unknown or inactive user". Fixed in the backend (needs the next deploy). Re-tested against the fixed backend: the app
-calls egister-token on the role switch and the token row moved from Provider to Client. Keep this behaviour (also
-re-register on login and on onTokenRefresh, always with the role the app is currently in).
+not a Flutter gap: register-token rejected userType = "Client" for upgraded (dual-role) accounts with 400
+"Unknown or inactive user". Fixed in the backend. Re-tested against the fixed backend: the app calls register-token on
+the role switch and the token row moved from Provider to Client. Keep this behaviour (also re-register on login and on
+onTokenRefresh, always with the role the app is currently in).
 
 ### 2. Notification tap routing (to confirm)
-- Tapping a banner now opens the app (backend fix: pushes no longer carry an Android click action, so no manifest
-  intent filter is needed). Not yet verified: that the app routes using data['screen'], ooking_id and equest_id
-  via onMessageOpenedApp (app in background) and getInitialMessage() (cold start). See step 3 above.
+- Tapping a banner opens the app (backend fix: pushes no longer carry an Android click action, so no manifest intent
+  filter is needed), including when the app was swiped away (cold start delivery works).
+- Not yet verified: that the app routes using data['screen'], booking_id and request_id via onMessageOpenedApp (app
+  in background) and getInitialMessage() (cold start).
 
-### Verified working (backend to emulator, Provider role)
-New job, "job taken by another provider", booking cancelled and job completed banners all arrive, and tapping them
-opens the app.
+### Verified working
+Provider and client booking pushes arrive and tapping them opens the app. The banner time now reads "Now" (the backend
+sets an explicit event time).

@@ -31,7 +31,8 @@
         <div class="fw-semibold mb-1"><i class="fa-solid fa-paper-plane me-2"></i>@r.Title</div>
         <div>@r.Body</div>
         <div class="small text-muted mt-1">
-            type <code>@r.Type</code>, screen <code>@(string.IsNullOrEmpty(r.Screen) ? "(none)" : r.Screen)</code> &middot;
+            type <code>@r.Type</code>, screen <code>@(string.IsNullOrEmpty(r.Screen) ? "(none)" : r.Screen)</code>,
+            channel <code>@r.ChannelId</code> (@(r.ChannelSent ? "sent to Android" : "not sent, app default channel")) &middot;
             @r.Recipients device(s): <strong>@r.Sent</strong> delivered to FCM, @r.Failed failed@(r.RemovedStale > 0 ? $", {r.RemovedStale} expired token(s) removed" : "")
             @(r.InboxSaved ? "· saved to inbox" : "")
         </div>
@@ -90,9 +91,14 @@
                         <label asp-for="IgnoreRole" class="form-check-label"></label>
                         <div class="form-text">Untick to test the real behaviour: a token registered under the other role gets no banner.</div>
                     </div>
-                    <div class="form-check mb-3" data-target="user device">
+                    <div class="form-check mb-1" data-target="user device">
                         <input asp-for="SaveToInbox" class="form-check-input" />
                         <label asp-for="SaveToInbox" class="form-check-label"></label>
+                    </div>
+                    <div class="form-check mb-3">
+                        <input asp-for="UseAndroidChannel" class="form-check-input" />
+                        <label asp-for="UseAndroidChannel" class="form-check-label"></label>
+                        <div class="form-text">Job requests, booking updates or announcements. Needs an app build that creates those channels; on older builds the banner may arrive silently or without a pop-up. Leave off unless testing the new build.</div>
                     </div>
 
                     <h6 class="text-uppercase text-muted small mt-4">2. What</h6>

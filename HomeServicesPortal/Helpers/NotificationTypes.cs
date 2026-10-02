@@ -21,3 +21,21 @@ public static class NotificationScreens
     public const string MyBookings = "my_bookings";
     public const string AppUpdate = "app_update";
 }
+
+/// <summary>
+/// Android notification channel ids. The app creates these channels (sound and importance are channel settings on
+/// Android 8+, so the backend can only say which channel a push belongs to). Part of the app contract, see api.txt.
+/// </summary>
+public static class NotificationChannels
+{
+    public const string JobRequests = "job_requests";
+    public const string BookingUpdates = "booking_updates";
+    public const string Announcements = "announcements";
+
+    public static string For(string? type) => type switch
+    {
+        NotificationTypes.JobAssigned => JobRequests,
+        NotificationTypes.AppUpdate => Announcements,
+        _ => BookingUpdates
+    };
+}

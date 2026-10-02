@@ -64,6 +64,9 @@ public class PushTesterFormVm
     [Display(Name = "Also save to the user's in-app inbox")]
     public bool SaveToInbox { get; set; }
 
+    [Display(Name = "Send on the type's Android channel")]
+    public bool UseAndroidChannel { get; set; }
+
     public bool FirebaseConfigured { get; set; }
 
     public List<PushTesterDeviceRow> Devices { get; set; } = new();
@@ -88,6 +91,8 @@ public class PushTesterResult
     public string Body { get; set; } = string.Empty;
     public string Type { get; set; } = string.Empty;
     public string Screen { get; set; } = string.Empty;
+    public string ChannelId { get; set; } = string.Empty;
+    public bool ChannelSent { get; set; }
     public int Recipients { get; set; }
     public int Sent { get; set; }
     public int Failed { get; set; }
