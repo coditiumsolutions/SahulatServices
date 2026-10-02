@@ -4,7 +4,7 @@ status: current
 
 # Flutter App Changes Tracker
 
-Running checklist of backend changes that the Flutter app needs to adopt to complete a feature's integration, or that are being deliberately held back as breaking changes pending approval. Updated incrementally as each backend feature lands — **`api.txt` (repo root, currently v3.32) is the exact, authoritative request/response contract of every endpoint referenced below**; read the cited `api.txt` section before implementing, since this file only summarizes.
+Running checklist of backend changes that the Flutter app needs to adopt to complete a feature's integration, or that are being deliberately held back as breaking changes pending approval. Updated incrementally as each backend feature lands — **`api.txt` (repo root, currently v3.33) is the exact, authoritative request/response contract of every endpoint referenced below**; read the cited `api.txt` section before implementing, since this file only summarizes.
 
 Sections are removed once the Flutter app has fully adopted them — this file tracks *pending/active* work, not a history of everything ever shipped. Completed feature history lives in git log and `api.txt`'s own version notes, not here.
 
@@ -19,37 +19,35 @@ Legend:
 
 ## Notification appearance, channels and sounds - remaining verification
 
-Implemented in the app (2026-10-02): the `ic_notification` small icon and accent colour, the `job_requests` /
-`booking_updates` / `announcements` channels (now the `_v2` ids with sounds, see below, next to `high_importance_channel`), foreground banners that use
-`data['channel_id']`, show the title/body as received with `BigTextStyle`, and replace the earlier banner for the same
-booking or request, event times taken from `sent_at` / the inbox `createdAt` in local time, and a live,
-colour-coded inbox with clear unread styling. Still to confirm on a device:
-- The white house glyph looks right in the status bar and banner (it is a simplified drawing of the logo; swap
-  `ic_notification.png` in the five `drawable-*` folders if design wants a different mark).
-- Two pushes for the same booking leave one banner in the shade (foreground), and a leading emoji renders in both the
-  banner and the inbox.
-- Foreground banner time reads the event time, not the receive time.
-- Pushes land on the new `_v2` channels once `Notifications:AndroidChannelsEnabled` is on (use the Push Tester to force a
-  channel for one send first).
-- iOS: nothing to build (thread-id grouping and default sound are backend-side); confirm on a physical device.
+Implemented in the app (2026-10-02) and confirmed on the Android emulator (results in `docs/notification-testing.md`
+section 8): the `ic_notification` small icon and accent colour (pop-up and status bar), the Android channels, foreground
+banners, event times from `sent_at` / the inbox `createdAt` in local time, and a live, colour-coded inbox with clear
+unread styling (emoji titles, live updates, separate client/provider inboxes, tap routing from foreground, background
+and cold start, no pushes after logout or for the old role after a role switch).
 
-### Sounds: bundled, needs device verification
-Implemented (2026-10-02): the three `.ogg` files are in `android/app/src/main/res/raw/`, the three `.wav` files are in
-`ios/Runner/` and registered in the Runner target (Copy Bundle Resources, edited in `project.pbxproj` by hand: open the
-project in Xcode once and confirm they show under Build Phases > Copy Bundle Resources). The source copies stay in
-`assets/notification-sounds/` (not a declared Flutter asset, so they are not bundled twice).
+Still open:
+- **Sounds on a physical Android device.** Emulator has no sound. Each channel must play its own sound in foreground,
+  background and cold start, and the three must sound different.
+- **One banner per booking.** The Push Tester sends no `booking_id`/`request_id`, so the emulator test could not show
+  stacking. Re-test with a real booking (accept, start, complete) and confirm one banner remains.
+- **Channels live:** pushes land on the `_v2` channels once `Notifications:AndroidChannelsEnabled` is on (use the Push
+  Tester's channel option to force one send first).
+- **Repeat the Android list on a physical device**, including the locked-screen and swiped-away cases.
+- **Xcode:** open `ios/Runner.xcodeproj` once and confirm the three `.wav` files show under Build Phases > Copy Bundle
+  Resources (added by hand in `project.pbxproj`).
+- **iOS delivery** on a physical device (no app code needed: thread-id grouping and sounds are backend-side; the app
+  draws no local notifications on iOS).
+- Optional: design may want a different `ic_notification` mark (a simplified drawing of the logo today); swap the PNG in
+  the five `drawable-*` folders.
 
-Channels now carry their sounds, under **new ids** because a channel's sound is fixed once it exists on a device:
-`job_requests_v2` (`job_request`), `booking_updates_v2` (`booking_update`), `announcements_v2` (`announcement`).
-`init()` deletes the earlier silent `job_requests` / `booking_updates` / `announcements`. The foreground banner accepts
-`data['channel_id']` with or without the `_v2` suffix, falling back to `booking_updates_v2`.
-
-- **Backend owner:** the `NotificationChannels` constants and the Push Tester must send the `_v2` ids (without it,
-  background pushes naming the old ids fall onto a generic channel with no sound and no pop-up).
-- iOS foreground banners need no app code: the app does not draw local notifications on iOS, so the system plays the
-  sound named in the push itself.
-- **Verify:** each channel plays its own sound in foreground, background and cold start, and the three sound different.
-  Existing test devices keep the old silent channels until the new build runs once (they are deleted then).
+### Sounds and channel ids (implemented)
+The three `.ogg` files are in `android/app/src/main/res/raw/` and the three `.wav` files in `ios/Runner/`; the source
+copies stay in `assets/notification-sounds/` (not a declared Flutter asset, so not bundled twice). Channels carry their
+sounds under **new ids**, because a channel's sound is fixed once it exists on a device: `job_requests_v2`
+(`job_request`), `booking_updates_v2` (`booking_update`), `announcements_v2` (`announcement`), next to
+`high_importance_channel`. `init()` deletes the earlier silent `job_requests` / `booking_updates` / `announcements`. The
+foreground banner accepts `data['channel_id']` with or without `_v2`, falling back to `booking_updates_v2`. If a sound
+ever changes, mint a new channel id again. Backend constants and the Push Tester use the `_v2` ids (api.txt v3.33).
 
 ### Rollout note (backend side, for the owner)
 `Notifications:AndroidChannelsEnabled` is **off**. If it were on before this build is installed, an older app build would
@@ -72,12 +70,11 @@ not a Flutter gap: register-token rejected userType = "Client" for upgraded (dua
 the role switch and the token row moved from Provider to Client. Keep this behaviour (also re-register on login and on
 onTokenRefresh, always with the role the app is currently in).
 
-### 2. Notification tap routing (to confirm)
-- Tapping a banner opens the app (backend fix: pushes no longer carry an Android click action, so no manifest intent
-  filter is needed), including when the app was swiped away (cold start delivery works).
-- Not yet verified: that the app routes using data['screen'], booking_id and request_id via onMessageOpenedApp (app
-  in background) and getInitialMessage() (cold start).
+### 2. Notification tap routing (RESOLVED)
+Confirmed on the emulator (2026-10-02): tapping a banner routes by `screen`, `booking_id` and `request_id` from the
+foreground, the background (`onMessageOpenedApp`) and a cold start (`getInitialMessage`). The backend no longer sends an
+Android click action, so no manifest intent filter is needed.
 
 ### Verified working
-Provider and client booking pushes arrive and tapping them opens the app. The banner time now reads "Now" (the backend
-sets an explicit event time).
+Provider and client booking pushes arrive and route on tap. The banner time reads the event time (the backend sets an
+explicit event time and `sent_at`), and the inbox shows local time.

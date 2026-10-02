@@ -67,7 +67,10 @@ delete by "everything after the baseline". Delete by explicit ids, in one transa
 2. `BookingMaterialItems` for the test bookings
 3. `ServiceBookings`, then `CustomerServiceRequests` (FK order)
 4. `UserNotifications` where `RequestUid` is a test request
-5. `AdminNotifications` whose `RelatedEntityUID` is a test request or booking
+5. `AdminNotifications` whose `RelatedEntityUID` is a test request or booking, **and** whose `Type` matches
+   (`ServiceRequestCreated` for the request, `ProviderBookingCancelled` for the booking). `RelatedEntityUID` alone is
+   ambiguous (request and booking ids share one number space), and an id-only delete removed one unrelated row on
+   2026-10-02 (see section 9).
 
 Leave the device token row alone.
 
@@ -164,6 +167,68 @@ routes to the screen named in `screen` / `booking_id` (the Flutter agent's `getI
   (`GET /api/v1/app/config`: update prompt, forced update, `minimum_required_version`). Only the booking-lifecycle
   pushes were exercised on the emulator.
 - The admin "Push Broadcast" page (`/Admin/PushBroadcast`) sending to real devices.
-- Cold-start tap **routing** (`getInitialMessage`): cold-start delivery works (section 5), but the tap landing on the
-  right screen was not confirmed.
+- Sounds on a real device (section 8, item B). Stacking with a real booking was driven on 2026-10-02 (section 9); the
+  device-side result is still to be confirmed.
 - Scheduled reminders and payout notifications are not built.
+
+## 8. Android build with icon, channels, live inbox and sounds (2026-10-02, emulator)
+
+Device checklist run on the Android emulator against the new Flutter build (`ic_notification` icon, `_v2` channels,
+foreground banners, live colour-coded inbox, bundled sounds). Pushes were sent from the Push Tester. Next round: the
+same list on a physical device.
+
+| # | Check | Result |
+|---|---|---|
+| A1 | System settings lists exactly the four channels (Important notifications, Job requests, Booking updates, Announcements), no old silent duplicates | confirmed |
+| A2 | Small icon is the white glyph (not a blank blob), accent colour applied | confirmed, in both the pop-up and the status bar |
+| B3-B5 | Job request / booking update / announcement each play their own sound, in foreground, background and swiped away | **not tested**: the emulator has no sound; test on a physical device |
+| C6 | Foreground push (app open on the client or provider home) | notification arrives and the unread badge increments. ("On the right channel" in the checklist only meant the banner is posted on the channel named by `channel_id`; it is visible in system settings, not in the UI.) |
+| C7, C8 | Several pushes for the same booking leave one banner | **not conclusive**: all three stayed as separate notifications. The Push Tester sends no `booking_id` / `request_id`, so there is no stacking key. Re-test with a real booking (accept, start, complete) |
+| D9 | Banner time is the event time, not "now" | confirmed |
+| D10 | Inbox time matches the local clock | confirmed |
+| E11 | Leading emoji in a title renders in the inbox | confirmed |
+| E12 | New push appears in an open inbox without a manual refresh, with unread styling | confirmed |
+| E13 | Rows are colour-coded by type | confirmed |
+| E14 | Client and provider inboxes are separate | confirmed |
+| F16, F17 | Tap routing from foreground, background and cold start lands on the screen named by `screen` | confirmed |
+| G18 | After logout, no pushes arrive | confirmed |
+| G19 | After a role switch, pushes for the old role are not delivered | confirmed |
+
+**Still open from this round**
+- Sounds (B3-B5): physical device, with the volume up.
+- Stacking (C7/C8): drive a real booking through accept, start and complete (admin portal assign, then the app or the
+  API calls in section 4) and confirm one banner remains per booking. The backend agent can script this: create a test
+  booking from the admin portal and send the booking events in order.
+- Everything in this list is still to repeat on a physical device.
+
+## 9. Stacking run with a real booking (2026-10-02, production)
+
+Scripted in `scripts/test-push-stacking.sh` (credentials via `ADMIN_*` / `DB*` environment variables, nothing stored).
+Run against `https://sahulatghartak.com` for the dual-role account (user 76 = Client 74 + Provider 35), token registered
+as Client.
+
+| Step | Action | Result |
+|---|---|---|
+| 1 | `POST /api/customer-service-requests` "NOTIF TEST stacking" | request UID 396 |
+| 2 | admin portal assign to provider 35 | booking UID 228 (provider-role push, no banner on a Client token) |
+| 3 | `respond` accept, then wait 10 s | success, client inbox row "Provider accepted" |
+| 4 | `start`, then wait 10 s | success, client inbox row "Job started" |
+| 5 | `verify-completion` (passcode read from the DB) | success, client inbox row "Job completed" |
+
+Backend side: all three calls succeeded and the client got exactly three inbox rows in order (booking_accepted,
+job_started, job_completed), so every push carried `booking_id` / `request_id` and so the `booking-228` tag.
+**Expected on the device:** one banner for the booking, showing "Job completed".
+**Device result (tester): FAIL.** Three separate banners, one per stage, did not merge. Not yet diagnosed. The backend
+code sets `AndroidNotification.Tag = booking-{id}` whenever `booking_id` is in the data and `NotifyUserAsync` always sends
+it, and the Flutter foreground path uses a stable id from the same key, so merging was expected on both paths. Open
+questions, in order: (1) was the production build running the tag code (deploy of 208c42e) when the test ran;
+(2) was the app foreground or background for each push (a system-drawn banner has the tag but id 0, a Flutter-drawn one
+has an id but no tag, so a mix never merges); (3) does the device's launcher/OEM group or ignore tags. Next step: Push
+Tester with the same `booking_id` filled in on two sends, once with the app in the background and once in the
+foreground, which isolates the tag from the real flow.
+
+Cleanup removed the test rows by explicit ids and counts returned to baseline for requests (15), bookings (7), ledger (7)
+and inbox (38). **One side effect:** `AdminNotifications` went from 66 to 65 instead of staying level. The script's
+cleanup matched `RelatedEntityUID IN (request, booking)` without the `Type`, and booking 228 collides with an older
+request-228 bell row, which was deleted too (not recoverable). The script and section 3 now filter by `Type`.
+
