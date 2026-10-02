@@ -181,6 +181,75 @@ section[id] {
     border-radius: 4px;
 }
 
+/* Mobile quick-links pop-up (replaces the old collapsing utility bar) */
+.hs-quick-modal .modal-content {
+    border: 0;
+    border-radius: 14px;
+    overflow: hidden;
+}
+
+.hs-quick-modal .modal-header {
+    background: var(--hs-navy);
+    color: #fff;
+    border-bottom: 2px solid var(--hs-navy-dark);
+    padding: 0.85rem 1.1rem;
+}
+
+.hs-quick-modal .modal-title {
+    font-family: "Libre Baskerville", Georgia, serif;
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin: 0;
+}
+
+.hs-quick-modal .btn-close {
+    filter: invert(1) grayscale(100%) brightness(200%);
+}
+
+.hs-quick-modal .modal-body {
+    padding: 0.5rem 1.1rem 1rem;
+}
+
+.hs-quick-date {
+    color: #5b6b7e;
+    font-size: 0.8rem;
+    margin: 0.5rem 0 0.25rem;
+}
+
+.hs-quick-date i {
+    margin-right: 0.5rem;
+}
+
+.hs-quick-link {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.85rem 0.15rem;
+    color: var(--hs-tab-text);
+    font-weight: 600;
+    text-decoration: none;
+    border-bottom: 1px solid #e4eaf2;
+}
+
+.hs-quick-link:last-child {
+    border-bottom: 0;
+}
+
+.hs-quick-link:hover,
+.hs-quick-link:focus {
+    color: var(--hs-maroon);
+}
+
+.hs-quick-link span i {
+    width: 1.5rem;
+    color: var(--hs-navy);
+}
+
+.hs-quick-link > .fa-chevron-right {
+    font-size: 0.7rem;
+    opacity: 0.6;
+}
+
 @media (max-width: 991.98px) {
     .hs-brand-main {
         font-size: 1.45rem;

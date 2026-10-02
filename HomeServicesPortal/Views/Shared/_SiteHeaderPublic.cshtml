@@ -14,13 +14,13 @@
                 <span class="hs-brand-sub">Ghar Tak</span>
             </a>
 
-            <button class="hs-mobile-toggle d-lg-none" type="button" data-bs-toggle="collapse"
-                    data-bs-target="#hsPublicUtilityNav" aria-controls="hsPublicUtilityNav" aria-expanded="false"
-                    aria-label="Toggle utility menu">
+            <button class="hs-mobile-toggle d-lg-none" type="button" data-bs-toggle="modal"
+                    data-bs-target="#hsPublicUtilityModal" aria-haspopup="dialog"
+                    aria-label="Open quick links">
                 <i class="fa-solid fa-bars"></i>
             </button>
 
-            <div class="collapse d-lg-flex" id="hsPublicUtilityNav">
+            <div class="d-none d-lg-flex" id="hsPublicUtilityNav">
                 <ul class="hs-utility-nav ms-lg-auto">
                     <li>
                         <span class="hs-utility-link d-none d-xl-inline-flex">
@@ -85,3 +85,30 @@
         </div>
     </div>
 </nav>
+
+@* Mobile quick links: the same links as the desktop utility bar, in their own pop-up. Kept outside the sticky
+   header so its stacking context can't put the modal behind the backdrop. *@
+<div class="modal fade hs-quick-modal" id="hsPublicUtilityModal" tabindex="-1" aria-labelledby="hsPublicUtilityModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="hsPublicUtilityModalLabel">Quick Links</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="hs-quick-date"><i class="fa-regular fa-calendar"></i>@PktTimeHelper.NowPkt.ToString("dddd, dd MMM yyyy")</p>
+                <div class="list-group list-group-flush">
+                    <a class="hs-quick-link" href="tel:+923225040823" data-bs-dismiss="modal">
+                        <span><i class="fa-solid fa-phone"></i>Call Us</span><i class="fa-solid fa-chevron-right"></i>
+                    </a>
+                    <a class="hs-quick-link" href="/#contact" data-bs-dismiss="modal">
+                        <span><i class="fa-solid fa-envelope"></i>Contact</span><i class="fa-solid fa-chevron-right"></i>
+                    </a>
+                    <a class="hs-quick-link" href="/privacy-policy">
+                        <span><i class="fa-solid fa-shield-halved"></i>Privacy Policy</span><i class="fa-solid fa-chevron-right"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
