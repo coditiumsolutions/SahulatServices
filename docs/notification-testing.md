@@ -1,5 +1,6 @@
 ---
 status: current
+version: 1.8.0
 ---
 
 # Push notification test routine
@@ -19,7 +20,9 @@ findings: `docs/flutter-changes.md`.
   Test backgrounded banners with **Home** or screen lock. Swiping the app away from recents (cold start) still receives
   pushes; only a **Force stop** from Android settings blocks FCM until the app is opened again. Cold-start checks need
   the app launched outside `flutter run` (or a physical device), since killing the run session drops the debugger.
-  iOS cannot be tested on a simulator (needs a physical device and an APNs key).
+  The emulator plays no sound, so sounds need a physical device. iOS cannot be tested on a simulator (needs a physical
+  device and an APNs key). Test **release** builds for anything involving sounds or resources: a debug build can hide
+  release-only problems (section 10).
 - A test account that is both a client and a provider (here user 76 = Client 74 + Provider 35), so one device can play
   both roles. A second provider (here 64) is only needed for the "taken by another provider" test.
 - Admin portal login for the staff-only steps (assign, staff cancel). Credentials live in
@@ -121,8 +124,8 @@ Accept and start notify the client only, and "new job" notifies the provider onl
 the matching role at each step. Steps that notify the other role still write their inbox row but show no banner.
 
 **Cold start (app swiped away from recents, 2026-10-02, physical Android device, sent from the Push Tester):** the push
-is delivered and the banner shows, and works correctly. Not separately confirmed: that tapping it from this state
-routes to the screen named in `screen` / `booking_id` (the Flutter agent's `getInitialMessage` handling).
+is delivered and the banner shows. Tap routing from this state (`getInitialMessage`) was confirmed on 2026-10-05
+(section 10).
 
 ## 6. Findings from this run
 
@@ -154,10 +157,12 @@ routes to the screen named in `screen` / `booking_id` (the Flutter agent's `getI
 
 7. **Appearance changes (backend, built, not yet tested on a device).** Titles/bodies reworded (one emoji only on new
    job, accepted, cancelled, completed), Android accent colour, a per-booking tag so a newer push replaces the earlier
-   banner (iOS: thread id), and `channel_id` in the data payload. Android channels (`job_requests`, `booking_updates`,
-   `announcements`) are only named in the push when `Notifications:AndroidChannelsEnabled` is on (default off), because
-   an app build without those channels would drop the pop-up banner. Test with the Push Tester's "Send on the type's
-   Android channel" box on a build that creates them. Sounds are prepared but not chosen: `docs/notification-sounds.md`.
+   banner (iOS: thread id), and `channel_id` in the data payload. Android channels (now `job_requests_v2`,
+   `booking_updates_v2`, `announcements_v2`, each with its own sound) are only named in the push when
+   `Notifications:AndroidChannelsEnabled` is on (default off), because an app build without those channels would drop
+   the pop-up banner. Test with the Push Tester's "Send on the type's Android channel" box on a build that creates
+   them: **off** = `high_importance_channel` (device default sound, by design), **on** = the type's `_v2` channel
+   (custom sound). Sounds: `docs/notification-sounds.md`. Appearance and sounds are tested on a device: section 10.
 
 ## 7. Not covered
 
@@ -167,8 +172,9 @@ routes to the screen named in `screen` / `booking_id` (the Flutter agent's `getI
   (`GET /api/v1/app/config`: update prompt, forced update, `minimum_required_version`). Only the booking-lifecycle
   pushes were exercised on the emulator.
 - The admin "Push Broadcast" page (`/Admin/PushBroadcast`) sending to real devices.
-- Sounds on a real device (section 8, item B). Stacking with a real booking was driven on 2026-10-02 (section 9); the
-  device-side result is still to be confirmed.
+- **Sounds and push delivery on iOS** (physical iPhone, APNs key in Firebase, Xcode steps in section 10).
+- **Stacking** (one banner per booking) fails on a physical Android device: three banners for accept, start and complete
+  (section 9). Accepted as a known issue and not pursued; see `docs/flutter-changes.md`.
 - Scheduled reminders and payout notifications are not built.
 
 ## 8. Android build with icon, channels, live inbox and sounds (2026-10-02, emulator)
@@ -181,9 +187,9 @@ same list on a physical device.
 |---|---|---|
 | A1 | System settings lists exactly the four channels (Important notifications, Job requests, Booking updates, Announcements), no old silent duplicates | confirmed |
 | A2 | Small icon is the white glyph (not a blank blob), accent colour applied | confirmed, in both the pop-up and the status bar |
-| B3-B5 | Job request / booking update / announcement each play their own sound, in foreground, background and swiped away | **not tested**: the emulator has no sound; test on a physical device |
+| B3-B5 | Job request / booking update / announcement each play their own sound, in foreground, background and swiped away | **not tested**: the emulator has no sound; tested on a physical device on 2026-10-05 (section 10) |
 | C6 | Foreground push (app open on the client or provider home) | notification arrives and the unread badge increments. ("On the right channel" in the checklist only meant the banner is posted on the channel named by `channel_id`; it is visible in system settings, not in the UI.) |
-| C7, C8 | Several pushes for the same booking leave one banner | **not conclusive**: all three stayed as separate notifications. The Push Tester sends no `booking_id` / `request_id`, so there is no stacking key. Re-test with a real booking (accept, start, complete) |
+| C7, C8 | Several pushes for the same booking leave one banner | **not conclusive**: all three stayed as separate notifications. The Push Tester sends no `booking_id` / `request_id`, so there is no stacking key. Re-tested with a real booking on a physical device: still fails (sections 9 and 10) |
 | D9 | Banner time is the event time, not "now" | confirmed |
 | D10 | Inbox time matches the local clock | confirmed |
 | E11 | Leading emoji in a title renders in the inbox | confirmed |
@@ -194,12 +200,8 @@ same list on a physical device.
 | G18 | After logout, no pushes arrive | confirmed |
 | G19 | After a role switch, pushes for the old role are not delivered | confirmed |
 
-**Still open from this round**
-- Sounds (B3-B5): physical device, with the volume up.
-- Stacking (C7/C8): drive a real booking through accept, start and complete (admin portal assign, then the app or the
-  API calls in section 4) and confirm one banner remains per booking. The backend agent can script this: create a test
-  booking from the admin portal and send the booking events in order.
-- Everything in this list is still to repeat on a physical device.
+**Follow-up:** sounds were verified on a physical device and stacking was re-driven with a real booking; both are
+recorded in section 10.
 
 ## 9. Stacking run with a real booking (2026-10-02, production)
 
@@ -232,3 +234,83 @@ and inbox (38). **One side effect:** `AdminNotifications` went from 66 to 65 ins
 cleanup matched `RelatedEntityUID IN (request, booking)` without the `Type`, and booking 228 collides with an older
 request-228 bell row, which was deleted too (not recoverable). The script and section 3 now filter by `Type`.
 
+## 10. Physical Android device round (2026-10-05, release APK)
+
+| Check | Result |
+|---|---|
+| Install the new build **over** the published one (secure-storage upgrade) | pass: still logged in, no data loss seen |
+| Cold-start tap routing (`getInitialMessage`) | pass: lands on the screen named by `screen` / `booking_id` |
+| Custom sounds, channel toggle **off** (`high_importance_channel`) | device default sound, as designed |
+| Custom sounds, channel toggle **on** (`_v2` channels), first release APK | **fail: silence**. Release resource shrinking had stripped `res/raw/*.ogg`; the channels pointed at missing files. `aapt2 dump resources` on the APK showed no `raw/` entries. |
+| Same, after the fix (`android/app/src/main/res/raw/keep.xml`) | **pass: each channel plays its own sound** |
+| Stacking with a real booking (accept, start, complete) | **fail**: three banners, again after the app-side tag change. Known issue, accepted, not pursued |
+
+Notes for repeating this:
+- **Test the release build.** The debug APK contained the sounds; only release stripped them (`docs/android-build-notes.md`
+  section 4 has the cause, the fix and the `aapt2` check).
+- **Uninstall the old app before re-testing sounds.** Android never changes a channel after it is created, so phones that
+  ran the broken build keep `_v2` channels pointing at missing files until the app is uninstalled (or the channels are
+  deleted in system settings).
+- Stacking: the foreground path now posts keyed pushes with the same tag and id 0 the system uses for background pushes,
+  but the three banners still did not merge. Untested leftovers if it is ever revisited: whether the production backend
+  was running the tag code (commit 208c42e) during the test, and whether the device launcher ignores tags. Every stage
+  still gets its own banner and inbox row, so nothing is lost.
+
+### iOS test checklist (physical iPhone, not yet run)
+Prerequisites (Mac): `flutter pub get`, `cd ios && pod install` (the secure-storage upgrade swapped
+`flutter_secure_storage_macos` for `flutter_secure_storage_darwin`), open `ios/Runner.xcworkspace`, confirm
+`job_request.wav`, `booking_update.wav`, `announcement.wav` are listed under Runner target > Build Phases > Copy Bundle
+Resources (they were registered in `project.pbxproj` by hand), and confirm Push Notifications and Background Modes
+(Remote notifications) under Signing & Capabilities. The APNs key must be uploaded in Firebase. `aps-environment` is
+`production` for every build configuration, so a debug build from Xcode may not get a token: test via TestFlight / an
+archive build, or set a development environment for Debug and Profile.
+
+1. Log in, allow notifications, and confirm the device token row exists (`UserDeviceTokens`, platform `ios`).
+2. Each push type plays its **own sound** (`job_request.wav`, `booking_update.wav`, `announcement.wav`; the sound name
+   comes from the push) in the foreground, the background and the locked state.
+3. Foreground push: the system banner shows (the app draws no local notifications on iOS) and the unread badge updates.
+4. Tap routing from foreground, background and cold start.
+5. Several pushes for one real booking group under one thread (`thread-id` = `booking-{id}`).
+6. Logout stops pushes; a role switch moves them to the other role.
+7. The `app_update` broadcast and the version gate (still untested on any platform, section 7).
+
+## 11. app_update carries per-platform version info (added 2026-10-05, not yet run)
+
+An `app_update` push now carries `latest_version`, `store_url` and an informational `platform` in its data map, resolved
+per platform (api.txt v3.34). The Push Broadcast form has one editable version field per platform, pre-filled from `AppConfig:Android` / `AppConfig:Ios` plus any saved version (what `GET /api/v1/app/config` returns); a typed version applies to that push only, and the store links come from `AppConfig`. Each field has a **Check store for update** button that reads the store listing and saves the version it finds (cases 9 to 12).
+The app blocks itself when the installed version is older than `latest_version`. Other push types must not carry these keys.
+
+Setup: type different versions per platform in the form (e.g. Android `1.0.5`, iOS `1.0.3`) and register at
+least one Android and one iOS token (or use two Android devices and check the log). Use **Admin > Push Broadcast**. The Push Tester's `app_update` entry follows the same rule (per-token platform).
+Check what arrived with a debug build / `adb logcat` / the FCM data shown in the app, not only the banner.
+
+| # | Case | Expected |
+|---|---|---|
+| 1 | Android-only broadcast | Android tokens receive `latest_version` = Android value and the Play Store `store_url`; iOS tokens receive nothing |
+| 2 | iOS-only broadcast | The reverse: iOS value and App Store URL; Android receives nothing |
+| 3 | All platforms, different versions (Android 1.0.5, iOS 1.0.3) | Each platform gets its own version and URL. The server log shows two separate sends (the broadcast result adds both). |
+| 4 | Targeted platform's version field is empty or malformed (`1.0`, `1.0.5+3`) | The form shows a clear error naming the platform and **nothing is sent**, also for "All" when only one platform is missing |
+| 5 | `app_update` has no inbox row | `UserNotifications` unchanged (count before and after); `notification_id` is empty |
+| 6 | Other push types (`booking_accepted`, `job_started`, ...) | No `latest_version`, `store_url` or `platform` key in the data map |
+| 7 | Edited version differs from `AppConfig` | The push carries the typed value; `GET /api/v1/app/config` still returns the configured one |
+| 8 | `store_url` blank in config | The key is sent as `""` and the app falls back to `GET /api/v1/app/config?platform=...` |
+| 9 | Check store for update, App Store | Field fills with the listing's version cut to major.minor.patch (listing "1.0.6 - GPS" -> `1.0.6`); `GET /api/v1/app/config?platform=ios` returns it as `latest_version`; the `Configurations` row `AppConfig.Ios.LatestVersion` exists |
+| 10 | Check store for update, Google Play | Same for Android (`AppConfig.Android.LatestVersion`). Best-effort: it reads the Play page, so a Google page change shows an error and saves nothing |
+| 11 | Store unreachable / app not found / blank store URL | Red message under the field, field and saved value unchanged |
+| 12 | Delete the `AppConfig.*.LatestVersion` rows in Admin > Configurations | The app config and the form fall back to the appsettings value |
+| 13 | Installed version vs `latest_version` | Older: full-screen block, Update Now opens the store link, survives a restart. Same or newer: ignored. |
+
+### force_update (added 2026-10-05, not yet run)
+
+`app_update` also carries `force_update`, exactly `"true"` or `"false"`, set per platform with the **Force update** checkbox next to each version field (default ticked). Unticked, the app shows a dismissable "Update available" dialog (the body is its message) instead of the block. Not saved; `GET /api/v1/app/config` is unchanged.
+
+| # | Case | Expected |
+|---|---|---|
+| 14 | Broadcast with Force update ticked | the push data has `force_update` = `"true"`; the app blocks |
+| 15 | Broadcast with it unticked | `force_update` = `"false"`; the app shows the dismissable dialog with the body as its text, and "Maybe later" leaves the app usable |
+| 16 | All platforms, Android ticked and iOS unticked | two separate sends: Android `"true"`, iOS `"false"` |
+| 17 | Every `app_update` push (broadcast and Push Tester) | `force_update` present and exactly `"true"` or `"false"`, never missing or empty |
+| 18 | Other types (`booking_accepted`, `job_started`, ...) | no `force_update` key |
+| 19 | Push Tester `app_update` | its "force the update" checkbox (default ticked) sets the value the same way |
+| 20 | `GET /api/v1/app/config?platform=...` | unchanged, still returns its own `force_update` |
+| 21 | Installed version same or newer than `latest_version` | nothing shown, whatever `force_update` says |

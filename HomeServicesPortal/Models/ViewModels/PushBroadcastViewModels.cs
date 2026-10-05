@@ -22,4 +22,26 @@ public class PushBroadcastFormVm
     public int IosDevices { get; set; }
 
     public bool FirebaseConfigured { get; set; }
+
+    /// <summary>
+    /// Version each platform's push announces. Pre-filled from AppConfig; editable because the two stores release
+    /// independently. Only the targeted platform's value is used.
+    /// </summary>
+    [Display(Name = "Android latest version")]
+    public string AndroidLatestVersion { get; set; } = string.Empty;
+
+    [Display(Name = "iOS latest version")]
+    public string IosLatestVersion { get; set; } = string.Empty;
+
+    /// <summary>Per platform: ticked = the app blocks until updated, unticked = a dismissable "Update available" dialog.</summary>
+    [Display(Name = "Force update")]
+    public bool AndroidForceUpdate { get; set; } = true;
+
+    [Display(Name = "Force update")]
+    public bool IosForceUpdate { get; set; } = true;
+
+    /// <summary>Store links the push carries (read from AppConfig, display only).</summary>
+    public string AndroidStoreUrl { get; set; } = string.Empty;
+
+    public string IosStoreUrl { get; set; } = string.Empty;
 }

@@ -2,7 +2,7 @@ using HomeServicesPortal.Models.Api;
 using HomeServicesPortal.Options;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Options;
+using HomeServicesPortal.Services;
 
 namespace HomeServicesPortal.Controllers.Api;
 
@@ -11,20 +11,23 @@ namespace HomeServicesPortal.Controllers.Api;
 [AllowAnonymous]
 public class AppConfigApiController : ControllerBase
 {
-    private readonly IOptionsMonitor<AppConfigOptions> _options;
+    private readonly IAppVersionPolicyService _policies;
 
-    public AppConfigApiController(IOptionsMonitor<AppConfigOptions> options)
+    public AppConfigApiController(IAppVersionPolicyService policies)
     {
-        _options = options;
+        _policies = policies;
     }
 
-    /// <summary>App version / force-update policy for a platform. Values come from appsettings (AppConfig).</summary>
+    /// <summary>
+    /// App version / force-update policy for a platform. Values come from appsettings (AppConfig); LatestVersion can be
+    /// overridden by a value saved from the admin portal (see AppVersionPolicyService).
+    /// </summary>
     [HttpGet("config")]
     [ProducesResponseType(typeof(AppConfigApiDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status400BadRequest)]
-    public IActionResult GetConfig([FromQuery] string? platform)
+    public async Task<IActionResult> GetConfig([FromQuery] string? platform, CancellationToken cancellationToken)
     {
-        var config = _options.CurrentValue;
+        var config = await _policies.GetEffectiveAsync(cancellationToken);
         var policy = platform?.Trim().ToLowerInvariant() switch
         {
             "android" => config.Android,

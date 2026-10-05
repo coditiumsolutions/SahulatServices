@@ -37,7 +37,7 @@
             <div class="card-body p-4">
                 <p class="small text-muted">
                     Registered devices: <strong>@Model.AndroidDevices</strong> Android, <strong>@Model.IosDevices</strong> iOS.
-                    Tapping the notification opens the app's update prompt (the store link comes from the app-config settings).
+                    Tapping the notification opens the app's update prompt.
                 </p>
                 <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
                 <form asp-action="Send" method="post"
@@ -52,6 +52,42 @@
                             <option value="ios">iOS only</option>
                         </select>
                         <span asp-validation-for="Platform" class="text-danger small"></span>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-sm-6">
+                            <label asp-for="AndroidLatestVersion" class="form-label"></label>
+                            <div class="input-group">
+                                <input asp-for="AndroidLatestVersion" class="form-control" placeholder="e.g. 1.0.5" maxlength="20" />
+                                <button type="button" class="btn btn-outline-primary check-store-btn" data-platform="android" data-target="AndroidLatestVersion">
+                                    <i class="fa-solid fa-rotate me-1"></i>Check store for update
+                                </button>
+                            </div>
+                            <div class="form-text" id="store-status-android" role="status"></div>
+                            <div class="form-check mt-1">
+                                <input asp-for="AndroidForceUpdate" class="form-check-input" />
+                                <label asp-for="AndroidForceUpdate" class="form-check-label"></label>
+                            </div>
+                            <div class="form-text text-break">Play Store: @Model.AndroidStoreUrl</div>
+                        </div>
+                        <div class="col-sm-6">
+                            <label asp-for="IosLatestVersion" class="form-label"></label>
+                            <div class="input-group">
+                                <input asp-for="IosLatestVersion" class="form-control" placeholder="e.g. 1.0.3" maxlength="20" />
+                                <button type="button" class="btn btn-outline-primary check-store-btn" data-platform="ios" data-target="IosLatestVersion">
+                                    <i class="fa-solid fa-rotate me-1"></i>Check store for update
+                                </button>
+                            </div>
+                            <div class="form-text" id="store-status-ios" role="status"></div>
+                            <div class="form-check mt-1">
+                                <input asp-for="IosForceUpdate" class="form-check-input" />
+                                <label asp-for="IosForceUpdate" class="form-check-label"></label>
+                            </div>
+                            <div class="form-text text-break">App Store: @Model.IosStoreUrl</div>
+                        </div>
+                        <div class="col-12 form-text mt-0">
+                            Store-facing version as <strong>major.minor.patch</strong> (no build number). The two stores release independently, so each platform's push carries its own; only the platform(s) you send to are used. <strong>Force update</strong> ticked: phones older than this see a full-screen "Update Now" block. Unticked: they see a dismissable "Update available" dialog ("Update now" / "Maybe later") instead, with the <strong>message below as the dialog text</strong>, so write it for the user (e.g. "Version 1.0.5 is available with new features.") and keep it free of technical wording. The setting is per platform and applies to this push only (it is not saved). "Check store for update" reads the store listing and saves that version (as the platform's latest version, which the app's start-up check also reads). A version you type by hand applies to this push only.
+                        </div>
                     </div>
 
                     <div class="mb-3">
@@ -77,4 +113,38 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        // "Check store for update": the server reads the store listing and saves the version it finds; this just
+        // shows the result and fills the field. Nothing is sent to devices until "Send broadcast".
+        document.querySelectorAll('.check-store-btn').forEach(function (btn) {
+            btn.addEventListener('click', async function () {
+                var platform = btn.dataset.platform;
+                var status = document.getElementById('store-status-' + platform);
+                var token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+                btn.disabled = true;
+                status.className = 'form-text';
+                status.textContent = 'Checking the store...';
+                try {
+                    var res = await fetch('/Admin/PushBroadcast/CheckStore', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'RequestVerificationToken': token },
+                        body: 'platform=' + encodeURIComponent(platform)
+                    });
+                    var data = await res.json();
+                    if (data.success) {
+                        document.getElementById(btn.dataset.target).value = data.version;
+                        status.className = 'form-text text-success';
+                    } else {
+                        status.className = 'form-text text-danger';
+                    }
+                    status.textContent = data.message || 'Could not check the store.';
+                } catch (e) {
+                    status.className = 'form-text text-danger';
+                    status.textContent = 'Could not check the store. Try again.';
+                } finally {
+                    btn.disabled = false;
+                }
+            });
+        });
+    </script>
 }

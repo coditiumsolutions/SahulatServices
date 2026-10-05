@@ -1,12 +1,9 @@
-@inject IWebHostEnvironment Env
 @{
     Layout = "_PublicLayout";
     ViewData["Title"] = "Download App";
     ViewData["Description"] = "Download the Sahulat Ghar Tak app to book verified home service professionals in Pakistan. Available now on Google Play and the App Store.";
     var playStoreUrl = "https://play.google.com/store/apps/details?id=com.coditiumsols.sahulatghartak";
     var appStoreUrl = "https://apps.apple.com/pk/app/sahulat-ghar-tak/id6810184599";
-    // The iOS screenshot slot shows up as soon as the file is added; until then the Android phone stands alone.
-    var hasIosScreenshot = System.IO.File.Exists(System.IO.Path.Combine(Env.WebRootPath, "img", "ios-home-screen.png"));
 }
 
 <section class="public-hero download-hero">
@@ -32,17 +29,14 @@
             </div>
             <div class="col-lg-6">
                 <div class="hero-phones">
-                    <div class="hero-phone">
+                    <div class="hero-phone hero-phone--pixel">
                         <img src="~/img/app-home-screen.png" width="540" height="1200"
                              alt="Screenshot of the Sahulat Ghar Tak Android app home screen" />
                     </div>
-                    @if (hasIosScreenshot)
-                    {
-                        <div class="hero-phone">
-                            <img src="~/img/ios-home-screen.png"
-                                 alt="Screenshot of the Sahulat Ghar Tak iOS app home screen" />
-                        </div>
-                    }
+                    <div class="hero-phone hero-phone--iphone">
+                        <img src="~/img/ios-home-screen.png" width="540" height="1173"
+                             alt="Screenshot of the Sahulat Ghar Tak iOS app home screen" />
+                    </div>
                 </div>
             </div>
         </div>

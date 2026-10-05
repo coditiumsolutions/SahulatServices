@@ -234,7 +234,8 @@ public class NotificationService : INotificationService
     }
 
     public async Task<BroadcastResult> SendBroadcastAsync(string? platform, string title, string body,
-        Dictionary<string, string>? dataPayload = null, CancellationToken cancellationToken = default)
+        Dictionary<string, string>? dataPayload = null, bool? androidChannels = null,
+        CancellationToken cancellationToken = default)
     {
         if (FirebaseApp.DefaultInstance == null)
         {
@@ -250,7 +251,7 @@ public class NotificationService : INotificationService
         }
 
         var tokens = await query.Select(t => t.DeviceToken).Distinct().ToListAsync(cancellationToken);
-        return await SendToDevicesAsync(tokens, title, body, dataPayload, null, cancellationToken);
+        return await SendToDevicesAsync(tokens, title, body, dataPayload, androidChannels, cancellationToken);
     }
 
     public async Task<BroadcastResult> SendToDevicesAsync(IReadOnlyCollection<string> deviceTokens, string title,

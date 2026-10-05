@@ -67,6 +67,9 @@ public class PushTesterFormVm
     [Display(Name = "Send on the type's Android channel")]
     public bool UseAndroidChannel { get; set; }
 
+    [Display(Name = "app_update: force the update (the app blocks)")]
+    public bool ForceUpdate { get; set; } = true;
+
     public bool FirebaseConfigured { get; set; }
 
     public List<PushTesterDeviceRow> Devices { get; set; } = new();

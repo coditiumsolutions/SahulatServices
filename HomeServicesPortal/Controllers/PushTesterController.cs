@@ -26,14 +26,16 @@ public class PushTesterController : Controller
     private readonly AppDbContext _db;
     private readonly ILogger<PushTesterController> _logger;
     private readonly IOptionsMonitor<NotificationOptions> _channelsSetting;
+    private readonly IAppVersionPolicyService _policies;
 
     public PushTesterController(INotificationService notifications, AppDbContext db, ILogger<PushTesterController> logger,
-        IOptionsMonitor<NotificationOptions> channelsSetting)
+        IOptionsMonitor<NotificationOptions> channelsSetting, IAppVersionPolicyService policies)
     {
         _notifications = notifications;
         _db = db;
         _logger = logger;
         _channelsSetting = channelsSetting;
+        _policies = policies;
     }
 
     [HttpGet("/Admin/PushTester")]
@@ -162,8 +164,44 @@ public class PushTesterController : Controller
 
         // Unticked = follow Notifications:AndroidChannelsEnabled; ticked = force the channel for this send, to try
         // a new app build's channels before the setting is switched on for everyone.
-        var result = await _notifications.SendToDevicesAsync(
-            tokens, title, body, data, model.UseAndroidChannel ? true : null, cancellationToken);
+        BroadcastResult result;
+        if (type == NotificationTypes.AppUpdate)
+        {
+            // Same rule as the broadcast: each platform's tokens get that platform's own latest_version / store_url.
+            var platformOf = await _db.UserDeviceTokens.AsNoTracking()
+                .Where(t => tokens.Contains(t.DeviceToken))
+                .Select(t => new { t.DeviceToken, t.Platform })
+                .ToListAsync(cancellationToken);
+            var groups = platformOf.GroupBy(t => t.Platform).ToList();
+
+            var effective = await _policies.GetEffectiveAsync(cancellationToken);
+            var payloads = new Dictionary<string, Dictionary<string, string>>();
+            foreach (var g in groups)
+            {
+                if (AppUpdatePayload.TryBuild(effective, g.Key, out var payload, out var error, null, model.ForceUpdate))
+                    payloads[g.Key] = payload;
+                else
+                    ModelState.AddModelError(string.Empty, error!);
+            }
+            if (!ModelState.IsValid) return View("Index", model);
+
+            result = new BroadcastResult(true, 0, 0, 0, 0);
+            foreach (var g in groups)
+            {
+                var groupData = new Dictionary<string, string>(data);
+                foreach (var (key, value) in payloads[g.Key]) groupData[key] = value;
+                var part = await _notifications.SendToDevicesAsync(g.Select(t => t.DeviceToken).ToList(), title, body,
+                    groupData, model.UseAndroidChannel ? true : null, cancellationToken);
+                result = new BroadcastResult(result.FirebaseConfigured && part.FirebaseConfigured,
+                    result.Recipients + part.Recipients, result.Sent + part.Sent,
+                    result.Failed + part.Failed, result.RemovedStale + part.RemovedStale);
+            }
+        }
+        else
+        {
+            result = await _notifications.SendToDevicesAsync(
+                tokens, title, body, data, model.UseAndroidChannel ? true : null, cancellationToken);
+        }
 
         _logger.LogInformation(
             "Push tester by {User}: mode={Mode}, type={Type}, role={Role}, recipients={Recipients}, sent={Sent}, failed={Failed}, inbox={Inbox}.",

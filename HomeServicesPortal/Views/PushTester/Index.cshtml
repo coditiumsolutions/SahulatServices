@@ -101,6 +101,12 @@
                         <div class="form-text">The type's channel (job_requests_v2, booking_updates_v2 or announcements_v2). Needs an app build that creates those channels; on older builds the banner may arrive silently or without a pop-up. Leave off unless testing the new build.</div>
                     </div>
 
+                    <div class="form-check mb-3">
+                        <input asp-for="ForceUpdate" class="form-check-input" />
+                        <label asp-for="ForceUpdate" class="form-check-label"></label>
+                        <div class="form-text">Only for the app_update type: sends force_update "true" (full-screen block) or "false" (dismissable dialog that shows the message). Each platform's latest_version and store_url come from the app config.</div>
+                    </div>
+
                     <h6 class="text-uppercase text-muted small mt-4">2. What</h6>
                     <div class="mb-3">
                         <select asp-for="EventKey" class="form-select" id="eventKey">

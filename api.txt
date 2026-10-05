@@ -1,6 +1,6 @@
 ================================================================================
 SahulatGharTak API Reference
-Version: 3.33 | Last Updated: 2026-10-02
+Version: 3.36 | Last Updated: 2026-10-05
 Database: SahulatAppDB
 Local Base URL:    https://localhost:7265/api/
 Deployed Base URL:  https://sahulatghartak.com/api/
@@ -3112,13 +3112,35 @@ empty string when not applicable):
                    (v2 because a channel's sound is fixed once created; the app deletes the older silent
                    job_requests / booking_updates / announcements. The app also tolerates the ids without
                    the _v2 suffix in foreground banners, for compatibility only. Always send the _v2 ids.)
+  latest_version   type app_update ONLY (absent on every other type). The store-facing version this device's
+                   platform must be on: major.minor.patch, e.g. "1.0.5" (Android versionName / iOS
+                   CFBundleShortVersionString; never a build number or +N suffix). Compare numerically per
+                   segment and ignore any +build / -suffix.
+  store_url        type app_update ONLY. Store listing for THIS device's platform (Play Store on Android, App
+                   Store on iOS). May be "": then use store_url from GET /api/v1/app/config?platform=...
+  platform         type app_update ONLY, informational ("android" | "ios"); the app need not read it.
+  force_update     type app_update ONLY, always present, exactly "true" or "false" (lowercase, never empty).
+                   "true": block the app with the non-dismissable "Update Now" screen (the behaviour before this
+                   key existed, so a build that does not read it, or a missing key, means block). "false": show a
+                   dismissable "Update available" dialog (Update now / Maybe later) using the notification body as
+                   the message. Either way only when the installed version is older than latest_version. Chosen per
+                   platform by staff on each broadcast; not saved, and unrelated to force_update in
+                   GET /api/v1/app/config (which is unchanged).
+  (Android and iOS are versioned independently, so latest_version / store_url are resolved per platform when
+  sent: a one-platform broadcast uses that platform's values, an all-platforms broadcast is sent as two
+  separate pushes, each with its own. The admin form is pre-filled from the same AppConfig settings as
+  GET /api/v1/app/config (including a version saved by "Check store for update") and staff can edit each
+  platform's version before sending, so a push may announce a version the config endpoint does not list yet
+  (the config stays the fallback for the splash check). A broadcast to a
+  platform with no valid latest_version is rejected by the admin portal and nothing is sent. Additive: older builds ignore the extra keys.)
                    Sound and importance are channel settings on Android 8+, so the app chooses them when it
                    creates the channel. For a foreground (local) notification, show it on this channel.
 The Android banner also carries an explicit event time, so the system's "2m ago" label is the server time, and
 an accent colour (#003366). Android pushes name the channel (notification channel_id) only once the server setting
 Notifications:AndroidChannelsEnabled is switched on, which happens after a build that creates the channels is live
 (an unknown channel would otherwise fall back to a generic, no-pop-up channel). Until then they use the app's
-default channel, high_importance_channel.
+default channel, high_importance_channel. Exception: the app_update broadcast always names
+announcements_v2, regardless of that setting.
 Stacking: every push for a booking (or, with no booking, a request) carries a tag / iOS thread id of
 "booking-{booking_id}" / "request-{request_id}". A newer push for the same booking REPLACES the earlier banner on
 Android instead of stacking, and iOS groups them under one thread. Foreground local notifications should use a
@@ -3142,7 +3164,10 @@ Provider starts the job (/start)                             client             
 Job completed (/verify-completion or staff sets Completed)   client + provider   job_completed          request_details / my_bookings
 Staff "Push Broadcast" from the admin portal (new version)   all / one platform  app_update            app_update
 
-type app_update is a broadcast (no inbox row): open the store_url from GET /api/v1/app/config.
+type app_update is a broadcast (no inbox row). It carries latest_version + store_url for the device's own
+platform (see the data map above): if the installed version is older, block with the update screen (force_update
+"true") or show the dismissable dialog (force_update "false") and open store_url (or, when empty, the store_url from GET /api/v1/app/config). GET /api/v1/app/config is unchanged and
+stays the fallback for the splash check.
 Backend kill switch: appsettings Notifications:BookingPushEnabled=false stops all booking
 pushes AND inbox rows (broadcasts and the version check are unaffected).
 
@@ -3258,7 +3283,9 @@ Deployed:  https://sahulatghartak.com/api/v1/app/config?platform=android
 
 Auth: none (call at app start, before login).
 Query: platform = "android" or "ios" (case-insensitive). Values come from the server's
-appsettings "AppConfig" section and can be changed without redeploying code.
+appsettings "AppConfig" section and can be changed without redeploying code. latest_version can also be
+replaced by a value saved from the admin portal (Push Broadcast > "Check store for update" reads the store
+listing and saves the version it finds, per platform); the response shape is unchanged.
 
 Request Body: none
 

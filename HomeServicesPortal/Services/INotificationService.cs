@@ -35,9 +35,13 @@ public interface INotificationService
     Task NotifyUserAsync(int userId, string userType, string type, string title, string body, string screen,
         int? bookingUid = null, int? requestUid = null, CancellationToken cancellationToken = default);
 
-    /// <summary>Push one message to every registered device (all, or one platform). No inbox rows are written.</summary>
+    /// <summary>
+    /// Push one message to every registered device (all, or one platform). No inbox rows are written.
+    /// androidChannels overrides Notifications:AndroidChannelsEnabled for this send (null = use the setting).
+    /// </summary>
     Task<BroadcastResult> SendBroadcastAsync(string? platform, string title, string body,
-        Dictionary<string, string>? dataPayload = null, CancellationToken cancellationToken = default);
+        Dictionary<string, string>? dataPayload = null, bool? androidChannels = null,
+        CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Push one message to an explicit set of device tokens (staff test tool). No inbox rows are written.

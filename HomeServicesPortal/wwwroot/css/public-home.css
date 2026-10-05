@@ -38,25 +38,22 @@
     opacity: 0.95;
 }
 
-/* Hero screenshots. Desktop: full phones side by side, the second one staggered lower. Tablet/phone: smaller and
-   cropped at the bottom so the hero doesn't grow much taller than the text. */
+/* Hero screenshots: both phones side by side, the second one staggered lower; smaller below 992px. The row is not
+   cropped any more: the framed phones (with side buttons and shadow) are shown whole. */
 .hero-phones {
     display: flex;
     justify-content: center;
     align-items: flex-start;
     gap: 1rem;
-    max-height: 330px;
-    overflow: hidden;
+    padding: 0 6px 1.5rem;
     margin-top: 1.5rem;
 }
 
 .hero-phone {
+    position: relative;
     flex: 0 1 150px;
     min-width: 0;
-    border: 6px solid #0b1f3a;
-    border-radius: 28px;
-    overflow: hidden;
-    background: #0b1f3a;
+    padding: 4px;
     box-shadow: 0 18px 36px rgba(0, 0, 0, 0.35);
 }
 
@@ -70,18 +67,76 @@
     height: auto;
 }
 
+/* Frames drawn in CSS. Radii are percentages of the phone's own width/height so the corners keep their proportion at
+   every size (elliptical pairs = a circular corner on a ~1:2.2 phone). */
+
+/* Google Pixel 8: matte black bezel with a slim aluminium edge, power + volume keys on the right. */
+.hero-phone--pixel {
+    background: #0d0e10;
+    border: 2px solid #5c6166;
+    border-radius: 11% / 5%;
+}
+
+.hero-phone--pixel img {
+    border-radius: 9% / 4.1%;
+}
+
+.hero-phone--pixel::after {
+    content: "";
+    position: absolute;
+    right: -4px;
+    top: 17%;
+    width: 3px;
+    height: 17%;
+    border-radius: 0 2px 2px 0;
+    background: linear-gradient(#5c6166 0 38%, transparent 38% 52%, #5c6166 52% 100%);
+}
+
+/* iPhone 16 Pro Max: natural-titanium band with a thin black bezel; action button + volume keys on the left,
+   power on the right. The Dynamic Island is part of the screenshot. */
+.hero-phone--iphone {
+    background: #050505;
+    border: 3px solid #8d8b86;
+    border-radius: 15.5% / 7.1%;
+}
+
+.hero-phone--iphone img {
+    border-radius: 12.5% / 5.8%;
+}
+
+.hero-phone--iphone::before,
+.hero-phone--iphone::after {
+    content: "";
+    position: absolute;
+    width: 3px;
+    background: #8d8b86;
+}
+
+.hero-phone--iphone::before {
+    left: -5px;
+    top: 12%;
+    height: 21%;
+    border-radius: 2px 0 0 2px;
+    background: linear-gradient(#8d8b86 0 13%, transparent 13% 29%, #8d8b86 29% 60%, transparent 60% 66%, #8d8b86 66% 100%);
+}
+
+.hero-phone--iphone::after {
+    right: -5px;
+    top: 22%;
+    height: 10%;
+    border-radius: 0 2px 2px 0;
+}
+
 @media (min-width: 992px) {
     .hero-phones {
-        max-height: none;
-        overflow: visible;
         gap: 1.5rem;
         margin-top: 0;
+        padding-bottom: 0;
     }
 
     .hero-phone {
         flex-basis: 210px;
-        border-width: 8px;
-        border-radius: 38px;
+        padding: 6px;
     }
 
     .hero-phone + .hero-phone {
