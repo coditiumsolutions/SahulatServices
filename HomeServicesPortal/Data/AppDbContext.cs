@@ -18,6 +18,7 @@ public class AppDbContext : DbContext
     public DbSet<UserDeviceToken> UserDeviceTokens => Set<UserDeviceToken>();
 
     public DbSet<UserNotification> UserNotifications => Set<UserNotification>();
+    public DbSet<UpdateBlockRelease> UpdateBlockReleases => Set<UpdateBlockRelease>();
 
     public DbSet<Client> Clients => Set<Client>();
 
@@ -106,6 +107,18 @@ public class AppDbContext : DbContext
                 .HasDefaultValueSql("(getutcdate())");
             entity.HasIndex(e => e.DeviceToken).IsUnique();
             entity.HasIndex(e => e.UserId);
+        });
+
+        modelBuilder.Entity<UpdateBlockRelease>(entity =>
+        {
+            entity.ToTable("UpdateBlockReleases");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Scope).HasMaxLength(20).IsRequired();
+            entity.Property(e => e.Platform).HasMaxLength(10);
+            entity.Property(e => e.ReleasedAtUtc).HasColumnType("datetime");
+            entity.Property(e => e.ReleasedBy).HasMaxLength(100).IsRequired();
+            entity.Property(e => e.Reason).HasMaxLength(200).IsRequired();
+            entity.HasIndex(e => e.ReleasedAtUtc);
         });
 
         modelBuilder.Entity<UserNotification>(entity =>

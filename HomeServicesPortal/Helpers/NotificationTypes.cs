@@ -11,6 +11,9 @@ public static class NotificationTypes
     public const string JobStarted = "job_started";
     public const string JobCompleted = "job_completed";
     public const string AppUpdate = "app_update";
+
+    /// <summary>Silent data-only push that lifts a forced-update block on the device (admin release). No inbox row.</summary>
+    public const string AppUnblock = "app_unblock";
 }
 
 /// <summary>Values of the push/inbox "screen" field: route hints the Flutter app maps to real routes.</summary>

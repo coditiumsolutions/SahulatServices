@@ -24,11 +24,14 @@ public class PushBroadcastController : Controller
     private readonly AppDbContext _db;
     private readonly IAppVersionPolicyService _policies;
     private readonly IStoreVersionChecker _storeChecker;
+    private readonly IUpdateBlockReleaseService _releases;
     private readonly ILogger<PushBroadcastController> _logger;
 
     public PushBroadcastController(INotificationService notifications, AppDbContext db,
-        IAppVersionPolicyService policies, IStoreVersionChecker storeChecker, ILogger<PushBroadcastController> logger)
+        IAppVersionPolicyService policies, IStoreVersionChecker storeChecker, IUpdateBlockReleaseService releases,
+        ILogger<PushBroadcastController> logger)
     {
+        _releases = releases;
         _notifications = notifications;
         _db = db;
         _policies = policies;
@@ -44,6 +47,8 @@ public class PushBroadcastController : Controller
         var effective = await _policies.GetEffectiveAsync(cancellationToken);
         vm.AndroidLatestVersion = effective.Android.LatestVersion;
         vm.IosLatestVersion = effective.Ios.LatestVersion;
+        vm.ReleaseMessage = TempData["ReleaseMessage"] as string;
+        vm.ReleaseError = TempData["ReleaseError"] as string;
         return View(vm);
     }
 
@@ -154,6 +159,67 @@ public class PushBroadcastController : Controller
         });
     }
 
+    /// <summary>
+    /// Reads the version the store currently lists WITHOUT saving it. Used by the form's "forced version is ahead of the
+    /// store" warning, so checking never changes the live version.
+    /// </summary>
+    [HttpPost("/Admin/PushBroadcast/PeekStore")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> PeekStore(string platform, CancellationToken cancellationToken)
+    {
+        platform = (platform ?? string.Empty).Trim().ToLowerInvariant();
+        if (!AppUpdatePayload.Platforms.Contains(platform))
+            return BadRequest(new { success = false, message = "Unknown platform." });
+
+        var policy = AppUpdatePayload.PolicyFor(await _policies.GetEffectiveAsync(cancellationToken), platform);
+        if (string.IsNullOrWhiteSpace(policy.StoreUrl))
+            return Ok(new { success = false, version = (string?)null });
+
+        var result = await _storeChecker.CheckAsync(platform, policy.StoreUrl, cancellationToken);
+        return Ok(new { success = result.Success, version = result.Version });
+    }
+
+    /// <summary>How many registered devices a release scope would reach (for the confirm step). Sends nothing.</summary>
+    [HttpPost("/Admin/PushBroadcast/ReleaseReach")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ReleaseReach(ReleaseFormVm model, CancellationToken cancellationToken)
+    {
+        var (devices, error) = await _releases.ResolveAsync(
+            new ReleaseTarget(NormalizeScope(model.Scope), null, model.UserId, model.TokenId), cancellationToken);
+        return Ok(new { count = devices.Count, error });
+    }
+
+    /// <summary>
+    /// Admin release of update blocks: sends the silent app_unblock push to the chosen scope and records it. Admin
+    /// portal only (there is deliberately no mobile endpoint), anti-forgery protected, logged with the admin username.
+    /// </summary>
+    [HttpPost("/Admin/PushBroadcast/Release")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Release(ReleaseFormVm model, CancellationToken cancellationToken)
+    {
+        var scope = NormalizeScope(model.Scope);
+        var platform = scope is "android" or "ios" ? scope : null;
+        var outcome = await _releases.ReleaseAsync(new ReleaseTarget(scope, platform, model.UserId, model.TokenId),
+            model.Reason, User.Identity?.Name ?? "unknown", cancellationToken);
+
+        if (outcome.Error != null)
+        {
+            TempData["ReleaseError"] = outcome.Error;
+        }
+        else
+        {
+            var r = outcome.Result!;
+            TempData["ReleaseMessage"] =
+                $"Release sent to {r.Recipients} device(s): {r.Sent} delivered to FCM, {r.Failed} failed" +
+                (r.RemovedStale > 0 ? $", {r.RemovedStale} expired token(s) removed." : ".") +
+                " iPhones may delay or drop silent pushes, so iOS delivery is best effort: send again if a device is still blocked.";
+        }
+
+        return Redirect("/Admin/PushBroadcast#release");
+    }
+
+    private static string NormalizeScope(string? scope) => (scope ?? string.Empty).Trim().ToLowerInvariant();
+
     private async Task FillReachAsync(PushBroadcastFormVm vm, CancellationToken cancellationToken)
     {
         vm.FirebaseConfigured = FirebaseApp.DefaultInstance != null;
@@ -164,5 +230,50 @@ public class PushBroadcastController : Controller
         var config = await _policies.GetEffectiveAsync(cancellationToken);
         vm.AndroidStoreUrl = config.Android.StoreUrl;
         vm.IosStoreUrl = config.Ios.StoreUrl;
+        vm.AndroidSavedVersion = config.Android.LatestVersion;
+        vm.IosSavedVersion = config.Ios.LatestVersion;
+
+        // "Release blocked devices" card: device picker (latest 200) and the append-only history (latest 50).
+        var tokens = await _db.UserDeviceTokens.AsNoTracking()
+            .OrderByDescending(t => t.UpdatedAt).Take(200)
+            .Select(t => new PushTesterDeviceRow
+            {
+                Id = t.Id, UserId = t.UserId, UserType = t.UserType, Platform = t.Platform, UpdatedAt = t.UpdatedAt
+            })
+            .ToListAsync(cancellationToken);
+        var userIds = tokens.Select(t => t.UserId).Distinct().ToList();
+        var clients = await _db.Clients.AsNoTracking().Where(c => userIds.Contains(c.UserUid))
+            .Select(c => new { c.UserUid, c.FullName }).ToListAsync(cancellationToken);
+        var providers = await _db.Providers.AsNoTracking().Where(p => userIds.Contains(p.UserUid))
+            .Select(p => new { p.UserUid, p.FullName }).ToListAsync(cancellationToken);
+        foreach (var t in tokens)
+        {
+            t.Name = t.UserType == UserTypeConstants.Client
+                ? clients.FirstOrDefault(c => c.UserUid == t.UserId)?.FullName
+                : providers.FirstOrDefault(p => p.UserUid == t.UserId)?.FullName;
+        }
+        vm.ReleaseDevices = tokens;
+
+        var history = await _db.UpdateBlockReleases.AsNoTracking()
+            .OrderByDescending(r => r.ReleasedAtUtc).ThenByDescending(r => r.Id).Take(50)
+            .ToListAsync(cancellationToken);
+        vm.ReleaseHistory = history.Select(r => new ReleaseHistoryRow
+        {
+            ReleasedAtUtc = r.ReleasedAtUtc,
+            Scope = r.Scope,
+            Target = r.Scope switch
+            {
+                "user" => $"user {r.UserId}",
+                "device" => $"device #{r.DeviceTokenId}",
+                "android" => "all Android",
+                "ios" => "all iOS",
+                _ => "everyone"
+            },
+            Reason = r.Reason,
+            ReleasedBy = r.ReleasedBy,
+            Recipients = r.Recipients,
+            Sent = r.Sent,
+            Failed = r.Failed
+        }).ToList();
     }
 }

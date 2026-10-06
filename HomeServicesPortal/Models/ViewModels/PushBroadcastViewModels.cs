@@ -44,4 +44,47 @@ public class PushBroadcastFormVm
     public string AndroidStoreUrl { get; set; } = string.Empty;
 
     public string IosStoreUrl { get; set; } = string.Empty;
+
+    /// <summary>Saved latest version per platform, used by the "typed version is ahead of the store" warning.</summary>
+    public string AndroidSavedVersion { get; set; } = string.Empty;
+
+    public string IosSavedVersion { get; set; } = string.Empty;
+
+    // ---- "Release blocked devices" card ----
+    public ReleaseFormVm Release { get; set; } = new();
+
+    public List<PushTesterDeviceRow> ReleaseDevices { get; set; } = new();
+
+    public List<ReleaseHistoryRow> ReleaseHistory { get; set; } = new();
+
+    /// <summary>Set after a release was sent, for the result line (comes through TempData).</summary>
+    public string? ReleaseMessage { get; set; }
+
+    public string? ReleaseError { get; set; }
+}
+
+/// <summary>Posted by the "Release blocked devices" card.</summary>
+public class ReleaseFormVm
+{
+    /// <summary>everyone | android | ios | user | device.</summary>
+    public string Scope { get; set; } = "everyone";
+
+    public int? UserId { get; set; }
+
+    public int? TokenId { get; set; }
+
+    [StringLength(200, ErrorMessage = "The reason can be at most 200 characters.")]
+    public string Reason { get; set; } = string.Empty;
+}
+
+public class ReleaseHistoryRow
+{
+    public DateTime ReleasedAtUtc { get; set; }
+    public string Scope { get; set; } = string.Empty;
+    public string Target { get; set; } = string.Empty;
+    public string Reason { get; set; } = string.Empty;
+    public string ReleasedBy { get; set; } = string.Empty;
+    public int Recipients { get; set; }
+    public int Sent { get; set; }
+    public int Failed { get; set; }
 }

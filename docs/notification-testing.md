@@ -1,6 +1,6 @@
 ---
 status: current
-version: 1.8.0
+version: 1.12.0
 ---
 
 # Push notification test routine
@@ -274,7 +274,7 @@ archive build, or set a development environment for Debug and Profile.
 6. Logout stops pushes; a role switch moves them to the other role.
 7. The `app_update` broadcast and the version gate (still untested on any platform, section 7).
 
-## 11. app_update carries per-platform version info (added 2026-10-05, not yet run)
+## 11. app_update carries per-platform version info (added 2026-10-05; first device result 2026-10-06, see below)
 
 An `app_update` push now carries `latest_version`, `store_url` and an informational `platform` in its data map, resolved
 per platform (api.txt v3.34). The Push Broadcast form has one editable version field per platform, pre-filled from `AppConfig:Android` / `AppConfig:Ios` plus any saved version (what `GET /api/v1/app/config` returns); a typed version applies to that push only, and the store links come from `AppConfig`. Each field has a **Check store for update** button that reads the store listing and saves the version it finds (cases 9 to 12).
@@ -298,19 +298,108 @@ Check what arrived with a debug build / `adb logcat` / the FCM data shown in the
 | 10 | Check store for update, Google Play | Same for Android (`AppConfig.Android.LatestVersion`). Best-effort: it reads the Play page, so a Google page change shows an error and saves nothing |
 | 11 | Store unreachable / app not found / blank store URL | Red message under the field, field and saved value unchanged |
 | 12 | Delete the `AppConfig.*.LatestVersion` rows in Admin > Configurations | The app config and the form fall back to the appsettings value |
-| 13 | Installed version vs `latest_version` | Older: full-screen block, Update Now opens the store link, survives a restart. Same or newer: ignored. |
+| 13 | Installed version vs `latest_version` | Older: full-screen block, Update Now opens the store link, survives a restart. Same or newer: ignored. **Partly run:** older version shows the dialog / block (2026-10-06); the rest not yet checked |
 
-### force_update (added 2026-10-05, not yet run)
+### force_update (added 2026-10-05; first device result 2026-10-06, see below)
 
 `app_update` also carries `force_update`, exactly `"true"` or `"false"`, set per platform with the **Force update** checkbox next to each version field (default ticked). Unticked, the app shows a dismissable "Update available" dialog (the body is its message) instead of the block. Not saved; `GET /api/v1/app/config` is unchanged.
 
 | # | Case | Expected |
 |---|---|---|
-| 14 | Broadcast with Force update ticked | the push data has `force_update` = `"true"`; the app blocks |
-| 15 | Broadcast with it unticked | `force_update` = `"false"`; the app shows the dismissable dialog with the body as its text, and "Maybe later" leaves the app usable |
+| 14 | Broadcast with Force update ticked | the push data has `force_update` = `"true"`; the app blocks. **Run via the Push Tester 2026-10-06: pass** (full-screen block shown) |
+| 15 | Broadcast with it unticked | `force_update` = `"false"`; the app shows the dismissable dialog with the body as its text, and "Maybe later" leaves the app usable. **Run via the Push Tester 2026-10-06: pass** for the dialog appearing; "Maybe later" not recorded |
 | 16 | All platforms, Android ticked and iOS unticked | two separate sends: Android `"true"`, iOS `"false"` |
 | 17 | Every `app_update` push (broadcast and Push Tester) | `force_update` present and exactly `"true"` or `"false"`, never missing or empty |
 | 18 | Other types (`booking_accepted`, `job_started`, ...) | no `force_update` key |
-| 19 | Push Tester `app_update` | its "force the update" checkbox (default ticked) sets the value the same way |
+| 19 | Push Tester `app_update` | its "force the update" checkbox (default ticked) sets the value the same way. **Pass 2026-10-06** (unticked gave the dialog, ticked gave the block) |
 | 20 | `GET /api/v1/app/config?platform=...` | unchanged, still returns its own `force_update` |
 | 21 | Installed version same or newer than `latest_version` | nothing shown, whatever `force_update` says |
+
+### Device result: update dialog and force-update block (2026-10-06, Android emulator)
+
+First on-device check of the app's update UI, sent to one device so no real users were involved.
+
+- **Target:** user 76, Provider token (`UserDeviceTokens` id 20, android). The emulator app was build **1.0.4**.
+- **Sender:** the admin Push Tester, `app_update`, device mode, run on a local copy of the API (same production database and
+  Firebase). The Push Tester has no version field, so a POST-only `LatestVersionOverride` of **1.0.7** was added to it for
+  this run; it applies to that one send and saves nothing, so the live `latest_version` stayed `1.0.4` (a saved 1.0.7
+  would have prompted every real user). Save to inbox was off.
+- **Send 1, `force_update` = false:** server log `recipients=1, sent=1, failed=0`. The emulator showed the dismissable
+  "Update available" dialog.
+- **Send 2, `force_update` = true:** server log `recipients=1, sent=1, failed=0`. The emulator showed the full-screen
+  force-update block.
+- **Result:** pass for both. Cases 14, 15 and 19 are confirmed; the push data carried the right `force_update` value for
+  the app to choose the dialog or the block.
+- **Not yet checked:** "Update Now" opening the Play Store link, "Maybe later" leaving the app usable, the block
+  surviving a restart, an installed version equal to or newer than `latest_version` showing nothing (case 21), the
+  all-platforms and iOS cases, and the store-check buttons (cases 9 to 12).
+- **Follow-up:** the `LatestVersionOverride` change in `PushTesterController` / `PushTesterViewModels` is local and
+  uncommitted. Decide whether to keep it as a documented test aid.
+
+## 12. Getting out of a test block (device stuck on the update screen)
+
+A forced `app_update` (`force_update` = `"true"`) is persisted on the device in secure storage
+(`pending_update_version`, `pending_update_store_url`) and is cleared only when the installed version reaches the stored
+one. A test push with a version above the installed build therefore locks the device until one of the fixes below. Real
+users leave the block by updating, or staff release it with the silent `app_unblock` push (`api.txt` v3.39, "Admin release
+of update blocks"; the app side and the backend are both built; the control is the "Release blocked devices" card at the bottom of
+Admin > Push Broadcast, results below). Run these on a blocked device first, and fall back to the fixes below only if the push did not land:
+
+| # | Case | Expected |
+|---|---|---|
+| 22 | Block a test device (Push Tester, `force_update` ticked, version above installed), then send "Release" to that device | the block screen disappears with no banner, sound or inbox row; relaunching the app stays unblocked |
+| 23 | Release with the app swiped away (background handler) | the next launch is not blocked |
+| 24 | Send an `app_update` with a `sent_at` earlier than the release (resend an old one) | ignored; a new `app_update` sent after the release blocks again |
+| 25 | Release scopes: one device, one user, Android, iOS, everyone | only the chosen devices are released; history row written with admin, scope, reason and counts |
+| 26 | Release with an empty reason / no matching devices | rejected with a message, nothing sent or written |
+| 27 | A build without this change receives `app_unblock` | ignores it (stays blocked); fix with section 12 below |
+
+- **Android emulator (done 2026-10-06):** clear the app data, then relaunch. Package id `com.coditiumsols.sahulatghartak`,
+  `adb` lives at `D:\ryDevelop\Android\Sdk\platform-tools\adb.exe` on this machine:
+  ```
+  adb devices
+  adb -s emulator-5554 shell pm clear com.coditiumsols.sahulatghartak
+  adb -s emulator-5554 shell monkey -p com.coditiumsols.sahulatghartak -c android.intent.category.LAUNCHER 1
+  ```
+  This also logs the account out. If `flutter run` was attached, restart it.
+- **Android physical device:** Settings > Apps > Sahulat Ghar Tak > Storage > **Clear data** (logs out), or the same
+  `adb shell pm clear` command over USB debugging. Plain uninstall and reinstall also works.
+- **iOS physical device:** deleting the app is **not reliable**, because the iOS Keychain can survive an uninstall, so
+  the stored requirement may come back after a reinstall. Instead install a build whose `version:` in `pubspec.yaml` is at
+  or above the pushed `latest_version` (Xcode run or TestFlight); the app clears the stored requirement on launch. The
+  same trick works on Android and the emulator: `flutter run` a build with a high enough version.
+- **Prevent it:** send test pushes only to a single device (Push Tester, device mode) with a `latest_version` you are
+  willing to be stuck on, or use `force_update = false` (dialog only, nothing persisted). Never save a higher `AppConfig`
+  `latest_version` for testing, since that blocks real users through the splash check as well.
+
+
+### Device result: release blocked devices (2026-10-06, Android emulator, sender side of cases 22 to 27)
+
+Target: user 76, Provider token `UserDeviceTokens` id **21** (the earlier id 20 had expired: the failed send reported it
+Unregistered and removed it, then the app registered as 21). App build 1.0.4. Blocking pushes came from the Push Tester
+(device mode, `app_update`, version 1.0.7 through the POST-only `LatestVersionOverride`, nothing saved); releases came from
+the new admin endpoint `POST /Admin/PushBroadcast/Release` (what the card posts). Server log counts:
+
+| Step | Send | Server log | Emulator |
+|---|---|---|---|
+| 1 | forced `app_update` 1.0.7 | recipients=1, sent=1, failed=0 | blocked (full-screen Update Now) |
+| 2 | release, scope device 21 | recipients=1, sent=1, failed=0 | block gone, no banner or sound (case 22 pass) |
+| 3 | unforced `app_update` 1.0.7 | recipients=1, sent=1, failed=0 | dismissable "Update available" dialog |
+| 4 | forced `app_update` 1.0.7 with `sent_at` 06:00:00Z, before the release at 07:00:18Z (stale) | recipients=1, sent=1, failed=0 | nothing shown, ignored (case 24 pass) |
+| 5 | fresh forced `app_update` 1.0.7 (current `sent_at`) | recipients=1, sent=1, failed=0 | blocked again (case 24 pass) |
+| 6 | release, scope device 21 (cleanup) | recipients=1, sent=1, failed=0 | unblocked |
+
+- **Case 22: pass.** Case 24: pass. **Case 26: pass** through the endpoint: empty reason, a reason over 200 characters, an
+  unknown user (999999), an unknown device (999999), a missing user id and an unknown scope were each rejected with a
+  message and nothing was written. History: `UpdateBlockReleases` has exactly the two rows sent (ids 1 and 2, admin, device 21,
+  reason, 1/1/0); the table was applied from `scripts/create-update-block-releases.sql` first. No `UserNotifications` row was
+  created by any release or by the test pushes.
+- **Case 25: partly run.** Only the one-device release was sent. The other scopes were only counted through `ReleaseReach`
+  (everyone 5, Android 5, iOS 0, user 76 = 3 devices across both roles, device 20 = 1 before it expired); no release was sent
+  to them, to avoid touching real devices. "No matching devices" (for example iOS scope with 0 devices) is covered by
+  the same check but was not sent as a live release.
+- **Not run:** case 23 (release with the app swiped away), case 27 (older build), an iOS device, and the browser behaviour of the
+  card and of the broadcast form's "forced version is ahead of the store" warning (the JavaScript was built and the page
+  served, but nobody clicked through it yet, so check the confirm dialogs with a real browser before relying on them).
+- **Test aid kept:** `LatestVersionOverride` on `POST /Admin/PushTester` (no field on the page) sends one `app_update` with a
+  chosen version without saving it, so a block test never touches the live `latest_version`.

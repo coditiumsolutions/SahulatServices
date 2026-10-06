@@ -4,6 +4,9 @@ namespace HomeServicesPortal.Services;
 
 public record BroadcastResult(bool FirebaseConfigured, int Recipients, int Sent, int Failed, int RemovedStale);
 
+/// <summary>A registered device (FCM token + "android" | "ios") for sends that set per-platform keys.</summary>
+public record DeviceTarget(string Token, string Platform);
+
 public interface INotificationService
 {
     /// <summary>Insert or update the token row. A token already owned by another user is re-assigned.</summary>
@@ -49,6 +52,15 @@ public interface INotificationService
     /// </summary>
     Task<BroadcastResult> SendToDevicesAsync(IReadOnlyCollection<string> deviceTokens, string title, string body,
         Dictionary<string, string>? dataPayload = null, bool? androidChannels = null,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Silent, data-only "app_unblock" push (admin release of a forced-update block): no notification block, so no
+    /// banner, sound, channel or inbox row. data = type, sent_at (<paramref name="sentAtUtc"/>, the same instant the
+    /// release is stored with) and platform. Android: high-priority data message. iOS: background push. Not filtered
+    /// by role and independent of Notifications:BookingPushEnabled. Dead tokens are removed like any other push.
+    /// </summary>
+    Task<BroadcastResult> SendUpdateUnblockAsync(IReadOnlyCollection<DeviceTarget> devices, DateTime sentAtUtc,
         CancellationToken cancellationToken = default);
 
     Task<UserNotificationListDto> GetInboxAsync(int userId, string? userType, int page, int pageSize,

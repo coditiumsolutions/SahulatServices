@@ -32,7 +32,7 @@
 }
 
 <div class="row justify-content-center">
-    <div class="col-lg-7">
+    <div class="col-xl-10 col-xxl-9">
         <div class="card hs-card">
             <div class="card-body p-4">
                 <p class="small text-muted">
@@ -40,8 +40,8 @@
                     Tapping the notification opens the app's update prompt.
                 </p>
                 <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
-                <form asp-action="Send" method="post"
-                      onsubmit="return confirm('Send this push notification to the selected devices now? This cannot be undone.');">
+                <form asp-action="Send" method="post" id="broadcastForm"
+                      data-saved-android="@Model.AndroidSavedVersion" data-saved-ios="@Model.IosSavedVersion">
                     @Html.AntiForgeryToken()
 
                     <div class="mb-3">
@@ -55,38 +55,48 @@
                     </div>
 
                     <div class="row g-3 mb-3">
-                        <div class="col-sm-6">
-                            <label asp-for="AndroidLatestVersion" class="form-label"></label>
-                            <div class="input-group">
+                        <div class="col-md-6">
+                            <div class="border rounded-3 p-3 h-100">
+                                <h6 class="mb-3"><i class="fa-brands fa-android me-2"></i>Android</h6>
+                                <label asp-for="AndroidLatestVersion" class="form-label"></label>
                                 <input asp-for="AndroidLatestVersion" class="form-control" placeholder="e.g. 1.0.5" maxlength="20" />
-                                <button type="button" class="btn btn-outline-primary check-store-btn" data-platform="android" data-target="AndroidLatestVersion">
-                                    <i class="fa-solid fa-rotate me-1"></i>Check store for update
+                                <button type="button" class="btn btn-outline-primary btn-sm mt-2 check-store-btn" data-platform="android" data-target="AndroidLatestVersion">
+                                    <i class="fa-solid fa-rotate me-1"></i>Check Play Store for the latest version
                                 </button>
+                                <div class="form-text" id="store-status-android" role="status"></div>
+                                <div class="form-check mt-3">
+                                    <input asp-for="AndroidForceUpdate" class="form-check-input" />
+                                    <label asp-for="AndroidForceUpdate" class="form-check-label"></label>
+                                </div>
+                                <div class="form-text text-break mt-2">Play Store link: @Model.AndroidStoreUrl</div>
                             </div>
-                            <div class="form-text" id="store-status-android" role="status"></div>
-                            <div class="form-check mt-1">
-                                <input asp-for="AndroidForceUpdate" class="form-check-input" />
-                                <label asp-for="AndroidForceUpdate" class="form-check-label"></label>
-                            </div>
-                            <div class="form-text text-break">Play Store: @Model.AndroidStoreUrl</div>
                         </div>
-                        <div class="col-sm-6">
-                            <label asp-for="IosLatestVersion" class="form-label"></label>
-                            <div class="input-group">
+                        <div class="col-md-6">
+                            <div class="border rounded-3 p-3 h-100">
+                                <h6 class="mb-3"><i class="fa-brands fa-apple me-2"></i>iPhone (iOS)</h6>
+                                <label asp-for="IosLatestVersion" class="form-label"></label>
                                 <input asp-for="IosLatestVersion" class="form-control" placeholder="e.g. 1.0.3" maxlength="20" />
-                                <button type="button" class="btn btn-outline-primary check-store-btn" data-platform="ios" data-target="IosLatestVersion">
-                                    <i class="fa-solid fa-rotate me-1"></i>Check store for update
+                                <button type="button" class="btn btn-outline-primary btn-sm mt-2 check-store-btn" data-platform="ios" data-target="IosLatestVersion">
+                                    <i class="fa-solid fa-rotate me-1"></i>Check App Store for the latest version
                                 </button>
+                                <div class="form-text" id="store-status-ios" role="status"></div>
+                                <div class="form-check mt-3">
+                                    <input asp-for="IosForceUpdate" class="form-check-input" />
+                                    <label asp-for="IosForceUpdate" class="form-check-label"></label>
+                                </div>
+                                <div class="form-text text-break mt-2">App Store link: @Model.IosStoreUrl</div>
                             </div>
-                            <div class="form-text" id="store-status-ios" role="status"></div>
-                            <div class="form-check mt-1">
-                                <input asp-for="IosForceUpdate" class="form-check-input" />
-                                <label asp-for="IosForceUpdate" class="form-check-label"></label>
-                            </div>
-                            <div class="form-text text-break">App Store: @Model.IosStoreUrl</div>
                         </div>
-                        <div class="col-12 form-text mt-0">
-                            Store-facing version as <strong>major.minor.patch</strong> (no build number). The two stores release independently, so each platform's push carries its own; only the platform(s) you send to are used. <strong>Force update</strong> ticked: phones older than this see a full-screen "Update Now" block. Unticked: they see a dismissable "Update available" dialog ("Update now" / "Maybe later") instead, with the <strong>message below as the dialog text</strong>, so write it for the user (e.g. "Version 1.0.5 is available with new features.") and keep it free of technical wording. The setting is per platform and applies to this push only (it is not saved). "Check store for update" reads the store listing and saves that version (as the platform's latest version, which the app's start-up check also reads). A version you type by hand applies to this push only.
+                        <div class="col-12">
+                            <div class="rounded-3 bg-light border p-3 small">
+                                <div class="fw-semibold mb-2"><i class="fa-solid fa-circle-info me-1 text-primary"></i>How this works</div>
+                                <ul class="mb-0 ps-3">
+                                    <li><strong>Each store has its own version.</strong> Android and iPhone are released separately, so each gets the version shown above. Only the platform(s) you send to are used.</li>
+                                    <li><strong>Check for the latest version</strong> looks at the store and saves what it finds. The app also uses this saved version when it opens. A version you type yourself is used for this message only.</li>
+                                    <li><strong>Force update ticked:</strong> people on an older version must update before they can keep using the app.</li>
+                                    <li><strong>Force update unticked:</strong> they see an "Update available" message and can choose "Maybe later". Your message below is the text they see, so write it in plain words, e.g. "Version 1.0.5 is available with new features." This choice applies to this message only and is not saved.</li>
+                                </ul>
+                            </div>
                         </div>
                     </div>
 
@@ -108,12 +118,193 @@
                 </form>
             </div>
         </div>
+
+        <div class="card hs-card mt-4" id="release">
+            <div class="card-body p-4">
+                <h5 class="mb-1"><i class="fa-solid fa-unlock me-2 text-primary"></i>Release blocked devices</h5>
+                <p class="text-muted small mb-3">Lifts the forced-update screen on devices that already received a blocking app_update. Does not change the live version or the store check.</p>
+
+                @if (!string.IsNullOrEmpty(Model.ReleaseMessage))
+                {
+                    <div class="alert alert-success"><i class="fa-solid fa-circle-check me-2"></i>@Model.ReleaseMessage</div>
+                }
+                @if (!string.IsNullOrEmpty(Model.ReleaseError))
+                {
+                    <div class="alert alert-warning"><i class="fa-solid fa-triangle-exclamation me-2"></i>@Model.ReleaseError</div>
+                }
+
+                <form asp-action="Release" method="post" id="releaseForm">
+                    @Html.AntiForgeryToken()
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-4">
+                            <label for="relScope" class="form-label">Who to release</label>
+                            <select name="Scope" id="relScope" class="form-select">
+                                <option value="everyone">Everyone</option>
+                                <option value="android">All Android</option>
+                                <option value="ios">All iOS</option>
+                                <option value="user">One user</option>
+                                <option value="device">One device</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4" data-rel-target="user" hidden>
+                            <label for="relUser" class="form-label">User id</label>
+                            <input name="UserId" id="relUser" class="form-control" type="number" min="1" placeholder="e.g. 76" />
+                            <div class="form-text">Releases every device this user has, in both roles.</div>
+                        </div>
+                        <div class="col-md-8" data-rel-target="device" hidden>
+                            <label for="relDevice" class="form-label">Device</label>
+                            <select name="TokenId" id="relDevice" class="form-select">
+                                <option value="">Choose a device...</option>
+                                @foreach (var d in Model.ReleaseDevices)
+                                {
+                                    <option value="@d.Id">#@d.Id &middot; user @d.UserId @(string.IsNullOrEmpty(d.Name) ? "" : "(" + d.Name + ")") &middot; @d.UserType &middot; @d.Platform</option>
+                                }
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="relReason" class="form-label">Reason</label>
+                        <input name="Reason" id="relReason" class="form-control" maxlength="200" placeholder="e.g. Test announcement for 1.0.7 sent by mistake" />
+                        <div class="form-text">Required. Saved in the release history below.</div>
+                    </div>
+                    <button type="submit" class="btn btn-outline-danger" disabled="@(!Model.FirebaseConfigured)">
+                        <i class="fa-solid fa-unlock me-1"></i>Send release
+                    </button>
+                    <div class="form-text mt-2">Silent: devices show no banner or sound. iPhones may delay or drop silent pushes, so iOS delivery is best effort.</div>
+                </form>
+
+                <hr class="my-4" />
+                <h6 class="mb-2">Release history</h6>
+                @if (Model.ReleaseHistory.Count == 0)
+                {
+                    <p class="text-muted small mb-0">No releases sent yet.</p>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table table-sm align-middle mb-0">
+                            <thead>
+                                <tr><th>When (PKT)</th><th>Target</th><th>Reason</th><th>Admin</th><th class="text-end">Recipients</th><th class="text-end">Sent</th><th class="text-end">Failed</th></tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var r in Model.ReleaseHistory)
+                                {
+                                    <tr>
+                                        <td class="text-nowrap">@r.ReleasedAtUtc.ToPktDisplay()</td>
+                                        <td>@r.Target</td>
+                                        <td>@r.Reason</td>
+                                        <td>@r.ReleasedBy</td>
+                                        <td class="text-end">@r.Recipients</td>
+                                        <td class="text-end">@r.Sent</td>
+                                        <td class="text-end">@r.Failed</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="form-text">Newest 50 shown. Rows are never edited or deleted.</div>
+                }
+            </div>
+        </div>
     </div>
 </div>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
     <script>
+        function csrf() { return document.querySelector('input[name="__RequestVerificationToken"]').value; }
+
+        function post(path, body) {
+            return fetch(path, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'RequestVerificationToken': csrf() },
+                body: body
+            }).then(function (r) { return r.json(); });
+        }
+
+        function parseVersion(v) {
+            var m = /^\s*(\d+)\.(\d+)\.(\d+)/.exec(v || '');
+            return m ? [+m[1], +m[2], +m[3]] : null;
+        }
+
+        // 1 when a is newer than b, -1 older, 0 same (or either is not a version).
+        function compareVersions(a, b) {
+            var x = parseVersion(a), y = parseVersion(b);
+            if (!x || !y) return 0;
+            for (var i = 0; i < 3; i++) { if (x[i] !== y[i]) return x[i] > y[i] ? 1 : -1; }
+            return 0;
+        }
+
+        // Broadcast submit: a forced update to a version that is ahead of what the store lists (or what is saved) is how
+        // test blocks happen, so warn first. The store is only read, never saved, by this check.
+        (function () {
+            var form = document.getElementById('broadcastForm');
+            var confirmed = false;
+            form.addEventListener('submit', async function (e) {
+                if (confirmed) return;
+                e.preventDefault();
+                var choice = form.querySelector('[name="Platform"]').value;
+                var platforms = choice === 'all' ? ['android', 'ios'] : [choice];
+                var warnings = [];
+                for (var i = 0; i < platforms.length; i++) {
+                    var p = platforms[i];
+                    var label = p === 'ios' ? 'iOS' : 'Android';
+                    var force = form.querySelector('[name="' + (p === 'ios' ? 'IosForceUpdate' : 'AndroidForceUpdate') + '"][type="checkbox"]');
+                    var typed = form.querySelector('[name="' + (p === 'ios' ? 'IosLatestVersion' : 'AndroidLatestVersion') + '"]').value;
+                    if (!force || !force.checked) continue;
+                    var saved = form.dataset[p === 'ios' ? 'savedIos' : 'savedAndroid'];
+                    var store = null;
+                    try { var peek = await post('/Admin/PushBroadcast/PeekStore', 'platform=' + p); store = peek.success ? peek.version : null; } catch (err) { }
+                    var aheadOfStore = store && compareVersions(typed, store) > 0;
+                    var aheadOfSaved = saved && compareVersions(typed, saved) > 0;
+                    if (aheadOfStore || aheadOfSaved) {
+                        warnings.push(label + ': ' + typed + ' is newer than ' +
+                            (store ? 'the version in the store (' + store + ')' : 'the saved latest version (' + saved + ')') + '.');
+                    }
+                }
+                var text = warnings.length
+                    ? 'WARNING: Force update is ticked.\n\n' + warnings.join('\n') +
+                      '\n\nPeople on older versions will be blocked until they install a version that may not exist yet. ' +
+                      '(If this is a mistake you can lift it with "Release blocked devices" below.)\n\nSend anyway?'
+                    : 'Send this push notification to the selected devices now? This cannot be undone.';
+                if (confirm(text)) { confirmed = true; form.submit(); }
+            });
+        })();
+
+        // Release card: show the user / device pickers for their scope, and confirm with the number of devices.
+        (function () {
+            var form = document.getElementById('releaseForm');
+            var scope = document.getElementById('relScope');
+            function syncScope() {
+                form.querySelectorAll('[data-rel-target]').forEach(function (el) {
+                    el.hidden = el.dataset.relTarget !== scope.value;
+                });
+            }
+            scope.addEventListener('change', syncScope);
+            syncScope();
+
+            var confirmed = false;
+            form.addEventListener('submit', async function (e) {
+                if (confirmed) return;
+                e.preventDefault();
+                if (!document.getElementById('relReason').value.trim()) {
+                    alert('Enter a reason for the release.');
+                    return;
+                }
+                var body = new URLSearchParams(new FormData(form));
+                var reach;
+                try { reach = await post('/Admin/PushBroadcast/ReleaseReach', body.toString()); }
+                catch (err) { alert('Could not count the devices. Try again.'); return; }
+                if (reach.error) { alert(reach.error); return; }
+                if (!reach.count) { alert('No registered devices match, so nothing would be sent.'); return; }
+                if (confirm('This will send a silent release to ' + reach.count + ' registered device(s). ' +
+                    'It lifts any forced-update screen they are showing. Send it now?')) {
+                    confirmed = true;
+                    form.submit();
+                }
+            });
+        })();
+
         // "Check store for update": the server reads the store listing and saves the version it finds; this just
         // shows the result and fills the field. Nothing is sent to devices until "Send broadcast".
         document.querySelectorAll('.check-store-btn').forEach(function (btn) {

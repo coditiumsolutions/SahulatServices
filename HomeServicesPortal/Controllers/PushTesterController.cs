@@ -178,7 +178,8 @@ public class PushTesterController : Controller
             var payloads = new Dictionary<string, Dictionary<string, string>>();
             foreach (var g in groups)
             {
-                if (AppUpdatePayload.TryBuild(effective, g.Key, out var payload, out var error, null, model.ForceUpdate))
+                if (AppUpdatePayload.TryBuild(effective, g.Key, out var payload, out var error,
+                        string.IsNullOrWhiteSpace(model.LatestVersionOverride) ? null : model.LatestVersionOverride.Trim(), model.ForceUpdate))
                     payloads[g.Key] = payload;
                 else
                     ModelState.AddModelError(string.Empty, error!);

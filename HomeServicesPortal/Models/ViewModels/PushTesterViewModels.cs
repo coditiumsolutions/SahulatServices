@@ -70,6 +70,10 @@ public class PushTesterFormVm
     [Display(Name = "app_update: force the update (the app blocks)")]
     public bool ForceUpdate { get; set; } = true;
 
+    /// <summary>app_update only, POST-only (no field on the page): version to send for this one push instead of the
+    /// saved latest version. Not saved anywhere, so the live app-config is untouched.</summary>
+    public string? LatestVersionOverride { get; set; }
+
     public bool FirebaseConfigured { get; set; }
 
     public List<PushTesterDeviceRow> Devices { get; set; } = new();

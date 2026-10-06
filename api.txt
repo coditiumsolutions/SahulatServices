@@ -1,6 +1,6 @@
 ================================================================================
 SahulatGharTak API Reference
-Version: 3.36 | Last Updated: 2026-10-05
+Version: 3.39 | Last Updated: 2026-10-06
 Database: SahulatAppDB
 Local Base URL:    https://localhost:7265/api/
 Deployed Base URL:  https://sahulatghartak.com/api/
@@ -3307,6 +3307,85 @@ Fail (400):
   "success": false,
   "message": "platform must be 'android' or 'ios'."
 }
+
+--------------------------------------------------------------------------------
+Admin release of update blocks - silent app_unblock push (v3.39; BUILT 2026-10-06, backend and app side both done)
+--------------------------------------------------------------------------------
+Why: an app_update push with force_update "true" blocks a device until it installs latest_version. The block is
+stored ON the device (secure storage) and survives restarts, so a wrong or test announcement (a version the store does
+not have yet, a push sent to the wrong audience) can lock devices that can never update. Without this the only escape is
+clearing the app data or reinstalling (not even enough on iOS, where the Keychain outlives an uninstall).
+
+Decision: NO public/mobile "unblock" endpoint. The mobile API is anonymous, so an endpoint the app could call would
+let anyone lift a block. Control stays with staff: releasing is an ADMIN PORTAL action only (Admin / Super Admin,
+anti-forgery token, audited), and it reaches devices through a SILENT FCM PUSH that only the server can send.
+GET /api/v1/app/config is unchanged.
+
+FCM message, DATA-ONLY (no notification title/body: no banner, no sound, no inbox row, no channel):
+  type        "app_unblock"
+  sent_at     server send time, ISO 8601 UTC (e.g. 2026-10-06T08:00:00.0000000Z). REQUIRED: the app treats it as
+              the release time (see the rules below).
+  platform    informational ("android" | "ios")
+  No latest_version / store_url / force_update / screen / booking_id; no other type carries these.
+  Android: high-priority data message, no "notification" block; works in foreground, background and (non force-stopped)
+  killed states through the app's background handler.
+  iOS: background notification (apns-push-type "background", apns-priority 5, content-available 1, no alert). iOS may
+  throttle or drop these; staff can resend, and a device that still cannot get it needs an app build at or above the
+  pushed version (see docs/notification-testing.md section 12).
+
+App behaviour (implemented, lib/utils/update_block.dart):
+  - app_unblock: delete the stored block and any queued prompt, unblock immediately, show nothing. Remember the highest
+    sent_at seen as "cleared at".
+  - app_update whose sent_at is NOT later than "cleared at" is ignored (an announcement still in flight when staff
+    released the block must not re-block). An app_update sent after the release blocks again as usual. A push with no
+    usable sent_at is never ignored.
+  - Does not touch the splash gate: GET /api/v1/app/config minimum_required_version still blocks a genuinely too-old
+    build. A release never edits latest_version, minimum_required_version or AppConfig.
+
+Targeting (chosen by staff, resolved to device tokens server side, same token table as the other pushes):
+  one device (UserDeviceTokens row), one user (all their tokens), all Android, all iOS, or everyone.
+  Not filtered by role/userType (the block is device-wide). Same dead-token cleanup as other pushes. Do not require
+  Notifications:BookingPushEnabled for this type (it must work even if booking pushes are switched off).
+
+Admin portal control - on the existing Push Broadcast page (/Admin/PushBroadcast), NEAR THE BOTTOM, in its own card
+titled "Release blocked devices" below the broadcast form and its history:
+  - Scope selector: Everyone | Android | iOS | One user | One device (user / device picker like the Push Tester).
+  - Mandatory Reason (free text, max 200).
+  - Confirm step stating the number of registered devices it will reach; button "Send release".
+  - Result line after sending: recipients / sent / failed, plus a note that iOS delivery is best effort.
+  - Short help text: "Lifts the forced-update screen on devices that already received a blocking app_update. Does
+    not change the live version or the store check."
+  - Release history table under the card (when, scope, target, reason, admin, recipients/sent/failed). Rows are never
+    edited or deleted.
+  - Safeguard in the broadcast form above it: when "Force update" is ticked and the typed version is higher than the
+    store listing or the saved latest_version, show a warning before sending (that is how test blocks happen).
+  - Admin / Super Admin only; every send writes the audit log with the admin username.
+  Table (e.g. UpdateBlockReleases): Id, Scope, Platform?, UserId?, DeviceTokenId?, ReleasedAtUtc, ReleasedBy,
+  Reason, Recipients, Sent, Failed. ReleasedAtUtc is the same instant that is sent as sent_at.
+  Rejected with a clear message and nothing sent/written: empty Reason, unknown user/device, no matching devices.
+
+Backend (built 2026-10-06, contract above unchanged):
+  - Admin portal only, Admin / Super Admin, anti-forgery on every POST, no mobile endpoint:
+      POST /Admin/PushBroadcast/Release       sends the release (Scope, UserId?, TokenId?, Reason)
+      POST /Admin/PushBroadcast/ReleaseReach  counts the devices a scope would reach (confirm step), sends nothing
+      POST /Admin/PushBroadcast/PeekStore     reads the store's listed version WITHOUT saving it (used by the
+                                              "forced version is ahead of the store" warning on the broadcast form)
+  - INotificationService.SendUpdateUnblockAsync sends the data-only push (one multicast per platform, same sent_at);
+    stale tokens are removed like other pushes; it does not read Notifications:BookingPushEnabled.
+  - Every send is recorded in dbo.UpdateBlockReleases (db.txt; scripts/create-update-block-releases.sql, applied
+    2026-10-06) and logged with the admin username. ReleasedAtUtc is the instant sent as sent_at.
+  - No UserNotifications / AdminNotifications rows are written. latest_version, minimum_required_version and AppConfig
+    are never touched.
+  - Rejected with a message, nothing sent or written: empty or >200-char Reason, unknown user, unknown device, no
+    matching devices, bad scope.
+  - Android verified on the emulator (docs/notification-testing.md section 12). iOS not yet verified on a device.
+
+Compatibility: fully additive. A build without this change ignores the unknown push type (it keeps its block and
+needs an update, clear data, or a build at or above the pushed version). Ship the backend first, the extra push is
+harmless to old builds.
+
+Optional later (not required): a config-side "released at" field on GET /api/v1/app/config so a device that missed
+the push is released on its next launch. Add only if silent-push delivery proves unreliable.
 
 ================================================================================
 MAPS / GPS APIs (Reverse Geocoding, Nearby Providers, Live Tracking)

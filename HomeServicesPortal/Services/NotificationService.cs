@@ -321,6 +321,83 @@ public class NotificationService : INotificationService
         return new BroadcastResult(true, tokens.Count, sent, failed, stale.Count);
     }
 
+    public async Task<BroadcastResult> SendUpdateUnblockAsync(IReadOnlyCollection<DeviceTarget> devices,
+        DateTime sentAtUtc, CancellationToken cancellationToken = default)
+    {
+        if (FirebaseApp.DefaultInstance == null)
+        {
+            _logger.LogWarning("FCM is not configured (Firebase:ServiceAccountPath); app_unblock skipped.");
+            return new BroadcastResult(false, 0, 0, 0, 0);
+        }
+
+        var unique = devices.GroupBy(d => d.Token).Select(g => g.First()).ToList();
+        int sent = 0, failed = 0;
+        var stale = new List<string>();
+
+        // One multicast per platform so the informational "platform" key is right; sent_at is identical in both.
+        foreach (var group in unique.GroupBy(d => d.Platform))
+        {
+            var data = new Dictionary<string, string>
+            {
+                ["type"] = NotificationTypes.AppUnblock,
+                ["sent_at"] = sentAtUtc.ToString("O"),
+                ["platform"] = group.Key
+            };
+
+            foreach (var batch in group.Select(d => d.Token).Chunk(MulticastBatchSize))
+            {
+#pragma warning disable CS0618
+                var message = new MulticastMessage
+                {
+                    Tokens = batch,
+                    Data = data,
+                    // No Notification on either platform: data-only.
+                    Android = new AndroidConfig { Priority = Priority.High },
+                    Apns = new ApnsConfig
+                    {
+                        Headers = new Dictionary<string, string>
+                        {
+                            ["apns-push-type"] = "background",
+                            ["apns-priority"] = "5"
+                        },
+                        Aps = new Aps { ContentAvailable = true }
+                    }
+                };
+#pragma warning restore CS0618
+
+                try
+                {
+                    var response = await FirebaseMessaging.DefaultInstance.SendEachForMulticastAsync(message, cancellationToken);
+                    for (var i = 0; i < response.Responses.Count; i++)
+                    {
+                        var r = response.Responses[i];
+                        if (r.IsSuccess)
+                        {
+                            sent++;
+                            continue;
+                        }
+
+                        failed++;
+                        if (r.Exception?.MessagingErrorCode == MessagingErrorCode.Unregistered)
+                            stale.Add(batch[i]);
+                    }
+                }
+                catch (FirebaseMessagingException ex)
+                {
+                    _logger.LogError(ex, "FCM app_unblock batch failed ({ErrorCode}).", ex.MessagingErrorCode);
+                    failed += batch.Length;
+                }
+            }
+        }
+
+        if (stale.Count > 0)
+        {
+            await _db.UserDeviceTokens.Where(t => stale.Contains(t.DeviceToken)).ExecuteDeleteAsync(cancellationToken);
+        }
+
+        return new BroadcastResult(true, unique.Count, sent, failed, stale.Count);
+    }
+
     // ---- inbox --------------------------------------------------------------------------------
 
     public async Task<UserNotificationListDto> GetInboxAsync(int userId, string? userType, int page, int pageSize,

@@ -1,6 +1,6 @@
 ---
 status: current
-version: 1.6.0
+version: 1.10.0
 ---
 
 # Flutter App Changes Tracker
@@ -18,30 +18,31 @@ Legend:
 
 ---
 
+## Admin release of update blocks (`app_unblock`) - app done, backend pending (api.txt v3.38)
+
+A forced-update block lives on the device, so staff need a server-side way to lift a wrong or test one. The app already
+handles a silent, data-only `app_unblock` push (`type`, `sent_at`): it deletes the stored block and any queued prompt,
+shows nothing, and remembers `sent_at` as "cleared at" (secure storage `update_block_cleared_at`). An `app_update` whose
+`sent_at` is not later than that is ignored, also in the background handler; one without `sent_at` is never ignored.
+Code: `lib/utils/update_block.dart`, `lib/services/push_notification_service.dart`, tests in `test/update_block_test.dart`.
+
+Backend built (2026-10-06, api.txt v3.39 "Admin release of update blocks"): the silent push, and its control on the admin
+Push Broadcast page near the bottom (scope, mandatory reason, confirmation, history, audit). There is deliberately no
+mobile endpoint. Verified end to end on the Android emulator (block, release, stale `app_update` ignored, fresh one blocks
+again): `docs/notification-testing.md` section 12. Still open for the app side: case 23 (release while swiped away), case 27
+(older build) and iOS on a physical device.
+
+---
+
 ## Notification appearance, channels and sounds - remaining verification
 
 Still open:
-- **Sounds on Android: fixed and confirmed on a physical device (2026-10-05).** Release builds were playing the default
-  sound because resource shrinking stripped `res/raw/*.ogg`; see `docs/android-build-notes.md` section 4 for the cause,
-  the `res/raw/keep.xml` fix and how to verify an APK. Remember the Push Tester toggle: off sends on
-  `high_importance_channel` (default sound, by design), on sends on the type's `_v2` channel (custom sound).
 - **Sounds on iOS: statically checked, not yet heard.** The three `.wav` files in `ios/Runner/` are 16-bit PCM, 1 to 3
   seconds (iOS requires linear PCM / IMA4 / mu-law / a-law and under 30 s), they are in the Runner group and in the
   Resources build phase, and iOS has no resource shrinking that could strip them. Still to do on a physical iPhone:
   open the project in Xcode once to confirm Build Phases > Copy Bundle Resources lists them, then confirm each push type
   plays its own sound (the sound name comes from the push, e.g. `job_request.wav`; the app draws no local notifications
   on iOS).
-- **Stacking: known issue, accepted and not pursued (decided 2026-10-05).** A real booking (request 396 /
-  booking 228: accept, start, complete) gave three separate banners instead of one (`docs/notification-testing.md`
-  section 9), and it still did after the app-side change below. That change stays in because it is correct on its own:
-  `PushNotificationService._onForegroundMessage` posts keyed pushes (`booking-{id}`, else `request-{id}`) with that tag
-  and id 0, matching how the system draws background pushes (Android replaces a notification only when tag and id both
-  match). Untested leftovers if this is ever revisited: whether the production backend was running the tag code
-  (commit 208c42e) during the test, and whether the device launcher/OEM ignores tags. Each stage still gets its own
-  inbox row and banner, so nothing is lost.
-- **Channels live:** pushes land on the `_v2` channels once `Notifications:AndroidChannelsEnabled` is on (use the Push
-  Tester's channel option to force one send first).
-- **Repeat the Android list on a physical device**, including the locked-screen and swiped-away cases.
 - **Xcode:** open `ios/Runner.xcodeproj` once and confirm the three `.wav` files show under Build Phases > Copy Bundle
   Resources (added by hand in `project.pbxproj`).
 - **iOS delivery** on a physical device (no app code needed: thread-id grouping and sounds are backend-side; the app
