@@ -17,6 +17,9 @@ public class Provider
 
     public string? City { get; set; }
 
+    /// <summary>Service zone from Configurations key=Zone (e.g. Zone 1).</summary>
+    public string? Zone { get; set; }
+
     public int? ExperienceYears { get; set; }
 
     public string? Description { get; set; }

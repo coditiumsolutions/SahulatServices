@@ -1,6 +1,6 @@
 ================================================================================
 SahulatGharTak Database Schema
-Version: 4.20 | Last Updated: 2026-10-06
+Version: 4.21 | Last Updated: 2026-10-06
 Database: SahulatAppDB
 Server: 34.131.41.192,1433
 
@@ -186,6 +186,7 @@ Table: Providers
                                            -- UserUID by GenderSyncService (dual-role accounts
                                            -- share one Gender value; last write from either side wins)
   City             nvarchar(100)    NULL  -- primary city (from Configurations Cities)
+  Zone             nvarchar(100)    NULL  -- service zone (from Configurations key=Zone; added 2026-10-06)
   ExperienceYears  int              NULL      DEFAULT (0)
   Description      nvarchar(MAX)    NULL
   IsVerified       bit              NOT NULL  DEFAULT (0)
@@ -328,10 +329,11 @@ Table: AdminNotifications
 Table: Configurations
 --------------------------------------------------------------------------------
   UID              int              NOT NULL  PK  IDENTITY
-  ConfigKey        nvarchar(100)    NOT NULL  UNIQUE  -- e.g. Cities
+  ConfigKey        nvarchar(100)    NOT NULL  UNIQUE  -- e.g. Cities, Zone
   ConfigValue      nvarchar(MAX)    NOT NULL  -- comma-separated multi-values
   CreatedOn        datetime         NOT NULL  DEFAULT (getutcdate())
   -- Example: ConfigKey=Cities, ConfigValue=Karachi, Islamabad, Faisalabad, Lahore, ...
+  -- Example: ConfigKey=Zone, ConfigValue=Zone 1, Zone 2, Zone 3, Zone 4 (admin provider form dropdown)
   -- In-app inbox limits (seeded by scripts/seed-inbox-retention-config.sql, edited in Admin > Configurations):
   --   Inbox.RetentionDays = 90   (UserNotifications older than this are deleted; allowed 7-365)
   --   Inbox.MaxPerRole    = 200  (newest rows kept per UserId + UserType; allowed 20-1000)

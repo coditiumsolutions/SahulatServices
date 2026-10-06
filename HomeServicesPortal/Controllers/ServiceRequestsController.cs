@@ -101,6 +101,7 @@ public class ServiceRequestsController : Controller
         model.ServiceAddress = form.ServiceAddress;
         model.Status = form.Status;
         model.EstimatedBudget = form.EstimatedBudget;
+        model.ProviderZones = form.ProviderZones;
         model.CategoryUid = form.CategoryUid;
         model.Providers = form.Providers;
         model.AllProviders = form.AllProviders;

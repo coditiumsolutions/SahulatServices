@@ -57,6 +57,10 @@ public class ServiceProviderFormVm : IValidatableObject
     [Display(Name = "City")]
     public string? City { get; set; }
 
+    [StringLength(100)]
+    [Display(Name = "Zone")]
+    public string? Zone { get; set; }
+
     /// <summary>Primary category (ProviderCategories.PrimaryCategory = 1). Must be one of CategoryUids.</summary>
     [Range(1, int.MaxValue, ErrorMessage = "Primary Category is required.")]
     [Display(Name = "Primary Category")]
@@ -106,6 +110,7 @@ public class ServiceProviderFormVm : IValidatableObject
 
     public List<SelectListItem> Categories { get; set; } = new();
     public List<SelectListItem> CityOptions { get; set; } = new();
+    public List<SelectListItem> ZoneOptions { get; set; } = new();
 
     /// <summary>Embedded Legal Documents create/edit form (Edit page tab).</summary>
     public ProviderDocumentFormVm DocumentForm { get; set; } = new();
@@ -142,6 +147,7 @@ public class ServiceProviderDetailsVm
     public string? MobileNo { get; set; }
     public string? Cnic { get; set; }
     public string? City { get; set; }
+    public string? Zone { get; set; }
     public string CategoryName { get; set; } = string.Empty;
     public int? ExperienceYears { get; set; }
     public decimal? Rating { get; set; }

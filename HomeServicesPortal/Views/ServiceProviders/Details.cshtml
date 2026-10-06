@@ -124,13 +124,19 @@
                     </div>
                     <div class="col-md-6">
                         <div class="row g-2">
-                            <div class="col-sm-4 sp-label">Experience</div>
-                            <div class="col-sm-8 sp-value">@(Model.ExperienceYears?.ToString() ?? "0") yrs</div>
+                            <div class="col-sm-4 sp-label">Zone</div>
+                            <div class="col-sm-8 sp-value">@(string.IsNullOrWhiteSpace(Model.Zone) ? "—" : Model.Zone)</div>
                         </div>
                     </div>
                 </div>
 
                 <div class="row g-2 mb-2 sp-detail-row">
+                    <div class="col-md-6">
+                        <div class="row g-2">
+                            <div class="col-sm-4 sp-label">Experience</div>
+                            <div class="col-sm-8 sp-value">@(Model.ExperienceYears?.ToString() ?? "0") yrs</div>
+                        </div>
+                    </div>
                     <div class="col-md-6">
                         <div class="row g-2">
                             <div class="col-sm-4 sp-label">Rating</div>
@@ -147,6 +153,9 @@
                             </div>
                         </div>
                     </div>
+                </div>
+
+                <div class="row g-2 mb-2 sp-detail-row">
                     <div class="col-md-6">
                         <div class="row g-2">
                             <div class="col-sm-4 sp-label">Verified</div>

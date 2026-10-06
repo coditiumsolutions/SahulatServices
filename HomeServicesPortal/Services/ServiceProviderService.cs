@@ -11,6 +11,7 @@ namespace HomeServicesPortal.Services;
 public class ServiceProviderService : IServiceProviderService
 {
     private const string CitiesConfigKey = "Cities";
+    private const string ZoneConfigKey = "Zone";
 
     private readonly AppDbContext _db;
     private readonly IFileStorageService _fileStorage;
@@ -93,7 +94,8 @@ public class ServiceProviderService : IServiceProviderService
     {
         model.Categories = await GetCategoryOptionsAsync(cancellationToken);
         model.ServiceTitleOptions = await GetServiceTitleOptionsAsync(cancellationToken);
-        model.CityOptions = await BuildCityOptionsAsync(model.City, cancellationToken);
+        model.CityOptions = await BuildConfigOptionsAsync(CitiesConfigKey, model.City, cancellationToken);
+        model.ZoneOptions = await BuildConfigOptionsAsync(ZoneConfigKey, model.Zone, cancellationToken);
         if (model.Uid > 0)
         {
             await PopulateDocumentFormAsync(model, cancellationToken);
@@ -165,22 +167,23 @@ public class ServiceProviderService : IServiceProviderService
             .FirstOrDefaultAsync(cancellationToken);
     }
 
-    private async Task<List<SelectListItem>> BuildCityOptionsAsync(
-        string? currentCity,
+    private async Task<List<SelectListItem>> BuildConfigOptionsAsync(
+        string configKey,
+        string? currentValue,
         CancellationToken cancellationToken)
     {
-        var values = await _configurations.GetValuesByKeyAsync(CitiesConfigKey, cancellationToken);
+        var values = await _configurations.GetValuesByKeyAsync(configKey, cancellationToken);
         var options = values
             .Select(v => new SelectListItem { Value = v, Text = v })
             .ToList();
 
-        if (!string.IsNullOrWhiteSpace(currentCity)
-            && !options.Any(o => string.Equals(o.Value, currentCity, StringComparison.OrdinalIgnoreCase)))
+        if (!string.IsNullOrWhiteSpace(currentValue)
+            && !options.Any(o => string.Equals(o.Value, currentValue, StringComparison.OrdinalIgnoreCase)))
         {
             options.Insert(0, new SelectListItem
             {
-                Value = currentCity,
-                Text = currentCity
+                Value = currentValue,
+                Text = currentValue
             });
         }
 
@@ -296,6 +299,7 @@ public class ServiceProviderService : IServiceProviderService
                 MobileNo = p.MobileNo,
                 Cnic = p.Cnic,
                 City = p.City,
+                Zone = p.Zone,
                 CategoryName = p.Category.CategoryName,
                 ExperienceYears = p.ExperienceYears,
                 Rating = p.AverageRating,
@@ -336,6 +340,7 @@ public class ServiceProviderService : IServiceProviderService
                 MobileNo = p.MobileNo,
                 Cnic = p.Cnic,
                 City = p.City,
+                Zone = p.Zone,
                 CategoryUid = p.CategoryUid,
                 ExperienceYears = p.ExperienceYears,
                 Rating = p.AverageRating,
@@ -446,6 +451,7 @@ public class ServiceProviderService : IServiceProviderService
             FullName = model.FullName.Trim(),
             Cnic = model.Cnic.Trim(),
             City = string.IsNullOrWhiteSpace(model.City) ? null : model.City.Trim(),
+            Zone = string.IsNullOrWhiteSpace(model.Zone) ? null : model.Zone.Trim(),
             ExperienceYears = model.ExperienceYears ?? 0,
             IsVerified = model.IsVerified,
             AverageRating = model.Rating ?? 0,
@@ -534,6 +540,7 @@ public class ServiceProviderService : IServiceProviderService
         provider.FullName = model.FullName.Trim();
         provider.Cnic = model.Cnic.Trim();
         provider.City = string.IsNullOrWhiteSpace(model.City) ? null : model.City.Trim();
+        provider.Zone = string.IsNullOrWhiteSpace(model.Zone) ? null : model.Zone.Trim();
         provider.ExperienceYears = model.ExperienceYears ?? 0;
         provider.AverageRating = model.Rating ?? provider.AverageRating;
         provider.IsVerified = model.IsVerified;

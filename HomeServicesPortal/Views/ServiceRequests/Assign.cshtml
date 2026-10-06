@@ -6,34 +6,132 @@
 }
 
 <style>
-    .assign-form-grid .form-label {
-        font-size: 0.78rem;
+    .assign-summary-grid {
+        font-size: 0.95rem;
+        line-height: 1.4;
+    }
+    .assign-summary-grid .sum-label {
+        font-size: 0.9rem;
         font-weight: 600;
-        color: #6c757d;
+        color: #111111;
+    }
+    .assign-summary-grid .sum-value {
+        font-size: 0.95rem;
+        font-weight: 500;
+        color: #0a58ca;
+        word-break: break-word;
+    }
+    .assign-summary-grid > .assign-row {
+        border-bottom: 1px solid #dee2e6;
+        padding-top: 0.45rem;
+        padding-bottom: 0.45rem;
+        margin-bottom: 0 !important;
+        --bs-gutter-y: 0.15rem;
+    }
+    .assign-summary-grid > .assign-row:last-child {
+        border-bottom: none;
+        padding-bottom: 0;
+    }
+    .assign-summary-grid > .assign-row:first-child {
+        padding-top: 0;
+    }
+
+    .assign-form-grid .form-label {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: #111111;
         margin-bottom: 0;
     }
     .assign-form-grid .form-control,
     .assign-form-grid .form-select {
-        font-size: 0.875rem;
+        font-size: 0.95rem;
+        color: #0a58ca;
+        font-weight: 500;
+    }
+    .assign-form-grid .form-control:focus,
+    .assign-form-grid .form-select:focus {
+        color: #0a58ca;
+    }
+    .assign-form-grid .form-check-label {
+        color: #0a58ca;
+        font-weight: 500;
     }
     .assign-form-grid .form-text {
-        font-size: 0.72rem;
+        font-size: 0.78rem;
         margin-top: 0.2rem;
     }
+    .assign-form-grid > .assign-row {
+        border-bottom: 1px solid #dee2e6;
+        padding-top: 0.55rem;
+        padding-bottom: 0.55rem;
+        margin-bottom: 0 !important;
+    }
+    .assign-form-grid > .assign-row:last-of-type {
+        border-bottom: none;
+    }
+    .assign-form-grid .assign-section-title {
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: #111111;
+        margin-top: 0.85rem;
+        margin-bottom: 0.35rem;
+        padding-bottom: 0.35rem;
+        border-bottom: 1px solid #ced4da;
+    }
+    .assign-form-grid .assign-bill-block > .assign-row {
+        padding-top: 0.3rem;
+        padding-bottom: 0.3rem;
+        border-bottom: 1px solid #e9ecef;
+    }
+    .assign-form-grid .assign-bill-block > .assign-row:last-child {
+        border-bottom: none;
+    }
+    .assign-form-grid .assign-bill-block .form-label {
+        font-size: 0.8rem;
+    }
+    .assign-form-grid .assign-bill-block .form-control,
+    .assign-form-grid .assign-bill-block .form-select {
+        font-size: 0.85rem;
+        padding-top: 0.2rem;
+        padding-bottom: 0.2rem;
+        min-height: calc(1.5em + 0.4rem + 2px);
+    }
+    .assign-form-grid .assign-bill-block .form-text {
+        display: none;
+    }
+    .assign-form-grid .assign-bill-field .col-form-label,
+    .assign-form-grid .assign-bill-field > .form-label {
+        margin-bottom: 0.15rem;
+    }
     .assign-form-grid .assign-provider-list {
-        max-height: 220px;
+        max-height: 240px;
         overflow-y: auto;
     }
-    .assign-summary-grid .sum-label {
-        font-size: 0.78rem;
-        font-weight: 600;
-        color: #6c757d;
+    .assign-form-grid .assign-provider-row {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.5rem;
+        padding: 0.4rem 0.15rem;
+        border-bottom: 1px solid #e9ecef;
     }
-    .assign-summary-grid .sum-value {
+    .assign-form-grid .assign-provider-row:last-child {
+        border-bottom: none;
+    }
+    .assign-form-grid .assign-provider-row .form-check-input {
+        margin-top: 0.35rem;
+    }
+    .assign-form-grid .assign-provider-meta {
+        flex: 1;
+        min-width: 0;
         font-size: 0.9rem;
+        color: #0a58ca;
         font-weight: 500;
-        color: #212529;
-        word-break: break-word;
+    }
+    .assign-form-grid .assign-provider-zone {
+        font-size: 0.82rem;
+        color: #0a58ca;
+        font-weight: 600;
+        white-space: nowrap;
     }
 </style>
 
@@ -45,7 +143,7 @@
 
 <div class="card hs-card mb-3">
     <div class="card-body p-3 assign-summary-grid">
-        <div class="row g-2 mb-2">
+        <div class="row g-2 assign-row">
             <div class="col-md-6">
                 <div class="row g-2">
                     <div class="col-sm-4 sum-label">Request</div>
@@ -59,7 +157,7 @@
                 </div>
             </div>
         </div>
-        <div class="row g-2 mb-2">
+        <div class="row g-2 assign-row">
             <div class="col-md-6">
                 <div class="row g-2">
                     <div class="col-sm-4 sum-label">City</div>
@@ -73,7 +171,7 @@
                 </div>
             </div>
         </div>
-        <div class="row g-2">
+        <div class="row g-2 assign-row">
             <div class="col-md-6">
                 <div class="row g-2">
                     <div class="col-sm-4 sum-label">Address</div>
@@ -87,7 +185,7 @@
                 </div>
             </div>
         </div>
-        <div class="row g-2 mt-2">
+        <div class="row g-2 assign-row">
             <div class="col-md-6">
                 <div class="row g-2">
                     <div class="col-sm-4 sum-label">Est. Budget</div>
@@ -107,255 +205,176 @@
             <input type="hidden" asp-for="CategoryUid" />
             <input type="hidden" asp-for="CommissionSourceLabel" id="CommissionSourceLabelHidden" />
 
-            <div class="row g-2 mb-2">
-                <div class="col-md-6">
-                    <div class="row g-2 align-items-start">
-                        <div class="col-sm-4 pt-1">
-                            <label class="form-label">Providers</label>
-                            <div class="mt-1"><span class="badge bg-primary" id="selectedProviderCount">0 selected</span></div>
+            <div class="row g-2 assign-row">
+                <div class="col-12">
+                    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2">
+                        <div class="d-flex align-items-center gap-2">
+                            <label class="form-label mb-0">Providers</label>
+                            <span class="badge bg-primary" id="selectedProviderCount">0 selected</span>
                         </div>
-                        <div class="col-sm-8">
-                            @if (Model.TitleFiltered)
-                            {
-                                <div class="alert alert-info py-2 px-3 small mb-2">
-                                    <i class="fa-solid fa-filter me-1"></i>
-                                    Pre-filtered by Service Title "@Model.ServiceTitle" — only providers offering this exact title are shown.
-                                </div>
-                            }
-                            @if (!Model.HasCategoryMatch)
-                            {
-                                <div class="alert alert-warning py-2 px-3 small mb-2">
-                                    <i class="fa-solid fa-triangle-exclamation me-1"></i>
-                                    No category match. Showing all providers.
-                                </div>
-                            }
+                        <div class="form-check form-switch mb-0">
+                            <input asp-for="ShowAllProviders" class="form-check-input" id="showAllProvidersToggle" disabled="@(!Model.HasCategoryMatch)" />
+                            <label asp-for="ShowAllProviders" class="form-check-label"></label>
+                        </div>
+                    </div>
+                    @if (Model.TitleFiltered)
+                    {
+                        <div class="alert alert-info py-2 px-3 small mb-2">
+                            <i class="fa-solid fa-filter me-1"></i>
+                            Pre-filtered by Service Title "@Model.ServiceTitle" — only providers offering this exact title are shown.
+                        </div>
+                    }
+                    @if (!Model.HasCategoryMatch)
+                    {
+                        <div class="alert alert-warning py-2 px-3 small mb-2">
+                            <i class="fa-solid fa-triangle-exclamation me-1"></i>
+                            No category match. Showing all providers.
+                        </div>
+                    }
 
-                            <div id="providerListMatching" class="border rounded p-2 assign-provider-list @(Model.ShowAllProviders ? "d-none" : "")">
-                                @if (Model.Providers.Count == 0)
+                    <div id="providerListMatching" class="border rounded p-2 assign-provider-list @(Model.ShowAllProviders ? "d-none" : "")">
+                        @if (Model.Providers.Count == 0)
+                        {
+                            <div class="text-muted small py-2 px-1">No matching providers.</div>
+                        }
+                        @foreach (var p in Model.Providers)
+                        {
+                            var uid = int.TryParse(p.Value, out var id) ? id : 0;
+                            var zone = Model.ProviderZones.TryGetValue(uid, out var z) ? z : "";
+                            <div class="assign-provider-row">
+                                @if (selected.Contains(uid))
                                 {
-                                    <div class="text-muted small py-2 px-1">No matching providers.</div>
+                                    <input class="form-check-input provider-check matching-check" type="checkbox"
+                                           name="ProviderUids" value="@p.Value" id="match_@p.Value" checked />
                                 }
-                                @foreach (var p in Model.Providers)
+                                else
                                 {
-                                    var uid = int.TryParse(p.Value, out var id) ? id : 0;
-                                    <div class="form-check">
-                                        @if (selected.Contains(uid))
-                                        {
-                                            <input class="form-check-input provider-check matching-check" type="checkbox"
-                                                   name="ProviderUids" value="@p.Value" id="match_@p.Value" checked />
-                                        }
-                                        else
-                                        {
-                                            <input class="form-check-input provider-check matching-check" type="checkbox"
-                                                   name="ProviderUids" value="@p.Value" id="match_@p.Value" />
-                                        }
-                                        <label class="form-check-label small" for="match_@p.Value">@p.Text</label>
-                                    </div>
+                                    <input class="form-check-input provider-check matching-check" type="checkbox"
+                                           name="ProviderUids" value="@p.Value" id="match_@p.Value" />
                                 }
+                                <label class="form-check-label assign-provider-meta" for="match_@p.Value">
+                                    <span>@p.Text</span>
+                                    <span class="assign-provider-zone d-block">Zone: @(string.IsNullOrWhiteSpace(zone) ? "—" : zone)</span>
+                                </label>
                             </div>
+                        }
+                    </div>
 
-                            <div id="providerListAll" class="border rounded p-2 assign-provider-list @(Model.ShowAllProviders ? "" : "d-none")">
-                                @if (string.IsNullOrWhiteSpace(Model.ClientCity))
+                    <div id="providerListAll" class="border rounded p-2 assign-provider-list @(Model.ShowAllProviders ? "" : "d-none")">
+                        @if (string.IsNullOrWhiteSpace(Model.ClientCity))
+                        {
+                            <div class="text-muted small py-2 px-1">Client has no City set. Update the client record first.</div>
+                        }
+                        else if (Model.AllProviders.Count == 0)
+                        {
+                            <div class="text-muted small py-2 px-1">No providers found in @Model.ClientCity.</div>
+                        }
+                        @foreach (var p in Model.AllProviders)
+                        {
+                            var uid = int.TryParse(p.Value, out var id) ? id : 0;
+                            var zone = Model.ProviderZones.TryGetValue(uid, out var z) ? z : "";
+                            <div class="assign-provider-row">
+                                @if (selected.Contains(uid))
                                 {
-                                    <div class="text-muted small py-2 px-1">Client has no City set. Update the client record first.</div>
+                                    <input class="form-check-input provider-check all-check" type="checkbox"
+                                           name="ProviderUids" value="@p.Value" id="all_@p.Value" checked
+                                           disabled="@(!Model.ShowAllProviders)" />
                                 }
-                                else if (Model.AllProviders.Count == 0)
+                                else
                                 {
-                                    <div class="text-muted small py-2 px-1">No providers found in @Model.ClientCity.</div>
+                                    <input class="form-check-input provider-check all-check" type="checkbox"
+                                           name="ProviderUids" value="@p.Value" id="all_@p.Value"
+                                           disabled="@(!Model.ShowAllProviders)" />
                                 }
-                                @foreach (var p in Model.AllProviders)
-                                {
-                                    var uid = int.TryParse(p.Value, out var id) ? id : 0;
-                                    <div class="form-check">
-                                        @if (selected.Contains(uid))
-                                        {
-                                            <input class="form-check-input provider-check all-check" type="checkbox"
-                                                   name="ProviderUids" value="@p.Value" id="all_@p.Value" checked
-                                                   disabled="@(!Model.ShowAllProviders)" />
-                                        }
-                                        else
-                                        {
-                                            <input class="form-check-input provider-check all-check" type="checkbox"
-                                                   name="ProviderUids" value="@p.Value" id="all_@p.Value"
-                                                   disabled="@(!Model.ShowAllProviders)" />
-                                        }
-                                        <label class="form-check-label small" for="all_@p.Value">@p.Text</label>
-                                    </div>
-                                }
+                                <label class="form-check-label assign-provider-meta" for="all_@p.Value">
+                                    <span>@p.Text</span>
+                                    <span class="assign-provider-zone d-block">Zone: @(string.IsNullOrWhiteSpace(zone) ? "—" : zone)</span>
+                                </label>
                             </div>
+                        }
+                    </div>
 
-                            <span asp-validation-for="ProviderUids" class="text-danger small"></span>
-                            <div class="form-text">Override list shows providers in the client's city only (category ignored).</div>
-                        </div>
+                    <span asp-validation-for="ProviderUids" class="text-danger small"></span>
+                    <div class="form-text">Override list shows providers in the client's city only (category ignored).</div>
+                </div>
+            </div>
+
+            <div class="row g-2 assign-row">
+                <div class="col-12">
+                    <label asp-for="ServiceDetail" class="form-label d-block mb-1"></label>
+                    <textarea asp-for="ServiceDetail" class="form-control form-control-sm" rows="3" maxlength="1000"></textarea>
+                    <span asp-validation-for="ServiceDetail" class="text-danger small"></span>
+                </div>
+            </div>
+
+            <h6 class="assign-section-title">Bill Breakdown</h6>
+            <div class="assign-bill-block">
+                <div class="row g-2 assign-row">
+                    <div class="col-md-3 assign-bill-field">
+                        <label asp-for="EstimatedAmount" class="form-label"></label>
+                        <input asp-for="EstimatedAmount" class="form-control form-control-sm calc-input" type="number" step="0.01" min="0" />
+                        <span asp-validation-for="EstimatedAmount" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-3 assign-bill-field">
+                        <label asp-for="VisitCharges" class="form-label"></label>
+                        <input asp-for="VisitCharges" class="form-control form-control-sm calc-input" type="number" step="0.01" min="0" />
+                        <span asp-validation-for="VisitCharges" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-3 assign-bill-field">
+                        <label asp-for="AdditionalCharges" class="form-label"></label>
+                        <input asp-for="AdditionalCharges" class="form-control form-control-sm calc-input" type="number" step="0.01" min="0" />
+                        <span asp-validation-for="AdditionalCharges" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-3 assign-bill-field">
+                        <label asp-for="Deductions" class="form-label"></label>
+                        <input asp-for="Deductions" class="form-control form-control-sm calc-input" type="number" step="0.01" min="0" />
+                        <span asp-validation-for="Deductions" class="text-danger small"></span>
                     </div>
                 </div>
-                <div class="col-md-6">
-                    <div class="row g-2 align-items-start">
-                        <div class="col-sm-4 pt-1">
-                            <label class="form-label">Options</label>
-                        </div>
-                        <div class="col-sm-8">
-                            <div class="form-check form-switch mb-2">
-                                <input asp-for="ShowAllProviders" class="form-check-input" id="showAllProvidersToggle" disabled="@(!Model.HasCategoryMatch)" />
-                                <label asp-for="ShowAllProviders" class="form-check-label small"></label>
-                            </div>
-                            <label asp-for="ServiceDetail" class="form-label d-block mb-1"></label>
-                            <textarea asp-for="ServiceDetail" class="form-control form-control-sm" rows="4" maxlength="1000"></textarea>
-                            <span asp-validation-for="ServiceDetail" class="text-danger small"></span>
-                        </div>
+
+                <div class="row g-2 assign-row">
+                    <div class="col-md-3 assign-bill-field">
+                        <label asp-for="FinalAmount" class="form-label" title="Estimated + Visit + Additional − Deductions"></label>
+                        <input asp-for="FinalAmount" class="form-control form-control-sm" type="number" step="0.01" readonly tabindex="-1" title="Estimated + Visit + Additional − Deductions" />
+                        <span asp-validation-for="FinalAmount" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-3 assign-bill-field">
+                        <label asp-for="CustomerPaid" class="form-label"></label>
+                        <input asp-for="CustomerPaid" class="form-control form-control-sm calc-input" type="number" step="0.01" min="0" />
+                        <span asp-validation-for="CustomerPaid" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-3 assign-bill-field">
+                        <label asp-for="CustomerRemaining" class="form-label" title="Final Bill − Customer Paid"></label>
+                        <input asp-for="CustomerRemaining" class="form-control form-control-sm" type="number" step="0.01" readonly tabindex="-1" title="Final Bill − Customer Paid" />
+                    </div>
+                    <div class="col-md-3 assign-bill-field">
+                        <label asp-for="PaymentMode" class="form-label"></label>
+                        <select asp-for="PaymentMode" class="form-select form-select-sm" asp-items="Model.PaymentModeOptions"></select>
+                        <span asp-validation-for="PaymentMode" class="text-danger small"></span>
                     </div>
                 </div>
             </div>
 
-            <h6 class="text-muted mt-3 mb-2">Bill Breakdown</h6>
-            <div class="row g-2 mb-2">
-                <div class="col-md-6">
-                    <div class="row g-2 align-items-center">
-                        <div class="col-sm-4">
-                            <label asp-for="EstimatedAmount" class="form-label"></label>
-                        </div>
-                        <div class="col-sm-8">
-                            <input asp-for="EstimatedAmount" class="form-control form-control-sm calc-input" type="number" step="0.01" min="0" />
-                            <span asp-validation-for="EstimatedAmount" class="text-danger small"></span>
-                        </div>
+            <h6 class="assign-section-title">Commission <span class="fw-normal text-muted" id="commissionSourceLabel">(@Model.CommissionSourceLabel)</span></h6>
+            <div class="assign-bill-block">
+                <div class="row g-2 assign-row">
+                    <div class="col-md-3 assign-bill-field">
+                        <label asp-for="CommissionType" class="form-label"></label>
+                        <select asp-for="CommissionType" class="form-select form-select-sm calc-input" asp-items="Model.CommissionTypeOptions"></select>
+                        <span asp-validation-for="CommissionType" class="text-danger small"></span>
                     </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="row g-2 align-items-center">
-                        <div class="col-sm-4">
-                            <label asp-for="VisitCharges" class="form-label"></label>
-                        </div>
-                        <div class="col-sm-8">
-                            <input asp-for="VisitCharges" class="form-control form-control-sm calc-input" type="number" step="0.01" min="0" />
-                            <span asp-validation-for="VisitCharges" class="text-danger small"></span>
-                        </div>
+                    <div class="col-md-3 assign-bill-field">
+                        <label asp-for="CommissionValue" class="form-label"></label>
+                        <input asp-for="CommissionValue" class="form-control form-control-sm calc-input" type="number" step="0.01" min="0" />
+                        <span asp-validation-for="CommissionValue" class="text-danger small"></span>
                     </div>
-                </div>
-            </div>
-
-            <div class="row g-2 mb-2">
-                <div class="col-md-6">
-                    <div class="row g-2 align-items-center">
-                        <div class="col-sm-4">
-                            <label asp-for="AdditionalCharges" class="form-label"></label>
-                        </div>
-                        <div class="col-sm-8">
-                            <input asp-for="AdditionalCharges" class="form-control form-control-sm calc-input" type="number" step="0.01" min="0" />
-                            <span asp-validation-for="AdditionalCharges" class="text-danger small"></span>
-                        </div>
+                    <div class="col-md-3 assign-bill-field">
+                        <label asp-for="CommissionAmount" class="form-label" title="Auto from type + rate on Final Bill"></label>
+                        <input asp-for="CommissionAmount" class="form-control form-control-sm" type="number" step="0.01" readonly tabindex="-1" title="Auto from type + rate on Final Bill" />
                     </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="row g-2 align-items-center">
-                        <div class="col-sm-4">
-                            <label asp-for="Deductions" class="form-label"></label>
-                        </div>
-                        <div class="col-sm-8">
-                            <input asp-for="Deductions" class="form-control form-control-sm calc-input" type="number" step="0.01" min="0" />
-                            <span asp-validation-for="Deductions" class="text-danger small"></span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="row g-2 mb-2">
-                <div class="col-md-6">
-                    <div class="row g-2 align-items-center">
-                        <div class="col-sm-4">
-                            <label asp-for="FinalAmount" class="form-label"></label>
-                        </div>
-                        <div class="col-sm-8">
-                            <input asp-for="FinalAmount" class="form-control form-control-sm" type="number" step="0.01" readonly tabindex="-1" />
-                            <div class="form-text">Estimated + Visit + Additional − Deductions</div>
-                            <span asp-validation-for="FinalAmount" class="text-danger small"></span>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="row g-2 align-items-center">
-                        <div class="col-sm-4">
-                            <label asp-for="CustomerPaid" class="form-label"></label>
-                        </div>
-                        <div class="col-sm-8">
-                            <input asp-for="CustomerPaid" class="form-control form-control-sm calc-input" type="number" step="0.01" min="0" />
-                            <span asp-validation-for="CustomerPaid" class="text-danger small"></span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="row g-2 mb-2">
-                <div class="col-md-6">
-                    <div class="row g-2 align-items-center">
-                        <div class="col-sm-4">
-                            <label asp-for="PaymentMode" class="form-label"></label>
-                        </div>
-                        <div class="col-sm-8">
-                            <select asp-for="PaymentMode" class="form-select form-select-sm" asp-items="Model.PaymentModeOptions"></select>
-                            <span asp-validation-for="PaymentMode" class="text-danger small"></span>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="row g-2 align-items-center">
-                        <div class="col-sm-4">
-                            <label asp-for="CustomerRemaining" class="form-label"></label>
-                        </div>
-                        <div class="col-sm-8">
-                            <input asp-for="CustomerRemaining" class="form-control form-control-sm" type="number" step="0.01" readonly tabindex="-1" />
-                            <div class="form-text">Final Bill − Customer Paid</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <h6 class="text-muted mt-3 mb-2">Commission <span class="fw-normal" id="commissionSourceLabel">(@Model.CommissionSourceLabel)</span></h6>
-            <div class="row g-2 mb-2">
-                <div class="col-md-6">
-                    <div class="row g-2 align-items-center">
-                        <div class="col-sm-4">
-                            <label asp-for="CommissionType" class="form-label"></label>
-                        </div>
-                        <div class="col-sm-8">
-                            <select asp-for="CommissionType" class="form-select form-select-sm calc-input" asp-items="Model.CommissionTypeOptions"></select>
-                            <span asp-validation-for="CommissionType" class="text-danger small"></span>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="row g-2 align-items-center">
-                        <div class="col-sm-4">
-                            <label asp-for="CommissionValue" class="form-label"></label>
-                        </div>
-                        <div class="col-sm-8">
-                            <input asp-for="CommissionValue" class="form-control form-control-sm calc-input" type="number" step="0.01" min="0" />
-                            <span asp-validation-for="CommissionValue" class="text-danger small"></span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="row g-2 mb-2">
-                <div class="col-md-6">
-                    <div class="row g-2 align-items-center">
-                        <div class="col-sm-4">
-                            <label asp-for="CommissionAmount" class="form-label"></label>
-                        </div>
-                        <div class="col-sm-8">
-                            <input asp-for="CommissionAmount" class="form-control form-control-sm" type="number" step="0.01" readonly tabindex="-1" />
-                            <div class="form-text">Auto from type + rate on Final Bill</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="row g-2 align-items-center">
-                        <div class="col-sm-4">
-                            <label asp-for="ProviderEarning" class="form-label"></label>
-                        </div>
-                        <div class="col-sm-8">
-                            <input asp-for="ProviderEarning" class="form-control form-control-sm" type="number" step="0.01" readonly tabindex="-1" />
-                            <div class="form-text">Final Bill − Company Commission</div>
-                        </div>
+                    <div class="col-md-3 assign-bill-field">
+                        <label asp-for="ProviderEarning" class="form-label" title="Final Bill − Company Commission"></label>
+                        <input asp-for="ProviderEarning" class="form-control form-control-sm" type="number" step="0.01" readonly tabindex="-1" title="Final Bill − Company Commission" />
                     </div>
                 </div>
             </div>

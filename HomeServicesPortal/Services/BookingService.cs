@@ -760,18 +760,28 @@ public class BookingService : IBookingService
             .AnyAsync(b => b.RequestUid == requestUid && b.Status != "Rejected" && b.Status != "Cancelled", cancellationToken);
         if (alreadyBooked) return null;
 
-        var matchingProviders = await _db.Providers
+        var matchingProviderRows = await _db.Providers
             .AsNoTracking()
             .Where(p => p.User.IsActive && p.IsVerified
                 && p.ProviderCategories.Any(pc => pc.CategoryUid == request.CategoryUid))
             .OrderBy(p => p.FullName)
+            .Select(p => new
+            {
+                p.Uid,
+                p.FullName,
+                CategoryName = p.Category.CategoryName,
+                p.City,
+                p.Zone
+            })
+            .ToListAsync(cancellationToken);
+
+        var matchingProviders = matchingProviderRows
             .Select(p => new SelectListItem
             {
                 Value = p.Uid.ToString(),
-                Text = p.FullName + " (" + p.Category.CategoryName + ")"
-                    + (p.City != null && p.City != "" ? " — " + p.City : "")
+                Text = FormatAssignProviderLabel(p.FullName, p.CategoryName, p.City)
             })
-            .ToListAsync(cancellationToken);
+            .ToList();
 
         // Conditionally narrow by Service Title: the customer's ServiceTitle is free text, not a
         // FK, so first check whether it happens to match a predefined ServiceTitles row for this
@@ -788,25 +798,41 @@ public class BookingService : IBookingService
 
         if (matchedTitleUid > 0)
         {
-            var titleFilteredProviders = await _db.Providers
+            var titleFilteredRows = await _db.Providers
                 .AsNoTracking()
                 .Where(p => p.User.IsActive && p.IsVerified
                     && p.ProviderCategories.Any(pc => pc.CategoryUid == request.CategoryUid)
                     && p.ProviderServiceTitles.Any(pt => pt.ServiceTitleUid == matchedTitleUid))
                 .OrderBy(p => p.FullName)
-                .Select(p => new SelectListItem
+                .Select(p => new
                 {
-                    Value = p.Uid.ToString(),
-                    Text = p.FullName + " (" + p.Category.CategoryName + ")"
-                        + (p.City != null && p.City != "" ? " — " + p.City : "")
+                    p.Uid,
+                    p.FullName,
+                    CategoryName = p.Category.CategoryName,
+                    p.City,
+                    p.Zone
                 })
                 .ToListAsync(cancellationToken);
 
-            if (titleFilteredProviders.Count > 0)
+            if (titleFilteredRows.Count > 0)
             {
-                matchingProviders = titleFilteredProviders;
+                matchingProviderRows = titleFilteredRows;
+                matchingProviders = titleFilteredRows
+                    .Select(p => new SelectListItem
+                    {
+                        Value = p.Uid.ToString(),
+                        Text = FormatAssignProviderLabel(p.FullName, p.CategoryName, p.City)
+                    })
+                    .ToList();
                 titleFiltered = true;
             }
+        }
+
+        var providerZones = new Dictionary<int, string>();
+        foreach (var row in matchingProviderRows)
+        {
+            if (!string.IsNullOrWhiteSpace(row.Zone))
+                providerZones[row.Uid] = row.Zone.Trim();
         }
 
         // Override list: same client city (category ignored). Empty if client has no city.
@@ -819,20 +845,36 @@ public class BookingService : IBookingService
         else
         {
             var cityLower = clientCity.ToLower();
-            cityProviders = await _db.Providers
+            var cityProviderRows = await _db.Providers
                 .AsNoTracking()
                 .Where(p => p.User.IsActive
                     && p.City != null
                     && p.City.ToLower() == cityLower
                     && p.IsVerified)
                 .OrderBy(p => p.FullName)
+                .Select(p => new
+                {
+                    p.Uid,
+                    p.FullName,
+                    CategoryName = p.Category.CategoryName,
+                    p.City,
+                    p.Zone
+                })
+                .ToListAsync(cancellationToken);
+
+            cityProviders = cityProviderRows
                 .Select(p => new SelectListItem
                 {
                     Value = p.Uid.ToString(),
-                    Text = p.FullName + " (" + p.Category.CategoryName + ")"
-                        + (p.City != null && p.City != "" ? " — " + p.City : "")
+                    Text = FormatAssignProviderLabel(p.FullName, p.CategoryName, p.City)
                 })
-                .ToListAsync(cancellationToken);
+                .ToList();
+
+            foreach (var row in cityProviderRows)
+            {
+                if (!string.IsNullOrWhiteSpace(row.Zone))
+                    providerZones[row.Uid] = row.Zone.Trim();
+            }
         }
 
         var estimated = request.EstimatedBudget ?? 0m;
@@ -852,6 +894,7 @@ public class BookingService : IBookingService
             ServiceAddress = request.ServiceAddress,
             Status = request.Status,
             EstimatedBudget = request.EstimatedBudget,
+            ProviderZones = providerZones,
             ServiceDetail = request.ServiceDescription,
             EstimatedAmount = estimated,
             VisitCharges = 0,
@@ -1328,6 +1371,17 @@ public class BookingService : IBookingService
         }
 
         return null;
+    }
+
+    private static string FormatAssignProviderLabel(
+        string fullName,
+        string categoryName,
+        string? city)
+    {
+        var label = fullName + " (" + categoryName + ")";
+        if (!string.IsNullOrWhiteSpace(city))
+            label += " — " + city.Trim();
+        return label;
     }
 
     private static void ApplyAssignTotals(AssignProviderVm model)

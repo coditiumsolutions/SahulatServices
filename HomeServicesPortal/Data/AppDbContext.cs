@@ -172,6 +172,7 @@ public class AppDbContext : DbContext
             entity.Property(e => e.Cnic).HasMaxLength(15).HasColumnName("CNIC").IsRequired();
             entity.Property(e => e.Gender).HasMaxLength(20);
             entity.Property(e => e.City).HasMaxLength(100);
+            entity.Property(e => e.Zone).HasMaxLength(100);
             entity.Property(e => e.ExperienceYears).HasDefaultValue(0);
             entity.Property(e => e.Description).HasColumnType("nvarchar(max)");
             entity.Property(e => e.IsVerified).HasDefaultValue(false);

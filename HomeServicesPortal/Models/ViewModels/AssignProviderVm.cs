@@ -17,6 +17,9 @@ public class AssignProviderVm
     public string? Status { get; set; }
     public decimal? EstimatedBudget { get; set; }
 
+    /// <summary>ProviderUid → Zone shown next to each Assign provider checkbox.</summary>
+    public Dictionary<int, string> ProviderZones { get; set; } = new();
+
     [Display(Name = "Service Detail")]
     [StringLength(1000)]
     public string? ServiceDetail { get; set; }
