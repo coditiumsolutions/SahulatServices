@@ -1,6 +1,6 @@
 ================================================================================
 SahulatGharTak Database Schema
-Version: 4.18 | Last Updated: 2026-10-02
+Version: 4.19 | Last Updated: 2026-10-06
 Database: SahulatAppDB
 Server: 34.131.41.192,1433
 
@@ -240,6 +240,8 @@ Table: ProviderServiceTitles
   ProviderUID      int              NOT NULL  FK -> Providers.UID (cascade delete)
   ServiceTitleUID  int              NOT NULL  FK -> ServiceTitles.UID (restrict delete)
   CreatedOn        datetime         NOT NULL  DEFAULT (getutcdate())
+  -- (2026-10-06) Default switched from getdate() to getutcdate() (same constraint name, no data
+  -- change) so it matches every other CreatedOn. Existing rows keep their stored values.
   -- Source of truth for provider service-title membership (added 2026-09-28). One row per
   -- (ProviderUID, ServiceTitleUID) pair, unique constraint
   -- UQ_ProviderServiceTitles_ProviderUID_ServiceTitleUID. Fully OPTIONAL, unlike
@@ -481,6 +483,16 @@ Table: ProviderPayouts
   -- purposes; Cnic/MobileNo/Gender/Description are still scrubbed. See api.txt for the exact
   -- error messages and response shape.
 
+
+--------------------------------------------------------------------------------
+Table: sysdiagrams
+--------------------------------------------------------------------------------
+  name             nvarchar(128)    NOT NULL
+  principal_id     int              NOT NULL
+  diagram_id       int              NOT NULL  PK  IDENTITY
+  version          int              NULL
+  definition       varbinary(MAX)   NULL
+  -- SQL Server Management Studio database-diagram storage (1 row). Not used by the app.
 
 ================================================================================
 BUSINESS TABLES (Home Services Portal) [REMOVED]
@@ -734,6 +746,8 @@ Table: AspNetUserTokens [REMOVED]
 --------------------------------------------------------------------------------
 Table: __EFMigrationsHistory [REMOVED]
 --------------------------------------------------------------------------------
+  -- (2026-10-06) Note: the table does still exist live (11 rows, same 2 columns), left over from
+  -- earlier EF migrations; nothing in the live app reads it. Not a Identity/legacy-schema table.
   MigrationId      nvarchar(150)    NOT NULL  PK
   ProductVersion   nvarchar(32)     NOT NULL
 
