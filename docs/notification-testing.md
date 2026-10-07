@@ -1,6 +1,6 @@
 ---
 status: current
-version: 1.12.0
+version: 1.14.0
 ---
 
 # Push notification test routine
@@ -166,13 +166,12 @@ is delivered and the banner shows. Tap routing from this state (`getInitialMessa
 
 ## 7. Not covered
 
-- Real delivery on iOS (needs a physical device, APNs key uploaded to Firebase).
-- **The App Update notification was not tested.** This covers the `app_update` push (staff broadcast from
-  `/Admin/PushBroadcast`, `screen = app_update`) and how the app reacts to it, plus the in-app version gate
-  (`GET /api/v1/app/config`: update prompt, forced update, `minimum_required_version`). Only the booking-lifecycle
-  pushes were exercised on the emulator.
+- Real APNs delivery on iOS (needs a physical iPhone and the APNs key uploaded to Firebase). The iOS Simulator round in
+  section 13 covers the app behaviour only.
+- The `app_update` push and the update UI were exercised on the Android emulator (section 11) and the iOS Simulator
+  (section 13). The in-app version gate (`GET /api/v1/app/config`: `minimum_required_version`) is still unchecked.
 - The admin "Push Broadcast" page (`/Admin/PushBroadcast`) sending to real devices.
-- **Sounds and push delivery on iOS** (physical iPhone, APNs key in Firebase, Xcode steps in section 10).
+- **Silent `app_unblock` on iOS** failed on the Simulator (section 13) and needs a physical iPhone to settle.
 - **Stacking** (one banner per booking) fails on a physical Android device: three banners for accept, start and complete
   (section 9). Accepted as a known issue and not pursued; see `docs/flutter-changes.md`.
 - Scheduled reminders and payout notifications are not built.
@@ -256,7 +255,7 @@ Notes for repeating this:
   was running the tag code (commit 208c42e) during the test, and whether the device launcher ignores tags. Every stage
   still gets its own banner and inbox row, so nothing is lost.
 
-### iOS test checklist (physical iPhone, not yet run)
+### iOS test checklist (physical iPhone, not yet run; the Simulator round is in section 13)
 Prerequisites (Mac): `flutter pub get`, `cd ios && pod install` (the secure-storage upgrade swapped
 `flutter_secure_storage_macos` for `flutter_secure_storage_darwin`), open `ios/Runner.xcworkspace`, confirm
 `job_request.wav`, `booking_update.wav`, `announcement.wav` are listed under Runner target > Build Phases > Copy Bundle
@@ -298,7 +297,7 @@ Check what arrived with a debug build / `adb logcat` / the FCM data shown in the
 | 10 | Check store for update, Google Play | Same for Android (`AppConfig.Android.LatestVersion`). Best-effort: it reads the Play page, so a Google page change shows an error and saves nothing |
 | 11 | Store unreachable / app not found / blank store URL | Red message under the field, field and saved value unchanged |
 | 12 | Delete the `AppConfig.*.LatestVersion` rows in Admin > Configurations | The app config and the form fall back to the appsettings value |
-| 13 | Installed version vs `latest_version` | Older: full-screen block, Update Now opens the store link, survives a restart. Same or newer: ignored. **Partly run:** older version shows the dialog / block (2026-10-06); the rest not yet checked |
+| 13 | Installed version vs `latest_version` | Older: full-screen block, Update Now opens the store link, survives a restart. Same or newer: ignored. **Partly run:** older version shows the dialog / block (2026-10-06); the rest not yet checked. iOS Simulator 2026-10-07: block and dialog shown correctly (section 13) |
 
 ### force_update (added 2026-10-05; first device result 2026-10-06, see below)
 
@@ -341,9 +340,9 @@ First on-device check of the app's update UI, sent to one device so no real user
 A forced `app_update` (`force_update` = `"true"`) is persisted on the device in secure storage
 (`pending_update_version`, `pending_update_store_url`) and is cleared only when the installed version reaches the stored
 one. A test push with a version above the installed build therefore locks the device until one of the fixes below. Real
-users leave the block by updating, or staff release it with the silent `app_unblock` push (`api.txt` v3.39, "Admin release
-of update blocks"; the app side and the backend are both built; the control is the "Release blocked devices" card at the bottom of
-Admin > Push Broadcast, results below). Run these on a blocked device first, and fall back to the fixes below only if the push did not land:
+users leave the block by updating, or staff release it with the silent `app_unblock` push (`api.txt` v3.38, "Admin release
+of update blocks"; the app side is built, the backend and its control on the Push Broadcast page are not yet). Once the
+backend ships, run these on a blocked device first, and fall back to the fixes below only if the push did not land:
 
 | # | Case | Expected |
 |---|---|---|
@@ -353,6 +352,9 @@ Admin > Push Broadcast, results below). Run these on a blocked device first, and
 | 25 | Release scopes: one device, one user, Android, iOS, everyone | only the chosen devices are released; history row written with admin, scope, reason and counts |
 | 26 | Release with an empty reason / no matching devices | rejected with a message, nothing sent or written |
 | 27 | A build without this change receives `app_unblock` | ignores it (stays blocked); fix with section 12 below |
+
+Result so far: cases 22 to 27 were verified on the Android emulator (2026-10-06). On the iOS Simulator (2026-10-07) the
+release did **not** clear the block (section 13).
 
 - **Android emulator (done 2026-10-06):** clear the app data, then relaunch. Package id `com.coditiumsols.sahulatghartak`,
   `adb` lives at `D:\ryDevelop\Android\Sdk\platform-tools\adb.exe` on this machine:
@@ -372,34 +374,45 @@ Admin > Push Broadcast, results below). Run these on a blocked device first, and
   willing to be stuck on, or use `force_update = false` (dialog only, nothing persisted). Never save a higher `AppConfig`
   `latest_version` for testing, since that blocks real users through the splash check as well.
 
+## 13. iOS Simulator round (2026-10-07)
 
-### Device result: release blocked devices (2026-10-06, Android emulator, sender side of cases 22 to 27)
+Run on the iOS Simulator with the iOS app (bundle id `com.coditiumsols.sahulatghartak.ios`, build `1.0.6+10`). Xcode
+settings checked beforehand: the three `.wav` files and `GoogleService-Info.plist` in Copy Bundle Resources, signing team,
+Push Notifications and Background Modes (Remote notifications); the APNs key is uploaded in Firebase. The Simulator cannot
+receive a real APNs push, so this round proves the app's behaviour, not APNs delivery.
 
-Target: user 76, Provider token `UserDeviceTokens` id **21** (the earlier id 20 had expired: the failed send reported it
-Unregistered and removed it, then the app registered as 21). App build 1.0.4. Blocking pushes came from the Push Tester
-(device mode, `app_update`, version 1.0.7 through the POST-only `LatestVersionOverride`, nothing saved); releases came from
-the new admin endpoint `POST /Admin/PushBroadcast/Release` (what the card posts). Server log counts:
+| Check | Result |
+|---|---|
+| Notifications show up, each type with its sound | pass |
+| `app_update` with `force_update` = `"false"`: dismissable dialog | pass |
+| `app_update` with `force_update` = `"true"`: full-screen block | pass |
+| Silent `app_unblock` clears a forced block (cases 22, 25) | **fail**: several retries, the Simulator stayed blocked |
+| Silent `app_unblock` sent from the production admin page (admin: "1 delivered to FCM, 0 failed") | **fail**: nothing in the console, block stayed |
+| Local `xcrun simctl push` of a **visible** alert carrying `type: app_unblock` (payload via stdin) | **pass**: banner, console line `Update block: app_unblock received, releasing`, block cleared |
+| Local `xcrun simctl push` of the **silent** form (`content-available: 1`, no alert) | **fail**: no log line, block stayed |
 
-| Step | Send | Server log | Emulator |
-|---|---|---|---|
-| 1 | forced `app_update` 1.0.7 | recipients=1, sent=1, failed=0 | blocked (full-screen Update Now) |
-| 2 | release, scope device 21 | recipients=1, sent=1, failed=0 | block gone, no banner or sound (case 22 pass) |
-| 3 | unforced `app_update` 1.0.7 | recipients=1, sent=1, failed=0 | dismissable "Update available" dialog |
-| 4 | forced `app_update` 1.0.7 with `sent_at` 06:00:00Z, before the release at 07:00:18Z (stale) | recipients=1, sent=1, failed=0 | nothing shown, ignored (case 24 pass) |
-| 5 | fresh forced `app_update` 1.0.7 (current `sent_at`) | recipients=1, sent=1, failed=0 | blocked again (case 24 pass) |
-| 6 | release, scope device 21 (cleanup) | recipients=1, sent=1, failed=0 | unblocked |
-
-- **Case 22: pass.** Case 24: pass. **Case 26: pass** through the endpoint: empty reason, a reason over 200 characters, an
-  unknown user (999999), an unknown device (999999), a missing user id and an unknown scope were each rejected with a
-  message and nothing was written. History: `UpdateBlockReleases` has exactly the two rows sent (ids 1 and 2, admin, device 21,
-  reason, 1/1/0); the table was applied from `scripts/create-update-block-releases.sql` first. No `UserNotifications` row was
-  created by any release or by the test pushes.
-- **Case 25: partly run.** Only the one-device release was sent. The other scopes were only counted through `ReleaseReach`
-  (everyone 5, Android 5, iOS 0, user 76 = 3 devices across both roles, device 20 = 1 before it expired); no release was sent
-  to them, to avoid touching real devices. "No matching devices" (for example iOS scope with 0 devices) is covered by
-  the same check but was not sent as a live release.
-- **Not run:** case 23 (release with the app swiped away), case 27 (older build), an iOS device, and the browser behaviour of the
-  card and of the broadcast form's "forced version is ahead of the store" warning (the JavaScript was built and the page
-  served, but nobody clicked through it yet, so check the confirm dialogs with a real browser before relying on them).
-- **Test aid kept:** `LatestVersionOverride` on `POST /Admin/PushTester` (no field on the page) sends one `app_update` with a
-  chosen version without saving it, so a block test never touches the live `latest_version`.
+**What this means**
+- The notification system is verified end to end on Android (emulator and physical device) and, for in-app behaviour,
+  on the iOS Simulator. It is **not** yet confirmed on a physical iPhone, so real APNs delivery, sounds through APNs and
+  background delivery are still open (checklist in section 10).
+- `app_unblock` on iOS is the one failure. It is a background push (`apns-push-type: background`, `content-available: 1`,
+  no alert). iOS may drop or throttle those, and the Simulator does not receive real pushes, so the failure is not yet
+  attributed to the app or the backend. Next step: send it to a physical iPhone and read the device log; if it still
+  fails there, check the payload flags against `api.txt` v3.39 and the app's background handler.
+- **Update 2026-10-07:** the pushes were sent from the production API, and Xcode 14+ Simulators on Apple silicon / T2 Macs
+  do receive real APNs sandbox pushes, so delivery of visible pushes is expected there. Silent background pushes are
+  reported as unreliable on the Simulator. One app gap was found and fixed: a release handled by the background push
+  handler (separate isolate) cleared storage but not the running app's in-memory block, so the block stayed until a cold
+  start. The app now re-reads the stored block on resume (`UpdateBlock.syncFromStore`), and logs `app_unblock received`
+  in the foreground and background paths. **Still to confirm:** run the Simulator with the app blocked in the foreground,
+  send the release, and watch the console: the log line means delivery works, no line means the push never arrived
+  (check the payload has `content-available: 1` and `apns-push-type: background`, then try a physical iPhone).
+- **Conclusion 2026-10-07:** the app's release logic is correct on iOS (the visible-form test proves it). The silent form
+  does not reach Dart on the Simulator, either from production or from local `simctl`. The Simulator also delivered real
+  pushes late and in bursts (all arriving together, straight into the inbox with no banner), so Simulator delivery is not
+  representative. Silent iOS pushes are best effort (the admin page says so), so a pull-based backstop is proposed: the
+  app checks the latest release time on launch and resume. Silent delivery itself still needs a physical iPhone.
+- Testing note: `xcrun simctl push booted <bundle-id> - <<EOF ... EOF` takes the payload on stdin; stale or unsaved
+  `.apns` files caused several false results. The payload needs `gcm.message_id` or FlutterFire ignores it.
+- The stuck Simulator was freed by building with a `pubspec.yaml` version at or above the pushed `latest_version`
+  (section 12), then restoring the version.

@@ -1,6 +1,6 @@
 ---
 status: current
-version: 1.10.0
+version: 1.11.0
 ---
 
 # Flutter App Changes Tracker
@@ -18,34 +18,14 @@ Legend:
 
 ---
 
-## Admin release of update blocks (`app_unblock`) - app done, backend pending (api.txt v3.38)
-
-A forced-update block lives on the device, so staff need a server-side way to lift a wrong or test one. The app already
-handles a silent, data-only `app_unblock` push (`type`, `sent_at`): it deletes the stored block and any queued prompt,
-shows nothing, and remembers `sent_at` as "cleared at" (secure storage `update_block_cleared_at`). An `app_update` whose
-`sent_at` is not later than that is ignored, also in the background handler; one without `sent_at` is never ignored.
-Code: `lib/utils/update_block.dart`, `lib/services/push_notification_service.dart`, tests in `test/update_block_test.dart`.
-
-Backend built (2026-10-06, api.txt v3.39 "Admin release of update blocks"): the silent push, and its control on the admin
-Push Broadcast page near the bottom (scope, mandatory reason, confirmation, history, audit). There is deliberately no
-mobile endpoint. Verified end to end on the Android emulator (block, release, stale `app_update` ignored, fresh one blocks
-again): `docs/notification-testing.md` section 12. Still open for the app side: case 23 (release while swiped away), case 27
-(older build) and iOS on a physical device.
-
----
-
-## Notification appearance, channels and sounds - remaining verification
-
-Still open:
-- **Sounds on iOS: statically checked, not yet heard.** The three `.wav` files in `ios/Runner/` are 16-bit PCM, 1 to 3
-  seconds (iOS requires linear PCM / IMA4 / mu-law / a-law and under 30 s), they are in the Runner group and in the
-  Resources build phase, and iOS has no resource shrinking that could strip them. Still to do on a physical iPhone:
-  open the project in Xcode once to confirm Build Phases > Copy Bundle Resources lists them, then confirm each push type
-  plays its own sound (the sound name comes from the push, e.g. `job_request.wav`; the app draws no local notifications
-  on iOS).
-- **Xcode:** open `ios/Runner.xcodeproj` once and confirm the three `.wav` files show under Build Phases > Copy Bundle
-  Resources (added by hand in `project.pbxproj`).
-- **iOS delivery** on a physical device (no app code needed: thread-id grouping and sounds are backend-side; the app
-  draws no local notifications on iOS).
-- Optional: design may want a different `ic_notification` mark (a simplified drawing of the logo today); swap the PNG in
-  the five `drawable-*` folders.
+**New, ready to build (backend built 2026-10-07, live once pushed to main, api.txt v3.40 "Release pull"):** silent pushes are unreliable on iOS, so
+`GET /api/v1/app/config?platform=ios&device_token=<fcm token>` now also returns `last_unblock_at` (UTC ISO 8601 with "Z",
+or `null`; always present). `device_token` is optional: without it (or with an unregistered one) you only get releases
+sent to everyone or to your platform; with it you also get releases sent to your user or your device. Never an error, never
+reveals whether a token exists. App steps:
+- Store when a forced block was created (the push `sent_at`, else the receive time). Blocks stored by older builds have no
+  time: do not clear them from the pull.
+- On launch and on every resume, call app config (send `device_token` when you have one). If `last_unblock_at` is later than
+  the block's created time, clear the block exactly like a pushed `app_unblock` and raise "cleared at" to `last_unblock_at`.
+- Fail open: a failed or slow call changes nothing. Compare with "later than" only (the value can differ from the pushed
+  `sent_at` by a few milliseconds). Treat a missing or unparseable value as null.

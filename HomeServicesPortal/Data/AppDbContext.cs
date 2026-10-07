@@ -119,6 +119,7 @@ public class AppDbContext : DbContext
             entity.Property(e => e.ReleasedBy).HasMaxLength(100).IsRequired();
             entity.Property(e => e.Reason).HasMaxLength(200).IsRequired();
             entity.HasIndex(e => e.ReleasedAtUtc);
+            entity.HasIndex(e => new { e.Scope, e.Platform, e.ReleasedAtUtc });
         });
 
         modelBuilder.Entity<UserNotification>(entity =>

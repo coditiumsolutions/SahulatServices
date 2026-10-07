@@ -21,6 +21,12 @@ public interface IUpdateBlockReleaseService
     Task<(IReadOnlyList<DeviceTarget> Devices, string? Error)> ResolveAsync(ReleaseTarget target, CancellationToken cancellationToken = default);
 
     Task<ReleaseOutcome> ReleaseAsync(ReleaseTarget target, string reason, string adminName, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Latest ReleasedAtUtc (UTC) among the releases that apply to a caller, or null: everyone, the caller's platform,
+    /// and (only when <paramref name="deviceToken"/> matches a registered token) that token's user or device. Read-only.
+    /// </summary>
+    Task<DateTime?> GetLastReleaseAtAsync(string platform, string? deviceToken, CancellationToken cancellationToken = default);
 }
 
 public class UpdateBlockReleaseService : IUpdateBlockReleaseService
@@ -71,6 +77,26 @@ public class UpdateBlockReleaseService : IUpdateBlockReleaseService
         var devices = await query.Select(t => new DeviceTarget(t.DeviceToken, t.Platform))
             .ToListAsync(cancellationToken);
         return (devices, null);
+    }
+
+    public async Task<DateTime?> GetLastReleaseAtAsync(string platform, string? deviceToken,
+        CancellationToken cancellationToken = default)
+    {
+        var token = string.IsNullOrWhiteSpace(deviceToken) ? null : deviceToken.Trim();
+
+        // One MAX query. The user/device branches only match when the token is registered, so an unknown token behaves
+        // exactly like no token (same answer, nothing revealed).
+        var latest = await _db.UpdateBlockReleases.AsNoTracking()
+            .Where(r =>
+                r.Scope == "everyone"
+                || ((r.Scope == "android" || r.Scope == "ios") && r.Platform == platform)
+                || (token != null && r.Scope == "user"
+                    && _db.UserDeviceTokens.Any(t => t.DeviceToken == token && t.UserId == r.UserId))
+                || (token != null && r.Scope == "device"
+                    && _db.UserDeviceTokens.Any(t => t.Id == r.DeviceTokenId && t.DeviceToken == token)))
+            .MaxAsync(r => (DateTime?)r.ReleasedAtUtc, cancellationToken);
+
+        return latest.HasValue ? DateTime.SpecifyKind(latest.Value, DateTimeKind.Utc) : null;
     }
 
     public async Task<ReleaseOutcome> ReleaseAsync(ReleaseTarget target, string reason, string adminName,

@@ -1,6 +1,6 @@
 ================================================================================
 SahulatGharTak Database Schema
-Version: 4.21 | Last Updated: 2026-10-06
+Version: 4.23 | Last Updated: 2026-10-07
 Database: SahulatAppDB
 Server: 34.131.41.192,1433
 
@@ -106,7 +106,9 @@ Table: UpdateBlockReleases
   Platform         nvarchar(10)     NULL      (android | ios, only for the platform scopes)
   UserId           int              NULL      (UsersLogin.UID, only for scope=user; no FK)
   DeviceTokenId    int              NULL      (UserDeviceTokens.Id, only for scope=device; no FK)
-  ReleasedAtUtc    datetime         NOT NULL  INDEX IX_UpdateBlockReleases_ReleasedAtUtc (DESC)
+  ReleasedAtUtc    datetime         NOT NULL  INDEX IX_UpdateBlockReleases_ReleasedAtUtc (DESC),
+                                              INDEX IX_UpdateBlockReleases_Scope_Platform_ReleasedAtUtc (Scope, Platform, ReleasedAtUtc DESC)
+                                              (2026-10-07, serves GET /api/v1/app/config last_unblock_at)
   ReleasedBy       nvarchar(100)    NOT NULL  (admin portal username)
   Reason           nvarchar(200)    NOT NULL
   Recipients       int              NOT NULL  DEFAULT (0)

@@ -1,6 +1,6 @@
 ================================================================================
 SahulatGharTak API Reference
-Version: 3.39 | Last Updated: 2026-10-06
+Version: 3.40 | Last Updated: 2026-10-07
 Database: SahulatAppDB
 Local Base URL:    https://localhost:7265/api/
 Deployed Base URL:  https://sahulatghartak.com/api/
@@ -3282,7 +3282,9 @@ Local:     https://localhost:7265/api/v1/app/config?platform=android
 Deployed:  https://sahulatghartak.com/api/v1/app/config?platform=android
 
 Auth: none (call at app start, before login).
-Query: platform = "android" or "ios" (case-insensitive). Values come from the server's
+Query: platform = "android" or "ios" (case-insensitive).
+       device_token = OPTIONAL FCM device token (v3.40, see "Release pull"); only used to resolve user/device-scoped
+       releases for last_unblock_at. Never stored or logged. Values come from the server's
 appsettings "AppConfig" section and can be changed without redeploying code. latest_version can also be
 replaced by a value saved from the admin portal (Push Broadcast > "Check store for update" reads the store
 listing and saves the version it finds, per platform); the response shape is unchanged.
@@ -3295,8 +3297,11 @@ Success (200) — NOTE: bare snake_case object, NOT wrapped in the ApiResponse e
   "latest_version": "1.0.3",
   "force_update": false,
   "store_url": "https://...",
-  "update_message": "A new version of Sahulat Ghar Tak is available."
+  "update_message": "A new version of Sahulat Ghar Tak is available.",
+  "last_unblock_at": null
 }
+last_unblock_at (v3.40, additive): ISO 8601 UTC time of the latest admin release (app_unblock) that applies to this
+caller, or null when none. Always present. Old app builds ignore it.
 
 Client rule: if installed version < minimum_required_version, or force_update is true while
 installed < latest_version, block the app with a non-dismissable update dialog; if only
@@ -3384,8 +3389,62 @@ Compatibility: fully additive. A build without this change ignores the unknown p
 needs an update, clear data, or a build at or above the pushed version). Ship the backend first, the extra push is
 harmless to old builds.
 
-Optional later (not required): a config-side "released at" field on GET /api/v1/app/config so a device that missed
-the push is released on its next launch. Add only if silent-push delivery proves unreliable.
+Release pull - config-side "last_unblock_at" (v3.40; backend built 2026-10-07, live once the push to main deploys; app side not built)
+Why: silent pushes proved unreliable on iOS (docs/notification-testing.md section 13: the silent form did not reach the
+app on the Simulator, the same release as a visible push did). A device that missed the push must still be released the
+next time it opens, so the app also PULLS the latest release time. The push stays the fast path.
+
+Contract (additive, no new endpoint, no mobile write):
+  GET /api/v1/app/config?platform={android|ios}[&device_token={fcm token}]
+  Adds last_unblock_at to the response (see GET App Config). Rules, using dbo.UpdateBlockReleases:
+    - Candidate releases and who they apply to:
+        Scope "everyone"        -> every caller
+        Scope "android"/"ios"   -> callers whose platform param equals the release Platform
+        Scope "user"            -> only when device_token is sent AND matches a UserDeviceTokens row whose UserId equals
+                                   the release UserId
+        Scope "device"          -> only when device_token is sent AND equals the token of the release's DeviceTokenId
+    - last_unblock_at = the greatest ReleasedAtUtc among the candidates that apply, serialized as UTC with a "Z"
+      (same instant that was sent as sent_at); null when none apply.
+    - A device_token that is missing or not registered simply gets the everyone/platform releases only. It is never an
+      error and never leaks whether a token exists (same response shape either way).
+    - Read-only. Never writes UserDeviceTokens or UpdateBlockReleases. Do not log or store device_token (treat it like a
+      credential in query strings; exclude it from request logging if the pipeline logs query strings).
+    - Cheap: one indexed MAX query (index UpdateBlockReleases on Scope, Platform, ReleasedAtUtc if needed). Add
+      Cache-Control: no-store so a release is seen on the next call.
+    - A release never edits latest_version, minimum_required_version or AppConfig (unchanged from above).
+
+Backend (built 2026-10-07, contract above unchanged):
+  - AppConfigApiController.GetConfig takes the optional query param device_token and always returns last_unblock_at
+    (string "yyyy-MM-ddTHH:mm:ss.fffffffZ" or null). Existing fields are byte-for-byte unchanged; a bad or missing
+    platform is still 400 with the same message. The response (200 and 400) carries Cache-Control: no-store.
+  - One read-only MAX query (UpdateBlockReleaseService.GetLastReleaseAtAsync). device_token is never stored or logged:
+    the app has no request logging and Microsoft.AspNetCore stays at Warning (do not raise it to Information, that
+    logs the query string). An unregistered, blank or over-512-character token behaves exactly like no token.
+  - Precision: ReleasedAtUtc is a SQL datetime column (about 3 ms steps), so last_unblock_at can differ from the pushed
+    sent_at by a few milliseconds. Compare with "later than" and treat equal or earlier as not cleared; do not compare
+    for equality.
+  - Index IX_UpdateBlockReleases_Scope_Platform_ReleasedAtUtc (scripts/add-update-block-releases-lookup-index.sql,
+    applied 2026-10-07).
+  - Tests: tests/HomeServicesPortal.ReleaseTests (15, in-memory SQLite): no releases, everyone, platform, user and device
+    scopes each with matching and non-matching tokens, unknown token, MAX not last row, UTC Z format, read-only, 400 for a
+    bad platform, no-store, field order and presence.
+  - Checked live on 2026-10-07 (GET only): android -> null, ios -> a real release time, unknown token -> same as none.
+
+App behaviour (to build now, lib/utils/update_block.dart + splash/PushHost):
+  - When a forced block is created, also persist when it was created: the announcement's server sent_at, else the
+    device receive time. Blocks stored by older builds have no time and are NOT cleared by the pull (avoids releasing a
+    still-valid block because of an unrelated old release); the push or an update still clears them.
+  - On launch and on every resume, fetch app config (send device_token when the app has one). If last_unblock_at is later
+    than the block's created time, clear the block exactly like a pushed app_unblock and raise "cleared at" to
+    last_unblock_at, so an announcement sent before the release cannot re-block.
+  - Fail open: a failed or slow fetch changes nothing. Existing splash gate (minimum_required_version) is unaffected.
+
+Test plan: unit tests with the existing fakes (release after block clears; release before block does not; null or bad
+value ignored; fetch failure leaves the block; re-block after release works). Simulator: block, release from the admin
+page, background and reopen the app, the block clears with no push needed. Backend: release scopes everyone/ios/android/
+user/device each checked against matching and non-matching device_token values.
+
+Compatibility: fully additive. Old backends omit the field (app treats it as null); old apps ignore it.
 
 ================================================================================
 MAPS / GPS APIs (Reverse Geocoding, Nearby Providers, Live Tracking)

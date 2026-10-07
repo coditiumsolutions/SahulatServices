@@ -19,4 +19,8 @@ public class AppConfigApiDto
 
     [JsonPropertyName("update_message")]
     public string UpdateMessage { get; set; } = string.Empty;
+
+    /// <summary>UTC ISO 8601 ("...Z") of the latest admin release that applies to the caller, or null. Always serialized.</summary>
+    [JsonPropertyName("last_unblock_at")]
+    public string? LastUnblockAt { get; set; }
 }
