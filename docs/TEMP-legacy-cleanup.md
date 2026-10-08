@@ -85,3 +85,24 @@ unconfirmed, and they have no version gate, so #1 and #4 stay on hold.
 1. #5 now, then #2 after the row-count check.
 2. #3 after confirming nothing reads the column.
 3. #1 and #4 only after a gate-aware build ships and the per-platform minimum version is raised.
+
+## Decisions after the Flutter audit (2026-10-08)
+
+Audited builds: Flutter commit 9cdaaf2, Android 1.0.5+11 / iOS 1.0.7+11. These are the first builds with the version
+gate, so Android 1.0.4 and below and iOS 1.0.6 and below cannot be forced to update. The version gate in the app only
+runs on cold launch (not on resume).
+
+- #4 single-category registration: DONE 2026-10-08. `categoryIds` + `primaryCategoryId` are required; `categoryId` /
+  `categoryName` removed from `RegisterProviderRequest` and `AuthService`. Response fields are unchanged. Low residual
+  risk: older builds already sent `categoryIds` (Flutter a858135, 2026-09-22) but this could not be proven.
+- #2 "Pending" status: PARTLY DONE 2026-10-08. The client PUT no longer accepts "Pending" (400 "Invalid status value.").
+  Kept on purpose: `LegacyPending` in `IsUnassigned`, `Normalize`, the admin `ServiceRequestService` and
+  `DashboardService`, so any existing Pending rows still behave as Initiated. Still to do: count live Pending rows, run
+  a one-off UPDATE to Initiated, then these can go.
+- #1 optional `labourAmount` / `materialItems`: KEPT by owner decision. The app omits them when the provider enters no
+  labour/materials. The TODO markers were reworded to KEEP, so grep for the old marker no longer finds them.
+- #3 `Providers.CategoryUid` scalar: NOT SAFE yet. The latest build still reads `categoryUid` from
+  `GET /api/provider-profiles/{userId}` (hard non-null cast, used at login), `categoryId` from
+  `GET /api/providers-detail/{uid}`, and echoes `categoryId` in `PUT /api/providers-detail/{uid}`. Wait for the next
+  Flutter build (flutter-changes v1.13.0, "TODO for the next build") to be live and adopted.
+- #5 dead admin controllers: still not done (no app impact).

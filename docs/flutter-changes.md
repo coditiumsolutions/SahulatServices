@@ -1,6 +1,6 @@
 ---
 status: current
-version: 1.11.0
+version: 1.13.0
 ---
 
 # Flutter App Changes Tracker
@@ -18,14 +18,12 @@ Legend:
 
 ---
 
-**New, ready to build (backend built 2026-10-07, live once pushed to main, api.txt v3.40 "Release pull"):** silent pushes are unreliable on iOS, so
-`GET /api/v1/app/config?platform=ios&device_token=<fcm token>` now also returns `last_unblock_at` (UTC ISO 8601 with "Z",
-or `null`; always present). `device_token` is optional: without it (or with an unregistered one) you only get releases
-sent to everyone or to your platform; with it you also get releases sent to your user or your device. Never an error, never
-reveals whether a token exists. App steps:
-- Store when a forced block was created (the push `sent_at`, else the receive time). Blocks stored by older builds have no
-  time: do not clear them from the pull.
-- On launch and on every resume, call app config (send `device_token` when you have one). If `last_unblock_at` is later than
-  the block's created time, clear the block exactly like a pushed `app_unblock` and raise "cleared at" to `last_unblock_at`.
-- Fail open: a failed or slow call changes nothing. Compare with "later than" only (the value can differ from the pushed
-  `sent_at` by a few milliseconds). Treat a missing or unparseable value as null.
+## TODO for the next build
+
+### Stop depending on `categoryId` for providers-detail
+`categoryId` on providers-detail is backed by the deprecated `Providers.CategoryUid` scalar, which the backend plans to retire. `categoryIds` + `primaryCategoryId` (`GET`/`PUT /api/providers/{providerUid}/categories`) are the source of truth. Today the app still:
+- reads `categoryId` / `categoryName` from `GET /api/providers-detail/{uid}` (`lib/models/provider/provider_detail.dart:59`) and shows it on the Profile tab (`lib/screens/provider/profile/profile_tab.dart:287`);
+- echoes `categoryId` back in `PUT /api/providers-detail/{uid}` (`lib/services/provider_profile_api_service.dart:32`);
+- reads `categoryUid` from `GET /api/provider-profiles/{userId}` with a hard `as int` cast (`lib/models/provider_profile_model.dart:27`), used by `AuthProvider.login` (`lib/providers/auth_provider.dart:63-66`). If the field disappears the cast throws, the catch swallows it and `providerUid` is not set either.
+
+Change: show the primary category from the categories endpoint, drop `categoryId` from the providers-detail PUT body, and make the `categoryUid` parse nullable so `providerUid` is still set. Until the build with this ships and is adopted, the backend must keep returning and accepting these fields.

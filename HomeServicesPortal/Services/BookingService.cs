@@ -1301,11 +1301,8 @@ public class BookingService : IBookingService
         booking.FinalAmount = actualAmountPaid;
         booking.CustomerRemaining = ComputeCustomerRemaining(booking.FinalAmount, actualAmountPaid);
 
-        // TODO(remove after old app retired): labourAmount is optional so an old app build
-        // (which never sends it) keeps today's exact legacy behavior — commission computed on
-        // the WHOLE amount collected. Only once the app sends labourAmount does completion
-        // switch to the labour-only commission base. Once every live build always sends it,
-        // collapse this to always use labourAmount ?? 0.
+        // KEEP (owner decision 2026-10-08): labourAmount stays optional. The app omits it when the
+        // provider enters no labour, so commission falls back to the WHOLE amount collected.
         var commissionBase = labourAmount ?? booking.FinalAmount;
         var (commissionAmount, providerEarning) = ResolveCommissionAmounts(
             commissionBase,

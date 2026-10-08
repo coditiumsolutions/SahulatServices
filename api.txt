@@ -1,6 +1,6 @@
 ================================================================================
 SahulatGharTak API Reference
-Version: 3.40 | Last Updated: 2026-10-07
+Version: 3.41 | Last Updated: 2026-10-08
 Database: SahulatAppDB
 Local Base URL:    https://localhost:7265/api/
 Deployed Base URL:  https://sahulatghartak.com/api/
@@ -97,20 +97,8 @@ POST Register Provider (upgrade client to provider)
 Local:     https://localhost:7265/api/auth/register-provider
 Deployed:  https://sahulatghartak.com/api/auth/register-provider
 
-Request Body (current/legacy app — still fully supported, unchanged, single category):
-{
-  "mobileNo": "03335191392",
-  "password": "ghauri",
-  "fullName": "Shahid",
-  "cnic": "37405-1234567-1",
-  "gender": "Male",
-  "experienceYears": 2,
-  "description": "Experienced provider",
-  "city": "Karachi",
-  "categoryId": 1
-}
-
-Request Body (new app, optionally registering multiple categories — added 2026-09-21):
+Request Body (categoryIds + primaryCategoryId are REQUIRED; the old single-category categoryId / categoryName
+body was removed 2026-10-08 — unknown fields are ignored, so a request that only has them gets 400):
 {
   "mobileNo": "03335191392",
   "password": "ghauri",
@@ -125,16 +113,11 @@ Request Body (new app, optionally registering multiple categories — added 2026
 }
 
 Notes:
-- Two mutually exclusive ways to specify category, both still supported:
-  - legacy: categoryId OR categoryName — single category, becomes the provider's only/primary category
-  - new, OPTIONAL (added 2026-09-21): categoryIds (array, at least 1) + primaryCategoryId (must be
-    one of categoryIds) — registers the provider with ALL of categoryIds; primaryCategoryId is
-    flagged as primary. If categoryIds is present, categoryId/categoryName are ignored.
-  - omitting categoryIds entirely (current/legacy app builds) is exactly today's behavior — no
-    change in outcome, this is purely additive.
-  - TODO(remove after old app retired): once every live app build always sends categoryIds for
-    provider registration, categoryId/categoryName can be retired and categoryIds +
-    primaryCategoryId made the sole required path. Tracked in docs/flutter-changes.md.
+- categoryIds (array, at least 1) + primaryCategoryId (must be one of categoryIds) are required: the
+  provider is registered with ALL of categoryIds and primaryCategoryId is flagged primary. Missing
+  categoryIds, or a primaryCategoryId not in the list, is 400.
+  (2026-10-08: the legacy categoryId / categoryName single-category path was removed; every published
+  build already sends categoryIds.)
 - verifies existing client using mobileNo + password
 - client must be OTP-verified (UsersLogin.IsVerified=true) before upgrade
 - CNIC must be unique across Providers (DB unique constraint)
@@ -1952,8 +1935,8 @@ Notes:
   (optional) to re-derive estimatedBudget from the (possibly new) selected title's ServiceTitles.
   BasePrice; the title must be active and belong to categoryUid, else 400. Omit serviceTitleUid to
   leave the existing estimatedBudget unchanged.
-- status is WHITELISTED to "Initiated" or "Cancelled" only (legacy "Pending" is still accepted and
-  normalized to "Initiated") — a client can edit request details while it's still Initiated, or
+- status is WHITELISTED to "Initiated" or "Cancelled" only ("Pending" is no longer accepted since
+  2026-10-08 and returns 400; existing Pending rows are still treated as Initiated) — a client can edit request details while it's still Initiated, or
   cancel it. "Assigned"/"In Progress"/"Completed" are set by staff/the provider flow, never by
   the client's own PUT; any other value fails with 400 ("Invalid status value.").
   See docs/status-workflow.md.
@@ -2699,9 +2682,8 @@ Notes:
   - materialItems is a plain array of {itemName, quantity, unitPrice} — quantity defaults to 1
     if omitted per item; amount is computed server-side (quantity * unitPrice). Sending an
     empty array or omitting it entirely is valid (no materials used on this job).
-  - TODO(remove after old app retired): once every live app build always sends labourAmount,
-    the omitted-labourAmount legacy fallback described above goes away and this field can be
-    treated as effectively required. Tracked in docs/flutter-changes.md.
+  - KEEP (owner decision 2026-10-08): labourAmount and materialItems stay optional; the latest builds still omit them
+    when the provider enters no labour/materials.
 - on success: Status="Completed", CompletedOn set, CustomerServiceRequests.Status synced to
   "Completed", and PaymentLedger/ProviderPayouts entries are posted automatically based on
   the final PaymentMode + CustomerPaid (handles cash-to-provider, online-to-company, and

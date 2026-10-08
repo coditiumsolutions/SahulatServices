@@ -30,7 +30,6 @@ public static class RequestStatusConstants
     public static readonly string[] ClientEditableStatuses =
     [
         Initiated,
-        LegacyPending, // older Flutter builds may still send Pending when editing
         Cancelled
     ];
 

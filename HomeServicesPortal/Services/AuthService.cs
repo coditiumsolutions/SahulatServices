@@ -177,33 +177,22 @@ public class AuthService : IAuthService
             return (false, "Client profile not found.", null, StatusCodes.Status404NotFound);
         }
 
-        // Multi-category path is OPTIONAL: only taken when the app sends CategoryIds (validated
-        // non-empty + PrimaryCategoryId membership already, on RegisterProviderRequest itself).
-        // Omitting CategoryIds keeps today's exact single-category behavior below.
-        // TODO(remove after old app retired): once every live app build always sends CategoryIds,
-        // collapse this branch to always require it and delete the single-category path.
-        var multiCategoryRequested = request.CategoryIds is { Count: > 0 };
-        var (categoryId, categoryName, categoryError) = multiCategoryRequested
-            ? await ResolveCategoryAsync(request.PrimaryCategoryId, null, cancellationToken)
-            : await ResolveCategoryAsync(request.CategoryId, request.CategoryName, cancellationToken);
+        // CategoryIds + PrimaryCategoryId are required and already validated on RegisterProviderRequest
+        // (non-empty, primary is a member).
+        var (categoryId, categoryName, categoryError) =
+            await ResolveCategoryAsync(request.PrimaryCategoryId, cancellationToken);
 
         if (categoryError != null)
         {
             return (false, categoryError, null, StatusCodes.Status400BadRequest);
         }
 
-        List<int> allCategoryIds = new() { categoryId!.Value };
-        if (multiCategoryRequested)
+        var allCategoryIds = request.CategoryIds!.Where(id => id > 0).Distinct().ToList();
+        var validCount = await _db.ServiceCategories
+            .CountAsync(c => allCategoryIds.Contains(c.Uid) && c.IsActive, cancellationToken);
+        if (validCount != allCategoryIds.Count)
         {
-            var distinctIds = request.CategoryIds!.Where(id => id > 0).Distinct().ToList();
-            var validCount = await _db.ServiceCategories
-                .CountAsync(c => distinctIds.Contains(c.Uid) && c.IsActive, cancellationToken);
-            if (validCount != distinctIds.Count)
-            {
-                return (false, "One or more selected categories do not exist or are inactive.", null, StatusCodes.Status400BadRequest);
-            }
-
-            allCategoryIds = distinctIds;
+            return (false, "One or more selected categories do not exist or are inactive.", null, StatusCodes.Status400BadRequest);
         }
 
         var city = request.City?.Trim();
@@ -259,9 +248,7 @@ public class AuthService : IAuthService
                 await _genderSync.SyncGenderAsync(userId, provider.Gender, cancellationToken);
             }
 
-            // allCategoryIds is [categoryId] for the legacy single-category path, or the full
-            // validated set when the app sent CategoryIds — either way, exactly one row is
-            // PrimaryCategory=1 (categoryId, which is PrimaryCategoryId in the multi-category case).
+            // allCategoryIds is the full validated set; exactly one row is PrimaryCategory=1 (PrimaryCategoryId).
             foreach (var catUid in allCategoryIds)
             {
                 _db.ProviderCategories.Add(new Entities.ProviderCategory
@@ -293,43 +280,25 @@ public class AuthService : IAuthService
 
     private async Task<(int? CategoryId, string? CategoryName, string? Error)> ResolveCategoryAsync(
         int? categoryId,
-        string? categoryName,
         CancellationToken cancellationToken)
     {
-        if (categoryId.HasValue)
+        if (!categoryId.HasValue)
         {
-            var byId = await _db.ServiceCategories
-                .AsNoTracking()
-                .Where(c => c.Uid == categoryId.Value && c.IsActive)
-                .Select(c => new { c.Uid, c.CategoryName })
-                .FirstOrDefaultAsync(cancellationToken);
-
-            if (byId == null)
-            {
-                return (null, null, "Invalid or inactive service category id.");
-            }
-
-            return (byId.Uid, byId.CategoryName, null);
+            return (null, null, "PrimaryCategoryId is required.");
         }
 
-        if (!string.IsNullOrWhiteSpace(categoryName))
+        var byId = await _db.ServiceCategories
+            .AsNoTracking()
+            .Where(c => c.Uid == categoryId.Value && c.IsActive)
+            .Select(c => new { c.Uid, c.CategoryName })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (byId == null)
         {
-            var term = categoryName.Trim();
-            var byName = await _db.ServiceCategories
-                .AsNoTracking()
-                .Where(c => c.IsActive && c.CategoryName.ToLower() == term.ToLower())
-                .Select(c => new { c.Uid, c.CategoryName })
-                .FirstOrDefaultAsync(cancellationToken);
-
-            if (byName == null)
-            {
-                return (null, null, $"Service category '{term}' was not found.");
-            }
-
-            return (byName.Uid, byName.CategoryName, null);
+            return (null, null, "Invalid or inactive service category id.");
         }
 
-        return (null, null, "CategoryId or CategoryName is required.");
+        return (byId.Uid, byId.CategoryName, null);
     }
 
     public async Task<(bool Success, string? Error, RegistrationResponse? Data)> RegisterStaffAsync(
