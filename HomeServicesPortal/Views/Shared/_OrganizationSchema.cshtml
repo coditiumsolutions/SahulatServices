@@ -1,5 +1,5 @@
 @{
-    var schemaBaseUrl = $"{Context.Request.Scheme}://{Context.Request.Host}";
+    var schemaBaseUrl = HomeServicesPortal.Helpers.PublicUrl.Base(Context.Request);
 }
 <script type="application/ld+json">
 {

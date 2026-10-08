@@ -1,0 +1,197 @@
+@using System.Text.Json
+@using HomeServicesPortal.Helpers
+@model HomeServicesPortal.Models.ViewModels.ServicePillarViewModel
+@{
+    Layout = "_PublicLayout";
+    ViewData["Title"] = Model.PageTitle;
+    ViewData["Description"] = Model.MetaDescription;
+
+    var siteBase = PublicUrl.Base(Context.Request);
+    var pageUrl = $"{siteBase}/{Model.Slug}";
+
+    var serviceSchema = new Dictionary<string, object?>
+    {
+        ["@context"] = "https://schema.org",
+        ["@type"] = "Service",
+        ["name"] = Model.Heading,
+        ["serviceType"] = Model.ServiceName,
+        ["url"] = pageUrl,
+        ["description"] = Model.MetaDescription,
+        ["provider"] = new Dictionary<string, object> { ["@id"] = siteBase + "/#organization" },
+        ["areaServed"] = new object[]
+        {
+            new Dictionary<string, object> { ["@type"] = "City", ["name"] = "Islamabad" },
+            new Dictionary<string, object> { ["@type"] = "City", ["name"] = "Rawalpindi" }
+        }
+    };
+    if (Model.Categories.Count > 0)
+    {
+        serviceSchema["hasOfferCatalog"] = new Dictionary<string, object>
+        {
+            ["@type"] = "OfferCatalog",
+            ["name"] = Model.ServiceName,
+            ["itemListElement"] = Model.Categories.Select(c => (object)new Dictionary<string, object>
+            {
+                ["@type"] = "Offer",
+                ["itemOffered"] = new Dictionary<string, object> { ["@type"] = "Service", ["name"] = c.Name }
+            }).ToArray()
+        };
+    }
+
+    var faqSchema = new Dictionary<string, object>
+    {
+        ["@context"] = "https://schema.org",
+        ["@type"] = "FAQPage",
+        ["mainEntity"] = Model.Faqs.Select(f => (object)new Dictionary<string, object>
+        {
+            ["@type"] = "Question",
+            ["name"] = f.Question,
+            ["acceptedAnswer"] = new Dictionary<string, object> { ["@type"] = "Answer", ["text"] = f.Answer }
+        }).ToArray()
+    };
+}
+
+@section Head {
+    <script type="application/ld+json">@Html.Raw(JsonSerializer.Serialize(serviceSchema))</script>
+    <script type="application/ld+json">@Html.Raw(JsonSerializer.Serialize(faqSchema))</script>
+}
+
+<section class="public-hero">
+    <div class="container public-hero-content">
+        <p class="text-uppercase fw-semibold mb-2 opacity-75" style="letter-spacing: 0.12em; font-size: 0.8rem;">
+            Bahria Town &middot; Islamabad &middot; Rawalpindi
+        </p>
+        <h1>@Model.Heading</h1>
+        <p class="lead mb-0">@Model.Lead</p>
+        <div class="public-hero-actions">
+            <a href="@StoreLinks.GooglePlay" target="_blank" rel="noopener" class="store-badge-img-link">
+                <img src="~/img/downloads/google-play-badge.svg" alt="Get it on Google Play" class="store-badge-img" />
+            </a>
+            <a href="@StoreLinks.AppStore" target="_blank" rel="noopener" class="store-badge-img-link">
+                <img src="~/img/downloads/app-store-badge.svg" alt="Download on the App Store" class="store-badge-img" />
+            </a>
+        </div>
+    </div>
+</section>
+
+<section class="public-section">
+    <div class="container">
+        @foreach (var paragraph in Model.Intro)
+        {
+            <p class="public-section-subtitle mb-3">@paragraph</p>
+        }
+    </div>
+</section>
+
+@if (Model.Categories.Count > 0)
+{
+    <section class="public-section public-bg-soft" id="categories">
+        <div class="container">
+            <h2 class="public-section-title">What you can book</h2>
+            <p class="public-section-subtitle">
+                @Model.Categories.Count categories under @Model.ServiceName. Open the app for the full list of services and current pricing.
+            </p>
+            <div class="pillar-cat-grid">
+                @foreach (var category in Model.Categories)
+                {
+                    <article class="public-service-card pillar-cat-card">
+                        <h3 class="h5">@category.Name</h3>
+                        @if (category.VerifiedProviders is int providers)
+                        {
+                            <p class="pillar-cat-count"><i class="fa-solid fa-circle-check"></i> @providers verified providers</p>
+                        }
+                        @if (category.Titles.Count > 0)
+                        {
+                            <ul class="pillar-cat-titles">
+                                @foreach (var title in category.Titles)
+                                {
+                                    <li>@title</li>
+                                }
+                            </ul>
+                        }
+                    </article>
+                }
+            </div>
+            <p class="text-center text-muted mt-4 mb-0">Prices are shown in the Sahulat Ghar Tak app before you confirm a booking.</p>
+        </div>
+    </section>
+}
+
+<section class="public-section" id="how-it-works">
+    <div class="container">
+        <h2 class="public-section-title">How booking works</h2>
+        <div class="public-steps">
+            <div class="public-step">
+                <div class="public-step-num">1</div>
+                <h3 class="h5">Choose a service</h3>
+                <p class="text-muted mb-0">Pick the category and tell us what you need.</p>
+            </div>
+            <div class="public-step">
+                <div class="public-step-num">2</div>
+                <h3 class="h5">Get matched</h3>
+                <p class="text-muted mb-0">We connect you with an available, verified provider near your location.</p>
+            </div>
+            <div class="public-step">
+                <div class="public-step-num">3</div>
+                <h3 class="h5">Confirm and track</h3>
+                <p class="text-muted mb-0">See the price in the app, confirm your booking and follow its progress.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="public-section public-bg-soft">
+    <div class="container">
+        <h2 class="public-section-title">Where we work</h2>
+        <p class="public-section-subtitle mb-0">
+            Sahulat Ghar Tak currently serves Islamabad and Rawalpindi, with a focus on Bahria Town in both cities.
+            We are expanding across Pakistan.
+        </p>
+    </div>
+</section>
+
+<section id="faq" class="public-section">
+    <div class="container">
+        <h2 class="public-section-title">Frequently asked questions</h2>
+        <div class="public-faq-list">
+            @foreach (var faq in Model.Faqs)
+            {
+                <div class="public-faq-item">
+                    <h3 class="h5">@faq.Question</h3>
+                    <p class="text-muted mb-0">@faq.Answer</p>
+                </div>
+            }
+        </div>
+    </div>
+</section>
+
+<section class="public-section public-bg-soft">
+    <div class="container">
+        <h2 class="public-section-title">More from Sahulat Ghar Tak</h2>
+        <ul class="pillar-other-links">
+            @foreach (var other in Model.OtherPillars)
+            {
+                <li><a href="@other.Url"><span>@other.Name</span><i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a></li>
+            }
+            <li><a href="https://sahulatride.com" target="_blank" rel="noopener noreferrer"><span>Sahulat Ride</span><i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i></a></li>
+            <li><a href="/Home/DownloadApp"><span>Download the app</span><i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a></li>
+        </ul>
+    </div>
+</section>
+
+<section class="public-section">
+    <div class="container">
+        <div class="public-cta">
+            <h2>Ready to book?</h2>
+            <p class="mb-4 opacity-75">Download the app, choose your service and see the price before you confirm.</p>
+            <div class="d-flex flex-wrap justify-content-center gap-2">
+                <a href="@StoreLinks.GooglePlay" target="_blank" rel="noopener" class="store-badge-img-link">
+                    <img src="~/img/downloads/google-play-badge.svg" alt="Get it on Google Play" class="store-badge-img" />
+                </a>
+                <a href="@StoreLinks.AppStore" target="_blank" rel="noopener" class="store-badge-img-link">
+                    <img src="~/img/downloads/app-store-badge.svg" alt="Download on the App Store" class="store-badge-img" />
+                </a>
+            </div>
+        </div>
+    </div>
+</section>

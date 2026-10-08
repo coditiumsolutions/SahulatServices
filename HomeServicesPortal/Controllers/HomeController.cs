@@ -19,6 +19,7 @@ public class HomeController : Controller
     private readonly AppDbContext _db;
     private readonly IProviderZoneService _zones;
     private readonly IMemoryCache _cache;
+    private readonly IServicePillarService _pillars;
 
     private const string HomeStatsCacheKey = "home-public-stats";
 
@@ -27,13 +28,15 @@ public class HomeController : Controller
         IAuthService authService,
         AppDbContext db,
         IProviderZoneService zones,
-        IMemoryCache cache)
+        IMemoryCache cache,
+        IServicePillarService pillars)
     {
         _logger = logger;
         _authService = authService;
         _db = db;
         _zones = zones;
         _cache = cache;
+        _pillars = pillars;
     }
 
     public async Task<IActionResult> Index(CancellationToken cancellationToken)
@@ -70,6 +73,25 @@ public class HomeController : Controller
             _logger.LogWarning(ex, "Could not load home page stats");
             return null;
         }
+    }
+
+    // Public landing pages for the three top-level services (catalogue read from the database).
+    [HttpGet("/home-maintenance")]
+    public Task<IActionResult> HomeMaintenance(CancellationToken cancellationToken)
+        => ServicePillarPage("home-maintenance", cancellationToken);
+
+    [HttpGet("/specialized-services")]
+    public Task<IActionResult> SpecializedServices(CancellationToken cancellationToken)
+        => ServicePillarPage("specialized-services", cancellationToken);
+
+    [HttpGet("/property-and-legal-services")]
+    public Task<IActionResult> PropertyAndLegalServices(CancellationToken cancellationToken)
+        => ServicePillarPage("property-and-legal-services", cancellationToken);
+
+    private async Task<IActionResult> ServicePillarPage(string slug, CancellationToken cancellationToken)
+    {
+        var model = await _pillars.GetAsync(slug, cancellationToken);
+        return model == null ? NotFound() : View("ServicePillar", model);
     }
 
     [Route("/about")]

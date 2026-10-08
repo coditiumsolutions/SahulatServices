@@ -6,6 +6,22 @@
     var appStoreUrl = "https://apps.apple.com/pk/app/sahulat-ghar-tak/id6810184599";
 }
 
+@section Head {
+    <script type="application/ld+json">
+    {
+        "@@context": "https://schema.org",
+        "@@type": "MobileApplication",
+        "name": "Sahulat Ghar Tak",
+        "description": "Book verified electricians, plumbers, AC technicians, cleaners, carpenters and painters in Islamabad and Rawalpindi from your phone.",
+        "applicationCategory": "LifestyleApplication",
+        "operatingSystem": "ANDROID, IOS",
+        "installUrl": ["@playStoreUrl", "@appStoreUrl"],
+        "offers": { "@@type": "Offer", "price": "0", "priceCurrency": "PKR" },
+        "publisher": { "@@id": "@(HomeServicesPortal.Helpers.PublicUrl.Base(Context.Request))/#organization" }
+    }
+    </script>
+}
+
 <section class="public-hero download-hero">
     <div class="container public-hero-content">
         <div class="row align-items-center g-4">
@@ -30,11 +46,11 @@
             <div class="col-lg-6">
                 <div class="hero-phones">
                     <div class="hero-phone hero-phone--pixel">
-                        <img src="~/img/app-home-screen.png" width="540" height="1200"
+                        <img src="~/img/app-home-screen.webp" width="540" height="1200"
                              alt="Screenshot of the Sahulat Ghar Tak Android app home screen" />
                     </div>
                     <div class="hero-phone hero-phone--iphone">
-                        <img src="~/img/ios-home-screen.png" width="540" height="1173"
+                        <img src="~/img/ios-home-screen.webp" width="540" height="1173"
                              alt="Screenshot of the Sahulat Ghar Tak iOS app home screen" />
                     </div>
                 </div>

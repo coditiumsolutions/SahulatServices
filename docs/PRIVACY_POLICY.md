@@ -5,7 +5,7 @@ type: legal
 
 # Privacy Policy for Sahulat Ghar Tak
 
-**Last Updated: October 1, 2026**
+**Last Updated: October 8, 2026**
 
 Sahulat Ghar Tak ("we," "us," "our," or the "App") is a home services marketplace mobile application operated by Coditum Solutions ("Company") that connects Customers seeking home services with independent Service Providers who offer those services. This Privacy Policy explains how we collect, use, disclose, and protect information when you use our mobile application.
 
@@ -48,6 +48,9 @@ We do not collect continuous or background location data. Your device location i
 
 **Third-party components the App uses:** Google Maps (displays the address map and, like any map service, receives your device's IP address and map-usage data under [Google's Privacy Policy](https://policies.google.com/privacy)); Google ML Kit (on-device face/text/card detection that guides photo and CNIC capture — images are analysed on your device and are not sent to Google by this component); Firebase Cloud Messaging (FCM) by Google, which delivers push notifications — FCM receives your push token and the content of the notifications we send you, and processes them under [Google's Privacy Policy](https://policies.google.com/privacy) and [Firebase's privacy information](https://firebase.google.com/support/privacy). Address search/pin lookups are handled through our own servers.
 
+### 1.4 Visitors to Our Website
+When you visit our public website (sahulatghartak.com), we use the **Meta Pixel**, a tracking tool provided by Meta Platforms, Inc. (Facebook and Instagram). When a page loads, and when you tap a link to our Google Play or App Store listing, the Pixel sends Meta information such as the page you viewed, your IP address, browser and device details, and cookie or similar identifiers. We use this to understand how many people visit and to measure the effectiveness of our promotion on Facebook and Instagram, and we may show our promotions to people who visited the site. We do not send your name, phone number, CNIC, address, or any booking details to Meta through the Pixel. Meta processes this data under [Meta's Privacy Policy](https://www.facebook.com/privacy/policy/). You can limit this through your Facebook and Instagram ad settings, by blocking third-party cookies in your browser, or by using a tracking-protection extension. The mobile App itself does not use the Meta Pixel.
+
 ---
 
 ## 2. How We Use Your Information
@@ -74,6 +77,7 @@ We do not sell your personal information. We share information only in the follo
 
 - **Between Customers and Providers:** To facilitate a service booking, a Customer's name, saved address, and request details are shared with the assigned Provider, and a Provider's name, profile, verification status, category, and rating are shared with Customers.
 - **Service providers to us:** We may use third-party infrastructure providers (such as cloud hosting providers) solely to host our backend servers and databases. These providers process data only on our behalf and are contractually obligated to protect it.
+- **Website analytics and promotion:** If you visit our website, the Meta Pixel described in Section 1.4 shares limited visit information (page views and store-link taps) with Meta.
 - **Push notification delivery:** To deliver push notifications we send your push token and the notification text (for example, "Your provider has started your job") to Google's Firebase Cloud Messaging service, which relays it to your device.
 - **Legal requirements:** We may disclose information if required to do so by law, regulation, legal process, or governmental request, or to protect the rights, property, or safety of our users, the public, or the Company.
 - **Business transfers:** If the Company is involved in a merger, acquisition, or sale of assets, user information may be transferred as part of that transaction, subject to this Privacy Policy or a policy at least as protective.
