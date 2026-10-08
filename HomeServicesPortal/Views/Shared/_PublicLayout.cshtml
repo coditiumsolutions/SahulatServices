@@ -1,7 +1,11 @@
+@inject IConfiguration Configuration
 <!DOCTYPE html>
 <html lang="en">
 <head>
     @{
+        // Configurable via Marketing:MetaPixelId; defaults to the business's existing Pixel so production
+        // (whose appsettings are not deployed from the repo) keeps tracking without a config change.
+        var metaPixelId = Configuration["Marketing:MetaPixelId"] ?? "943484539264647";
         var pageTitle = $"{ViewData["Title"]} - Sahulat Ghar Tak";
         var pageDescription = ViewData["Description"] as string
             ?? "Sahulat Ghar Tak connects households across Pakistan with verified electricians, plumbers, cleaners, AC technicians, carpenters and painters — book trusted home service professionals in minutes.";
@@ -37,6 +41,28 @@
     <link rel="stylesheet" href="~/css/public-home.css" asp-append-version="true" />
     <link rel="manifest" href="~/manifest.json" />
     <partial name="_OrganizationSchema" />
+    @if (!string.IsNullOrWhiteSpace(metaPixelId))
+    {
+        <!-- Meta Pixel Code (shared by every public page) -->
+        <script>
+        !function(f,b,e,v,n,t,s)
+        {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+        n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+        if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+        n.queue=[];t=b.createElement(e);t.async=!0;
+        t.src=v;s=b.getElementsByTagName(e)[0];
+        s.parentNode.insertBefore(t,s)}(window, document,'script',
+        'https://connect.facebook.net/en_US/fbevents.js');
+        fbq('init', '@metaPixelId');
+        fbq('track', 'PageView');
+        </script>
+        <noscript>
+            <img height="1" width="1" style="display:none"
+                 src="https://www.facebook.com/tr?id=@metaPixelId&ev=PageView&noscript=1"
+                 alt="" />
+        </noscript>
+        <!-- End Meta Pixel Code -->
+    }
     @await RenderSectionAsync("Head", required: false)
 </head>
 <body class="public-home">
@@ -53,11 +79,15 @@
                         </a>
                         <p class="hs-footer-tagline">
                             Trusted home service professionals, verified and dispatched to your doorstep
-                            across Bahria Town.
+                            in Islamabad and Rawalpindi, with a focus on Bahria Town.
                         </p>
                         <div class="hs-footer-social">
                             <a href="tel:+923225040823" aria-label="Call us"><i class="fa-solid fa-phone"></i></a>
-                            <a href="mailto:info@sahulatghartak.com" aria-label="Email us"><i class="fa-solid fa-envelope"></i></a>
+                            <a href="mailto:sahulatghartak@gmail.com" aria-label="Email us"><i class="fa-solid fa-envelope"></i></a>
+                            <a href="https://www.facebook.com/p/Sahulat-Ghar-Tak-61594810288945/" target="_blank" rel="noopener noreferrer me" aria-label="Sahulat Ghar Tak on Facebook"><i class="fa-brands fa-facebook-f"></i></a>
+                            <a href="https://www.instagram.com/sahulatghartak" target="_blank" rel="noopener noreferrer me" aria-label="Sahulat Ghar Tak on Instagram"><i class="fa-brands fa-instagram"></i></a>
+                            <a href="https://www.youtube.com/@@sahulatghartak" target="_blank" rel="noopener noreferrer me" aria-label="Sahulat Ghar Tak on YouTube"><i class="fa-brands fa-youtube"></i></a>
+                            <a href="https://www.tiktok.com/@@sahulatghartak" target="_blank" rel="noopener noreferrer me" aria-label="Sahulat Ghar Tak on TikTok"><i class="fa-brands fa-tiktok"></i></a>
                         </div>
                     </div>
 
@@ -87,8 +117,8 @@
                         <h6 class="hs-footer-heading">Reach Us</h6>
                         <ul class="hs-footer-links hs-footer-contact">
                             <li><i class="fa-solid fa-phone"></i><a href="tel:+923225040823">0322-5040823</a></li>
-                            <li><i class="fa-solid fa-envelope"></i><a href="mailto:info@sahulatghartak.com">info@sahulatghartak.com</a></li>
-                            <li><i class="fa-solid fa-location-dot"></i><span>Bahria Town, Pakistan</span></li>
+                            <li><i class="fa-solid fa-envelope"></i><a href="mailto:sahulatghartak@gmail.com">sahulatghartak@gmail.com</a></li>
+                            <li><i class="fa-solid fa-location-dot"></i><span>Bahria Town, Islamabad &amp; Rawalpindi, Pakistan</span></li>
                         </ul>
                     </div>
                 </div>
@@ -108,6 +138,14 @@
         </div>
     </footer>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+    // Count taps on Google Play / App Store links as a Meta "Lead" so app-install intent is measurable.
+    document.addEventListener('click', function (e) {
+        var a = e.target.closest && e.target.closest('a[href*="play.google.com"], a[href*="apps.apple.com"]');
+        if (!a || typeof fbq !== 'function') return;
+        fbq('track', 'Lead', { content_name: a.href.indexOf('apple.com') > -1 ? 'app_store' : 'google_play' });
+    });
+    </script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

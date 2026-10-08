@@ -1,3 +1,47 @@
+# Search and answer-engine crawlers are welcome; model-training crawlers are not.
+# Rules are repeated in each group because a crawler obeys only its most specific group.
+
+# Search / retrieval crawlers (these surface the site in AI answers)
+User-agent: OAI-SearchBot
+User-agent: ChatGPT-User
+User-agent: Claude-SearchBot
+User-agent: Claude-User
+User-agent: PerplexityBot
+User-agent: Perplexity-User
+Allow: /
+Allow: /privacy-policy
+Allow: /delete-account
+Allow: /Home/DownloadApp
+
+Disallow: /adminportal
+Disallow: /Account/
+Disallow: /Admin
+Disallow: /Administration
+Disallow: /ApkManagement
+Disallow: /Bookings
+Disallow: /Customers
+Disallow: /Payments
+Disallow: /ProviderAvailability
+Disallow: /ProviderDocuments
+Disallow: /ProviderLocations
+Disallow: /ProviderQuotes
+Disallow: /Reports
+Disallow: /Reviews
+Disallow: /ServiceCategories
+Disallow: /ServiceProviders
+Disallow: /ServiceRequests
+Disallow: /ServiceTitles
+Disallow: /Services
+Disallow: /api/
+Disallow: /Home/Error
+
+# Model-training crawlers
+User-agent: GPTBot
+User-agent: ClaudeBot
+User-agent: CCBot
+Disallow: /
+
+# Everyone else (Googlebot, Bingbot, etc.)
 User-agent: *
 Allow: /
 Allow: /privacy-policy

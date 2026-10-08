@@ -1,29 +1,10 @@
-﻿@{
+﻿@model HomeServicesPortal.Models.ViewModels.HomeStatsViewModel?
+@{
     Layout = "_PublicLayout";
-    ViewData["Title"] = "Home";
-    ViewData["Description"] = "Sahulat Ghar Tak is Pakistan's trusted home services platform — book verified electricians, plumbers, cleaners, AC technicians, carpenters and painters with transparent pricing and live tracking.";
-}
-
-@section Head {
-    <!-- Meta Pixel Code -->
-    <script>
-    !function(f,b,e,v,n,t,s)
-    {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-    n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-    if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-    n.queue=[];t=b.createElement(e);t.async=!0;
-    t.src=v;s=b.getElementsByTagName(e)[0];
-    s.parentNode.insertBefore(t,s)}(window, document,'script',
-    'https://connect.facebook.net/en_US/fbevents.js');
-    fbq('init', '943484539264647');
-    fbq('track', 'PageView');
-    </script>
-    <noscript>
-        <img height="1" width="1" style="display:none"
-             src="https://www.facebook.com/tr?id=943484539264647&ev=PageView&noscript=1"
-             alt="" />
-    </noscript>
-    <!-- End Meta Pixel Code -->
+    ViewData["Title"] = "Home Services in Bahria Town, Islamabad & Rawalpindi";
+    ViewData["Description"] = "Book verified electricians, plumbers, cleaners, AC technicians, carpenters and painters in Bahria Town, Islamabad and Rawalpindi with Sahulat Ghar Tak. Transparent pricing and live tracking in the app.";
+    // Live numbers from the DB; when unavailable the page falls back to wording without counts.
+    var categoryCountText = Model is { ActiveCategories: > 0 } ? $"{Model.ActiveCategories} service categories" : "a wide range of service categories";
 }
 
 <section class="public-hero">
@@ -42,20 +23,26 @@
                     <a href="#services" class="public-btn-light">Explore Services</a>
                     <a href="#how-it-works" class="public-btn-outline">How It Works</a>
                 </div>
-                <div class="public-stats">
-                    <div class="public-stat-card">
-                        <strong>500+</strong>
-                        <span>Verified Providers</span>
+                @if (Model is { VerifiedProviders: > 0, ActiveCategories: > 0 })
+                {
+                    <div class="public-stats">
+                        <div class="public-stat-card">
+                            <strong>@Model.VerifiedProviders</strong>
+                            <span>Verified Providers</span>
+                        </div>
+                        <div class="public-stat-card">
+                            <strong>@Model.ActiveCategories</strong>
+                            <span>Service Categories</span>
+                        </div>
+                        @if (Model.ServiceZones > 0)
+                        {
+                            <div class="public-stat-card">
+                                <strong>@Model.ServiceZones</strong>
+                                <span>Service Zones</span>
+                            </div>
+                        }
                     </div>
-                    <div class="public-stat-card">
-                        <strong>18+</strong>
-                        <span>Service Categories</span>
-                    </div>
-                    <div class="public-stat-card">
-                        <strong>24/7</strong>
-                        <span>Booking Support</span>
-                    </div>
-                </div>
+                }
             </div>
             <div class="col-lg-5 d-none d-lg-block text-center">
                 <i class="fa-solid fa-house-chimney-user" style="font-size: 9rem; opacity: 0.25;"></i>
@@ -240,7 +227,7 @@
         <div class="public-faq-list">
             <div class="public-faq-item">
                 <h3 class="h5">What home services does Sahulat Ghar Tak offer?</h3>
-                <p class="text-muted mb-0">Sahulat Ghar Tak connects you with verified electricians, plumbers, cleaners, AC technicians, carpenters, and painters across Pakistan, covering 18+ service categories in total.</p>
+                <p class="text-muted mb-0">Sahulat Ghar Tak connects you with verified electricians, plumbers, cleaners, AC technicians, carpenters, and painters in Islamabad and Rawalpindi, covering @categoryCountText in total.</p>
             </div>
             <div class="public-faq-item">
                 <h3 class="h5">How do I book a plumber or electrician near me?</h3>
@@ -252,7 +239,7 @@
             </div>
             <div class="public-faq-item">
                 <h3 class="h5">What areas does Sahulat Ghar Tak serve?</h3>
-                <p class="text-muted mb-0">Sahulat Ghar Tak operates across Pakistan, with verified home service providers available in Bahria Town and other served areas.</p>
+                <p class="text-muted mb-0">Sahulat Ghar Tak currently serves Islamabad and Rawalpindi, with a focus on Bahria Town in both cities. We are expanding across Pakistan.</p>
             </div>
             <div class="public-faq-item">
                 <h3 class="h5">Is pricing transparent?</h3>
@@ -276,7 +263,7 @@
             "name": "What home services does Sahulat Ghar Tak offer?",
             "acceptedAnswer": {
                 "@@type": "Answer",
-                "text": "Sahulat Ghar Tak connects you with verified electricians, plumbers, cleaners, AC technicians, carpenters, and painters across Pakistan, covering 18+ service categories in total."
+                "text": "Sahulat Ghar Tak connects you with verified electricians, plumbers, cleaners, AC technicians, carpenters, and painters in Islamabad and Rawalpindi, covering @categoryCountText in total."
             }
         },
         {
@@ -300,7 +287,7 @@
             "name": "What areas does Sahulat Ghar Tak serve?",
             "acceptedAnswer": {
                 "@@type": "Answer",
-                "text": "Sahulat Ghar Tak operates across Pakistan, with verified home service providers available in Bahria Town and other served areas."
+                "text": "Sahulat Ghar Tak currently serves Islamabad and Rawalpindi, with a focus on Bahria Town in both cities. We are expanding across Pakistan."
             }
         },
         {
@@ -330,7 +317,7 @@
             <p class="mb-4 opacity-75">Book trusted home services today or reach out to our team for assistance.</p>
             <div class="d-flex flex-wrap justify-content-center gap-2">
                 <a href="tel:+923225040823" class="public-btn-light">Call 0322-5040823</a>
-                <a href="mailto:info@sahulatghartak.com" class="public-btn-outline">Email Us</a>
+                <a href="mailto:sahulatghartak@gmail.com" class="public-btn-outline">Email Us</a>
             </div>
         </div>
     </div>

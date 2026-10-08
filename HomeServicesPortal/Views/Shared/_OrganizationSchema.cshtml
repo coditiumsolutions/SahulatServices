@@ -4,18 +4,47 @@
 <script type="application/ld+json">
 {
     "@@context": "https://schema.org",
-    "@@type": "LocalBusiness",
-    "name": "Sahulat Ghar Tak",
-    "description": "Home services marketplace connecting verified electricians, plumbers, cleaners, AC technicians, carpenters and painters with households across Pakistan.",
-    "url": "@schemaBaseUrl/",
-    "logo": "@schemaBaseUrl/img/og-default.jpg",
-    "image": "@schemaBaseUrl/img/og-default.jpg",
-    "telephone": "+92-322-5040823",
-    "email": "info@sahulatghartak.com",
-    "areaServed": {
-        "@@type": "Country",
-        "name": "Pakistan"
-    },
-    "priceRange": "$$"
+    "@@graph": [
+        {
+            "@@type": "Organization",
+            "@@id": "@schemaBaseUrl/#organization",
+            "name": "Sahulat Ghar Tak",
+            "alternateName": "Sahulat Ghar Tak Home Services",
+            "description": "Home services marketplace connecting verified electricians, plumbers, cleaners, AC technicians, carpenters and painters with households in Islamabad and Rawalpindi, with a focus on Bahria Town.",
+            "url": "@schemaBaseUrl/",
+            "logo": "@schemaBaseUrl/img/og-default.jpg",
+            "image": "@schemaBaseUrl/img/og-default.jpg",
+            "email": "sahulatghartak@gmail.com",
+            "telephone": "+92-322-5040823",
+            "contactPoint": {
+                "@@type": "ContactPoint",
+                "telephone": "+92-322-5040823",
+                "email": "sahulatghartak@gmail.com",
+                "contactType": "customer service",
+                "areaServed": "PK",
+                "availableLanguage": ["en", "ur"]
+            },
+            "areaServed": [
+                { "@@type": "City", "name": "Islamabad" },
+                { "@@type": "City", "name": "Rawalpindi" }
+            ],
+            "sameAs": [
+                "https://play.google.com/store/apps/details?id=com.coditiumsols.sahulatghartak",
+                "https://apps.apple.com/pk/app/sahulat-ghar-tak/id6810184599",
+                "https://www.instagram.com/sahulatghartak",
+                "https://www.facebook.com/p/Sahulat-Ghar-Tak-61594810288945/",
+                "https://www.youtube.com/@@sahulatghartak",
+                "https://www.tiktok.com/@@sahulatghartak"
+            ]
+        },
+        {
+            "@@type": "WebSite",
+            "@@id": "@schemaBaseUrl/#website",
+            "url": "@schemaBaseUrl/",
+            "name": "Sahulat Ghar Tak",
+            "publisher": { "@@id": "@schemaBaseUrl/#organization" },
+            "inLanguage": "en"
+        }
+    ]
 }
 </script>
