@@ -38,6 +38,9 @@ public class RegisterProviderRequest : IValidatableObject
     [Range(1, int.MaxValue, ErrorMessage = "Primary category id must be greater than 0.")]
     public int? PrimaryCategoryId { get; set; }
 
+    /// <summary>Optional service zones (names from GET /api/zones). Omit or send an empty list for none; can be edited later.</summary>
+    public List<string>? Zones { get; set; }
+
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {
         if (CategoryIds is not { Count: > 0 })

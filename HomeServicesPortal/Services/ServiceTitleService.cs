@@ -32,6 +32,7 @@ public class ServiceTitleService : IServiceTitleService
                 Title = t.Title,
                 Description = t.Description,
                 BasePrice = t.BasePrice,
+                EstimateText = t.EstimateText,
                 DisplayOrder = t.DisplayOrder,
                 CreatedOn = t.CreatedOn
             })
@@ -53,6 +54,7 @@ public class ServiceTitleService : IServiceTitleService
                 Title = t.Title,
                 Description = t.Description,
                 BasePrice = t.BasePrice,
+                EstimateText = t.EstimateText,
                 DisplayOrder = t.DisplayOrder,
                 CreatedOn = t.CreatedOn
             })
@@ -146,6 +148,7 @@ public class ServiceTitleService : IServiceTitleService
                 Title = x.Title.Title,
                 Description = x.Title.Description,
                 BasePrice = x.Title.BasePrice,
+                EstimateText = x.Title.EstimateText,
                 DisplayOrder = x.Title.DisplayOrder,
                 IsActive = x.Title.IsActive,
                 CreatedOn = x.Title.CreatedOn
@@ -180,6 +183,7 @@ public class ServiceTitleService : IServiceTitleService
                 Title = t.Title,
                 Description = t.Description,
                 BasePrice = t.BasePrice,
+                EstimateText = t.EstimateText,
                 DisplayOrder = t.DisplayOrder,
                 IsActive = t.IsActive,
                 CreatedOn = t.CreatedOn
@@ -198,6 +202,7 @@ public class ServiceTitleService : IServiceTitleService
                 Title = t.Title,
                 Description = t.Description,
                 BasePrice = t.BasePrice,
+                EstimateText = t.EstimateText,
                 DisplayOrder = t.DisplayOrder,
                 IsActive = t.IsActive
             })
@@ -248,6 +253,7 @@ public class ServiceTitleService : IServiceTitleService
             Title = title,
             Description = model.Description?.Trim(),
             BasePrice = model.BasePrice,
+            EstimateText = string.IsNullOrWhiteSpace(model.EstimateText) ? null : model.EstimateText.Trim(),
             DisplayOrder = model.DisplayOrder,
             IsActive = model.IsActive,
             CreatedOn = DateTime.UtcNow
@@ -292,6 +298,7 @@ public class ServiceTitleService : IServiceTitleService
         entity.Title = title;
         entity.Description = model.Description?.Trim();
         entity.BasePrice = model.BasePrice;
+        entity.EstimateText = string.IsNullOrWhiteSpace(model.EstimateText) ? null : model.EstimateText.Trim();
         entity.DisplayOrder = model.DisplayOrder;
         entity.IsActive = model.IsActive;
 

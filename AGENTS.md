@@ -42,6 +42,14 @@ Minimum required: `ConnectionStrings:DefaultConnection` (SQL Server), `Jwt:Key` 
 
 The app connects **directly** to the configured SQL Server — there is no local tunnel needed by default. `scripts/ensure-sql-tunnel.ps1` / `dev-sql-tunnel.ps1` are leftover from a prior Hostinger SSH-tunnel setup (`HomeServicesPortal/Infrastructure/DevSqlTunnelBootstrap.cs` is currently disabled/commented out in `Program.cs`); only touch these if reviving that setup.
 
+### Admin portal login for testing
+
+A git-ignored `.env` at the repo root holds the admin portal test login as `username=` and `password=` lines (under an "Admin Portal Login" heading). Agents need it to click through the admin pages (`/adminportal`, then `/Admin/...`) when verifying portal changes.
+
+- Read the values from `.env` when needed (for example `grep '^username=' .env`). Use them only to log in to the portal while testing.
+- Never copy the username or password into any tracked file, doc, commit message, log or chat reply, and never commit `.env` (it is already in `.gitignore`).
+- Remember the DB is shared with production, so keep portal testing read-only unless the change under test needs a write, and restore anything you change.
+
 ## Architecture
 
 ### The two-DbContext situation (critical to understand before touching data access)

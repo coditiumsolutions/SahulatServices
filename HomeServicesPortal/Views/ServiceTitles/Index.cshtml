@@ -117,7 +117,7 @@
                         <tr>
                             <td class="fw-semibold">@item.Title</td>
                             <td>@item.CategoryName</td>
-                            <td>@(item.BasePrice?.ToString("N2") ?? "—")</td>
+                            <td>@(!string.IsNullOrWhiteSpace(item.EstimateText) ? item.EstimateText : (item.BasePrice?.ToString("N2") ?? "—"))</td>
                             <td>@item.DisplayOrder</td>
                             <td>
                                 @if (item.IsActive)

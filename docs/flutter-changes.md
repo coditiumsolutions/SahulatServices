@@ -1,6 +1,6 @@
 ---
 status: current
-version: 1.13.0
+version: 1.15.0
 ---
 
 # Flutter App Changes Tracker
@@ -15,6 +15,20 @@ Legend:
 - **Available now** — backend is live, app can adopt whenever convenient (non-breaking, optional).
 - **Held for approval** — a genuinely breaking change to a live endpoint contract (not just optional-field additions) that hasn't been implemented at all yet; listed here so the scope is visible ahead of time. Per the constraint above, when these are eventually implemented they should also default to an optional/additive interim contract rather than a hard break, unless explicitly decided otherwise at that time.
 - **TODO(remove after old app retired)** — inline code/doc comments marking legacy-fallback branches that exist ONLY to support currently-published app builds. Once the new app version is confirmed live on both stores (i.e. no meaningfully active install base still hits these code paths), these branches can be deleted — grep the codebase for this exact marker to find all of them. Do not remove any of these until that confirmation, even if it looks safe.
+
+---
+
+## Available now (backend built 2026-10-08, api.txt v3.42; live once the SQL scripts are applied and main is deployed)
+
+### Provider zones (register, view, edit)
+- `GET /api/zones` returns the configured zone names (`data`: array of strings). Use them for a multi-select picker.
+- **Limit: a provider can pick at most 2 zones.** Stop the user at 2 in the picker; the backend returns 400 ("A provider can have at most 2 zones.") for more.
+- Registration: `POST /api/auth/register-provider` accepts an optional `zones` array (names from `/api/zones`). Omit it or send `[]` for none. An unknown name is 400.
+- Profile: `GET /api/providers/{providerUid}/zones` lists the provider's zones. `PUT /api/providers/{providerUid}/zones` with `{ "zones": [...] }` replaces the whole set (send `[]` to clear). Idempotent.
+- Old builds are unaffected: `zones` is optional everywhere.
+
+### Text estimate on service titles
+- `GET /api/service-titles` and `/api/service-titles/{id}` now include `estimateText` (string or null), e.g. `"2000-3000"`. Show it as the estimated budget when present; fall back to `basePrice` when it is null. `basePrice` is unchanged (still numeric, still populates `estimatedBudget`).
 
 ---
 

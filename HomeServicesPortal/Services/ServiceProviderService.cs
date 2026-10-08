@@ -18,6 +18,7 @@ public class ServiceProviderService : IServiceProviderService
     private readonly IConfigurationEntryService _configurations;
     private readonly IProviderCategoryService _providerCategories;
     private readonly IProviderServiceTitleService _providerServiceTitles;
+    private readonly IProviderZoneService _providerZones;
     private readonly ILogger<ServiceProviderService> _logger;
 
     public ServiceProviderService(
@@ -26,6 +27,7 @@ public class ServiceProviderService : IServiceProviderService
         IConfigurationEntryService configurations,
         IProviderCategoryService providerCategories,
         IProviderServiceTitleService providerServiceTitles,
+        IProviderZoneService providerZones,
         ILogger<ServiceProviderService> logger)
     {
         _db = db;
@@ -33,6 +35,7 @@ public class ServiceProviderService : IServiceProviderService
         _configurations = configurations;
         _providerCategories = providerCategories;
         _providerServiceTitles = providerServiceTitles;
+        _providerZones = providerZones;
         _logger = logger;
     }
 
@@ -95,7 +98,10 @@ public class ServiceProviderService : IServiceProviderService
         model.Categories = await GetCategoryOptionsAsync(cancellationToken);
         model.ServiceTitleOptions = await GetServiceTitleOptionsAsync(cancellationToken);
         model.CityOptions = await BuildConfigOptionsAsync(CitiesConfigKey, model.City, cancellationToken);
-        model.ZoneOptions = await BuildConfigOptionsAsync(ZoneConfigKey, model.Zone, cancellationToken);
+        model.ZoneOptions = (await _providerZones.GetZoneOptionsAsync(cancellationToken))
+            .Union(model.Zones, StringComparer.OrdinalIgnoreCase)
+            .Select(z => new SelectListItem { Value = z, Text = z })
+            .ToList();
         if (model.Uid > 0)
         {
             await PopulateDocumentFormAsync(model, cancellationToken);
@@ -358,6 +364,7 @@ public class ServiceProviderService : IServiceProviderService
         }
 
         provider.ServiceTitleUids = await _providerServiceTitles.GetServiceTitleUidsAsync(id, cancellationToken);
+        provider.Zones = await _providerZones.GetZonesAsync(id, cancellationToken);
 
         return await PopulateFormAsync(provider, cancellationToken);
     }
@@ -478,6 +485,13 @@ public class ServiceProviderService : IServiceProviderService
             return (false, titleError);
         }
 
+        var (zoneList, zoneError) = await _providerZones.ResolveZonesAsync(model.Zones, null, cancellationToken);
+        if (zoneList == null)
+        {
+            return (false, zoneError);
+        }
+        await _providerZones.SetZonesAsync(provider.Uid, zoneList, cancellationToken);
+
         _logger.LogInformation("Provider {Name} created.", model.FullName);
         return (true, null);
     }
@@ -564,6 +578,13 @@ public class ServiceProviderService : IServiceProviderService
         {
             return (false, titleError);
         }
+
+        var (zoneList, zoneError) = await _providerZones.ResolveZonesAsync(model.Zones, provider.Uid, cancellationToken);
+        if (zoneList == null)
+        {
+            return (false, zoneError);
+        }
+        await _providerZones.SetZonesAsync(provider.Uid, zoneList, cancellationToken);
 
         _logger.LogInformation("Provider {Uid} updated.", model.Uid);
         return (true, null);

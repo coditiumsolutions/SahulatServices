@@ -25,6 +25,7 @@ public class AppDbContext : DbContext
     public DbSet<Provider> Providers => Set<Provider>();
 
     public DbSet<ProviderCategory> ProviderCategories => Set<ProviderCategory>();
+    public DbSet<ProviderZone> ProviderZones => Set<ProviderZone>();
 
     public DbSet<ProviderServiceTitle> ProviderServiceTitles => Set<ProviderServiceTitle>();
 
@@ -208,6 +209,28 @@ public class AppDbContext : DbContext
                 .OnDelete(DeleteBehavior.Restrict);
         });
 
+        modelBuilder.Entity<ProviderZone>(entity =>
+        {
+            entity.ToTable("ProviderZones");
+            entity.HasKey(e => e.Uid);
+            entity.Property(e => e.Uid).HasColumnName("UID");
+            entity.Property(e => e.ProviderUid).HasColumnName("ProviderUID");
+            entity.Property(e => e.ZoneName).HasMaxLength(100).IsRequired();
+            entity.Property(e => e.CreatedOn)
+                .HasColumnType("datetime")
+                .HasDefaultValueSql("(getdate())");
+
+            entity.HasIndex(e => new { e.ProviderUid, e.ZoneName })
+                .IsUnique()
+                .HasDatabaseName("UQ_ProviderZones_ProviderUID_ZoneName");
+
+            entity.HasOne(e => e.Provider)
+                .WithMany()
+                .HasForeignKey(e => e.ProviderUid)
+                .HasConstraintName("FK_ProviderZones_Providers")
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
         modelBuilder.Entity<ProviderCategory>(entity =>
         {
             entity.ToTable("ProviderCategories");
@@ -308,6 +331,7 @@ public class AppDbContext : DbContext
             entity.Property(e => e.Title).HasMaxLength(150).IsRequired();
             entity.Property(e => e.Description).HasMaxLength(500);
             entity.Property(e => e.BasePrice).HasColumnType("decimal(12,2)");
+            entity.Property(e => e.EstimateText).HasMaxLength(100);
             entity.Property(e => e.DisplayOrder).HasDefaultValue(0);
             entity.Property(e => e.IsActive).HasDefaultValue(true);
             entity.Property(e => e.CreatedOn)

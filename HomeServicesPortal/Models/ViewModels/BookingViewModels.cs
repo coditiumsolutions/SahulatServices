@@ -180,6 +180,7 @@ public class BookingDetailsVm
     public string? Status { get; set; }
     public string? RejectReason { get; set; }
     public string? CancelReason { get; set; }
+    public string? Passcode { get; set; }
     public int LedgerCount { get; set; }
 }
 

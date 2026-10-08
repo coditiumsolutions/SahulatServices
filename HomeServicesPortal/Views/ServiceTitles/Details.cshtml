@@ -24,6 +24,8 @@
                     <dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.Description) ? "—" : Model.Description)</dd>
                     <dt class="col-sm-4 text-muted">Estimated Budget</dt>
                     <dd class="col-sm-8">@(Model.BasePrice.HasValue ? Model.BasePrice.Value.ToString("N2") : "—")</dd>
+                    <dt class="col-sm-4 text-muted">Estimate (text)</dt>
+                    <dd class="col-sm-8">@(string.IsNullOrWhiteSpace(Model.EstimateText) ? "—" : Model.EstimateText)</dd>
                     <dt class="col-sm-4 text-muted">Display Order</dt>
                     <dd class="col-sm-8">@Model.DisplayOrder</dd>
                     <dt class="col-sm-4 text-muted">Status</dt>

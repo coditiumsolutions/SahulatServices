@@ -210,6 +210,7 @@ public class BookingService : IBookingService
                 Status = b.Status,
                 RejectReason = b.RejectReason,
                 CancelReason = b.CancelReason,
+                Passcode = b.Passcode,
                 LedgerCount = _db.PaymentLedgers.Count(l => l.BookingUid == b.Uid)
             })
             .FirstOrDefaultAsync(cancellationToken);

@@ -155,7 +155,7 @@
                             }
                             @foreach (var group in titleGroups)
                             {
-                                <li class="sp-title-group-header">@group.CategoryName</li>
+                                <li class="sp-title-group-header" data-category-uid="@group.CategoryUid">@group.CategoryName</li>
                                 @foreach (var title in group.Titles)
                                 {
                                     var isChecked = Model.ServiceTitleUids.Contains(title.Uid);
@@ -170,13 +170,52 @@
                                     </li>
                                 }
                             }
+                            <li class="px-3 py-2 small text-muted" id="spTitleEmpty" style="display:none;">Select a category first. Only titles from the provider's categories can be chosen.</li>
                         </ul>
                     </div>
+                    <div class="form-text">Only titles from the selected categories are shown.</div>
                     <span asp-validation-for="ServiceTitleUids" class="text-danger small"></span>
                 </div>
             </div>
         </div>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // The zone markup is rendered below this script, so wait for the page to finish loading.
+            var root = document.getElementById('spZoneDropdown');
+            if (!root) return;
+            var summary = root.querySelector('.sp-zone-summary');
+            var hint = document.getElementById('spZoneLimitHint');
+            var LIMIT = 2;
+
+            function refresh() {
+                var checks = Array.prototype.slice.call(root.querySelectorAll('.sp-zone-check'));
+                var selected = checks.filter(function (c) { return c.checked; });
+                var atLimit = selected.length >= LIMIT;
+                checks.forEach(function (c) {
+                    var disable = atLimit && !c.checked;
+                    c.disabled = disable;
+                    var label = c.closest('label');
+                    if (label) {
+                        label.classList.toggle('text-muted', disable);
+                        label.style.cursor = disable ? 'not-allowed' : '';
+                    }
+                });
+                summary.textContent = selected.length === 0
+                    ? '-- Select Zones --'
+                    : selected.map(function (c) { return c.closest('label').querySelector('span').textContent.trim(); }).join(', ');
+                summary.classList.toggle('text-muted', selected.length === 0);
+                hint.textContent = atLimit
+                    ? 'Maximum of ' + LIMIT + ' zones reached.'
+                    : 'Maximum ' + LIMIT + ' zones per provider (' + selected.length + '/' + LIMIT + ' selected).';
+                hint.classList.toggle('text-danger', atLimit);
+            }
+
+            root.addEventListener('change', refresh);
+            refresh();
+        });
+    </script>
 
     <script>
         (function () {
@@ -241,6 +280,24 @@
                 categorySummary.textContent = labels.length <= 2 ? labels.join(', ') : (labels.length + ' categories selected');
             }
 
+            // Only titles from a currently checked category are visible; a title can never be kept
+            // without its category (unchecked-category titles are cleared).
+            function filterTitlesByCategory() {
+                var checkedCats = {};
+                selectedCategoryChecks().forEach(function (c) { checkedCats[c.value] = true; });
+                var anyVisible = false;
+                titleRoot.querySelectorAll('.sp-title-group-header, .sp-title-group').forEach(function (li) {
+                    var show = !!checkedCats[li.getAttribute('data-category-uid')];
+                    li.style.display = show ? '' : 'none';
+                    if (show) anyVisible = true;
+                });
+                titleRoot.querySelectorAll('.sp-title-check:checked').forEach(function (cb) {
+                    if (!checkedCats[cb.getAttribute('data-category-uid')]) cb.checked = false;
+                });
+                var empty = document.getElementById('spTitleEmpty');
+                if (empty) empty.style.display = anyVisible ? 'none' : '';
+            }
+
             function refreshTitleSummary() {
                 var checks = selectedTitleChecks();
                 if (checks.length === 0) {
@@ -288,21 +345,6 @@
                 primary.value = stillValid ? currentValue : (checks.length === 1 ? checks[0].value : '');
             }
 
-            function ensureCategoryForTitle(categoryUid) {
-                if (!categoryUid) return true;
-                var match = categoryRoot.querySelector('.sp-category-check[value="' + categoryUid + '"]');
-                if (match && !match.checked) {
-                    if (match.disabled) return false;
-                    match.checked = true;
-                    enforceCategoryLimit();
-                    refreshPrimaryOptions();
-                    if (primary && !primary.value) {
-                        primary.value = categoryUid;
-                    }
-                }
-                return true;
-            }
-
             function clearTitlesForCategory(categoryUid) {
                 titleRoot.querySelectorAll('.sp-title-check[data-category-uid="' + categoryUid + '"]:checked')
                     .forEach(function (cb) { cb.checked = false; });
@@ -316,19 +358,12 @@
                 enforceCategoryLimit();
                 refreshPrimaryOptions();
                 refreshCategorySummary();
+                filterTitlesByCategory();
                 refreshTitleSummary();
             });
 
             titleRoot.addEventListener('change', function (e) {
                 if (!e.target.classList.contains('sp-title-check')) return;
-                if (e.target.checked) {
-                    var ok = ensureCategoryForTitle(e.target.getAttribute('data-category-uid'));
-                    if (!ok) {
-                        e.target.checked = false;
-                        alert('This title belongs to a category you have not selected, and the ' + CATEGORY_LIMIT + '-category limit has been reached. Remove a category first.');
-                    }
-                    refreshCategorySummary();
-                }
                 refreshTitleSummary();
             });
 
@@ -343,6 +378,7 @@
             enforceCategoryLimit();
             refreshPrimaryOptions();
             refreshCategorySummary();
+            filterTitlesByCategory();
             refreshTitleSummary();
         })();
     </script>
@@ -389,13 +425,31 @@
         <div class="col-md-6">
             <div class="row g-2 align-items-center">
                 <div class="col-sm-4">
-                    <label asp-for="Zone" class="form-label"></label>
+                    <label asp-for="Zones" class="form-label"></label>
                 </div>
                 <div class="col-sm-8">
-                    <select asp-for="Zone" class="form-select form-select-sm" asp-items="Model.ZoneOptions">
-                        <option value="">-- Select Zone --</option>
-                    </select>
-                    <span asp-validation-for="Zone" class="text-danger small"></span>
+                    <div class="dropdown" id="spZoneDropdown">
+                        <button class="form-select form-select-sm text-start sp-category-toggle" type="button"
+                                data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false"
+                                aria-haspopup="listbox">
+                            <span class="sp-zone-summary text-truncate">-- Select Zones --</span>
+                        </button>
+                        <ul class="dropdown-menu w-100 py-1 sp-category-menu" role="listbox" aria-multiselectable="true">
+                            @foreach (var zone in Model.ZoneOptions)
+                            {
+                                var zoneChecked = Model.Zones.Contains(zone.Value, StringComparer.OrdinalIgnoreCase);
+                                <li>
+                                    <label class="dropdown-item d-flex align-items-center gap-2 py-1">
+                                        <input type="checkbox" class="form-check-input mt-0 sp-zone-check"
+                                               name="Zones" value="@zone.Value" @(zoneChecked ? "checked" : null) />
+                                        <span class="small">@zone.Text</span>
+                                    </label>
+                                </li>
+                            }
+                        </ul>
+                    </div>
+                    <div class="form-text" id="spZoneLimitHint">Maximum 2 zones per provider.</div>
+                    <span asp-validation-for="Zones" class="text-danger small"></span>
                 </div>
             </div>
         </div>

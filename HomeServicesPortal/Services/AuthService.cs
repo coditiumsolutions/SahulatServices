@@ -19,6 +19,7 @@ public class AuthService : IAuthService
     private readonly IConfigurationEntryService _configurations;
     private readonly IProviderCategoryService _providerCategories;
     private readonly IGenderSyncService _genderSync;
+    private readonly IProviderZoneService _providerZones;
 
     public AuthService(
         AppDbContext db,
@@ -27,7 +28,8 @@ public class AuthService : IAuthService
         IFileStorageService fileStorageService,
         IConfigurationEntryService configurations,
         IProviderCategoryService providerCategories,
-        IGenderSyncService genderSync)
+        IGenderSyncService genderSync,
+        IProviderZoneService providerZones)
     {
         _db = db;
         _userRepository = userRepository;
@@ -36,6 +38,7 @@ public class AuthService : IAuthService
         _configurations = configurations;
         _providerCategories = providerCategories;
         _genderSync = genderSync;
+        _providerZones = providerZones;
     }
 
     public async Task<(bool Success, string? Error, RegistrationResponse? Data)> RegisterClientAsync(
@@ -195,6 +198,12 @@ public class AuthService : IAuthService
             return (false, "One or more selected categories do not exist or are inactive.", null, StatusCodes.Status400BadRequest);
         }
 
+        var (resolvedZones, zoneError) = await _providerZones.ResolveZonesAsync(request.Zones, null, cancellationToken);
+        if (resolvedZones == null)
+        {
+            return (false, zoneError, null, StatusCodes.Status400BadRequest);
+        }
+
         var city = request.City?.Trim();
         if (!string.IsNullOrWhiteSpace(city))
         {
@@ -260,6 +269,11 @@ public class AuthService : IAuthService
                 });
             }
             await _db.SaveChangesAsync(cancellationToken);
+
+            if (resolvedZones.Count > 0)
+            {
+                await _providerZones.SetZonesAsync(provider.Uid, resolvedZones, cancellationToken);
+            }
 
             return (true, null, new ProviderUpgradeResponse
             {

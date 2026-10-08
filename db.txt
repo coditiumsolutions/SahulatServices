@@ -1,6 +1,6 @@
 ================================================================================
 SahulatGharTak Database Schema
-Version: 4.23 | Last Updated: 2026-10-07
+Version: 4.24 | Last Updated: 2026-10-08
 Database: SahulatAppDB
 Server: 34.131.41.192,1433
 
@@ -166,6 +166,8 @@ Table: ServiceTitles
   Description      nvarchar(500)    NULL
   BasePrice        decimal(12,2)    NULL  -- admin-set price estimate for this title; populates
                                            -- CustomerServiceRequests.EstimatedBudget server-side
+  EstimateText     nvarchar(100)    NULL  -- free-text estimate shown to customers, e.g. "2000-3000"
+                                           -- (scripts/add-service-title-estimate-text.sql, 2026-10-08)
   DisplayOrder     int              NOT NULL  DEFAULT (0)
   IsActive         bit              NOT NULL  DEFAULT (1)
   CreatedOn        datetime         NOT NULL  DEFAULT (getutcdate())
@@ -214,6 +216,17 @@ Table: Providers
   -- applies when the caller-supplied ClientTimestampUtc is newer than the stored LocationUpdatedOn.
   -- MobileNo is kept in sync with UsersLogin.MobileNo on create/update; used as alternate key
   -- for ProviderDocuments (1:1).
+
+--------------------------------------------------------------------------------
+Table: ProviderZones
+--------------------------------------------------------------------------------
+  UID              int              NOT NULL  PK  IDENTITY
+  ProviderUID      int              NOT NULL  FK -> Providers.UID (cascade delete)
+  ZoneName         nvarchar(100)    NOT NULL  -- a value from Configurations key=Zone
+  CreatedOn        datetime         NOT NULL  DEFAULT (getdate())
+  -- Source of truth for provider zones (scripts/create-provider-zones.sql, 2026-10-08). Unique
+  -- (ProviderUID, ZoneName). Providers.Zone keeps a comma-separated display copy, written by
+  -- ProviderZoneService.SetZonesAsync. Backfilled from the existing single Providers.Zone values.
 
 --------------------------------------------------------------------------------
 Table: ProviderCategories

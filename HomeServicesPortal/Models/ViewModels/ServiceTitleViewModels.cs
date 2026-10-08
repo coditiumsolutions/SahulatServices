@@ -25,6 +25,7 @@ public class ServiceTitleItemVm
     public string Title { get; set; } = string.Empty;
     public string? Description { get; set; }
     public decimal? BasePrice { get; set; }
+    public string? EstimateText { get; set; }
     public int DisplayOrder { get; set; }
     public bool IsActive { get; set; }
     public DateTime? CreatedOn { get; set; }
@@ -52,6 +53,10 @@ public class ServiceTitleFormVm
     [Display(Name = "Estimated Budget")]
     public decimal? BasePrice { get; set; }
 
+    [StringLength(100, ErrorMessage = "Estimate text cannot exceed 100 characters.")]
+    [Display(Name = "Estimate (text / range)")]
+    public string? EstimateText { get; set; }
+
     [Display(Name = "Display Order")]
     public int DisplayOrder { get; set; }
 
@@ -69,6 +74,7 @@ public class ServiceTitleDetailsVm
     public string Title { get; set; } = string.Empty;
     public string? Description { get; set; }
     public decimal? BasePrice { get; set; }
+    public string? EstimateText { get; set; }
     public int DisplayOrder { get; set; }
     public bool IsActive { get; set; }
     public DateTime? CreatedOn { get; set; }

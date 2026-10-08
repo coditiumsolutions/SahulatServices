@@ -1,6 +1,6 @@
 ================================================================================
 SahulatGharTak API Reference
-Version: 3.41 | Last Updated: 2026-10-08
+Version: 3.43 | Last Updated: 2026-10-08
 Database: SahulatAppDB
 Local Base URL:    https://localhost:7265/api/
 Deployed Base URL:  https://sahulatghartak.com/api/
@@ -118,6 +118,10 @@ Notes:
   categoryIds, or a primaryCategoryId not in the list, is 400.
   (2026-10-08: the legacy categoryId / categoryName single-category path was removed; every published
   build already sends categoryIds.)
+- zones (OPTIONAL, added 2026-10-08, additive): array of zone names, each one of GET /api/zones
+  (case-insensitive, stored with the configured spelling). Omit or send [] for none. An unknown name is 400
+  ("Zone 'X' is not one of the configured zones."). MAXIMUM 2 ZONES per provider: more than 2 is 400
+  ("A provider can have at most 2 zones."). Zones can be changed later via PUT /api/providers/{providerUid}/zones.
 - verifies existing client using mobileNo + password
 - client must be OTP-verified (UsersLogin.IsVerified=true) before upgrade
 - CNIC must be unique across Providers (DB unique constraint)
@@ -1134,6 +1138,66 @@ Fail (404):
   "message": "Provider not found.",
   "data": null
 }
+
+--------------------------------------------------------------------------------
+GET Zones (picker options) - added 2026-10-08
+--------------------------------------------------------------------------------
+Local:     https://localhost:7265/api/zones
+Deployed:  https://sahulatghartak.com/api/zones
+
+Request Body: none. Public.
+
+Success (200):
+{
+  "success": true,
+  "message": "Zones fetched successfully.",
+  "data": ["Bahria 1-8", "Zone 2", "Zone 3", "Zone 4", "Zone 5"]
+}
+
+Notes:
+- Admin-managed via Admin > Configurations, key "Zone" (comma-separated). Use these exact strings for
+  register-provider "zones" and PUT /api/providers/{providerUid}/zones.
+
+--------------------------------------------------------------------------------
+GET Provider Zones - added 2026-10-08
+--------------------------------------------------------------------------------
+Local:     https://localhost:7265/api/providers/{providerUid}/zones
+Deployed:  https://sahulatghartak.com/api/providers/{providerUid}/zones
+
+Success (200):
+{
+  "success": true,
+  "message": "Provider zones fetched successfully.",
+  "data": ["Bahria 1-8", "Zone 3"]
+}
+
+Notes:
+- Alphabetical. Empty array when the provider has no zones (or the provider does not exist).
+
+--------------------------------------------------------------------------------
+PUT Provider Zones (full replace) - added 2026-10-08
+--------------------------------------------------------------------------------
+Local:     https://localhost:7265/api/providers/{providerUid}/zones
+Deployed:  https://sahulatghartak.com/api/providers/{providerUid}/zones
+
+Request Body:
+{
+  "zones": ["Bahria 1-8", "Zone 3"]
+}
+
+Success (200): same shape as GET Provider Zones, with message "Provider zones updated successfully."
+Fail (400): { "success": false, "message": "Zone 'X' is not one of the configured zones." }
+            or "A provider can have at most 2 zones." or "Provider not found."
+
+Notes:
+- A provider can have AT MOST 2 zones (limit enforced on this endpoint, on register-provider and in the admin
+  form). The app should stop the user from picking a third.
+- Replaces the whole set; send [] to clear. Zone names are matched case-insensitively against GET /api/zones
+  (a zone the provider already has is still accepted if an admin later removed it from the config).
+- Idempotent: sending the same list twice gives the same result, no duplicates.
+- Same anonymous-by-providerUid access as the other provider endpoints (see docs/auth-gap-report.md).
+- Staff can also edit zones on Admin > Service Providers > Edit (multi-select).
+- Providers.Zone keeps a comma-separated copy ("Bahria 1-8, Zone 3") for the admin Assign page.
 
 --------------------------------------------------------------------------------
 GET Provider Categories
@@ -2898,6 +2962,9 @@ SERVICE TITLES APIs
 ================================================================================
 Hierarchy: Services -> ServiceCategories -> ServiceTitles
 Flutter flow: GET /api/service-categories?serviceUid={id} then GET /api/service-titles?categoryUid={id}
+estimateText (added 2026-10-08, additive, nullable) is a free-text estimate the admin types, e.g. "2000-3000"
+or "From 1500" (Admin > Job Types). When present, show it as the estimated budget instead of basePrice; fall
+back to basePrice when it is null. basePrice itself stays numeric and is what populates estimatedBudget.
 basePrice is an admin-set price estimate per title (Admin > Job Types, /Admin/ServiceTitles), nullable
 if the admin hasn't priced that title yet. Show it read-only as the "Estimated Budget" on the service
 request form (it replaces the old free-text estimatedBudget field customers used to type in) — send
@@ -2927,6 +2994,7 @@ Success (200):
     "title": "Leak Repair",
     "description": "Fixing pipe and faucet leaks",
     "basePrice": 1500.00,
+    "estimateText": "1500-2000",
     "displayOrder": 1,
     "createdOn": "2026-08-06T00:00:00"
   }
@@ -2953,6 +3021,7 @@ Success (200):
   "title": "Leak Repair",
   "description": "Fixing pipe and faucet leaks",
   "basePrice": 1500.00,
+  "estimateText": "1500-2000",
   "displayOrder": 1,
   "createdOn": "2026-08-06T00:00:00"
 }

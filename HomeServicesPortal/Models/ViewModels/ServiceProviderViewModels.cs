@@ -61,6 +61,10 @@ public class ServiceProviderFormVm : IValidatableObject
     [Display(Name = "Zone")]
     public string? Zone { get; set; }
 
+    /// <summary>Selected zones (ProviderZones). Zone above is only the comma-separated display copy.</summary>
+    [Display(Name = "Zones")]
+    public List<string> Zones { get; set; } = new();
+
     /// <summary>Primary category (ProviderCategories.PrimaryCategory = 1). Must be one of CategoryUids.</summary>
     [Range(1, int.MaxValue, ErrorMessage = "Primary Category is required.")]
     [Display(Name = "Primary Category")]
