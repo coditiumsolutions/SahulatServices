@@ -64,6 +64,8 @@ builder.Services.AddScoped<IServiceProviderService, ServiceProviderService>();
 builder.Services.AddScoped<IProviderCategoryService, ProviderCategoryService>();
 builder.Services.AddScoped<IProviderZoneService, ProviderZoneService>();
 builder.Services.AddMemoryCache();
+builder.Services.AddHttpClient<IIndexNowService, IndexNowService>(client => client.Timeout = TimeSpan.FromSeconds(15));
+builder.Services.AddHostedService<IndexNowStartupSubmitter>();
 builder.Services.AddScoped<IProviderServiceTitleService, ProviderServiceTitleService>();
 builder.Services.AddScoped<IProviderLocationService, ProviderLocationService>();
 builder.Services.AddScoped<IProviderAvailabilityService, ProviderAvailabilityService>();

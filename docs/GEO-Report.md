@@ -87,7 +87,7 @@ ChatGPT search, Copilot, DuckDuckGo and Brave draw on Bing/Brave-style indexes. 
 
 1. Verify the site in **Bing Webmaster Tools** (import from Google Search Console is available).
 2. Submit the sitemap.
-3. Implement **IndexNow** so new or changed URLs are pushed to Bing and partners within minutes. It is a simple key file plus an HTTP call; it can be hooked into the same code that publishes or changes service pages.
+3. Implement **IndexNow** so new or changed URLs are pushed to Bing and partners within minutes. It is a simple key file plus an HTTP call; it can be hooked into the same code that publishes or changes service pages. **Status (2026-10-08): implemented** in `Services/IndexNowService.cs`. The key file is `wwwroot/7b4f691ed30cc1b394265e78456b39f4.txt`. The app submits every URL in `sitemap.xml` about 45 seconds after each Production start (i.e. after each deploy). Settings `IndexNow:Enabled`, `IndexNow:Key`, `IndexNow:Host` are optional overrides. New page types should call `IIndexNowService.SubmitAsync` when they are created or edited.
 
 ### 4.3 Write content that can be quoted
 
