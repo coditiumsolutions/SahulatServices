@@ -682,7 +682,7 @@
 
 .store-card-pill.is-live {
     background: rgba(30, 142, 62, 0.12);
-    color: #1e8e3e;
+    color: #146c2e; /* darker green: 4.5:1+ contrast on the pale green pill */
 }
 
 .store-card-pill.is-pending {

@@ -337,7 +337,23 @@ var apkContentTypeProvider = new Microsoft.AspNetCore.StaticFiles.FileExtensionC
 apkContentTypeProvider.Mappings[".apk"] = "application/vnd.android.package-archive";
 app.UseStaticFiles(new StaticFileOptions
 {
-    ContentTypeProvider = apkContentTypeProvider
+    ContentTypeProvider = apkContentTypeProvider,
+    // Without this browsers re-validate every asset on every visit. Versioned URLs (?v=hash from
+    // asp-append-version) can be cached for a year; unversioned site assets for a week.
+    OnPrepareResponse = ctx =>
+    {
+        var path = ctx.Context.Request.Path;
+        var cacheable = path.StartsWithSegments("/css") || path.StartsWithSegments("/js")
+            || path.StartsWithSegments("/lib") || path.StartsWithSegments("/img");
+        if (!cacheable)
+        {
+            return;
+        }
+
+        ctx.Context.Response.Headers.CacheControl = ctx.Context.Request.Query.ContainsKey("v")
+            ? "public, max-age=31536000, immutable"
+            : "public, max-age=604800";
+    }
 });
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();
