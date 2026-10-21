@@ -1,11 +1,12 @@
 # Secret scan patterns
-Use when reviewing diffs before commit. A single match is enough to block the file.
+Manual fallback only, for when `scripts/scan_secrets.py` cannot run (no Python). The script implements these rules; keep both in sync when adding patterns. A single match is enough to block the file.
 
 ## File names (block unless clearly a template)
-- `.env`, `.env.local`, `.env.production`, `.env.development`
+- `.env`, `.env.local`, `.env.production`, `.env.development`, `.envrc`, `*.env`
 - Local config overrides — e.g. `appsettings.Development.json`, `config.local.json`, `*.local.json`, `*.local.yaml`
 - `secrets.json`, `credentials.json`, `serviceAccountKey.json`
-- `*.pfx`, `*.p12`, `id_rsa`, `id_ed25519`, `*.pem` (private keys)
+- `*.pfx`, `*.p12`, `*.jks`, `*.keystore`, `id_rsa`, `id_ed25519`, `*.pem`, `*.key` (private keys)
+- `*.secrets.*`, `google-services.json`, `GoogleService-Info.plist`
 - Any config file containing real connection strings or credentials
 
 ## Safe template exceptions
@@ -30,6 +31,7 @@ api_key\s*=\s*["'][^"']+["']
 api_key\s*:\s*["'][^"']+["']
 APIKEY=
 x-api-key:\s*[^\s]+
+<key containing password|secret|token|api_key>: <unquoted value>   # YAML / .properties / .ini
 Authorization:\s*Bearer\s+[^\s]{16,}
 private_key\s*=
 ```
@@ -60,7 +62,10 @@ hf_           # Hugging Face token
 SG.           # SendGrid
 key-          # Mailgun
 Bearer        # Hardcoded Bearer token in source code or config
+eyJ...eyJ...  # JWT
 ```
+
+Not secrets: placeholders (`your-key-here`, `changeme`, `xxxx`, `${VAR}`, `<token>`), env lookups (`process.env.X`, `os.environ[...]`), plain numbers (`MAX_TOKENS=100000`), and URLs without credentials. Skip dependency/cache folders (`node_modules/`, `.venv/`, `__pycache__/`); they belong in `.gitignore`.
 
 ## Framework-specific notes
 
