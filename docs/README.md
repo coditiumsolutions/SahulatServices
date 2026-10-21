@@ -35,6 +35,8 @@ always-current references for this project are **not** in this folder. They live
 
 - **[flutter-changes.md](mobile-app/flutter-changes.md)** (current) - running checklist of backend changes the
   Flutter app needs to adopt. Updated incrementally as features land.
+- **[deep-linking.md](mobile-app/deep-linking.md)** (active) - Android App Links / iOS Universal Links: link map,
+  the `.well-known` files served by this repo, the app-side setup, and the pending list.
 - **[notification-sounds.md](mobile-app/notification-sounds.md)** (current) - custom push sounds and channels.
 - **[flutter-integration-plan.md](mobile-app/flutter-integration-plan.md)** (stale) - one-time integration task
   list from 2026-08-04; expected long since adopted.
