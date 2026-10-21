@@ -56,6 +56,15 @@
     <script type="application/ld+json">@Html.Raw(JsonSerializer.Serialize(faqSchema))</script>
 }
 
+@section Scripts {
+    <script>
+    // Meta Pixel: which service page was viewed (the Pixel itself is defined in the layout's head).
+    if (typeof fbq === 'function') {
+        fbq('track', 'ViewContent', { content_name: @Html.Raw(JsonSerializer.Serialize(Model.ServiceName)), content_type: 'service_category' });
+    }
+    </script>
+}
+
 <section class="public-hero">
     <div class="container public-hero-content">
         <p class="text-uppercase fw-semibold mb-2 opacity-75" style="letter-spacing: 0.12em; font-size: 0.8rem;">

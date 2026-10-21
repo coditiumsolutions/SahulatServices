@@ -173,11 +173,26 @@
     </footer>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-    // Count taps on Google Play / App Store links as a Meta "Lead" so app-install intent is measurable.
+    // Meta Pixel click events, one delegated listener for every public page:
+    //   Lead = Google Play / App Store tap (app-install intent); Contact = call or email tap;
+    //   custom events for the download page, Sahulat Ride and social profile links.
     document.addEventListener('click', function (e) {
-        var a = e.target.closest && e.target.closest('a[href*="play.google.com"], a[href*="apps.apple.com"]');
+        var a = e.target.closest && e.target.closest('a[href]');
         if (!a || typeof fbq !== 'function') return;
-        fbq('track', 'Lead', { content_name: a.href.indexOf('apple.com') > -1 ? 'app_store' : 'google_play' });
+        var href = a.getAttribute('href') || '';
+        if (href.indexOf('play.google.com') > -1 || href.indexOf('apps.apple.com') > -1) {
+            fbq('track', 'Lead', { content_name: href.indexOf('apple.com') > -1 ? 'app_store' : 'google_play', content_category: location.pathname });
+        } else if (href.indexOf('tel:') === 0) {
+            fbq('track', 'Contact', { content_name: 'phone_call', content_category: location.pathname });
+        } else if (href.indexOf('mailto:') === 0) {
+            fbq('track', 'Contact', { content_name: 'email', content_category: location.pathname });
+        } else if (/^\/Home\/DownloadApp/i.test(href)) {
+            fbq('trackCustom', 'DownloadPageClick', { source: location.pathname });
+        } else if (href.indexOf('sahulatride.com') > -1) {
+            fbq('trackCustom', 'SahulatRideClick', { source: location.pathname });
+        } else if (/(facebook|instagram|youtube|tiktok)\.com/.test(href)) {
+            fbq('trackCustom', 'SocialClick', { network: href.match(/(facebook|instagram|youtube|tiktok)/)[1] });
+        }
     });
     </script>
     @await RenderSectionAsync("Scripts", required: false)
