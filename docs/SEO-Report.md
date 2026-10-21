@@ -125,7 +125,7 @@ Home-services businesses with no storefront are "service-area businesses":
 
 **How it is added today** (added by a colleague in commit `f4e0c5b`, 2026-09-10, "about page, services pillars, and Meta Pixel"):
 
-- The standard Meta Pixel base snippet is pasted directly into `Views/Home/Index.cshtml`, inside `@section Head` (lines 7 to 27). Pixel ID `943484539264647`.
+- The standard Meta Pixel base snippet is pasted directly into `Views/Home/Index.cshtml`, inside `@section Head` (lines 7 to 27). Original Pixel ID `943484539264647` (personal account). Replaced on 2026-10-21 by the business-portfolio dataset `1146923304673549`, now the default in `_PublicLayout.cshtml`.
 - It runs `fbq('init', ...)` and `fbq('track', 'PageView')` and has the usual `<noscript>` tracking image.
 - **It exists only on the home page.** It is not in `_PublicLayout.cshtml`, so `/about`, `/Home/DownloadApp`, `/privacy-policy` and `/delete-account` are not tracked.
 - No other events are sent (no download clicks, no scroll or engagement events), no cookie/consent handling, and no server-side (Conversions API) events.
