@@ -69,6 +69,8 @@
     {
         <script type="application/ld+json">@Html.Raw(breadcrumbJson)</script>
     }
+    @await RenderSectionAsync("Head", required: false)
+    @* Meta asks for the base code last in <head>, below any other head content. *@
     @if (!string.IsNullOrWhiteSpace(metaPixelId))
     {
         <!-- Meta Pixel Code (shared by every public page) -->
@@ -77,12 +79,9 @@
         {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
         n.callMethod.apply(n,arguments):n.queue.push(arguments)};
         if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-        n.queue=[];
-        // Calls made before the script arrives are queued; the script itself loads after the page has loaded.
-        var load=function(){t=b.createElement(e);t.async=!0;
+        n.queue=[];t=b.createElement(e);t.async=!0;
         t.src=v;s=b.getElementsByTagName(e)[0];
-        s.parentNode.insertBefore(t,s)};
-        if(b.readyState==='complete')load();else f.addEventListener('load',load)}(window, document,'script',
+        s.parentNode.insertBefore(t,s)}(window, document,'script',
         'https://connect.facebook.net/en_US/fbevents.js');
         fbq('init', '@metaPixelId');
         fbq('track', 'PageView');
@@ -94,7 +93,6 @@
         </noscript>
         <!-- End Meta Pixel Code -->
     }
-    @await RenderSectionAsync("Head", required: false)
 </head>
 <body class="public-home">
     <partial name="_SiteHeaderPublic" />
