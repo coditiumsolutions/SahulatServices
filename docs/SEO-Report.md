@@ -10,7 +10,15 @@ Done in the codebase (uncommitted at the time of writing): home title and descri
 Added later the same day: IndexNow (see GEO report); canonical, Open Graph and schema URLs forced to `https://sahulatghartak.com` (they were rendering as `http://` behind nginx); `BreadcrumbList` on inner pages; `MobileApplication` schema on the Download page; download-page screenshots converted to WebP (about 880 KB to 74 KB) and the share image recompressed (479 KB to 89 KB); Meta Pixel, Font Awesome and Google Fonts no longer block first paint; `<main>` landmark, footer heading order and menu-button label fixed; Meta Pixel disclosure added to the live privacy page (`Views/Home/Privacy.cshtml`; `docs/PRIVACY_POLICY.md` was deliberately left untouched).
 Lighthouse mobile baseline on the live home page before these changes (2026-10-08): Performance 65, Accessibility 96, Best practices 77, SEO 100; FCP 3.6 s, LCP 4.5 s, total blocking time 430 ms. Re-run after deploy: `npx lighthouse https://sahulatghartak.com/ --form-factor=mobile`. A local run showed Accessibility 100 and blocking time 0 ms, but local timings are not comparable with production.
 Service landing pages built: `/home-maintenance`, `/specialized-services`, `/property-and-legal-services` (catalogue from the database, provider counts only where 3 or more verified providers, no prices, `Service` and `FAQPage` schema, added to the sitemap and linked from the home page and footer). Covered by `ServicePillarTests`.
-Still open: Google Business Profile, Search Console and Bing setup, privacy-policy mention of the Pixel, service landing pages, dynamic sitemap, Core Web Vitals pass. Urdu: see [Urdu-Variants-Plan.md](Urdu-Variants-Plan.md).
+**Confirmed as done (2026-10-21):**
+- Google Business Profile: set up and completed (confirmed by the owner).
+- Google Search Console: verified by DNS; `sitemap.xml` added and accepted. Bing Webmaster Tools: verified, sitemap processed (5 URLs at the time), IndexNow checked.
+- Store listings: Google Play and App Store text updated from [storelisting.md](storelisting.md). Checked from outside on 2026-10-21: the Play short description is live; the Play title ("Sahulat Ghar Tak Home Services") and App Store subtitle ("Home Services in Bahria Town") were not yet visible. Play titles can take a day or more, and App Store name/subtitle changes only publish with an approved app version. Re-check later.
+- Meta Pixel: swapped to the business-portfolio dataset `1146923304673549`, deployed. Verified in headed Chrome that PageView fires to the new ID; the old ID is on no live page. Dataset access assignment and removal of the old personal Pixel are owner-side steps.
+- Privacy-policy mention of the Pixel, service landing pages and the site speed pass are shipped (see above).
+- Admin service-title typos (for example "Electric France" under CCTV) are intentionally left as they are.
+
+Still open: Google "Request indexing" for the main pages in Search Console, add the website and store links to the Business Profile, dynamic sitemap with real `lastmod`, consent banner (deferred), Conversions API (optional). Urdu: see [Urdu-Variants-Plan.md](Urdu-Variants-Plan.md).
 
 ## 1. Key finding: for Google's AI surfaces, GEO is SEO
 
