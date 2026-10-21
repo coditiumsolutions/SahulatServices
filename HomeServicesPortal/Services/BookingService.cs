@@ -410,7 +410,7 @@ public class BookingService : IBookingService
 
             // Same staff action, same save — mirrors AssignProviderAsync/RespondToAssignmentAsync
             // (reject branch), which also update both tables atomically from one call site.
-            // See docs/status-workflow.md.
+            // See docs/design/status-workflow.md.
             //
             // The ServiceBookings row (entity, above) always ends up Cancelled either way —
             // that history is never touched here, only the parent request's fate differs:

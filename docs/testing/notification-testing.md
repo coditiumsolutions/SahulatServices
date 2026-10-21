@@ -10,7 +10,7 @@ Android emulator running the Flutter app. Repeat this after changing `BookingPus
 the notification templates, or any booking status transition in `BookingService`.
 
 Contract reference: `api.txt` section "PUSH NOTIFICATIONS (FCM) & APP VERSION CHECK". Flutter-side to-do and test
-findings: `docs/flutter-changes.md`.
+findings: `docs/mobile-app/flutter-changes.md`.
 
 ## 1. Prerequisites
 
@@ -79,7 +79,7 @@ Leave the device token row alone.
 
 ## 4. Driving the flow
 
-All mobile calls are anonymous for now (see `docs/auth-gap-report.md` finding 9). Name test requests `NOTIF TEST ...`.
+All mobile calls are anonymous for now (see `docs/audits/auth-gap-report.md` finding 9). Name test requests `NOTIF TEST ...`.
 
 | Step | How |
 |---|---|
@@ -162,7 +162,7 @@ is delivered and the banner shows. Tap routing from this state (`getInitialMessa
    `Notifications:AndroidChannelsEnabled` is on (default off), because an app build without those channels would drop
    the pop-up banner. Test with the Push Tester's "Send on the type's Android channel" box on a build that creates
    them: **off** = `high_importance_channel` (device default sound, by design), **on** = the type's `_v2` channel
-   (custom sound). Sounds: `docs/notification-sounds.md`. Appearance and sounds are tested on a device: section 10.
+   (custom sound). Sounds: `docs/mobile-app/notification-sounds.md`. Appearance and sounds are tested on a device: section 10.
 
 ## 7. Not covered
 
@@ -173,7 +173,7 @@ is delivered and the banner shows. Tap routing from this state (`getInitialMessa
 - The admin "Push Broadcast" page (`/Admin/PushBroadcast`) sending to real devices.
 - **Silent `app_unblock` on iOS** failed on the Simulator (section 13) and needs a physical iPhone to settle.
 - **Stacking** (one banner per booking) fails on a physical Android device: three banners for accept, start and complete
-  (section 9). Accepted as a known issue and not pursued; see `docs/flutter-changes.md`.
+  (section 9). Accepted as a known issue and not pursued; see `docs/mobile-app/flutter-changes.md`.
 - Scheduled reminders and payout notifications are not built.
 
 ## 8. Android build with icon, channels, live inbox and sounds (2026-10-02, emulator)

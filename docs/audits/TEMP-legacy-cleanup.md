@@ -1,14 +1,24 @@
+---
+status: active
+type: temporary-notes
+updated: 2026-10-21
+reason: Still open as of 2026-10-21: #3 (Providers.CategoryUid, waiting on a Flutter build). #4 is done and #1 is kept by owner decision. Mark stale or delete once the open items are done. Every change needs owner approval first.
+related:
+  - docs/mobile-app/flutter-changes.md
+---
+
 # TEMP: legacy endpoint cleanup candidates
 
-Temporary notes, written 2026-10-01. Nothing here has been done. Delete this file once the items are resolved or moved
-elsewhere. Each item must be shown to the owner (diff plus api.txt / db.txt edits, mirrored to the Flutter api.txt)
+Temporary notes, written 2026-10-01 and last reviewed 2026-10-21. Done since: #4 (2026-10-08), #5 and #2 (2026-10-21). Kept by owner decision: #1.
+Still open: #3, see "Decisions after the Flutter audit" at the end. Delete this file once the items
+are resolved or moved elsewhere. Each item must be shown to the owner (diff plus api.txt / db.txt edits, mirrored to the Flutter api.txt)
 and approved before any change.
 
 ## Context
 
 - GPS is now production-level. Store builds published 2026-09-30: Android `1.0.4+10`, iOS `1.0.6+10`.
 - The app version gate (`GET /api/v1/app/config`) is NOT in those builds yet; the Flutter agent still has it on their
-  list in `docs/flutter-changes.md`. Until a gate-aware build ships and is adopted, old builds cannot be forced to
+  list in `docs/mobile-app/flutter-changes.md`. Until a gate-aware build ships and is adopted, old builds cannot be forced to
   update, so compatibility branches used by old builds are unsafe to remove.
 - `AppConfig` currently has one shared `MinimumRequiredVersion` (1.0.3). Android and iOS version numbers differ, so
   per-platform minimums are needed before raising them (Android 1.0.4, iOS 1.0.6).
@@ -48,8 +58,8 @@ and approved before any change.
 ## Review of commits and api.txt up to 2026-09-30 (added 2026-10-01)
 
 Result: no additional held-back breaking changes were found. The only deferred hard cutovers are the ones above, and
-they are all already marked `TODO(remove after old app retired)` (the marker `docs/flutter-changes.md` says to grep for).
-The "Held for approval" list in `docs/flutter-changes.md` is empty, and `docs/feature-plan-multi-provider-notifications-billing-categories.md`
+they are all already marked `TODO(remove after old app retired)` (the marker `docs/mobile-app/flutter-changes.md` says to grep for).
+The "Held for approval" list in `docs/mobile-app/flutter-changes.md` is empty, and `docs/design/feature-plan-multi-provider-notifications-billing-categories.md`
 shows the three held items were all implemented in an additive form instead:
 - `register-provider` single category -> `categoryIds` (this file's #4)
 - completion `labourAmount` / `materialItems` (#1)
@@ -72,7 +82,7 @@ Watch items (not version-gated cleanups, not recommended as part of this):
   builds are gone, but nothing is gained by doing that.
 - `Otp:IncludeInResponse` is `true` in every appsettings file (including production): the OTP code is returned in the
   API response. api.txt marks this TEMPORARY until an SMS gateway exists. Not about app versions, so it is not listed
-  as a cleanup, but it is a security gap worth tracking next to `docs/auth-gap-report.md`.
+  as a cleanup, but it is a security gap worth tracking next to `docs/audits/auth-gap-report.md`.
 
 Unchanged blocker: whether builds 1.0.4 (Android) / 1.0.6 (iOS) already send `labourAmount` and `categoryIds` is still
 unconfirmed, and they have no version gate, so #1 and #4 stay on hold.
@@ -101,8 +111,15 @@ runs on cold launch (not on resume).
   a one-off UPDATE to Initiated, then these can go.
 - #1 optional `labourAmount` / `materialItems`: KEPT by owner decision. The app omits them when the provider enters no
   labour/materials. The TODO markers were reworded to KEEP, so grep for the old marker no longer finds them.
+- #2 row check (2026-10-21, read-only): live `CustomerServiceRequests` by Status = Accepted 10, Initiated 8, Completed 4,
+  Assigned 3, Cancelled 1. Zero `Pending` rows, so no UPDATE is needed and `LegacyPending` was removed 2026-10-21 (`RequestStatusConstants`,
+  `ServiceRequestService`, `DashboardService`; api.txt v3.44). `Normalize` still maps an incoming "Pending" to Initiated on create.
 - #3 `Providers.CategoryUid` scalar: NOT SAFE yet. The latest build still reads `categoryUid` from
   `GET /api/provider-profiles/{userId}` (hard non-null cast, used at login), `categoryId` from
   `GET /api/providers-detail/{uid}`, and echoes `categoryId` in `PUT /api/providers-detail/{uid}`. Wait for the next
   Flutter build (flutter-changes v1.13.0, "TODO for the next build") to be live and adopted.
-- #5 dead admin controllers: still not done (no app impact).
+- #5 dead admin controllers: DONE 2026-10-21. Removed `ProviderLocationsController`, `ProviderAvailabilityController` and
+  `ReviewsController` (they only showed a WIP page), their views, the Reviews nav entry, the legacy admin CRUD in
+  `ProviderAvailabilityService` (the live `GET/PUT` availability status API is untouched), `ProviderLocationService`, the
+  three view-model files, and the `ProviderAvailability` / `ProviderLocation` / `Review` entities with their
+  `SahulatAppDbContext` mappings. Those admin URLs now return 404.

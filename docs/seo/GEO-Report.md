@@ -1,3 +1,12 @@
+---
+status: active
+type: report
+updated: 2026-10-08
+topic: Generative engine optimisation (chatbots and AI search)
+related:
+  - docs/seo/SEO-Report.md
+---
+
 # GEO Report: Sahulat Ghar Tak
 
 Researched 2026-10-08. Companion to [SEO-Report.md](SEO-Report.md).

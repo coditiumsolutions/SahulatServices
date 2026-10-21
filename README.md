@@ -40,7 +40,7 @@ Web App/
 └── SahulatGharTak.sln
 ```
 
-> **Note on the data layer:** the project currently runs two `DbContext`s — `SahulatAppDbContext` (live schema) and `AppDbContext` — reflecting an in-progress consolidation. See `docs/api-audit-report.md` for details.
+> **Note on the data layer:** the project currently runs two `DbContext`s — `SahulatAppDbContext` (live schema) and `AppDbContext` — reflecting an in-progress consolidation. See `docs/audits/api-audit-report.md` for details.
 
 ## Getting started
 
@@ -113,7 +113,7 @@ Manual/alternative deployment scripts live under `deploy/gcp/` and `deploy/hosti
 
 - `api.txt` — active mobile/client API reference
 - `db.txt` — live database schema
-- `docs/api-audit-report.md` — audit of redundant/non-functional endpoints and the two-data-layer situation
+- `docs/audits/api-audit-report.md` — audit of redundant/non-functional endpoints and the two-data-layer situation
 
 ---
 

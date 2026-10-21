@@ -7,7 +7,7 @@ reason: >-
   providers, etc.). Historical record only — do not use as current behavior documentation.
 superseded_by:
   - api.txt
-  - docs/status-workflow.md
+  - docs/design/status-workflow.md
 ---
 
 # Provider Job Workflow — End-to-End Test Report

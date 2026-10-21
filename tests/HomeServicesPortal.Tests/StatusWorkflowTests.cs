@@ -7,7 +7,7 @@ using Xunit;
 namespace HomeServicesPortal.Tests;
 
 /// <summary>
-/// Integration tests for docs/status-workflow.md against a real database (whatever
+/// Integration tests for docs/design/status-workflow.md against a real database (whatever
 /// appsettings.json currently points at). Every row a test inserts is deleted at the end of that
 /// same test, in a finally block, so failures still clean up. The shared Client/Provider/Address
 /// fixture is cleaned up in DatabaseFixture.DisposeAsync.

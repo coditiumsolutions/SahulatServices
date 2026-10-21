@@ -16,15 +16,12 @@ public partial class SahulatAppDbContext : DbContext
 
     public virtual DbSet<Payment> Payments { get; set; }
 
-    public virtual DbSet<ProviderAvailability> ProviderAvailabilities { get; set; }
 
     public virtual DbSet<ProviderDocument> ProviderDocuments { get; set; }
 
-    public virtual DbSet<ProviderLocation> ProviderLocations { get; set; }
 
     public virtual DbSet<ProviderQuote> ProviderQuotes { get; set; }
 
-    public virtual DbSet<Review> Reviews { get; set; }
 
     public virtual DbSet<ServiceCategory> ServiceCategories { get; set; }
 
@@ -72,22 +69,6 @@ public partial class SahulatAppDbContext : DbContext
                 .IsUnicode(false);
         });
 
-        modelBuilder.Entity<ProviderAvailability>(entity =>
-        {
-            entity.HasKey(e => e.Uid).HasName("PK__Provider__C5B19602F9B16356");
-
-            entity.ToTable("ProviderAvailability");
-
-            entity.Property(e => e.Uid).HasColumnName("UID");
-            entity.Property(e => e.IsOnline).HasDefaultValue(false);
-            entity.Property(e => e.ProviderUid).HasColumnName("ProviderUID");
-
-            entity.HasOne(d => d.ProviderU).WithMany(p => p.ProviderAvailabilities)
-                .HasForeignKey(d => d.ProviderUid)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__ProviderA__Provi__47DBAE45");
-        });
-
         modelBuilder.Entity<ProviderDocument>(entity =>
         {
             entity.HasKey(e => e.Uid).HasName("PK__Provider__C5B19602F27F76C2");
@@ -108,24 +89,6 @@ public partial class SahulatAppDbContext : DbContext
                 .HasForeignKey(d => d.ProviderUid)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__ProviderD__Provi__4AB81AF0");
-        });
-
-        modelBuilder.Entity<ProviderLocation>(entity =>
-        {
-            entity.HasKey(e => e.Uid).HasName("PK__Provider__C5B19602C850575D");
-
-            entity.Property(e => e.Uid).HasColumnName("UID");
-            entity.Property(e => e.LastUpdated)
-                .HasDefaultValueSql("(getdate())")
-                .HasColumnType("datetime");
-            entity.Property(e => e.Latitude).HasColumnType("decimal(10, 7)");
-            entity.Property(e => e.Longitude).HasColumnType("decimal(10, 7)");
-            entity.Property(e => e.ProviderUid).HasColumnName("ProviderUID");
-
-            entity.HasOne(d => d.ProviderU).WithMany(p => p.ProviderLocations)
-                .HasForeignKey(d => d.ProviderUid)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__ProviderL__Provi__440B1D61");
         });
 
         modelBuilder.Entity<ProviderQuote>(entity =>
@@ -155,32 +118,6 @@ public partial class SahulatAppDbContext : DbContext
                 .HasForeignKey(d => d.RequestUid)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__ProviderQ__Reque__571DF1D5");
-        });
-
-        modelBuilder.Entity<Review>(entity =>
-        {
-            entity.HasKey(e => e.Uid).HasName("PK__Reviews__C5B19602862AAE02");
-
-            entity.Property(e => e.Uid).HasColumnName("UID");
-            entity.Property(e => e.BookingUid).HasColumnName("BookingUID");
-            entity.Property(e => e.CustomerUid).HasColumnName("CustomerUID");
-            entity.Property(e => e.ProviderUid).HasColumnName("ProviderUID");
-            entity.Property(e => e.ReviewDate)
-                .HasDefaultValueSql("(getdate())")
-                .HasColumnType("datetime");
-            entity.Property(e => e.ReviewText)
-                .HasMaxLength(1000)
-                .IsUnicode(false);
-
-            entity.HasOne(d => d.CustomerU).WithMany(p => p.Reviews)
-                .HasForeignKey(d => d.CustomerUid)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Reviews__Custome__6A30C649");
-
-            entity.HasOne(d => d.ProviderU).WithMany(p => p.Reviews)
-                .HasForeignKey(d => d.ProviderUid)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Reviews__Provide__6B24EA82");
         });
 
         modelBuilder.Entity<ServiceCategory>(entity =>

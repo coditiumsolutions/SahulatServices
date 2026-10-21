@@ -121,7 +121,7 @@ Assigned -> Initiated    (all providers rejected, OR provider cancelled an accep
     (`AdminNotificationService.RequestNeedsReassignment`) so staff can find these without having
     to distinguish them from a routine single-provider reject or a staff-initiated cancel, both
     of which still separately fire the existing `ProviderBookingCancelled` type. See
-    `docs/flutter-changes.md` for the client-facing implication (a request the app previously
+    `docs/mobile-app/flutter-changes.md` for the client-facing implication (a request the app previously
     would have shown as terminally cancelled can now bounce back to "Requested"/no-provider-yet).
 
 This column is **not** where `In Progress` lives — no automated flow ever writes that value
@@ -436,7 +436,7 @@ touches is scoped to its own fixture and cleaned up per-test and at teardown.
 - The Flutter client and provider apps still need to be rewired to consume `progressStatus`
   and call the new `/start` endpoint — tracked in Flutter Q4 above, not started here.
 - The pre-existing `[AllowAnonymous]`/no-ownership-check gap on `CustomerServiceRequestsApiController`
-  and `ServiceBookingsApiController` (see `docs/auth-gap-report.md`) is unchanged — the new
+  and `ServiceBookingsApiController` (see `docs/audits/auth-gap-report.md`) is unchanged — the new
   `/start` endpoint inherits the same lack of authentication as every other action on that
   controller. Not something this change was scoped to fix, but worth remembering it means
   `/start` is currently callable by anyone who knows a `bookingUid`, same as `/respond` and

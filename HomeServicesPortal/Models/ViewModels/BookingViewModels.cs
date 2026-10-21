@@ -45,7 +45,7 @@ public class BookingFormVm
     /// request to Initiated for staff re-dispatch) from a staff-initiated cancel via the
     /// admin portal (stays a terminal Cancelled, unchanged existing behavior) — both currently
     /// funnel through this same BookingService.UpdateAsync with no other way to tell them apart.
-    /// See docs/status-workflow.md.
+    /// See docs/design/status-workflow.md.
     /// </summary>
     public bool InitiatedByProvider { get; set; }
 

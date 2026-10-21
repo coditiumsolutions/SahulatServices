@@ -4,7 +4,7 @@ namespace HomeServicesPortal.Services;
 
 /// <summary>
 /// Custom sound per notification channel. The files live in the Flutter app (ogg for Android, wav for iOS) and must
-/// be shipped in the app build under the names below. See docs/notification-sounds.md. A build that lacks a
+/// be shipped in the app build under the names below. See docs/mobile-app/notification-sounds.md. A build that lacks a
 /// file just plays the device default.
 /// </summary>
 public static class NotificationSounds

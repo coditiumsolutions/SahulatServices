@@ -4,9 +4,9 @@ reason: >-
   One-time integration task list written 2026-08-04 for a specific backend phase (booking
   accept/reject, completion passcode, wallet APIs), with ready-to-paste prompts meant to be run
   once inside the Flutter repo. That work is long since expected to be integrated. Not a living
-  reference — for current/pending Flutter work see docs/flutter-changes.md instead.
+  reference — for current/pending Flutter work see docs/mobile-app/flutter-changes.md instead.
 superseded_by:
-  - docs/flutter-changes.md
+  - docs/mobile-app/flutter-changes.md
   - api.txt
 ---
 

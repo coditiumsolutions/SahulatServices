@@ -1,3 +1,13 @@
+---
+status: active
+type: report
+updated: 2026-10-21
+topic: SEO and Google AI surfaces
+related:
+  - docs/seo/GEO-Report.md
+  - docs/seo/Urdu-Variants-Plan.md
+---
+
 # SEO Report: Sahulat Ghar Tak
 
 Researched 2026-10-08. Companion to [GEO-Report.md](GEO-Report.md).
@@ -7,7 +17,7 @@ Researched 2026-10-08. Companion to [GEO-Report.md](GEO-Report.md).
 ## Implementation status (2026-10-08)
 
 Done in the codebase (uncommitted at the time of writing): home title and description for Islamabad / Rawalpindi / Bahria Town; coverage wording aligned in the footer, FAQ and schema; live provider, category and zone counts replacing the hard-coded 500+ / 18+ / 24/7 stats (cached 10 minutes); richer `Organization` and `WebSite` schema (cities, contact point, store links, no `priceRange`); AI-crawler rules in `robots.txt` (search bots allowed, `GPTBot` / `ClaudeBot` / `CCBot` blocked); `/about` added to the sitemap; Meta Pixel moved to the shared layout (ID overridable with `Marketing:MetaPixelId`) with a `Lead` event on Google Play / App Store clicks.
-Added later the same day: IndexNow (see GEO report); canonical, Open Graph and schema URLs forced to `https://sahulatghartak.com` (they were rendering as `http://` behind nginx); `BreadcrumbList` on inner pages; `MobileApplication` schema on the Download page; download-page screenshots converted to WebP (about 880 KB to 74 KB) and the share image recompressed (479 KB to 89 KB); Meta Pixel, Font Awesome and Google Fonts no longer block first paint; `<main>` landmark, footer heading order and menu-button label fixed; Meta Pixel disclosure added to the live privacy page (`Views/Home/Privacy.cshtml`; `docs/PRIVACY_POLICY.md` was deliberately left untouched).
+Added later the same day: IndexNow (see GEO report); canonical, Open Graph and schema URLs forced to `https://sahulatghartak.com` (they were rendering as `http://` behind nginx); `BreadcrumbList` on inner pages; `MobileApplication` schema on the Download page; download-page screenshots converted to WebP (about 880 KB to 74 KB) and the share image recompressed (479 KB to 89 KB); Meta Pixel, Font Awesome and Google Fonts no longer block first paint; `<main>` landmark, footer heading order and menu-button label fixed; Meta Pixel disclosure added to the live privacy page (`Views/Home/Privacy.cshtml`; `docs/legal/PRIVACY_POLICY.md` was deliberately left untouched).
 Lighthouse mobile baseline on the live home page before these changes (2026-10-08): Performance 65, Accessibility 96, Best practices 77, SEO 100; FCP 3.6 s, LCP 4.5 s, total blocking time 430 ms. Re-run after deploy: `npx lighthouse https://sahulatghartak.com/ --form-factor=mobile`. A local run showed Accessibility 100 and blocking time 0 ms, but local timings are not comparable with production.
 Service landing pages built: `/home-maintenance`, `/specialized-services`, `/property-and-legal-services` (catalogue from the database, provider counts only where 3 or more verified providers, no prices, `Service` and `FAQPage` schema, added to the sitemap and linked from the home page and footer). Covered by `ServicePillarTests`.
 **Confirmed as done (2026-10-21):**
@@ -162,7 +172,7 @@ Do not also add the same events with Events Manager's manual event setup tool, o
 3. **Build audiences for outreach.** With events flowing you can create Facebook/Instagram custom audiences (visited a service page but did not click download) and lookalikes, and run low-budget local ads or boosts targeted to Bahria Town and neighbouring areas. This supports the same "get discovered locally" goal as SEO.
 4. **Measure UTM-tagged traffic.** Use UTM parameters on posts, ads and Google Business Profile links so Pixel and any future analytics can separate social, search and direct traffic.
 5. **Consider the Conversions API** (server-side events). Browser Pixels lose data to ad blockers and iOS privacy settings; the ASP.NET backend can send the same events server-side. Only worth doing once ads are actually running.
-6. **Add a lightweight consent notice and a privacy policy line.** The privacy policy (both `docs/PRIVACY_POLICY.md` and `Views/Home/Privacy.cshtml`) should state that the website uses the Meta Pixel and what it collects. Check Meta's current terms and local requirements before enabling advanced matching or sending any user data; do not send phone numbers, names or booking details to the Pixel.
+6. **Add a lightweight consent notice and a privacy policy line.** The privacy policy (both `docs/legal/PRIVACY_POLICY.md` and `Views/Home/Privacy.cshtml`) should state that the website uses the Meta Pixel and what it collects. Check Meta's current terms and local requirements before enabling advanced matching or sending any user data; do not send phone numbers, names or booking details to the Pixel.
 7. **Keep it from hurting speed.** The base code loads asynchronously, which is fine, but defer it until after first paint or user interaction if Core Web Vitals (section 3.6) show it as a cost.
 8. **Pair it with free search tools.** Add Google Search Console and Bing Webmaster Tools (3.8) and GA4 or a similar tool; the Pixel does not replace them. Its Events Manager "Test events" tab can verify installs, and the Meta Pixel Helper browser extension shows what fires on each page.
 

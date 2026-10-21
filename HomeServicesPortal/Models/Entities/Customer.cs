@@ -17,7 +17,5 @@ public partial class Customer
 
     public DateTime? CreatedOn { get; set; }
 
-    public virtual ICollection<Review> Reviews { get; set; } = new List<Review>();
-
     public virtual ICollection<ServiceRequest> ServiceRequests { get; set; } = new List<ServiceRequest>();
 }

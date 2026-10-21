@@ -1,3 +1,13 @@
+---
+status: planned
+type: plan
+updated: 2026-10-08
+reason: Planning only; nothing implemented. Needs a translator.
+related:
+  - docs/seo/SEO-Report.md
+  - docs/seo/GEO-Report.md
+---
+
 # Plan: Urdu variants of the public website
 
 Status: planning only, nothing implemented. Written 2026-10-08. Follow-up to [SEO-Report.md](SEO-Report.md) (section 3.7) and [GEO-Report.md](GEO-Report.md) (section 4.7).

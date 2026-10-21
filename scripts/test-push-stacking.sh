@@ -2,7 +2,7 @@
 # Push stacking test: one real booking driven through accept -> start -> verify-completion, 10 s apart, so the
 # device can be watched. Each push carries booking_id / request_id, so the tag "booking-{id}" should leave ONE banner
 # showing the latest ("Job completed"). Everything the run creates is deleted by explicit ids at the end (also on
-# error/Ctrl+C). See docs/notification-testing.md sections 3, 4 and 8.
+# error/Ctrl+C). See docs/testing/notification-testing.md sections 3, 4 and 8.
 #
 # Needs: bash, curl, python, sqlcmd. Credentials come from the environment, never from this file:
 #   ADMIN_USER, ADMIN_PASS          admin portal login

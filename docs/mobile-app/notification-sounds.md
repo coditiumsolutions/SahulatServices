@@ -7,7 +7,7 @@ status: current
 Status: **sounds chosen (Pixabay) and named on the backend** (`NotificationSounds.cs`). The files are **not stored in this repo**: they
 are bundled in the Flutter app (`res/raw/*.ogg` for Android, `ios/Runner/*.wav` for iOS) as `job_request`,
 `booking_update` and `announcement`. The backend only sends their names. They only play once the Flutter build
-contains them and the channels are created with a `sound` (see `docs/flutter-changes.md`). Builds without the files
+contains them and the channels are created with a `sound` (see `docs/mobile-app/flutter-changes.md`). Builds without the files
 fall back to the device default sound.
 
 Sources (all Pixabay Sound Effects, pixabay.com/sound-effects, Pixabay Content License; re-check the licence before
@@ -60,7 +60,7 @@ Suggested names: `job_request`, `booking_update`, `announcement` (same base name
 
 ## 4. Adding them (when the files exist)
 
-1. **Flutter** (steps are in `docs/flutter-changes.md`, section "Notification appearance, channels and sounds"):
+1. **Flutter** (steps are in `docs/mobile-app/flutter-changes.md`, section "Notification appearance, channels and sounds"):
    put the files in `res/raw/` and the iOS bundle, and create the channels with a `sound`. Android channel sound is fixed
    once a channel exists on a device, so a changed sound needs new channel ids. The current ids are already the `_v2` ones (the first channels had no sound).
    The app also accepts the ids without `_v2` in foreground banners, for compatibility only; the backend sends `_v2`.

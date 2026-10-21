@@ -11,7 +11,7 @@ namespace HomeServicesPortal.Controllers.Api;
 // and require userId / userType to match the "UserId" / "UserType" claims from JwtTokenService.CreateToken
 // (403 otherwise), read the user from the claims for the inbox endpoints, and scope unregister-token to the
 // caller's own rows. Without that anyone who knows a userId can register a device under it and read that
-// user's inbox. See docs/auth-gap-report.md finding 9 for the full checklist.
+// user's inbox. See docs/audits/auth-gap-report.md finding 9 for the full checklist.
 [ApiController]
 [Route("api/notifications")]
 [AllowAnonymous]

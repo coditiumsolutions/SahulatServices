@@ -1,6 +1,6 @@
 ================================================================================
 SahulatGharTak API Reference
-Version: 3.43 | Last Updated: 2026-10-08
+Version: 3.44 | Last Updated: 2026-10-21
 Database: SahulatAppDB
 Local Base URL:    https://localhost:7265/api/
 Deployed Base URL:  https://sahulatghartak.com/api/
@@ -1195,7 +1195,7 @@ Notes:
 - Replaces the whole set; send [] to clear. Zone names are matched case-insensitively against GET /api/zones
   (a zone the provider already has is still accepted if an admin later removed it from the config).
 - Idempotent: sending the same list twice gives the same result, no duplicates.
-- Same anonymous-by-providerUid access as the other provider endpoints (see docs/auth-gap-report.md).
+- Same anonymous-by-providerUid access as the other provider endpoints (see docs/audits/auth-gap-report.md).
 - Staff can also edit zones on Admin > Service Providers > Edit (multi-select).
 - Providers.Zone keeps a comma-separated copy ("Bahria 1-8, Zone 3") for the admin Assign page.
 
@@ -1743,7 +1743,7 @@ Notes:
   closed it out). progressStatus is null whenever the request or its booking is Cancelled — render a
   plain "Cancelled" label and hide the progress bar entirely rather than switching on this field.
   Do not derive UI state from "status" directly for the progress bar; use progressStatus.
-  See docs/status-workflow.md for the full design and rationale.
+  See docs/design/status-workflow.md for the full design and rationale.
 
 Success (200):
 {
@@ -2000,10 +2000,10 @@ Notes:
   BasePrice; the title must be active and belong to categoryUid, else 400. Omit serviceTitleUid to
   leave the existing estimatedBudget unchanged.
 - status is WHITELISTED to "Initiated" or "Cancelled" only ("Pending" is no longer accepted since
-  2026-10-08 and returns 400; existing Pending rows are still treated as Initiated) — a client can edit request details while it's still Initiated, or
+  2026-10-08 and returns 400; no Pending rows remain in the database as of 2026-10-21) — a client can edit request details while it's still Initiated, or
   cancel it. "Assigned"/"In Progress"/"Completed" are set by staff/the provider flow, never by
   the client's own PUT; any other value fails with 400 ("Invalid status value.").
-  See docs/status-workflow.md.
+  See docs/design/status-workflow.md.
 - cancelReason is REQUIRED (non-empty) whenever status is being set to "Cancelled" — the customer's
   reason for cancelling. Fails with 400 if status="Cancelled" and cancelReason is missing/empty.
   For status="Initiated", cancelReason is optional/ignored (existing stored value is preserved).
@@ -2397,7 +2397,7 @@ Notes:
       happens — the app should treat that exactly like a fresh, not-yet-assigned request.
     - Staff cancels via the admin portal (not this endpoint): unchanged — the parent request
       still becomes "Cancelled" (terminal), since that's a deliberate staff decision to end it.
-  See docs/status-workflow.md. Before v3.21, a post-acceptance cancel only touched
+  See docs/design/status-workflow.md. Before v3.21, a post-acceptance cancel only touched
   ServiceBookings, leaving the request stuck at "Assigned" indefinitely — v3.21 fixed that by
   always cancelling the request too; v3.22 refines it further so a provider-initiated cancel
   reopens the request for reassignment instead of ending it.
@@ -2665,7 +2665,7 @@ Notes:
 - on success: Status="In Progress". This does NOT sync anything onto the parent
   CustomerServiceRequest — the client's progressStatus (see GET /customer-service-requests)
   already reflects "In Progress" once the booking reaches this state, computed at read time.
-  See docs/status-workflow.md.
+  See docs/design/status-workflow.md.
 - this is the provider app's explicit "start job" action — the alternative trigger for the
   client seeing progressStatus="In Progress" is the preferred service date/time arriving while
   the booking is still Accepted (no provider action required for that path)
@@ -3387,7 +3387,7 @@ FCM message, DATA-ONLY (no notification title/body: no banner, no sound, no inbo
   killed states through the app's background handler.
   iOS: background notification (apns-push-type "background", apns-priority 5, content-available 1, no alert). iOS may
   throttle or drop these; staff can resend, and a device that still cannot get it needs an app build at or above the
-  pushed version (see docs/notification-testing.md section 12).
+  pushed version (see docs/testing/notification-testing.md section 12).
 
 App behaviour (implemented, lib/utils/update_block.dart):
   - app_unblock: delete the stored block and any queued prompt, unblock immediately, show nothing. Remember the highest
@@ -3434,14 +3434,14 @@ Backend (built 2026-10-06, contract above unchanged):
     are never touched.
   - Rejected with a message, nothing sent or written: empty or >200-char Reason, unknown user, unknown device, no
     matching devices, bad scope.
-  - Android verified on the emulator (docs/notification-testing.md section 12). iOS not yet verified on a device.
+  - Android verified on the emulator (docs/testing/notification-testing.md section 12). iOS not yet verified on a device.
 
 Compatibility: fully additive. A build without this change ignores the unknown push type (it keeps its block and
 needs an update, clear data, or a build at or above the pushed version). Ship the backend first, the extra push is
 harmless to old builds.
 
 Release pull - config-side "last_unblock_at" (v3.40; backend built 2026-10-07, live once the push to main deploys; app side not built)
-Why: silent pushes proved unreliable on iOS (docs/notification-testing.md section 13: the silent form did not reach the
+Why: silent pushes proved unreliable on iOS (docs/testing/notification-testing.md section 13: the silent form did not reach the
 app on the Simulator, the same release as a visible push did). A device that missed the push must still be released the
 next time it opens, so the app also PULLS the latest release time. The push stays the fast path.
 

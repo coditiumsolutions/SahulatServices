@@ -8,7 +8,7 @@ namespace HomeServicesPortal.Controllers.Api;
 /// <summary>
 /// Manage a provider's multi-category membership (ProviderCategories junction table). Additive,
 /// non-breaking endpoints — does not change the registration contract (POST /api/auth/register-provider
-/// remains single-category pending approval; see docs/flutter-changes.md).
+/// remains single-category pending approval; see docs/mobile-app/flutter-changes.md).
 /// </summary>
 [ApiController]
 [Route("api/providers/{providerUid:int}/categories")]

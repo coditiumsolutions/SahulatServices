@@ -61,7 +61,7 @@ The app registers **two separate `DbContext`s side by side** in `Program.cs`, bo
 
 This is an **in-progress consolidation, not a stable pattern to imitate**. When adding new features:
 - New REST API work → use `AppDbContext` and its entities (`Entities/*.cs` — `Client`, `Provider`, `ServiceBooking`, `CustomerServiceRequest`, etc.), not `Models/Entities/*.cs` (the older `SahulatAppDbContext`-side entities).
-- Read `docs/api-audit-report.md` before modifying or extending any existing endpoint — it tracks which endpoints are functional, non-functional, or redundant against the live DB, and which tables are dead.
+- Read `docs/audits/api-audit-report.md` before modifying or extending any existing endpoint — it tracks which endpoints are functional, non-functional, or redundant against the live DB, and which tables are dead.
 - `api.txt` (mobile/client API reference) and `db.txt` (live DB schema) are the source of truth for what's actually deployed/working — prefer them over assumptions from reading controller code alone, since some controllers query removed tables.
 
 ### Layering

@@ -61,7 +61,7 @@
         activeSection = "providers";
     else if (TabClass("/admin/servicerequests") == "active" || IsBookingsPath())
         activeSection = "operations";
-    else if (TabClass("/admin/payments", "/admin/reviews") == "active")
+    else if (TabClass("/admin/payments") == "active")
         activeSection = "finance";
     else if (TabClass("/admin/reports") == "active")
         activeSection = "reports";
@@ -760,7 +760,7 @@
                            href="#" data-hs-section="operations">Operations</a>
                     </li>
                     <li>
-                        <a class="hs-tab-link @TabClass("/admin/payments", "/admin/reviews")" href="#" data-hs-section="finance">Finance</a>
+                        <a class="hs-tab-link @TabClass("/admin/payments")" href="#" data-hs-section="finance">Finance</a>
                     </li>
                     <li>
                         <a class="hs-tab-link @TabClass("/admin/reports")"
@@ -933,9 +933,6 @@
                         </a>
                         <a class="hs-nav-link hs-nav-sublink @NavClass("/admin/payments/commissionrules")" href="/Admin/Payments/CommissionRules">
                             <i class="fa-solid fa-percent"></i> Commission Rules
-                        </a>
-                        <a class="hs-nav-link hs-nav-sublink @NavClass("/admin/reviews")" href="/Admin/Reviews">
-                            <i class="fa-solid fa-star"></i> Reviews <span class="hs-wip-badge-row"><span class="hs-wip-badge">WIP</span></span>
                         </a>
                     </div>
 

@@ -1,3 +1,10 @@
+---
+status: current
+type: reference
+updated: 2026-10-21
+reason: Copy-paste text for the Google Play and App Store listings; applied by the owner on 2026-10-21 (Play title and App Store subtitle still propagating).
+---
+
 # Store listings
 
 Copy each block into the matching field. Every block is plain text with no formatting marks. Character counts are in the headings.

@@ -6,11 +6,11 @@ reason: >-
   since been implemented and are live in the code (ProviderCategories junction table,
   AdminNotifications with typed icons, LabourAmount/BookingMaterialItems, etc.) — this is a
   historical design record, not a pending-work tracker. For current schema/API shape see db.txt
-  and api.txt; for any still-open Flutter follow-up see docs/flutter-changes.md.
+  and api.txt; for any still-open Flutter follow-up see docs/mobile-app/flutter-changes.md.
 superseded_by:
   - api.txt
   - db.txt
-  - docs/flutter-changes.md
+  - docs/mobile-app/flutter-changes.md
 ---
 
 # Client Feature Breakdown: Multi-Provider Assign, Admin Notifications, Labour/Material Billing, Provider Multi-Category
@@ -24,15 +24,15 @@ The client submitted four vague feature requests for the Sahulat Ghar Tak backen
 - There is **no labour/material split** anywhere today — commission is currently computed on the whole `FinalAmount`.
 - Provider→Category is currently a strict 1:1 scalar FK, used as an exact-match filter in ~10 places.
 - **No test suite exists.** No transactions/rowversion/concurrency tokens exist anywhere in the booking code today (team explicitly avoids `BeginTransactionAsync` due to `SqlServerRetryingExecutionStrategy` constraints). Every plan below must respect that constraint while still being race-safe.
-- `db.txt` and `api.txt` (repo root) are the source of truth and must be updated for every DB/API change in this plan. Do **not** update `docs/api-audit-report.md` (stale, per standing instruction).
+- `db.txt` and `api.txt` (repo root) are the source of truth and must be updated for every DB/API change in this plan. Do **not** update `docs/audits/api-audit-report.md` (stale, per standing instruction).
 - Migrations target `AppDbContext` explicitly: `dotnet ef migrations add <Name> --context AppDbContext --project HomeServicesPortal`.
 
 ### Scope constraints for this implementation pass (per user direction)
 
 - **"No frontend changes" means the Flutter mobile app specifically — the ASP.NET admin portal (server-rendered `.cshtml` views under `HomeServicesPortal/Views/`) is in scope and should be implemented fully**, including Feature 7's notification-icon UI.
 - **Database changes must be additive/non-breaking wherever possible.** Anything that would break the live production app or an existing live API contract must be held for explicit approval before implementing — do not just implement and flag it after the fact.
-- Any backend change whose corresponding Flutter app work is deferred (not implemented in this pass) must be recorded in a new tracking file: **`docs/flutter-changes.md`**. This file lists, per feature, exactly what changed on the backend and what the Flutter app needs to do to complete the integration (new/changed endpoints, request/response shape changes, new fields to display, etc.) — it is the single running checklist for the app team's follow-up work. Update it incrementally as each feature is implemented, don't write it all at once at the end.
-- **Feature 9's breaking change is explicitly held for approval**: `ProviderCategories` junction table, backfill, sync helper, and all non-breaking additive endpoints/read-path fixes are implemented now. The breaking change to `POST /api/auth/register-provider`'s request contract (single `categoryId` → `categoryIds` array) is **not** implemented in this pass — it's documented in `docs/flutter-changes.md` as a pending breaking change awaiting go-ahead, along with a suggested non-breaking interim path (e.g. accept an optional `categoryIds` array alongside the existing singular field, falling back to singular if array is omitted — a backward-compatible way to ship this without waiting, worth proposing when that work is greenlit).
+- Any backend change whose corresponding Flutter app work is deferred (not implemented in this pass) must be recorded in a new tracking file: **`docs/mobile-app/flutter-changes.md`**. This file lists, per feature, exactly what changed on the backend and what the Flutter app needs to do to complete the integration (new/changed endpoints, request/response shape changes, new fields to display, etc.) — it is the single running checklist for the app team's follow-up work. Update it incrementally as each feature is implemented, don't write it all at once at the end.
+- **Feature 9's breaking change is explicitly held for approval**: `ProviderCategories` junction table, backfill, sync helper, and all non-breaking additive endpoints/read-path fixes are implemented now. The breaking change to `POST /api/auth/register-provider`'s request contract (single `categoryId` → `categoryIds` array) is **not** implemented in this pass — it's documented in `docs/mobile-app/flutter-changes.md` as a pending breaking change awaiting go-ahead, along with a suggested non-breaking interim path (e.g. accept an optional `categoryIds` array alongside the existing singular field, falling back to singular if array is omitted — a backward-compatible way to ship this without waiting, worth proposing when that work is greenlit).
 
 ---
 
@@ -60,7 +60,7 @@ The client submitted four vague feature requests for the Sahulat Ghar Tak backen
 - API authentication/authorization hardening (e.g. `[AllowAnonymous]` on `ServiceBookingsApiController`) is explicitly out of scope here — per direction, security work across the whole application will be addressed together once features are complete.
 - `api.txt`: update the `/respond` endpoint doc with the new idempotent response shapes (already-accepted, lost-race, success).
 
-### 3. Flutter app changes required (not implemented this pass — track in `docs/flutter-changes.md`)
+### 3. Flutter app changes required (not implemented this pass — track in `docs/mobile-app/flutter-changes.md`)
 - Provider app's "pending jobs" list should re-fetch after any accept/reject action so a job that another provider just won disappears from the list.
 - App must handle the new "already assigned to another provider" idempotent-failure response gracefully (toast/message) instead of treating it as a generic error.
 - No backend contract change is required for existing successful-accept responses — this is additive behavior (new failure-response case + siblings disappearing from list queries), so the app can adopt the improved handling whenever convenient; it won't break against the old app in the meantime since a losing provider simply gets an error response it may currently mishandle as generic.
@@ -91,7 +91,7 @@ The client submitted four vague feature requests for the Sahulat Ghar Tak backen
 - `api.txt`: document the `type`/`types` query param on the three notification endpoints.
 
 ### 3. Flutter app changes required
-- None — this is an admin-portal (server-rendered MVC) feature only; the Flutter app is unaffected. No entry needed in `docs/flutter-changes.md` for this feature.
+- None — this is an admin-portal (server-rendered MVC) feature only; the Flutter app is unaffected. No entry needed in `docs/mobile-app/flutter-changes.md` for this feature.
 
 ### 4. Backend-only changes (portal UI is backend-rendered, still counts as "backend changes, app unaffected")
 - `_AdminLayout.cshtml`: duplicate the `.hs-notify-wrap` bell block (lines 757-777) twice more — one for "Customer notification" (icon suggestion: `fa-user-slash` or a cancel-glyph variant), one for "Provider notification" (`fa-user-tie` + cancel glyph) — each with its own badge/panel IDs.
@@ -102,7 +102,7 @@ The client submitted four vague feature requests for the Sahulat Ghar Tak backen
 
 ## Feature 8 — Labour charge + itemized material breakdown, ledger stays labour-only, customer billed the full amount
 
-**Decision (per user):** provider enters `LabourAmount` as a single figure, but materials are entered as an **itemized breakdown** (e.g. "light bulb — Rs 200", "pipe fitting — Rs 150") rather than one lump `MaterialAmount`. Admin can always enter/edit both via the existing booking-edit form (non-breaking — admin portal is in scope). The mobile passcode-verify completion endpoint *ideally* also captures these from the provider, but making `labourAmount`/`materialItems` part of that request is a **breaking change to a live endpoint the current Flutter app calls** — per the DB/API change-approval rule, this endpoint contract change is **held for approval** and tracked in `docs/flutter-changes.md` rather than implemented this pass. In the interim, the fields are nullable/optional on the backend (admin can fill them in after the fact via the booking-edit form/new material-items endpoints) so nothing breaks for the current app.
+**Decision (per user):** provider enters `LabourAmount` as a single figure, but materials are entered as an **itemized breakdown** (e.g. "light bulb — Rs 200", "pipe fitting — Rs 150") rather than one lump `MaterialAmount`. Admin can always enter/edit both via the existing booking-edit form (non-breaking — admin portal is in scope). The mobile passcode-verify completion endpoint *ideally* also captures these from the provider, but making `labourAmount`/`materialItems` part of that request is a **breaking change to a live endpoint the current Flutter app calls** — per the DB/API change-approval rule, this endpoint contract change is **held for approval** and tracked in `docs/mobile-app/flutter-changes.md` rather than implemented this pass. In the interim, the fields are nullable/optional on the backend (admin can fill them in after the fact via the booking-edit form/new material-items endpoints) so nothing breaks for the current app.
 
 ### 1. Database
 - Migration `AddLabourAndMaterialItemsToServiceBookings`:
@@ -124,12 +124,12 @@ The client submitted four vague feature requests for the Sahulat Ghar Tak backen
 ### 2. API changes
 - `ResolveCommissionAmounts` (`HomeServicesPortal/Services/BookingService.cs:968+`) call sites change their base input from `booking.FinalAmount` to `booking.LabourAmount` only: `commissionAmount = LabourAmount * CommissionValue/100 (or fixed)`, `providerEarning = LabourAmount − commissionAmount`. `CustomerPaid`/`FinalAmount` continue to reflect the full labour+materials+visit+additional−deductions total — only the commission/ledger base narrows to labour. If `LabourAmount` is null (not yet entered), fall back to treating commission base as `0` (or as `FinalAmount` if that's less disruptive to existing reports) until an admin fills it in — needs a sensible default so nothing crashes on bookings created before this feature lands; recommend `0` with a portal-visible "Labour amount not set" flag rather than silently defaulting to the old whole-amount behavior, so it's obvious which historical/in-flight bookings need attention.
 - `ApplyAssignTotals`/`ApplyBookingTotals` (`BookingService.cs:891-936`, admin assign/edit forms) — extended to accept `LabourAmount` and a material-items list, so admin can set/edit these via the portal today. This is additive (new optional fields), not breaking.
-- **Held for approval, not implemented this pass:** changing `VerifyCompletionPasscodeAsync`'s (lines 850-857) request contract to require/accept `labourAmount`/`materialItems` from the mobile app at completion time — this is the endpoint the live Flutter app calls to complete a job, and changing its contract needs a coordinated app release. Tracked in `docs/flutter-changes.md`.
+- **Held for approval, not implemented this pass:** changing `VerifyCompletionPasscodeAsync`'s (lines 850-857) request contract to require/accept `labourAmount`/`materialItems` from the mobile app at completion time — this is the endpoint the live Flutter app calls to complete a job, and changing its contract needs a coordinated app release. Tracked in `docs/mobile-app/flutter-changes.md`.
 - New endpoints for managing material items (additive, new routes, non-breaking), usable by admin now and by the app later once wired up: `GET /api/service-bookings/{bookingUid}/material-items`, `PUT /api/service-bookings/{bookingUid}/material-items` (full-replace of the item list, recomputes `FinalAmount`/`CustomerRemaining`).
 - `PaymentService.RecordBookingCompletionAsync` (`HomeServicesPortal/Services/PaymentService.cs:162-296`) needs **no structural change** — it already writes `PaymentLedger` rows from `booking.CommissionAmount`/`booking.ProviderEarning`/`booking.CustomerPaid`, which will now correctly reflect labour-only commission once the upstream calculation and stored `FinalAmount` are fixed.
 - `api.txt`: document the new material-items endpoints and the admin assign/edit form's new optional fields now; add a clearly-marked "planned, not yet active" section for the eventual passcode-verify contract change.
 
-### 3. Flutter app changes required (held for approval — track in `docs/flutter-changes.md`)
+### 3. Flutter app changes required (held for approval — track in `docs/mobile-app/flutter-changes.md`)
 - Provider app's job-completion/passcode-verify screen will eventually need: a Labour Charges input, plus a repeatable "add material item" row (item name, quantity, unit price) — but this is NOT implemented this pass since it requires the held-back breaking contract change on `VerifyCompletionPasscodeAsync`.
 - Suggested non-breaking interim path to propose when this is greenlit: keep `labourAmount`/`materialItems` optional on the existing endpoint (rather than required) so an old app version can keep completing jobs without them, while a new app version can start sending them — avoids a hard-forced simultaneous release.
 - Customer-facing receipt/invoice view, if the app has one, should eventually show the itemized material breakdown plus labour charge and grand total — also deferred, tracked alongside the above.
@@ -145,7 +145,7 @@ The client submitted four vague feature requests for the Sahulat Ghar Tak backen
 
 **Decision (per user):** introduce `ProviderCategories` as the canonical source of truth immediately; `Providers.CategoryUid` becomes a synced, deprecated "primary category" convenience column, explicitly marked for removal in a fast-follow cleanup once call sites are migrated — not kept indefinitely as a permanent parallel field.
 
-**Scope for this pass:** the junction table, backfill, sync helper, read-path matching fixes, and new additive category-management endpoints are all implemented now (non-breaking). The breaking change to `POST /api/auth/register-provider` (single `categoryId` → `categoryIds` array) is **held for approval** and tracked in `docs/flutter-changes.md` rather than implemented — registration keeps working exactly as today (single category, seeded as the primary + first junction row) until that change is greenlit.
+**Scope for this pass:** the junction table, backfill, sync helper, read-path matching fixes, and new additive category-management endpoints are all implemented now (non-breaking). The breaking change to `POST /api/auth/register-provider` (single `categoryId` → `categoryIds` array) is **held for approval** and tracked in `docs/mobile-app/flutter-changes.md` rather than implemented — registration keeps working exactly as today (single category, seeded as the primary + first junction row) until that change is greenlit.
 
 ### 1. Database
 - Migration `AddProviderCategoriesJunctionTable`:
@@ -181,7 +181,7 @@ The client submitted four vague feature requests for the Sahulat Ghar Tak backen
 - Admin web form (`Views/ServiceProviders/_FormFields.cshtml:42-49`) — in scope, ASP.NET-only: replace single `<select>` with multi-select checkboxes plus a primary-category designation (radio alongside checkboxes, or "first checked = primary"); `ServiceProviderService` create/edit take `List<int> CategoryUids` + `int PrimaryCategoryUid`, routed through the sync helper.
 - `api.txt`: document the two new category-management endpoints now; add a clearly-marked "planned, not yet active" section for the eventual `register-provider` contract change, and note `categoryId`/`CategoryUid` fields elsewhere in the doc now mean "primary category" specifically pending the fast-follow removal.
 
-### 3. Flutter app changes required (track in `docs/flutter-changes.md`)
+### 3. Flutter app changes required (track in `docs/mobile-app/flutter-changes.md`)
 - Not required immediately: registration keeps working unchanged (single category) since that endpoint's contract isn't changing this pass.
 - Available now, app team's choice when to adopt: a provider profile screen could call the new `GET`/`PUT /api/providers/{providerUid}/categories` endpoints to let a provider view/manage additional categories post-registration, without waiting on the registration-endpoint change.
 - Held for later (once the registration contract change is greenlit): registration screen change to multi-select (checkboxes), submitting `categoryIds` array + primary designation.
@@ -200,7 +200,7 @@ The client submitted four vague feature requests for the Sahulat Ghar Tak backen
 3. **Feature 9** (provider multi-category) — schema-heavy but the migration/backfill is safe (additive table, `CategoryUid` untouched during transition); do this before Feature 8 since it's more architecturally invasive and best landed while context is fresh.
 4. **Feature 8** (labour/material split) — coordinate with the app team since it changes the mobile completion contract; do last since it's the most likely to need a synchronized app release.
 
-## `docs/flutter-changes.md` — new tracking file
+## `docs/mobile-app/flutter-changes.md` — new tracking file
 
 Created/updated incrementally as each feature is implemented (not written all at once at the end). Structure: one section per feature, listing (a) what changed on the backend, (b) what's already usable by the app with no backend change needed, (c) what's held for approval / not yet active, and (d) a suggested non-breaking interim contract when relevant. This is the single checklist the app team works off of.
 
@@ -211,4 +211,4 @@ Created/updated incrementally as each feature is implemented (not written all at
   - **Feature 7**: log into `/adminportal`, trigger a customer cancellation and a provider post-acceptance cancellation via API calls, confirm all three bell icons behave correctly (new two update independently; existing Job Request bell's unread count is unaffected by the other two).
   - **Feature 8**: via the admin booking-edit form (or the new material-items endpoints), set a `LabourAmount` and 2+ material items on a booking, confirm `FinalAmount` reflects labour + summed material items, confirm `BookingMaterialItems` rows persisted match what was entered, and check the resulting `PaymentLedger` row's `CommissionAmount`/`ProviderEarning` are computed off `LabourAmount` only (not the full amount). Mobile passcode-verify completion flow is intentionally unchanged this pass — confirm it still works exactly as before for an app that never sends labour/material data.
   - **Feature 9**: use the new `PUT /api/providers/{providerUid}/categories` endpoint (or the updated admin form) to give an existing provider multiple categories, confirm `ProviderCategories` rows are created and `Providers.CategoryUid` is set to the chosen primary; confirm the provider appears in job-inbox matching for a request in a *secondary* (non-primary) category. Confirm `POST /api/auth/register-provider` still behaves exactly as before (single category) since its contract is untouched this pass.
-- After each feature, update `db.txt`/`api.txt`/`docs/flutter-changes.md` and run `dotnet build HomeServicesPortal/HomeServicesPortal.csproj` (via `powershell.exe` from WSL if applicable) to confirm no compile errors before considering the feature done.
+- After each feature, update `db.txt`/`api.txt`/`docs/mobile-app/flutter-changes.md` and run `dotnet build HomeServicesPortal/HomeServicesPortal.csproj` (via `powershell.exe` from WSL if applicable) to confirm no compile errors before considering the feature done.

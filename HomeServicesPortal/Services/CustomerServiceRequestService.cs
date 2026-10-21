@@ -294,7 +294,7 @@ public class CustomerServiceRequestService : ICustomerServiceRequestService
 
     /// <summary>
     /// Computes the client-facing progress-bar stage from the request's own status and its
-    /// linked (non-Rejected) booking's status, per docs/status-workflow.md. Cancelled always
+    /// linked (non-Rejected) booking's status, per docs/design/status-workflow.md. Cancelled always
     /// wins and suppresses the field entirely (null) rather than appearing as a stage.
     /// </summary>
     private static void ApplyProgressStatus(CustomerServiceRequestApiDto dto, string? bookingStatus)

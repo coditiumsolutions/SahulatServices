@@ -40,7 +40,7 @@ public class CustomerServiceRequestApiDto
     /// Accepted->In Progress transition, whether the preferred service date/time has arrived).
     /// Null whenever the request or its booking is cancelled — the client app should hide the
     /// progress bar and show a plain "Cancelled" label instead of switching on this field.
-    /// See docs/status-workflow.md.
+    /// See docs/design/status-workflow.md.
     /// </summary>
     public string? ProgressStatus { get; set; }
 

@@ -5,10 +5,10 @@ reason: >-
   accurate historical records of what was built. The "Next steps"/Phase 3 (Flutter mobile
   integration) framing may be outdated — GPS/location fields (clientLatitude/clientLongitude)
   have since shipped on provider-facing booking endpoints per api.txt/db.txt v4.10. Verify
-  against api.txt and docs/flutter-changes.md before treating Phase 3 as still not started.
+  against api.txt and docs/mobile-app/flutter-changes.md before treating Phase 3 as still not started.
 superseded_by:
   - api.txt
-  - docs/flutter-changes.md
+  - docs/mobile-app/flutter-changes.md
 ---
 
 # Maps / GPS Implementation — Current State & Next Steps
