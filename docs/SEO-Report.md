@@ -131,6 +131,20 @@ Home-services businesses with no storefront are "service-area businesses":
 
 ### 3.9 Existing resource: the Meta Pixel
 
+**Current state (2026-10-21).** The Pixel is live and confirmed on the business-portfolio dataset `1146923304673549`: Meta Pixel Helper detects the ID and the dataset shows "set up and connected". It is in `_PublicLayout.cshtml` (every public page; admin and login layouts are deliberately untracked), uses Meta's standard async snippet placed last in `<head>` as Meta instructs (an earlier version deferred loading to the page `load` event, which Pixel Helper and Meta's detector did not pick up, so that was removed), and takes its ID from `Marketing:MetaPixelId` with the business dataset as the default. The production `appsettings.Production.json` has no `Marketing` section, so nothing overrides it. Events sent from one delegated click listener in the layout:
+
+| Click | Event |
+|---|---|
+| Google Play / App Store links | `Lead` (`content_name` app_store or google_play, `content_category` page path) |
+| `tel:` links | `Contact` (phone_call) |
+| `mailto:` links | `Contact` (email) |
+| Links to `/Home/DownloadApp` | custom `DownloadPageClick` (`source`) |
+| Sahulat Ride links | custom `SahulatRideClick` (`source`) |
+| Facebook / Instagram / YouTube / TikTok links | custom `SocialClick` (`network`) |
+| Service page load (`ServicePillar.cshtml`) | `ViewContent` (service name) |
+
+Do not also add the same events with Events Manager's manual event setup tool, or each click is counted twice. Owner-side steps still open: assign people and the ad account to the dataset, verify `sahulatghartak.com` under Business Settings, Brand Safety, Domains (DNS TXT), and delete the old personal-account Pixel `943484539264647`. The Pixel cannot see completed installs, only store clicks. The notes below describe the original state and the plan that led to this.
+
 **How it is added today** (added by a colleague in commit `f4e0c5b`, 2026-09-10, "about page, services pillars, and Meta Pixel"):
 
 - The standard Meta Pixel base snippet is pasted directly into `Views/Home/Index.cshtml`, inside `@section Head` (lines 7 to 27). Original Pixel ID `943484539264647` (personal account). Replaced on 2026-10-21 by the business-portfolio dataset `1146923304673549`, now the default in `_PublicLayout.cshtml`.
