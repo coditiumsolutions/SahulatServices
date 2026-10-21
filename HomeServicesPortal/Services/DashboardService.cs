@@ -22,10 +22,7 @@ public class DashboardService : IDashboardService
     {
         var initiated = await _db.CustomerServiceRequests
             .AsNoTracking()
-            .CountAsync(r =>
-                r.Status == RequestStatusConstants.Initiated
-                || r.Status == RequestStatusConstants.LegacyPending,
-                cancellationToken);
+            .CountAsync(r => r.Status == RequestStatusConstants.Initiated, cancellationToken);
 
         var pending = await _db.CustomerServiceRequests
             .AsNoTracking()

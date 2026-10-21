@@ -5,7 +5,7 @@ namespace HomeServicesPortal.Helpers;
 /// mobile PUT endpoint. Deliberately narrower than the admin portal's own whitelist
 /// (Services/ServiceRequestService.ValidStatuses) — a client can edit while Initiated or cancel,
 /// but Assigned/In Progress/Completed are staff/provider/system-driven only.
-/// See docs/status-workflow.md.
+/// See docs/design/status-workflow.md.
 /// </summary>
 public static class RequestStatusConstants
 {
@@ -13,9 +13,6 @@ public static class RequestStatusConstants
     public const string Assigned = "Assigned";
     public const string Completed = "Completed";
     public const string Cancelled = "Cancelled";
-
-    /// <summary>Legacy pre-assignment value; still accepted for older clients / rows.</summary>
-    public const string LegacyPending = "Pending";
 
     /// <summary>
     /// Admin list filter (not a stored Status): requests with a booking still awaiting provider response.
@@ -35,8 +32,7 @@ public static class RequestStatusConstants
 
     /// <summary>Request has no active assignment yet (new, or provider rejected).</summary>
     public static bool IsUnassigned(string? status) =>
-        string.Equals(status, Initiated, StringComparison.OrdinalIgnoreCase)
-        || string.Equals(status, LegacyPending, StringComparison.OrdinalIgnoreCase);
+        string.Equals(status, Initiated, StringComparison.OrdinalIgnoreCase);
 
     public static bool IsPendingRequestsFilter(string? status) =>
         string.Equals(status, PendingRequestsFilter, StringComparison.OrdinalIgnoreCase)
@@ -45,12 +41,15 @@ public static class RequestStatusConstants
     public static bool IsUrgentFilter(string? status) =>
         string.Equals(status, UrgentFilter, StringComparison.OrdinalIgnoreCase);
 
-    /// <summary>Normalize client/admin input: Pending → Initiated.</summary>
+    /// <summary>
+    /// Normalize client/admin input: blank → Initiated. "Pending" (what older app builds send when creating a
+    /// request) is also mapped to Initiated so it is never stored; no live row has that status any more.
+    /// </summary>
     public static string Normalize(string? status)
     {
         if (string.IsNullOrWhiteSpace(status)) return Initiated;
         var trimmed = status.Trim();
-        return string.Equals(trimmed, LegacyPending, StringComparison.OrdinalIgnoreCase)
+        return string.Equals(trimmed, "Pending", StringComparison.OrdinalIgnoreCase)
             ? Initiated
             : trimmed;
     }

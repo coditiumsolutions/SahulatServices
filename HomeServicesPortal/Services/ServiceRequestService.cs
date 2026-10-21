@@ -16,8 +16,7 @@ public class ServiceRequestService : IServiceRequestService
         RequestStatusConstants.Assigned,
         "In Progress",
         RequestStatusConstants.Completed,
-        RequestStatusConstants.Cancelled,
-        RequestStatusConstants.LegacyPending // keep for editing legacy rows
+        RequestStatusConstants.Cancelled
     ];
 
     private readonly AppDbContext _db;
@@ -64,7 +63,6 @@ public class ServiceRequestService : IServiceRequestService
     public List<SelectListItem> GetStatusOptions()
     {
         return ValidStatuses
-            .Where(s => !string.Equals(s, RequestStatusConstants.LegacyPending, StringComparison.OrdinalIgnoreCase))
             .Select(s => new SelectListItem { Value = s, Text = s })
             .ToList();
     }
@@ -99,13 +97,9 @@ public class ServiceRequestService : IServiceRequestService
                     && r.Status != RequestStatusConstants.Completed
                     && r.Status != RequestStatusConstants.Cancelled);
             }
-            else if (RequestStatusConstants.IsUnassigned(status)
-                || string.Equals(status, RequestStatusConstants.Initiated, StringComparison.OrdinalIgnoreCase))
+            else if (RequestStatusConstants.IsUnassigned(status))
             {
-                // Treat legacy Pending rows as Initiated when filtering.
-                query = query.Where(r =>
-                    r.Status == RequestStatusConstants.Initiated
-                    || r.Status == RequestStatusConstants.LegacyPending);
+                query = query.Where(r => r.Status == RequestStatusConstants.Initiated);
             }
             else
             {
@@ -150,14 +144,6 @@ public class ServiceRequestService : IServiceRequestService
             .Select(g => new { Status = g.Key, Count = g.Count() })
             .ToDictionaryAsync(g => g.Status, g => g.Count, cancellationToken);
 
-        // Fold legacy Pending into Initiated for filter chips.
-        if (statusCounts.TryGetValue(RequestStatusConstants.LegacyPending, out var pendingCount))
-        {
-            statusCounts.Remove(RequestStatusConstants.LegacyPending);
-            statusCounts[RequestStatusConstants.Initiated] =
-                statusCounts.GetValueOrDefault(RequestStatusConstants.Initiated) + pendingCount;
-        }
-
         var items = await query
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
@@ -181,9 +167,7 @@ public class ServiceRequestService : IServiceRequestService
             Sort = sort,
             SortDir = sortDir,
             Status = status,
-            StatusOptions = ValidStatuses
-                .Where(s => !string.Equals(s, RequestStatusConstants.LegacyPending, StringComparison.OrdinalIgnoreCase))
-                .ToArray(),
+            StatusOptions = ValidStatuses.ToArray(),
             StatusCounts = statusCounts,
             Page = page,
             PageSize = pageSize,

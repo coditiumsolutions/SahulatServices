@@ -122,8 +122,13 @@ public class LegacyCleanupAndZonesTests : IDisposable
     }
 
     [Fact]
-    public void ExistingPendingRows_StillCountAsUnassigned() =>
-        Assert.True(RequestStatusConstants.IsUnassigned("Pending"));
+    public void PendingIsNoLongerARequestStatus()
+    {
+        Assert.False(RequestStatusConstants.IsUnassigned("Pending"));
+        Assert.True(RequestStatusConstants.IsUnassigned("Initiated"));
+        // Older builds may still send "Pending" when creating a request; it is stored as Initiated.
+        Assert.Equal("Initiated", RequestStatusConstants.Normalize("Pending"));
+    }
 
     // ---------- zones ----------
 
