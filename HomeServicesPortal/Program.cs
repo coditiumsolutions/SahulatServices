@@ -371,6 +371,17 @@ app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 
+// App link verification files. Both must be served as application/json with no redirect.
+app.MapGet("/.well-known/assetlinks.json",
+    () => Results.Content(HomeServicesPortal.Helpers.AppLinkFiles.BuildAssetLinks(), "application/json"));
+app.MapGet("/.well-known/apple-app-site-association",
+    () => Results.Content(HomeServicesPortal.Helpers.AppLinkFiles.BuildAppleAppSiteAssociation(), "application/json"));
+
+// /app/... links are meant for the installed app (see AppLinkFiles). Without the app they land here, so send
+// them to the download page rather than a 404.
+app.MapGet("/app", () => Results.Redirect("/Home/DownloadApp"));
+app.MapGet("/app/{**rest}", () => Results.Redirect("/Home/DownloadApp"));
+
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
