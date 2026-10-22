@@ -105,6 +105,12 @@ section[id] {
     opacity: 0.85;
 }
 
+.hs-utility-role {
+    opacity: 0.75;
+    font-weight: 500;
+    margin-left: 0.15rem;
+}
+
 .hs-utility-link--logout:hover {
     color: #ffb4b4;
 }

@@ -1,0 +1,146 @@
+@model HomeServicesPortal.Models.ViewModels.PublicLoginViewModel
+@{
+    Layout = "_PublicLayout";
+    ViewData["Title"] = "Login";
+    ViewData["Description"] = "Log in to Sahulat Ghar Tak as a customer or service provider.";
+    ViewData["Robots"] = "noindex, follow";
+}
+
+@section Head {
+    <link rel="stylesheet" href="~/css/public-auth.css" asp-append-version="true" />
+}
+
+<section class="pub-auth">
+    <div class="container">
+        <div class="pub-auth-shell">
+            <aside class="pub-auth-aside" aria-hidden="true">
+                <p class="pub-auth-eyebrow">Sahulat Ghar Tak</p>
+                <h1 class="pub-auth-aside-title">Welcome back</h1>
+                <p class="pub-auth-aside-text">
+                    Sign in with your mobile number to manage bookings as a customer or take jobs as a provider.
+                </p>
+            </aside>
+
+            <div class="pub-auth-panel">
+                <header class="pub-auth-header">
+                    <h1>Login</h1>
+                    <p>Customers and service providers only — admin staff use the admin portal.</p>
+                </header>
+
+                @if (TempData["SignupSuccess"] is string successMsg)
+                {
+                    <div class="alert alert-success d-flex align-items-start gap-2" role="status">
+                        <i class="fa-solid fa-circle-check mt-1" aria-hidden="true"></i>
+                        <div>@successMsg</div>
+                    </div>
+                }
+
+                @if (!ViewData.ModelState.IsValid && ViewData.ModelState.ErrorCount > 0)
+                {
+                    var errors = ViewData.ModelState.Values
+                        .SelectMany(v => v.Errors)
+                        .Select(e => e.ErrorMessage)
+                        .Where(m => !string.IsNullOrWhiteSpace(m))
+                        .Distinct()
+                        .ToList();
+                    if (errors.Count > 0)
+                    {
+                        <div class="alert alert-danger d-flex align-items-start gap-2" role="alert">
+                            <i class="fa-solid fa-circle-exclamation mt-1" aria-hidden="true"></i>
+                            <div>
+                                @foreach (var error in errors)
+                                {
+                                    <div>@error</div>
+                                }
+                            </div>
+                        </div>
+                    }
+                }
+
+                <form asp-controller="PublicAccount" asp-action="Login" method="post" novalidate class="pub-auth-form" id="publicLoginForm">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" asp-for="ReturnUrl" />
+
+                    <div class="mb-3">
+                        <label asp-for="MobileNo" class="form-label"></label>
+                        <input asp-for="MobileNo"
+                               id="loginMobileNo"
+                               class="form-control form-control-lg"
+                               placeholder="03XX-XXXXXXX"
+                               autocomplete="username"
+                               inputmode="numeric"
+                               maxlength="12"
+                               pattern="^03\d{2}-?\d{7}$"
+                               title="Pakistani mobile: 03XX-XXXXXXX" />
+                        <div class="form-text">Format: 03XX-XXXXXXX (digits only)</div>
+                        <span asp-validation-for="MobileNo" class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Password" class="form-label"></label>
+                        <input asp-for="Password" class="form-control form-control-lg" autocomplete="current-password" />
+                        <span asp-validation-for="Password" class="text-danger small"></span>
+                    </div>
+
+                    <div class="form-check mb-4">
+                        <input asp-for="RememberMe" class="form-check-input" />
+                        <label asp-for="RememberMe" class="form-check-label"></label>
+                    </div>
+
+                    <button type="submit" class="btn pub-auth-btn w-100">
+                        <i class="fa-solid fa-right-to-bracket me-2" aria-hidden="true"></i>Log in
+                    </button>
+                </form>
+
+                <p class="pub-auth-switch">
+                    New here?
+                    <a href="/signup">Create an account</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <script>
+        (function () {
+            var input = document.getElementById('loginMobileNo');
+            if (!input) return;
+
+            function formatMobile(raw) {
+                var digits = String(raw || '').replace(/\D/g, '');
+                if (digits.indexOf('92') === 0 && digits.length >= 12) {
+                    digits = '0' + digits.slice(2);
+                }
+                digits = digits.slice(0, 11);
+                if (digits.length <= 4) return digits;
+                return digits.slice(0, 4) + '-' + digits.slice(4);
+            }
+
+            function applyMask() {
+                var start = input.selectionStart;
+                var before = input.value;
+                var next = formatMobile(before);
+                if (before === next) return;
+                input.value = next;
+                // Keep caret near the end while typing; avoids jumping on hyphen insert.
+                var pos = next.length;
+                if (typeof start === 'number' && before.length > next.length) {
+                    pos = Math.max(0, start - (before.length - next.length));
+                }
+                try { input.setSelectionRange(pos, pos); } catch (e) { /* ignore */ }
+            }
+
+            input.addEventListener('input', applyMask);
+            input.addEventListener('blur', applyMask);
+            input.addEventListener('paste', function () { setTimeout(applyMask, 0); });
+
+            document.getElementById('publicLoginForm').addEventListener('submit', function () {
+                // Server expects 03XXXXXXXXX; strip hyphen before post.
+                input.value = String(input.value || '').replace(/\D/g, '').slice(0, 11);
+            });
+
+            applyMask();
+        })();
+    </script>
+}

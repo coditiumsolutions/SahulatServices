@@ -1,0 +1,389 @@
+.pub-dash {
+    padding: 2.5rem 0 3.5rem;
+    background:
+        radial-gradient(ellipse at 88% 0%, rgba(139, 26, 26, 0.06), transparent 45%),
+        linear-gradient(180deg, #f4f7fb 0%, #e8eef5 100%);
+    min-height: calc(100vh - 140px);
+}
+
+.pub-dash-hero {
+    max-width: 720px;
+    margin-bottom: 2rem;
+}
+
+.pub-dash-eyebrow {
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #8B1A1A;
+    margin-bottom: 0.5rem;
+}
+
+.pub-dash-hero--provider .pub-dash-eyebrow {
+    color: #003366;
+}
+
+.pub-dash-hero h1 {
+    font-family: "Libre Baskerville", Georgia, serif;
+    font-size: clamp(1.75rem, 3vw, 2.35rem);
+    color: #003366;
+    margin-bottom: 0.65rem;
+}
+
+.pub-dash-lead {
+    color: #5a6b7d;
+    font-size: 1.05rem;
+    line-height: 1.55;
+    margin: 0;
+}
+
+.pub-dash-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.25rem;
+}
+
+.pub-dash-card {
+    background: #fff;
+    border-radius: 16px;
+    padding: 1.5rem 1.4rem;
+    box-shadow: 0 12px 32px rgba(0, 34, 68, 0.08);
+    border: 1px solid rgba(0, 51, 102, 0.06);
+}
+
+.pub-dash-card h2 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #003366;
+    margin-bottom: 1rem;
+}
+
+.pub-dash-dl {
+    margin: 0;
+    display: grid;
+    gap: 0.75rem;
+}
+
+.pub-dash-dl > div {
+    display: grid;
+    grid-template-columns: 7.5rem 1fr;
+    gap: 0.5rem;
+    align-items: baseline;
+}
+
+.pub-dash-dl dt {
+    margin: 0;
+    color: #7a8a9a;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.pub-dash-dl dd {
+    margin: 0;
+    color: #1a3a5c;
+    font-weight: 600;
+}
+
+.pub-dash-actions {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 0.65rem;
+}
+
+.pub-dash-actions a,
+.pub-dash-link-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    padding: 0.75rem 0.9rem;
+    border-radius: 10px;
+    background: #f4f7fb;
+    color: #003366;
+    font-weight: 600;
+    text-decoration: none;
+    border: 0;
+    width: 100%;
+    text-align: left;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.pub-dash-actions a:hover,
+.pub-dash-link-btn:hover {
+    background: #003366;
+    color: #fff;
+}
+
+@media (max-width: 767.98px) {
+    .pub-dash-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .pub-dash-dl > div {
+        grid-template-columns: 1fr;
+        gap: 0.15rem;
+    }
+}
+
+/* Client Services catalogue grid */
+.client-services-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1.25rem;
+}
+
+.client-service-card {
+    background: #fff;
+    border-radius: 16px;
+    padding: 1.5rem 1.35rem;
+    box-shadow: 0 12px 32px rgba(0, 34, 68, 0.08);
+    border: 1px solid rgba(0, 51, 102, 0.06);
+    height: 100%;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    display: flex;
+    flex-direction: column;
+}
+
+.client-service-card--link {
+    text-decoration: none;
+    color: inherit;
+    cursor: pointer;
+}
+
+.client-service-card--link:hover,
+.client-service-card--link:focus {
+    transform: translateY(-3px);
+    box-shadow: 0 16px 36px rgba(0, 34, 68, 0.12);
+    color: inherit;
+    outline: none;
+}
+
+.client-service-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 16px 36px rgba(0, 34, 68, 0.12);
+}
+
+.client-service-cta {
+    margin-top: auto;
+    padding-top: 1rem;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #8B1A1A;
+}
+
+.client-service-cta i {
+    font-size: 0.75rem;
+    margin-left: 0.25rem;
+}
+
+.client-back-link {
+    color: #003366;
+    font-weight: 600;
+    text-decoration: none;
+    font-size: 0.95rem;
+}
+
+.client-back-link:hover {
+    color: #8B1A1A;
+    text-decoration: underline;
+}
+
+.client-request-form-card {
+    max-width: 640px;
+}
+
+.client-request-form .form-label {
+    font-weight: 600;
+    color: #1a3a5c;
+}
+
+.client-request-form .form-control[readonly] {
+    background: #f4f7fb;
+    color: #003366;
+    font-weight: 600;
+}
+
+.client-request-submit {
+    background: #003366;
+    border-color: #003366;
+    color: #fff;
+    font-weight: 700;
+    padding: 0.75rem 1.25rem;
+    border-radius: 10px;
+}
+
+.client-request-submit:hover:not(:disabled),
+.client-request-submit:focus:not(:disabled) {
+    background: #002244;
+    border-color: #002244;
+    color: #fff;
+}
+
+.client-request-submit:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.pub-auth-btn {
+    background: #003366;
+    border-color: #003366;
+    color: #fff;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    padding: 0.75rem 1.25rem;
+    border-radius: 10px;
+}
+
+.client-address-table {
+    font-size: 0.95rem;
+}
+
+.client-address-table thead th {
+    color: #5a6b7d;
+    font-weight: 600;
+    border-bottom-width: 1px;
+}
+
+.client-address-table td {
+    color: #1a3a5c;
+}
+
+.client-request-form-card .btn-sm,
+.client-request-submit.btn-sm {
+    padding: 0.4rem 0.85rem;
+    font-size: 0.875rem;
+}
+
+.client-request-card-top {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.85rem;
+}
+
+.client-req-status {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.2rem 0.55rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+}
+
+.client-req-status--initiated {
+    background: rgba(0, 51, 102, 0.1);
+    color: #003366;
+}
+
+.client-req-status--assigned {
+    background: rgba(13, 110, 253, 0.12);
+    color: #0d6efd;
+}
+
+.client-req-status--active {
+    background: rgba(25, 135, 84, 0.12);
+    color: #198754;
+}
+
+.client-req-status--done {
+    background: rgba(25, 135, 84, 0.18);
+    color: #0f5132;
+}
+
+.client-req-status--cancelled {
+    background: rgba(139, 26, 26, 0.1);
+    color: #8B1A1A;
+}
+
+.client-req-urgent {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #8B1A1A;
+}
+
+.client-request-meta {
+    margin: -0.15rem 0 0.75rem;
+    color: #7a8a9a;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.client-request-dl {
+    margin: 0.85rem 0 0;
+    display: grid;
+    gap: 0.45rem;
+}
+
+.client-request-dl > div {
+    display: grid;
+    grid-template-columns: 5.5rem 1fr;
+    gap: 0.4rem;
+    align-items: baseline;
+}
+
+.client-request-dl dt {
+    margin: 0;
+    color: #7a8a9a;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.client-request-dl dd {
+    margin: 0;
+    color: #1a3a5c;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.client-service-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    background: rgba(0, 51, 102, 0.08);
+    color: #003366;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    margin-bottom: 1rem;
+}
+
+.client-service-title {
+    font-family: "Libre Baskerville", Georgia, serif;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #003366;
+    margin-bottom: 0.5rem;
+}
+
+.client-service-desc {
+    margin: 0;
+    color: #5a6b7d;
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+.client-service-desc--muted {
+    font-style: italic;
+    opacity: 0.85;
+}
+
+@media (max-width: 991.98px) {
+    .client-services-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 575.98px) {
+    .client-services-grid {
+        grid-template-columns: 1fr;
+    }
+}

@@ -1,15 +1,40 @@
 @{
     var path = (Context.Request.Path.Value ?? "/").ToLowerInvariant();
-    string TabActive(string segment) =>
-        segment == "home" && (path == "/" || path == "/home" || path == "/home/index")
-            ? "active"
-            : path.Contains(segment, StringComparison.OrdinalIgnoreCase) ? "active" : "";
+    var userType = User.FindFirst("UserType")?.Value;
+    var isClient = User.Identity?.IsAuthenticated == true
+        && userType != null
+        && userType.Equals("Client", StringComparison.OrdinalIgnoreCase);
+    var isProvider = User.Identity?.IsAuthenticated == true
+        && userType != null
+        && userType.Equals("Provider", StringComparison.OrdinalIgnoreCase);
+    var isPortalUser = isClient || isProvider;
+    var displayName = User.Identity?.Name;
+    var homeHref = isProvider ? "/provider-dashboard" : isClient ? "/client-dashboard" : "/";
+
+    string TabActive(string segment)
+    {
+        if (segment == "home")
+        {
+            return path is "/" or "/home" or "/home/index"
+                or "/client-dashboard" or "/provider-dashboard"
+                ? "active" : "";
+        }
+
+        if (segment == "services")
+        {
+            return path.StartsWith("/client/services", StringComparison.OrdinalIgnoreCase) ? "active" : "";
+        }
+
+        return path.Contains($"/{segment}", StringComparison.OrdinalIgnoreCase)
+            || path.EndsWith($"/{segment}", StringComparison.OrdinalIgnoreCase)
+            ? "active" : "";
+    }
 }
 
 <header class="hs-topbar-primary">
     <div class="container-fluid px-3 px-lg-4">
         <div class="d-flex align-items-center justify-content-between py-2 gap-2">
-            <a class="hs-brand" href="/">
+            <a class="hs-brand" href="@homeHref">
                 <span class="hs-brand-main">Sahulat</span>
                 <span class="hs-brand-sub">Ghar Tak</span>
             </a>
@@ -28,21 +53,37 @@
                             @PktTimeHelper.NowPkt.ToString("dddd, dd MMM yyyy")
                         </span>
                     </li>
-                    <li>
-                        <a class="hs-utility-link" href="tel:+923225040823">
-                            Call Us<i class="fa-solid fa-chevron-right"></i>
-                        </a>
-                    </li>
-                    <li>
-                        <a class="hs-utility-link" href="/#contact">
-                            Contact<i class="fa-solid fa-chevron-right"></i>
-                        </a>
-                    </li>
-                    <li>
-                        <a class="hs-utility-link" href="/privacy-policy">
-                            Privacy Policy<i class="fa-solid fa-chevron-right"></i>
-                        </a>
-                    </li>
+                    @if (isPortalUser)
+                    {
+                        <li>
+                            <span class="hs-utility-link">
+                                <i class="fa-solid fa-user"></i>
+                                @(displayName ?? userType)
+                                <span class="hs-utility-role">(@(isProvider ? "Provider" : "Client"))</span>
+                            </span>
+                        </li>
+                        <li>
+                            <form method="post" action="/logout" class="d-inline">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="hs-utility-link border-0 bg-transparent">
+                                    Logout<i class="fa-solid fa-chevron-right"></i>
+                                </button>
+                            </form>
+                        </li>
+                    }
+                    else
+                    {
+                        <li>
+                            <a class="hs-utility-link" href="/login">
+                                Login<i class="fa-solid fa-chevron-right"></i>
+                            </a>
+                        </li>
+                        <li>
+                            <a class="hs-utility-link" href="/signup">
+                                Signup<i class="fa-solid fa-chevron-right"></i>
+                            </a>
+                        </li>
+                    }
                 </ul>
             </div>
         </div>
@@ -59,29 +100,69 @@
         </button>
 
         <div class="collapse d-lg-block" id="hsPublicTabNav">
-            <ul class="hs-tab-nav">
-                <li>
-                    <a class="hs-tab-link @TabActive("home")" href="/">Home</a>
-                </li>
-                <li>
-                    <a class="hs-tab-link @(path.StartsWith("/about") ? "active" : "")" href="/about">About</a>
-                </li>
-                <li>
-                    <a class="hs-tab-link @TabActive("services")" href="/#services">Services</a>
-                </li>
-                <li>
-                    <a class="hs-tab-link @TabActive("providers")" href="/#providers">Providers</a>
-                </li>
-                <li>
-                    <a class="hs-tab-link @TabActive("how-it-works")" href="/#how-it-works">How It Works</a>
-                </li>
-                <li>
-                    <a class="hs-tab-link @TabActive("contact")" href="/#contact">Contact</a>
-                </li>
-                <li class="hs-tab-link-spacer">
-                    <a class="hs-tab-link @TabActive("downloadapp")" href="/Home/DownloadApp">Download App</a>
-                </li>
-            </ul>
+            @if (isClient)
+            {
+                <ul class="hs-tab-nav">
+                    <li>
+                        <a class="hs-tab-link @TabActive("home")" href="/client-dashboard">Home</a>
+                    </li>
+                    <li>
+                        <a class="hs-tab-link @TabActive("services")" href="/client/services">Services</a>
+                    </li>
+                    <li>
+                        <a class="hs-tab-link @TabActive("requests")" href="/client/requests">Requests</a>
+                    </li>
+                    <li>
+                        <a class="hs-tab-link @TabActive("profile")" href="/client/profile">Profile</a>
+                    </li>
+                </ul>
+            }
+            else if (isProvider)
+            {
+                <ul class="hs-tab-nav">
+                    <li>
+                        <a class="hs-tab-link @TabActive("home")" href="/provider-dashboard">Home</a>
+                    </li>
+                    <li>
+                        <a class="hs-tab-link @TabActive("requests")" href="/provider/requests">Requests</a>
+                    </li>
+                    <li>
+                        <a class="hs-tab-link @TabActive("bookings")" href="/provider/bookings">Bookings</a>
+                    </li>
+                    <li>
+                        <a class="hs-tab-link @TabActive("wallet")" href="/provider/wallet">Wallet</a>
+                    </li>
+                    <li>
+                        <a class="hs-tab-link @TabActive("profile")" href="/provider/profile">Profile</a>
+                    </li>
+                </ul>
+            }
+            else
+            {
+                <ul class="hs-tab-nav">
+                    <li>
+                        <a class="hs-tab-link @TabActive("home")" href="/">Home</a>
+                    </li>
+                    <li>
+                        <a class="hs-tab-link @(path.StartsWith("/about") ? "active" : "")" href="/about">About</a>
+                    </li>
+                    <li>
+                        <a class="hs-tab-link @TabActive("services")" href="/#services">Services</a>
+                    </li>
+                    <li>
+                        <a class="hs-tab-link @TabActive("providers")" href="/#providers">Providers</a>
+                    </li>
+                    <li>
+                        <a class="hs-tab-link @TabActive("how-it-works")" href="/#how-it-works">How It Works</a>
+                    </li>
+                    <li>
+                        <a class="hs-tab-link @TabActive("contact")" href="/#contact">Contact</a>
+                    </li>
+                    <li class="hs-tab-link-spacer">
+                        <a class="hs-tab-link @TabActive("downloadapp")" href="/Home/DownloadApp">Download App</a>
+                    </li>
+                </ul>
+            }
         </div>
     </div>
 </nav>
@@ -98,15 +179,66 @@
             <div class="modal-body">
                 <p class="hs-quick-date"><i class="fa-regular fa-calendar"></i>@PktTimeHelper.NowPkt.ToString("dddd, dd MMM yyyy")</p>
                 <div class="list-group list-group-flush">
-                    <a class="hs-quick-link" href="tel:+923225040823" data-bs-dismiss="modal">
-                        <span><i class="fa-solid fa-phone"></i>Call Us</span><i class="fa-solid fa-chevron-right"></i>
-                    </a>
-                    <a class="hs-quick-link" href="/#contact" data-bs-dismiss="modal">
-                        <span><i class="fa-solid fa-envelope"></i>Contact</span><i class="fa-solid fa-chevron-right"></i>
-                    </a>
-                    <a class="hs-quick-link" href="/privacy-policy">
-                        <span><i class="fa-solid fa-shield-halved"></i>Privacy Policy</span><i class="fa-solid fa-chevron-right"></i>
-                    </a>
+                    @if (isClient)
+                    {
+                        <div class="hs-quick-link">
+                            <span><i class="fa-solid fa-user"></i>@(displayName ?? userType) (Client)</span>
+                        </div>
+                        <a class="hs-quick-link" href="/client-dashboard" data-bs-dismiss="modal">
+                            <span><i class="fa-solid fa-house"></i>Home</span><i class="fa-solid fa-chevron-right"></i>
+                        </a>
+                        <a class="hs-quick-link" href="/client/services" data-bs-dismiss="modal">
+                            <span><i class="fa-solid fa-screwdriver-wrench"></i>Services</span><i class="fa-solid fa-chevron-right"></i>
+                        </a>
+                        <a class="hs-quick-link" href="/client/requests" data-bs-dismiss="modal">
+                            <span><i class="fa-solid fa-inbox"></i>Requests</span><i class="fa-solid fa-chevron-right"></i>
+                        </a>
+                        <a class="hs-quick-link" href="/client/profile" data-bs-dismiss="modal">
+                            <span><i class="fa-solid fa-id-badge"></i>Profile</span><i class="fa-solid fa-chevron-right"></i>
+                        </a>
+                        <form method="post" action="/logout">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="hs-quick-link border-0 bg-transparent w-100 text-start">
+                                <span><i class="fa-solid fa-right-from-bracket"></i>Logout</span><i class="fa-solid fa-chevron-right"></i>
+                            </button>
+                        </form>
+                    }
+                    else if (isProvider)
+                    {
+                        <div class="hs-quick-link">
+                            <span><i class="fa-solid fa-user"></i>@(displayName ?? userType) (Provider)</span>
+                        </div>
+                        <a class="hs-quick-link" href="/provider-dashboard" data-bs-dismiss="modal">
+                            <span><i class="fa-solid fa-house"></i>Home</span><i class="fa-solid fa-chevron-right"></i>
+                        </a>
+                        <a class="hs-quick-link" href="/provider/requests" data-bs-dismiss="modal">
+                            <span><i class="fa-solid fa-inbox"></i>Requests</span><i class="fa-solid fa-chevron-right"></i>
+                        </a>
+                        <a class="hs-quick-link" href="/provider/bookings" data-bs-dismiss="modal">
+                            <span><i class="fa-solid fa-calendar-check"></i>Bookings</span><i class="fa-solid fa-chevron-right"></i>
+                        </a>
+                        <a class="hs-quick-link" href="/provider/wallet" data-bs-dismiss="modal">
+                            <span><i class="fa-solid fa-wallet"></i>Wallet</span><i class="fa-solid fa-chevron-right"></i>
+                        </a>
+                        <a class="hs-quick-link" href="/provider/profile" data-bs-dismiss="modal">
+                            <span><i class="fa-solid fa-id-badge"></i>Profile</span><i class="fa-solid fa-chevron-right"></i>
+                        </a>
+                        <form method="post" action="/logout">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="hs-quick-link border-0 bg-transparent w-100 text-start">
+                                <span><i class="fa-solid fa-right-from-bracket"></i>Logout</span><i class="fa-solid fa-chevron-right"></i>
+                            </button>
+                        </form>
+                    }
+                    else
+                    {
+                        <a class="hs-quick-link" href="/login" data-bs-dismiss="modal">
+                            <span><i class="fa-solid fa-right-to-bracket"></i>Login</span><i class="fa-solid fa-chevron-right"></i>
+                        </a>
+                        <a class="hs-quick-link" href="/signup" data-bs-dismiss="modal">
+                            <span><i class="fa-solid fa-user-plus"></i>Signup</span><i class="fa-solid fa-chevron-right"></i>
+                        </a>
+                    }
                 </div>
             </div>
         </div>

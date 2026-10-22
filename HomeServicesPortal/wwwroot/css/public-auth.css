@@ -1,0 +1,169 @@
+/* Public login / signup — matches site navy + maroon branding */
+
+.pub-auth {
+    padding: 2.5rem 0 3.5rem;
+    background:
+        radial-gradient(ellipse at 12% 0%, rgba(0, 51, 102, 0.08), transparent 50%),
+        linear-gradient(180deg, #f4f7fb 0%, #e8eef5 100%);
+    min-height: calc(100vh - 140px);
+}
+
+.pub-auth-shell {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+    gap: 0;
+    max-width: 920px;
+    margin: 0 auto;
+    border-radius: 18px;
+    overflow: hidden;
+    box-shadow: 0 18px 48px rgba(0, 34, 68, 0.14);
+    background: #fff;
+}
+
+.pub-auth-aside {
+    background: linear-gradient(160deg, #003366 0%, #004d8c 55%, #8B1A1A 140%);
+    color: #fff;
+    padding: 2.75rem 2.25rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    position: relative;
+}
+
+.pub-auth-aside::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 85% 15%, rgba(255, 255, 255, 0.14), transparent 42%);
+    pointer-events: none;
+}
+
+.pub-auth-eyebrow {
+    position: relative;
+    z-index: 1;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    opacity: 0.85;
+    margin-bottom: 0.75rem;
+}
+
+.pub-auth-aside-title {
+    position: relative;
+    z-index: 1;
+    font-family: "Libre Baskerville", Georgia, serif;
+    font-size: clamp(1.6rem, 2.5vw, 2rem);
+    font-weight: 700;
+    line-height: 1.25;
+    margin-bottom: 0.85rem;
+}
+
+.pub-auth-aside-text {
+    position: relative;
+    z-index: 1;
+    font-size: 0.98rem;
+    line-height: 1.55;
+    opacity: 0.92;
+    margin: 0;
+    max-width: 28ch;
+}
+
+.pub-auth-panel {
+    padding: 2.5rem 2.25rem;
+}
+
+.pub-auth-header {
+    margin-bottom: 1.5rem;
+}
+
+.pub-auth-header h1 {
+    font-family: "Libre Baskerville", Georgia, serif;
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #003366;
+    margin-bottom: 0.35rem;
+}
+
+.pub-auth-header p {
+    margin: 0;
+    color: #5a6b7d;
+    font-size: 0.95rem;
+}
+
+.pub-auth-form .form-label {
+    font-weight: 600;
+    color: #1a3a5c;
+    font-size: 0.9rem;
+}
+
+.pub-auth-form .form-control,
+.pub-auth-form .form-select {
+    border-color: #c8d4e0;
+    border-radius: 10px;
+}
+
+.pub-auth-form .form-control:focus,
+.pub-auth-form .form-select:focus {
+    border-color: #003366;
+    box-shadow: 0 0 0 0.2rem rgba(0, 51, 102, 0.15);
+}
+
+.pub-auth-btn {
+    background: #003366;
+    border-color: #003366;
+    color: #fff;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    padding: 0.75rem 1.25rem;
+    border-radius: 10px;
+    transition: background 0.2s ease, transform 0.15s ease;
+}
+
+.pub-auth-btn:hover,
+.pub-auth-btn:focus {
+    background: #002244;
+    border-color: #002244;
+    color: #fff;
+    transform: translateY(-1px);
+}
+
+.pub-auth-switch {
+    margin: 1.5rem 0 0;
+    text-align: center;
+    color: #5a6b7d;
+    font-size: 0.95rem;
+}
+
+.pub-auth-switch a {
+    color: #8B1A1A;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.pub-auth-switch a:hover {
+    text-decoration: underline;
+}
+
+@media (max-width: 767.98px) {
+    .pub-auth {
+        padding: 1.25rem 0 2.5rem;
+    }
+
+    .pub-auth-shell {
+        grid-template-columns: 1fr;
+        border-radius: 14px;
+    }
+
+    .pub-auth-aside {
+        padding: 1.75rem 1.5rem 1.5rem;
+    }
+
+    .pub-auth-aside-text {
+        max-width: none;
+    }
+
+    .pub-auth-panel {
+        padding: 1.75rem 1.35rem 2rem;
+    }
+}

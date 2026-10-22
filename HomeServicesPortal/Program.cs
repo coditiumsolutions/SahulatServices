@@ -123,7 +123,14 @@ var jwtKey = builder.Configuration["Jwt:Key"]
 var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "SahulatGharTak";
 var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "SahulatGharTakClients";
 
+static bool IsPublicUserPath(PathString path) =>
+    path.StartsWithSegments("/client-dashboard")
+    || path.StartsWithSegments("/provider-dashboard")
+    || path.StartsWithSegments("/client")
+    || path.StartsWithSegments("/provider");
+
 // Cookie auth for admin portal (UsersLogin + Staff). No AspNet Identity tables / migrations.
+// Public Client/Provider sessions share the same cookie scheme but challenge to /login for dashboard routes.
 builder.Services.AddAuthentication(options =>
     {
         options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
@@ -149,6 +156,14 @@ builder.Services.AddAuthentication(options =>
                     ApiResponse<object>.Fail("Authentication required. Provide a valid Bearer token."));
             }
 
+            // Public Client/Provider dashboards challenge to /login, not the admin portal.
+            if (IsPublicUserPath(context.Request.Path))
+            {
+                var returnUrl = context.Request.Path + context.Request.QueryString;
+                context.Response.Redirect("/login?returnUrl=" + Uri.EscapeDataString(returnUrl));
+                return Task.CompletedTask;
+            }
+
             context.Response.Redirect(context.RedirectUri);
             return Task.CompletedTask;
         };
@@ -161,6 +176,26 @@ builder.Services.AddAuthentication(options =>
                 context.Response.ContentType = "application/json";
                 return context.Response.WriteAsJsonAsync(
                     ApiResponse<object>.Fail("Access denied."));
+            }
+
+            // Wrong public role (e.g. Client hitting provider dashboard) → their own dashboard, not admin login.
+            if (IsPublicUserPath(context.Request.Path))
+            {
+                var userType = context.HttpContext.User.FindFirst("UserType")?.Value;
+                if (string.Equals(userType, "Provider", StringComparison.OrdinalIgnoreCase))
+                {
+                    context.Response.Redirect("/provider-dashboard");
+                }
+                else if (string.Equals(userType, "Client", StringComparison.OrdinalIgnoreCase))
+                {
+                    context.Response.Redirect("/client-dashboard");
+                }
+                else
+                {
+                    context.Response.Redirect("/login");
+                }
+
+                return Task.CompletedTask;
             }
 
             context.Response.Redirect(context.RedirectUri);

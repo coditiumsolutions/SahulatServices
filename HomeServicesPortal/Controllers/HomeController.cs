@@ -41,7 +41,11 @@ public class HomeController : Controller
 
     public async Task<IActionResult> Index(CancellationToken cancellationToken)
     {
-        if (User?.Identity?.IsAuthenticated == true)
+        // Only staff belong in the admin portal; Client/Provider cookie sessions stay on the public site.
+        var userType = User?.FindFirst("UserType")?.Value;
+        if (User?.Identity?.IsAuthenticated == true
+            && userType != null
+            && userType.Equals("Staff", StringComparison.OrdinalIgnoreCase))
         {
             return Redirect("/Admin");
         }

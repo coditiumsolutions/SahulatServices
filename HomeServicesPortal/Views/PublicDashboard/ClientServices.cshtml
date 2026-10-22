@@ -1,0 +1,51 @@
+@model HomeServicesPortal.Models.ViewModels.ClientServicesVm
+@{
+    Layout = "_PublicLayout";
+    ViewData["Title"] = "Services";
+    ViewData["Robots"] = "noindex, nofollow";
+}
+
+@section Head {
+    <link rel="stylesheet" href="~/css/public-dashboard.css" asp-append-version="true" />
+}
+
+<section class="pub-dash">
+    <div class="container">
+        <header class="pub-dash-hero">
+            <p class="pub-dash-eyebrow">Client · Services</p>
+            <h1>Services</h1>
+            <p class="pub-dash-lead">Choose a service to view its categories.</p>
+        </header>
+
+        @if (Model.Services.Count == 0)
+        {
+            <div class="pub-dash-card">
+                <h2 class="h5 mb-2">No services available</h2>
+                <p class="mb-0 text-muted">Active services will appear here once they are published.</p>
+            </div>
+        }
+        else
+        {
+            <div class="client-services-grid">
+                @foreach (var service in Model.Services)
+                {
+                    <a class="client-service-card client-service-card--link" href="/client/services/@service.Uid">
+                        <div class="client-service-icon" aria-hidden="true">
+                            <i class="@service.IconClass"></i>
+                        </div>
+                        <h2 class="client-service-title">@service.ServiceName</h2>
+                        @if (!string.IsNullOrWhiteSpace(service.Description))
+                        {
+                            <p class="client-service-desc">@service.Description</p>
+                        }
+                        else
+                        {
+                            <p class="client-service-desc client-service-desc--muted">Home service available on request.</p>
+                        }
+                        <span class="client-service-cta">View categories <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
+                    </a>
+                }
+            </div>
+        }
+    </div>
+</section>

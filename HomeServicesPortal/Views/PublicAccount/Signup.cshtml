@@ -1,0 +1,114 @@
+@model HomeServicesPortal.Models.ViewModels.PublicSignupViewModel
+@{
+    Layout = "_PublicLayout";
+    ViewData["Title"] = "Sign Up";
+    ViewData["Description"] = "Create a Sahulat Ghar Tak account as a customer or service provider.";
+    ViewData["Robots"] = "noindex, follow";
+}
+
+@section Head {
+    <link rel="stylesheet" href="~/css/public-auth.css" asp-append-version="true" />
+}
+
+<section class="pub-auth">
+    <div class="container">
+        <div class="pub-auth-shell">
+            <aside class="pub-auth-aside" aria-hidden="true">
+                <p class="pub-auth-eyebrow">Sahulat Ghar Tak</p>
+                <h1 class="pub-auth-aside-title">Join the marketplace</h1>
+                <p class="pub-auth-aside-text">
+                    Register as a customer to book trusted help at home, or as a provider to receive service requests near you.
+                </p>
+            </aside>
+
+            <div class="pub-auth-panel">
+                <header class="pub-auth-header">
+                    <h1>Sign up</h1>
+                    <p>Choose Client or Provider — admin staff are not created here.</p>
+                </header>
+
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+                <form asp-controller="PublicAccount" asp-action="Signup" method="post" novalidate class="pub-auth-form" id="publicSignupForm">
+                    @Html.AntiForgeryToken()
+
+                    <div class="mb-3">
+                        <label asp-for="FullName" class="form-label"></label>
+                        <input asp-for="FullName" class="form-control form-control-lg" placeholder="Your full name" autocomplete="name" />
+                        <span asp-validation-for="FullName" class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="MobileNo" class="form-label"></label>
+                        <input asp-for="MobileNo" class="form-control form-control-lg" placeholder="03XXXXXXXXX" autocomplete="tel" inputmode="tel" />
+                        <span asp-validation-for="MobileNo" class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="UserType" class="form-label"></label>
+                        <select asp-for="UserType" class="form-select form-select-lg" id="userTypeSelect">
+                            <option value="">-- Select account type --</option>
+                            <option value="Client">Client (Customer)</option>
+                            <option value="Provider">Provider (Service professional)</option>
+                        </select>
+                        <span asp-validation-for="UserType" class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-3 provider-only @(Model.UserType == "Provider" ? "" : "d-none")" id="cnicGroup">
+                        <label asp-for="Cnic" class="form-label"></label>
+                        <input asp-for="Cnic" class="form-control form-control-lg" placeholder="XXXXX-XXXXXXX-X" autocomplete="off" />
+                        <span asp-validation-for="Cnic" class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-3 provider-only @(Model.UserType == "Provider" ? "" : "d-none")" id="categoryGroup">
+                        <label asp-for="CategoryUid" class="form-label"></label>
+                        <select asp-for="CategoryUid" class="form-select form-select-lg" asp-items="Model.Categories">
+                            <option value="">-- Select category --</option>
+                        </select>
+                        <span asp-validation-for="CategoryUid" class="text-danger small"></span>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="Password" class="form-label"></label>
+                            <input asp-for="Password" class="form-control form-control-lg" autocomplete="new-password" />
+                            <span asp-validation-for="Password" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="ConfirmPassword" class="form-label"></label>
+                            <input asp-for="ConfirmPassword" class="form-control form-control-lg" autocomplete="new-password" />
+                            <span asp-validation-for="ConfirmPassword" class="text-danger small"></span>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn pub-auth-btn w-100">
+                        <i class="fa-solid fa-user-plus me-2" aria-hidden="true"></i>Create account
+                    </button>
+                </form>
+
+                <p class="pub-auth-switch">
+                    Already have an account?
+                    <a href="/login">Log in</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <script>
+        (function () {
+            var select = document.getElementById('userTypeSelect');
+            var groups = document.querySelectorAll('.provider-only');
+            if (!select) return;
+            function sync() {
+                var show = select.value === 'Provider';
+                groups.forEach(function (el) {
+                    el.classList.toggle('d-none', !show);
+                });
+            }
+            select.addEventListener('change', sync);
+            sync();
+        })();
+    </script>
+}

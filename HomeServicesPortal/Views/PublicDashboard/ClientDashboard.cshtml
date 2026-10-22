@@ -1,0 +1,45 @@
+@model HomeServicesPortal.Models.ViewModels.PublicDashboardVm
+@{
+    Layout = "_PublicLayout";
+    ViewData["Title"] = "Client Dashboard";
+    ViewData["Robots"] = "noindex, nofollow";
+}
+
+@section Head {
+    <link rel="stylesheet" href="~/css/public-auth.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/public-dashboard.css" asp-append-version="true" />
+}
+
+<section class="pub-dash">
+    <div class="container">
+        <header class="pub-dash-hero">
+            <p class="pub-dash-eyebrow">Client account</p>
+            <h1>Welcome, @Model.FullName</h1>
+            <p class="pub-dash-lead">Manage your home service bookings from here. More tools are coming soon — for the full experience, use the Sahulat Ghar Tak mobile app.</p>
+        </header>
+
+        <div class="pub-dash-grid">
+            <article class="pub-dash-card">
+                <h2><i class="fa-solid fa-id-card me-2" aria-hidden="true"></i>Account</h2>
+                <dl class="pub-dash-dl">
+                    <div><dt>Name</dt><dd>@Model.FullName</dd></div>
+                    <div><dt>Mobile</dt><dd>@Model.MobileNo</dd></div>
+                    <div><dt>Type</dt><dd>Client</dd></div>
+                    @if (Model.LastLogin.HasValue)
+                    {
+                        <div><dt>Last login</dt><dd>@Model.LastLogin.Value.ToPktDisplay()</dd></div>
+                    }
+                </dl>
+            </article>
+
+            <article class="pub-dash-card">
+                <h2><i class="fa-solid fa-bolt me-2" aria-hidden="true"></i>Quick actions</h2>
+                <ul class="pub-dash-actions">
+                    <li><a href="/client/services"><i class="fa-solid fa-screwdriver-wrench"></i>Services</a></li>
+                    <li><a href="/client/requests"><i class="fa-solid fa-inbox"></i>Requests</a></li>
+                    <li><a href="/client/profile"><i class="fa-solid fa-id-badge"></i>Profile</a></li>
+                </ul>
+            </article>
+        </div>
+    </div>
+</section>

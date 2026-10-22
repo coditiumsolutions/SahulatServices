@@ -1,0 +1,79 @@
+@model HomeServicesPortal.Models.ViewModels.ClientPortalAddressFormVm
+@{
+    Layout = "_PublicLayout";
+    var heading = Model.IsEdit ? "Edit address" : "Add address";
+    ViewData["Title"] = heading;
+    ViewData["Robots"] = "noindex, nofollow";
+}
+
+@section Head {
+    <link rel="stylesheet" href="~/css/public-dashboard.css" asp-append-version="true" />
+}
+
+<section class="pub-dash">
+    <div class="container">
+        <p class="mb-3">
+            <a href="/client/profile" class="client-back-link">
+                <i class="fa-solid fa-arrow-left me-1" aria-hidden="true"></i>Back to profile
+            </a>
+        </p>
+
+        <header class="pub-dash-hero">
+            <p class="pub-dash-eyebrow">Client · Profile · Addresses</p>
+            <h1>@heading</h1>
+            <p class="pub-dash-lead">Saved addresses are used when you submit a service request.</p>
+        </header>
+
+        <div class="pub-dash-card client-request-form-card">
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+            <form method="post" class="client-request-form" novalidate>
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="Uid" />
+
+                <div class="mb-3">
+                    <label asp-for="AddressTitle" class="form-label"></label>
+                    <input asp-for="AddressTitle" class="form-control form-control-lg" placeholder="e.g. Home, Office" />
+                    <span asp-validation-for="AddressTitle" class="text-danger small"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="FullAddress" class="form-label"></label>
+                    <textarea asp-for="FullAddress" class="form-control" rows="3" placeholder="Street, house / building"></textarea>
+                    <span asp-validation-for="FullAddress" class="text-danger small"></span>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="Area" class="form-label"></label>
+                        <input asp-for="Area" class="form-control form-control-lg" placeholder="Area / sector" />
+                        <span asp-validation-for="Area" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="City" class="form-label"></label>
+                        <input asp-for="City" class="form-control form-control-lg" placeholder="City" />
+                        <span asp-validation-for="City" class="text-danger small"></span>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="Latitude" class="form-label"></label>
+                        <input asp-for="Latitude" class="form-control" inputmode="decimal" />
+                        <span asp-validation-for="Latitude" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="Longitude" class="form-label"></label>
+                        <input asp-for="Longitude" class="form-control" inputmode="decimal" />
+                        <span asp-validation-for="Longitude" class="text-danger small"></span>
+                    </div>
+                </div>
+                <p class="form-text mb-4">Latitude and longitude are optional — provide both or leave both blank.</p>
+
+                <button type="submit" class="btn client-request-submit">
+                    <i class="fa-solid fa-floppy-disk me-2" aria-hidden="true"></i>Save address
+                </button>
+            </form>
+        </div>
+    </div>
+</section>

@@ -1,0 +1,58 @@
+@model HomeServicesPortal.Models.ViewModels.PublicDashboardVm
+@{
+    Layout = "_PublicLayout";
+    var role = ViewData["PortalRole"] as string ?? Model.UserType;
+    var title = ViewData["SectionTitle"] as string ?? "Portal";
+    var blurb = ViewData["SectionBlurb"] as string ?? "";
+    ViewData["Title"] = title;
+    ViewData["Robots"] = "noindex, nofollow";
+    var isProvider = role.Equals("Provider", StringComparison.OrdinalIgnoreCase);
+}
+
+@section Head {
+    <link rel="stylesheet" href="~/css/public-auth.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/public-dashboard.css" asp-append-version="true" />
+}
+
+<section class="pub-dash">
+    <div class="container">
+        <header class="pub-dash-hero @(isProvider ? "pub-dash-hero--provider" : "")">
+            <p class="pub-dash-eyebrow">@(isProvider ? "Provider" : "Client") · @title</p>
+            <h1>@title</h1>
+            <p class="pub-dash-lead">@blurb</p>
+        </header>
+
+        @if (TempData["RequestSuccess"] is string requestOk)
+        {
+            <div class="alert alert-success d-flex align-items-start gap-2 mb-3" role="status">
+                <i class="fa-solid fa-circle-check mt-1" aria-hidden="true"></i>
+                <div>@requestOk</div>
+            </div>
+        }
+
+        <div class="pub-dash-grid">
+            <article class="pub-dash-card">
+                <h2><i class="fa-solid fa-circle-info me-2" aria-hidden="true"></i>Coming soon</h2>
+                <p class="mb-0 text-muted">
+                    This @(title.ToLowerInvariant()) section is ready in the navigation. Full lists and actions will be connected next.
+                </p>
+            </article>
+
+            @if (title.Equals("Profile", StringComparison.OrdinalIgnoreCase))
+            {
+                <article class="pub-dash-card">
+                    <h2><i class="fa-solid fa-id-card me-2" aria-hidden="true"></i>Account</h2>
+                    <dl class="pub-dash-dl">
+                        <div><dt>Name</dt><dd>@Model.FullName</dd></div>
+                        <div><dt>Mobile</dt><dd>@Model.MobileNo</dd></div>
+                        <div><dt>Type</dt><dd>@role</dd></div>
+                        @if (Model.LastLogin.HasValue)
+                        {
+                            <div><dt>Last login</dt><dd>@Model.LastLogin.Value.ToPktDisplay()</dd></div>
+                        }
+                    </dl>
+                </article>
+            }
+        </div>
+    </div>
+</section>

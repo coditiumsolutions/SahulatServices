@@ -32,7 +32,11 @@ public class AccountController : Controller
     [AllowAnonymous]
     public IActionResult Login(string? returnUrl = null)
     {
-        if (User.Identity?.IsAuthenticated == true)
+        // Only redirect Staff into the portal. Client/Provider sessions use the public /login page.
+        var userType = User.FindFirstValue("UserType");
+        if (User.Identity?.IsAuthenticated == true
+            && userType != null
+            && userType.Equals(UserTypeConstants.Staff, StringComparison.OrdinalIgnoreCase))
         {
             return RedirectToLocal(returnUrl);
         }

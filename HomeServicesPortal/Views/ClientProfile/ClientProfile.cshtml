@@ -1,0 +1,102 @@
+@model HomeServicesPortal.Models.ViewModels.ClientProfileVm
+@{
+    Layout = "_PublicLayout";
+    ViewData["Title"] = "Profile";
+    ViewData["Robots"] = "noindex, nofollow";
+}
+
+@section Head {
+    <link rel="stylesheet" href="~/css/public-dashboard.css" asp-append-version="true" />
+}
+
+<section class="pub-dash">
+    <div class="container">
+        <header class="pub-dash-hero">
+            <p class="pub-dash-eyebrow">Client · Profile</p>
+            <h1>Profile</h1>
+            <p class="pub-dash-lead">Manage your account details and service addresses.</p>
+        </header>
+
+        @if (TempData["ProfileSuccess"] is string ok)
+        {
+            <div class="alert alert-success d-flex align-items-start gap-2" role="status">
+                <i class="fa-solid fa-circle-check mt-1" aria-hidden="true"></i>
+                <div>@ok</div>
+            </div>
+        }
+        @if (TempData["ProfileError"] is string err)
+        {
+            <div class="alert alert-danger d-flex align-items-start gap-2" role="alert">
+                <i class="fa-solid fa-circle-exclamation mt-1" aria-hidden="true"></i>
+                <div>@err</div>
+            </div>
+        }
+
+        <div class="pub-dash-grid mb-4">
+            <article class="pub-dash-card">
+                <h2><i class="fa-solid fa-id-card me-2" aria-hidden="true"></i>Account</h2>
+                <dl class="pub-dash-dl">
+                    <div><dt>Name</dt><dd>@Model.FullName</dd></div>
+                    <div><dt>Mobile</dt><dd>@Model.MobileNo</dd></div>
+                    <div><dt>Type</dt><dd>Client</dd></div>
+                    @if (Model.LastLogin.HasValue)
+                    {
+                        <div><dt>Last login</dt><dd>@Model.LastLogin.Value.ToPktDisplay()</dd></div>
+                    }
+                </dl>
+            </article>
+        </div>
+
+        <div class="pub-dash-card">
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+                <h2 class="mb-0"><i class="fa-solid fa-location-dot me-2" aria-hidden="true"></i>Addresses <span class="text-muted fw-normal">(@Model.Addresses.Count)</span></h2>
+                <a href="/client/profile/addresses/create" class="btn client-request-submit btn-sm">
+                    <i class="fa-solid fa-plus me-1" aria-hidden="true"></i>Add address
+                </a>
+            </div>
+
+            @if (Model.Addresses.Count == 0)
+            {
+                <p class="mb-0 text-muted">No addresses yet. Add one so you can submit service requests.</p>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table align-middle client-address-table mb-0">
+                        <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>Address</th>
+                                <th>Area</th>
+                                <th>City</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var a in Model.Addresses)
+                            {
+                                <tr>
+                                    <td class="fw-semibold">@a.AddressTitle</td>
+                                    <td>@a.FullAddress</td>
+                                    <td>@a.Area</td>
+                                    <td>@a.City</td>
+                                    <td class="text-end text-nowrap">
+                                        <a href="/client/profile/addresses/@a.Uid/edit" class="btn btn-outline-primary btn-sm">Edit</a>
+                                        @if (a.InUse)
+                                        {
+                                            <button type="button" class="btn btn-outline-secondary btn-sm" disabled title="Linked to service requests">Delete</button>
+                                        }
+                                        else
+                                        {
+                                            <a href="/client/profile/addresses/@a.Uid/delete" class="btn btn-outline-danger btn-sm">Delete</a>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+</section>

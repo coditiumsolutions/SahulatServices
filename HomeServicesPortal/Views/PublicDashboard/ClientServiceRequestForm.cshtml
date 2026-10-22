@@ -1,0 +1,129 @@
+@model HomeServicesPortal.Models.ViewModels.ClientServiceRequestFormVm
+@{
+    Layout = "_PublicLayout";
+    ViewData["Title"] = "Service Request";
+    ViewData["Robots"] = "noindex, nofollow";
+}
+
+@section Head {
+    <link rel="stylesheet" href="~/css/public-dashboard.css" asp-append-version="true" />
+}
+
+<section class="pub-dash">
+    <div class="container">
+        <p class="mb-3">
+            <a href="/client/services/@Model.ServiceUid" class="client-back-link">
+                <i class="fa-solid fa-arrow-left me-1" aria-hidden="true"></i>Back to @Model.ServiceName
+            </a>
+        </p>
+
+        <header class="pub-dash-hero">
+            <p class="pub-dash-eyebrow">Client · Service Request</p>
+            <h1>New request</h1>
+            <p class="pub-dash-lead">@Model.ServiceName · @Model.CategoryName</p>
+        </header>
+
+        <div class="pub-dash-card client-request-form-card">
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+            @if (!Model.HasAddresses)
+            {
+                <div class="alert alert-warning" role="status">
+                    You need at least one saved address before you can submit a request.
+                    <a href="/client/profile/addresses/create" class="alert-link">Add an address</a> on your profile, then return here.
+                </div>
+            }
+
+            @if (!Model.HasTitles)
+            {
+                <div class="alert alert-warning" role="status">
+                    No service titles are configured for this category yet.
+                </div>
+            }
+
+            <form method="post"
+                  asp-controller="PublicDashboard"
+                  asp-action="ClientServiceRequestForm"
+                  asp-route-serviceUid="@Model.ServiceUid"
+                  asp-route-categoryUid="@Model.CategoryUid"
+                  class="client-request-form"
+                  id="clientRequestForm"
+                  novalidate>
+                @Html.AntiForgeryToken()
+
+                <div class="mb-3">
+                    <label class="form-label" for="estimatedBudgetDisplay">Estimated Budget</label>
+                    <input type="text"
+                           id="estimatedBudgetDisplay"
+                           class="form-control form-control-lg"
+                           value="@Model.EstimatedBudgetDisplay"
+                           readonly
+                           tabindex="-1" />
+                    <div class="form-text">Filled automatically from the selected service title.</div>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="ClientAddressUid" class="form-label"></label>
+                    <select asp-for="ClientAddressUid" class="form-select form-select-lg" asp-items="Model.Addresses">
+                        <option value="">-- Select address --</option>
+                    </select>
+                    <span asp-validation-for="ClientAddressUid" class="text-danger small"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="ServiceTitleUid" class="form-label"></label>
+                    <select asp-for="ServiceTitleUid" class="form-select form-select-lg" asp-items="Model.Titles" id="serviceTitleSelect">
+                        <option value="">-- Select service title --</option>
+                    </select>
+                    <span asp-validation-for="ServiceTitleUid" class="text-danger small"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="ServiceDescription" class="form-label"></label>
+                    <textarea asp-for="ServiceDescription" class="form-control" rows="4" placeholder="Optional details about what you need"></textarea>
+                    <span asp-validation-for="ServiceDescription" class="text-danger small"></span>
+                </div>
+
+                <div class="form-check form-switch mb-4">
+                    <input asp-for="IsUrgent" class="form-check-input" type="checkbox" role="switch" id="isUrgentSwitch" />
+                    <label asp-for="IsUrgent" class="form-check-label" for="isUrgentSwitch"></label>
+                </div>
+
+                <button type="submit"
+                        class="btn pub-auth-btn client-request-submit"
+                        @(Model.HasAddresses && Model.HasTitles ? null : "disabled")>
+                    <i class="fa-solid fa-paper-plane me-2" aria-hidden="true"></i>Submit request
+                </button>
+            </form>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <script>
+        (function () {
+            var select = document.getElementById('serviceTitleSelect');
+            var budget = document.getElementById('estimatedBudgetDisplay');
+            if (!select || !budget) return;
+
+            var map = {};
+            try { map = @Html.Raw(Model.TitlesBudgetJson); } catch (e) { map = {}; }
+
+            function formatBudget(entry) {
+                if (!entry) return 'Select a service title';
+                if (entry.estimateText) return entry.estimateText;
+                if (entry.basePrice != null && entry.basePrice !== '') {
+                    return 'Rs. ' + Number(entry.basePrice).toLocaleString('en-PK');
+                }
+                return 'Not set';
+            }
+
+            function sync() {
+                budget.value = formatBudget(map[select.value]);
+            }
+
+            select.addEventListener('change', sync);
+            sync();
+        })();
+    </script>
+}

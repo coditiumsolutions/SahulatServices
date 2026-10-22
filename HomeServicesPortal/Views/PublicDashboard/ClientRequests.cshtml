@@ -1,0 +1,115 @@
+@model HomeServicesPortal.Models.ViewModels.ClientRequestsVm
+@{
+    Layout = "_PublicLayout";
+    ViewData["Title"] = "Requests";
+    ViewData["Robots"] = "noindex, nofollow";
+
+    string StatusClass(string status) => status.ToLowerInvariant() switch
+    {
+        "initiated" => "client-req-status--initiated",
+        "assigned" => "client-req-status--assigned",
+        "accepted" or "in progress" => "client-req-status--active",
+        "completed" => "client-req-status--done",
+        "cancelled" or "rejected" => "client-req-status--cancelled",
+        _ => "client-req-status--initiated"
+    };
+}
+
+@section Head {
+    <link rel="stylesheet" href="~/css/public-dashboard.css" asp-append-version="true" />
+}
+
+<section class="pub-dash">
+    <div class="container">
+        <header class="pub-dash-hero">
+            <p class="pub-dash-eyebrow">Client · Requests</p>
+            <h1>My requests</h1>
+            <p class="pub-dash-lead">Track the service requests you have submitted.</p>
+        </header>
+
+        @if (TempData["RequestSuccess"] is string requestOk)
+        {
+            <div class="alert alert-success d-flex align-items-start gap-2 mb-3" role="status">
+                <i class="fa-solid fa-circle-check mt-1" aria-hidden="true"></i>
+                <div>@requestOk</div>
+            </div>
+        }
+
+        @if (Model.Requests.Count == 0)
+        {
+            <div class="pub-dash-card">
+                <h2 class="h5 mb-2">No requests yet</h2>
+                <p class="mb-3 text-muted">Browse services and submit your first request.</p>
+                <a href="/client/services" class="btn client-request-submit btn-sm">
+                    <i class="fa-solid fa-screwdriver-wrench me-1" aria-hidden="true"></i>Browse services
+                </a>
+            </div>
+        }
+        else
+        {
+            <div class="client-services-grid">
+                @foreach (var req in Model.Requests)
+                {
+                    <article class="client-service-card client-request-card">
+                        <div class="client-request-card-top">
+                            <span class="client-req-status @StatusClass(req.Status)">@req.Status</span>
+                            @if (req.IsUrgent)
+                            {
+                                <span class="client-req-urgent"><i class="fa-solid fa-bolt" aria-hidden="true"></i> Urgent</span>
+                            }
+                        </div>
+
+                        <h2 class="client-service-title">@req.ServiceTitle</h2>
+                        <p class="client-request-meta">
+                            #@req.Uid
+                            @if (!string.IsNullOrWhiteSpace(req.CategoryName))
+                            {
+                                <span aria-hidden="true">·</span> @req.CategoryName
+                            }
+                        </p>
+
+                        @if (!string.IsNullOrWhiteSpace(req.ServiceDescription))
+                        {
+                            <p class="client-service-desc">@req.ServiceDescription</p>
+                        }
+
+                        <dl class="client-request-dl">
+                            @if (!string.IsNullOrWhiteSpace(req.AddressTitle))
+                            {
+                                <div>
+                                    <dt>Address</dt>
+                                    <dd>@req.AddressTitle</dd>
+                                </div>
+                            }
+                            @if (req.EstimatedBudget.HasValue)
+                            {
+                                <div>
+                                    <dt>Budget</dt>
+                                    <dd>Rs. @req.EstimatedBudget.Value.ToString("N0")</dd>
+                                </div>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(req.ProgressStatus))
+                            {
+                                <div>
+                                    <dt>Progress</dt>
+                                    <dd>@req.ProgressStatus</dd>
+                                </div>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(req.ProviderName))
+                            {
+                                <div>
+                                    <dt>Provider</dt>
+                                    <dd>@req.ProviderName</dd>
+                                </div>
+                            }
+                            <div>
+                                <dt>Created</dt>
+                                <dd>@req.CreatedOn.ToPktDisplay()</dd>
+                            </div>
+                        </dl>
+                    </article>
+                }
+            </div>
+        }
+    </div>
+</section>
