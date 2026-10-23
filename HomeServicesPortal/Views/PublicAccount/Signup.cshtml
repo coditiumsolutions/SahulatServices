@@ -1,4 +1,5 @@
-@model HomeServicesPortal.Models.ViewModels.PublicSignupViewModel
+@using HomeServicesPortal.Models.ViewModels
+@model PublicSignupViewModel
 @{
     Layout = "_PublicLayout";
     ViewData["Title"] = "Sign Up";
@@ -40,7 +41,16 @@
 
                     <div class="mb-3">
                         <label asp-for="MobileNo" class="form-label"></label>
-                        <input asp-for="MobileNo" class="form-control form-control-lg" placeholder="03XXXXXXXXX" autocomplete="tel" inputmode="tel" />
+                        <input asp-for="MobileNo"
+                               id="signupMobileNo"
+                               class="form-control form-control-lg"
+                               placeholder="03XX-XXXXXXX"
+                               autocomplete="tel"
+                               inputmode="numeric"
+                               maxlength="12"
+                               pattern="^03\d{2}-?\d{7}$"
+                               title="Pakistani mobile: 03XX-XXXXXXX" />
+                        <div class="form-text">Format: 03XX-XXXXXXX (digits only)</div>
                         <span asp-validation-for="MobileNo" class="text-danger small"></span>
                     </div>
 
@@ -54,18 +64,71 @@
                         <span asp-validation-for="UserType" class="text-danger small"></span>
                     </div>
 
+                    <div class="mb-3">
+                        <label asp-for="Gender" class="form-label"></label>
+                        <div class="d-flex flex-wrap gap-2" role="radiogroup" aria-label="Gender">
+                            @foreach (var option in new[] { "Male", "Female", "Other" })
+                            {
+                                var id = "gender" + option;
+                                <input type="radio" class="btn-check" name="Gender" id="@id" value="@option"
+                                       checked="@string.Equals(Model.Gender, option, StringComparison.OrdinalIgnoreCase)" autocomplete="off" />
+                                <label class="btn btn-outline-primary" for="@id">@option</label>
+                            }
+                        </div>
+                        <span asp-validation-for="Gender" class="text-danger small"></span>
+                    </div>
+
                     <div class="mb-3 provider-only @(Model.UserType == "Provider" ? "" : "d-none")" id="cnicGroup">
                         <label asp-for="Cnic" class="form-label"></label>
-                        <input asp-for="Cnic" class="form-control form-control-lg" placeholder="XXXXX-XXXXXXX-X" autocomplete="off" />
+                        <input asp-for="Cnic" id="signupCnic" class="form-control form-control-lg" placeholder="XXXXX-XXXXXXX-X"
+                               inputmode="numeric" maxlength="15" autocomplete="off" />
                         <span asp-validation-for="Cnic" class="text-danger small"></span>
                     </div>
 
                     <div class="mb-3 provider-only @(Model.UserType == "Provider" ? "" : "d-none")" id="categoryGroup">
-                        <label asp-for="CategoryUid" class="form-label"></label>
-                        <select asp-for="CategoryUid" class="form-select form-select-lg" asp-items="Model.Categories">
-                            <option value="">-- Select category --</option>
-                        </select>
-                        <span asp-validation-for="CategoryUid" class="text-danger small"></span>
+                        <label asp-for="CategoryUids" class="form-label"></label>
+                        <div class="form-text mb-2">Select up to @PublicSignupViewModel.MaxCategories categories.</div>
+                        <div class="signup-category-list" id="categoryList">
+                            @foreach (var cat in Model.Categories)
+                            {
+                                var catId = "cat" + cat.Value;
+                                <div class="form-check">
+                                    <input class="form-check-input signup-cat-check" type="checkbox" name="CategoryUids" id="@catId"
+                                           value="@cat.Value" data-name="@cat.Text" checked="@cat.Selected" />
+                                    <label class="form-check-label" for="@catId">@cat.Text</label>
+                                </div>
+                            }
+                        </div>
+                        <span asp-validation-for="CategoryUids" class="text-danger small"></span>
+
+                        <div class="mt-3 d-none" id="primaryGroup">
+                            <label class="form-label">Primary category</label>
+                            <div id="primaryList" data-selected="@Model.PrimaryCategoryUid"></div>
+                            <span asp-validation-for="PrimaryCategoryUid" class="text-danger small"></span>
+                        </div>
+                    </div>
+
+                    <div class="row provider-only @(Model.UserType == "Provider" ? "" : "d-none")">
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="City" class="form-label"></label>
+                            <select asp-for="City" class="form-select form-select-lg" asp-items="Model.Cities">
+                                <option value="">Select your city</option>
+                            </select>
+                            <span asp-validation-for="City" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="ExperienceYears" class="form-label"></label>
+                            <input asp-for="ExperienceYears" type="number" min="0" max="50" step="1"
+                                   class="form-control form-control-lg" placeholder="0" />
+                            <span asp-validation-for="ExperienceYears" class="text-danger small"></span>
+                        </div>
+                    </div>
+
+                    <div class="mb-3 provider-only @(Model.UserType == "Provider" ? "" : "d-none")">
+                        <label asp-for="Description" class="form-label"></label>
+                        <textarea asp-for="Description" class="form-control" rows="3" maxlength="1000"
+                                  placeholder="Briefly describe your services"></textarea>
+                        <span asp-validation-for="Description" class="text-danger small"></span>
                     </div>
 
                     <div class="row">
@@ -109,6 +172,101 @@
             }
             select.addEventListener('change', sync);
             sync();
+        })();
+
+        (function () {
+            var input = document.getElementById('signupMobileNo');
+            if (!input) return;
+
+            function formatMobile(raw) {
+                var digits = String(raw || '').replace(/\D/g, '');
+                if (digits.indexOf('92') === 0 && digits.length >= 12) {
+                    digits = '0' + digits.slice(2);
+                }
+                digits = digits.slice(0, 11);
+                if (digits.length <= 4) return digits;
+                return digits.slice(0, 4) + '-' + digits.slice(4);
+            }
+
+            function applyMask() {
+                var start = input.selectionStart;
+                var before = input.value;
+                var next = formatMobile(before);
+                if (before === next) return;
+                input.value = next;
+                var pos = next.length;
+                if (typeof start === 'number' && before.length > next.length) {
+                    pos = Math.max(0, start - (before.length - next.length));
+                }
+                try { input.setSelectionRange(pos, pos); } catch (e) { /* ignore */ }
+            }
+
+            input.addEventListener('input', applyMask);
+            input.addEventListener('blur', applyMask);
+            input.addEventListener('paste', function () { setTimeout(applyMask, 0); });
+
+            document.getElementById('publicSignupForm').addEventListener('submit', function () {
+                // Server expects 03XXXXXXXXX; strip hyphen before post.
+                input.value = String(input.value || '').replace(/\D/g, '').slice(0, 11);
+            });
+
+            applyMask();
+        })();
+
+        (function () {
+            var checks = Array.prototype.slice.call(document.querySelectorAll('.signup-cat-check'));
+            var primaryGroup = document.getElementById('primaryGroup');
+            var primaryList = document.getElementById('primaryList');
+            if (!checks.length || !primaryList) return;
+            var max = @PublicSignupViewModel.MaxCategories;
+            var preset = primaryList.getAttribute('data-selected');
+
+            function render() {
+                var chosen = checks.filter(function (c) { return c.checked; });
+                checks.forEach(function (c) { c.disabled = !c.checked && chosen.length >= max; });
+
+                var current = (primaryList.querySelector('input:checked') || {}).value || preset;
+                primaryList.innerHTML = '';
+                primaryGroup.classList.toggle('d-none', chosen.length < 2);
+                if (chosen.length < 2) return;
+
+                var valid = chosen.some(function (c) { return c.value === current; });
+                chosen.forEach(function (c, i) {
+                    var id = 'primary' + c.value;
+                    var wrap = document.createElement('div');
+                    wrap.className = 'form-check form-check-inline';
+                    var radio = document.createElement('input');
+                    radio.type = 'radio';
+                    radio.className = 'form-check-input';
+                    radio.name = 'PrimaryCategoryUid';
+                    radio.id = id;
+                    radio.value = c.value;
+                    radio.checked = valid ? c.value === current : i === 0;
+                    var label = document.createElement('label');
+                    label.className = 'form-check-label';
+                    label.htmlFor = id;
+                    label.textContent = c.getAttribute('data-name');
+                    wrap.appendChild(radio);
+                    wrap.appendChild(label);
+                    primaryList.appendChild(wrap);
+                });
+            }
+
+            checks.forEach(function (c) { c.addEventListener('change', render); });
+            render();
+        })();
+
+        (function () {
+            var cnic = document.getElementById('signupCnic');
+            if (!cnic) return;
+            function formatCnic(raw) {
+                var d = String(raw || '').replace(/\D/g, '').slice(0, 13);
+                if (d.length <= 5) return d;
+                if (d.length <= 12) return d.slice(0, 5) + '-' + d.slice(5);
+                return d.slice(0, 5) + '-' + d.slice(5, 12) + '-' + d.slice(12);
+            }
+            cnic.addEventListener('input', function () { cnic.value = formatCnic(cnic.value); });
+            cnic.value = formatCnic(cnic.value);
         })();
     </script>
 }

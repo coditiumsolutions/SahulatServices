@@ -1,18 +1,40 @@
-@model HomeServicesPortal.Models.ViewModels.ClientRequestsVm
+@using HomeServicesPortal.Helpers
+@using HomeServicesPortal.Models.ViewModels
+@model ClientRequestsVm
 @{
     Layout = "_PublicLayout";
     ViewData["Title"] = "Requests";
     ViewData["Robots"] = "noindex, nofollow";
 
-    string StatusClass(string status) => status.ToLowerInvariant() switch
+    string StatusClass(string label) => label switch
     {
-        "initiated" => "client-req-status--initiated",
-        "assigned" => "client-req-status--assigned",
-        "accepted" or "in progress" => "client-req-status--active",
-        "completed" => "client-req-status--done",
-        "cancelled" or "rejected" => "client-req-status--cancelled",
-        _ => "client-req-status--initiated"
+        "Requested" => "client-req-status--initiated",
+        "Assigned" => "client-req-status--assigned",
+        "In Progress" => "client-req-status--active",
+        "Completed" => "client-req-status--done",
+        _ => "client-req-status--cancelled"
     };
+
+    var tabs = new[]
+    {
+        (Key: ClientRequestsVm.TabActive, Label: "Active", Count: Model.ActiveCount),
+        (Key: ClientRequestsVm.TabCompleted, Label: "Completed", Count: Model.CompletedCount),
+        (Key: ClientRequestsVm.TabCancelled, Label: "Cancelled", Count: Model.CancelledCount)
+    };
+
+    var emptyTitle = Model.Tab switch
+    {
+        ClientRequestsVm.TabCompleted => "No completed requests",
+        ClientRequestsVm.TabCancelled => "No cancelled requests",
+        _ => "No active requests"
+    };
+    var emptyText = Model.Tab switch
+    {
+        ClientRequestsVm.TabCompleted => "Requests you've completed will show up here.",
+        ClientRequestsVm.TabCancelled => "Requests you've cancelled will show up here.",
+        _ => "Active requests you submit will show up here so you can track their status."
+    };
+    var activeNow = Model.ActiveCount;
 }
 
 @section Head {
@@ -23,8 +45,10 @@
     <div class="container">
         <header class="pub-dash-hero">
             <p class="pub-dash-eyebrow">Client · Requests</p>
-            <h1>My requests</h1>
-            <p class="pub-dash-lead">Track the service requests you have submitted.</p>
+            <h1>My Service Requests</h1>
+            <p class="pub-dash-lead">
+                @(activeNow == 0 ? "Track your requests here" : activeNow == 1 ? "1 active request" : $"{activeNow} active requests")
+            </p>
         </header>
 
         @if (TempData["RequestSuccess"] is string requestOk)
@@ -34,15 +58,38 @@
                 <div>@requestOk</div>
             </div>
         }
+        @if (TempData["RequestError"] is string requestErr)
+        {
+            <div class="alert alert-danger d-flex align-items-start gap-2 mb-3" role="alert">
+                <i class="fa-solid fa-circle-exclamation mt-1" aria-hidden="true"></i>
+                <div>@requestErr</div>
+            </div>
+        }
+
+        <ul class="nav nav-pills client-req-tabs mb-3" role="tablist">
+            @foreach (var t in tabs)
+            {
+                <li class="nav-item">
+                    <a class="nav-link @(Model.Tab == t.Key ? "active" : "")"
+                       href="/client/requests?tab=@t.Key"
+                       @(Model.Tab == t.Key ? "aria-current=page" : null)>
+                        @t.Label <span class="badge text-bg-light ms-1">@t.Count</span>
+                    </a>
+                </li>
+            }
+        </ul>
 
         @if (Model.Requests.Count == 0)
         {
             <div class="pub-dash-card">
-                <h2 class="h5 mb-2">No requests yet</h2>
-                <p class="mb-3 text-muted">Browse services and submit your first request.</p>
-                <a href="/client/services" class="btn client-request-submit btn-sm">
-                    <i class="fa-solid fa-screwdriver-wrench me-1" aria-hidden="true"></i>Browse services
-                </a>
+                <h2 class="h5 mb-2">@emptyTitle</h2>
+                <p class="mb-3 text-muted">@emptyText</p>
+                @if (Model.Tab == ClientRequestsVm.TabActive)
+                {
+                    <a href="/client/services" class="btn client-request-submit btn-sm">
+                        <i class="fa-solid fa-screwdriver-wrench me-1" aria-hidden="true"></i>Browse services
+                    </a>
+                }
             </div>
         }
         else
@@ -50,16 +97,19 @@
             <div class="client-services-grid">
                 @foreach (var req in Model.Requests)
                 {
+                    var budget = RequestDisplayHelper.Currency(req.EstimatedBudget);
                     <article class="client-service-card client-request-card">
                         <div class="client-request-card-top">
-                            <span class="client-req-status @StatusClass(req.Status)">@req.Status</span>
+                            <span class="client-req-status @StatusClass(req.StatusLabel)">@req.StatusLabel</span>
                             @if (req.IsUrgent)
                             {
                                 <span class="client-req-urgent"><i class="fa-solid fa-bolt" aria-hidden="true"></i> Urgent</span>
                             }
                         </div>
 
-                        <h2 class="client-service-title">@req.ServiceTitle</h2>
+                        <h2 class="client-service-title">
+                            <a href="/client/requests/@req.Uid" class="client-req-title-link">@req.ServiceTitle</a>
+                        </h2>
                         <p class="client-request-meta">
                             #@req.Uid
                             @if (!string.IsNullOrWhiteSpace(req.CategoryName))
@@ -76,40 +126,55 @@
                         <dl class="client-request-dl">
                             @if (!string.IsNullOrWhiteSpace(req.AddressTitle))
                             {
-                                <div>
-                                    <dt>Address</dt>
-                                    <dd>@req.AddressTitle</dd>
-                                </div>
+                                <div><dt>Address</dt><dd>@req.AddressTitle</dd></div>
                             }
-                            @if (req.EstimatedBudget.HasValue)
+                            <div><dt>Scheduled</dt><dd>@RequestDisplayHelper.ScheduleText(req.PreferredServiceDate, req.PreferredServiceTime)</dd></div>
+                            @if (budget != null)
                             {
-                                <div>
-                                    <dt>Budget</dt>
-                                    <dd>Rs. @req.EstimatedBudget.Value.ToString("N0")</dd>
-                                </div>
-                            }
-                            @if (!string.IsNullOrWhiteSpace(req.ProgressStatus))
-                            {
-                                <div>
-                                    <dt>Progress</dt>
-                                    <dd>@req.ProgressStatus</dd>
-                                </div>
+                                <div><dt>Est. budget</dt><dd>@budget</dd></div>
                             }
                             @if (!string.IsNullOrWhiteSpace(req.ProviderName))
                             {
-                                <div>
-                                    <dt>Provider</dt>
-                                    <dd>@req.ProviderName</dd>
-                                </div>
+                                <div><dt>Provider</dt><dd>@req.ProviderName</dd></div>
                             }
-                            <div>
-                                <dt>Created</dt>
-                                <dd>@req.CreatedOn.ToPktDisplay()</dd>
-                            </div>
+                            <div><dt>Requested</dt><dd>@req.CreatedOn.ToPktString("dd-MM-yy")</dd></div>
                         </dl>
+
+                        <div class="mt-3">
+                            @await Html.PartialAsync("_RequestProgress", req.ProgressStatus)
+                        </div>
+
+                        <div class="client-req-actions">
+                            <a href="/client/requests/@req.Uid" class="btn btn-outline-primary btn-sm">Details</a>
+                            @if (!string.IsNullOrWhiteSpace(req.Passcode))
+                            {
+                                <button type="button" class="btn btn-outline-secondary btn-sm"
+                                        data-show-passcode data-passcode="@req.Passcode">
+                                    <i class="fa-solid fa-key me-1" aria-hidden="true"></i>Passcode
+                                </button>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(req.ProviderMobileNo))
+                            {
+                                <a href="tel:@req.ProviderMobileNo" class="btn btn-outline-success btn-sm">
+                                    <i class="fa-solid fa-phone me-1" aria-hidden="true"></i>Call
+                                </a>
+                                <a href="@RequestDisplayHelper.WhatsAppUrl(req.ProviderMobileNo)" target="_blank" rel="noopener" class="btn btn-outline-success btn-sm">
+                                    <i class="fa-brands fa-whatsapp me-1" aria-hidden="true"></i>WhatsApp
+                                </a>
+                            }
+                            @if (req.CanCancel)
+                            {
+                                <button type="button" class="btn btn-outline-warning btn-sm"
+                                        data-cancel-request data-request-id="@req.Uid" data-request-title="@req.ServiceTitle">
+                                    Cancel
+                                </button>
+                            }
+                        </div>
                     </article>
                 }
             </div>
         }
     </div>
 </section>
+
+@await Html.PartialAsync("_RequestModals")

@@ -38,12 +38,16 @@
                 <dl class="pub-dash-dl">
                     <div><dt>Name</dt><dd>@Model.FullName</dd></div>
                     <div><dt>Mobile</dt><dd>@Model.MobileNo</dd></div>
+                    <div><dt>Gender</dt><dd>@(string.IsNullOrWhiteSpace(Model.Gender) ? "-" : Model.Gender)</dd></div>
                     <div><dt>Type</dt><dd>Client</dd></div>
                     @if (Model.LastLogin.HasValue)
                     {
                         <div><dt>Last login</dt><dd>@Model.LastLogin.Value.ToPktDisplay()</dd></div>
                     }
                 </dl>
+                <a href="/client/profile/edit" class="btn btn-outline-primary btn-sm mt-2">
+                    <i class="fa-solid fa-pen me-1" aria-hidden="true"></i>Edit Profile
+                </a>
             </article>
         </div>
 
@@ -98,5 +102,33 @@
                 </div>
             }
         </div>
+        <div class="pub-dash-card mt-4 border-danger-subtle">
+            <h2 class="text-danger"><i class="fa-solid fa-triangle-exclamation me-2" aria-hidden="true"></i>Danger zone</h2>
+            <p class="text-muted">Deleting your account is permanent. You cannot delete it while you have pending dues or open bookings.</p>
+            <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteAccountModal">
+                Delete Account
+            </button>
+        </div>
     </div>
 </section>
+
+<div class="modal fade" id="deleteAccountModal" tabindex="-1" aria-labelledby="deleteAccountTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <form method="post" action="/client/profile/delete-account" class="modal-content">
+            @Html.AntiForgeryToken()
+            <div class="modal-header">
+                <h2 class="modal-title h5" id="deleteAccountTitle">Delete Account</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Enter your password to confirm. This cannot be undone.</p>
+                <label class="form-label" for="deletePassword">Password</label>
+                <input type="password" class="form-control" id="deletePassword" name="password" autocomplete="current-password" required />
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" class="btn btn-danger">Delete</button>
+            </div>
+        </form>
+    </div>
+</div>

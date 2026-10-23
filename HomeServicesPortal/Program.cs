@@ -184,11 +184,11 @@ builder.Services.AddAuthentication(options =>
                 var userType = context.HttpContext.User.FindFirst("UserType")?.Value;
                 if (string.Equals(userType, "Provider", StringComparison.OrdinalIgnoreCase))
                 {
-                    context.Response.Redirect("/provider-dashboard");
+                    context.Response.Redirect("/provider/dashboard");
                 }
                 else if (string.Equals(userType, "Client", StringComparison.OrdinalIgnoreCase))
                 {
-                    context.Response.Redirect("/client-dashboard");
+                    context.Response.Redirect("/client/dashboard");
                 }
                 else
                 {

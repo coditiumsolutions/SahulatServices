@@ -1,4 +1,5 @@
-@model HomeServicesPortal.Models.ViewModels.ClientServiceRequestFormVm
+@using HomeServicesPortal.Models.ViewModels
+@model ClientServiceRequestFormVm
 @{
     Layout = "_PublicLayout";
     ViewData["Title"] = "Service Request";
@@ -34,13 +35,6 @@
                 </div>
             }
 
-            @if (!Model.HasTitles)
-            {
-                <div class="alert alert-warning" role="status">
-                    No service titles are configured for this category yet.
-                </div>
-            }
-
             <form method="post"
                   asp-controller="PublicDashboard"
                   asp-action="ClientServiceRequestForm"
@@ -59,13 +53,12 @@
                            value="@Model.EstimatedBudgetDisplay"
                            readonly
                            tabindex="-1" />
-                    <div class="form-text">Filled automatically from the selected service title.</div>
                 </div>
 
                 <div class="mb-3">
                     <label asp-for="ClientAddressUid" class="form-label"></label>
                     <select asp-for="ClientAddressUid" class="form-select form-select-lg" asp-items="Model.Addresses">
-                        <option value="">-- Select address --</option>
+                        <option value="">Select an address</option>
                     </select>
                     <span asp-validation-for="ClientAddressUid" class="text-danger small"></span>
                 </div>
@@ -73,26 +66,81 @@
                 <div class="mb-3">
                     <label asp-for="ServiceTitleUid" class="form-label"></label>
                     <select asp-for="ServiceTitleUid" class="form-select form-select-lg" asp-items="Model.Titles" id="serviceTitleSelect">
-                        <option value="">-- Select service title --</option>
+                        <option value="">Select a service title</option>
+                        <option value="@ClientServiceRequestFormVm.OtherTitleValue" selected="@Model.IsOtherTitle">Other (not listed)</option>
                     </select>
                     <span asp-validation-for="ServiceTitleUid" class="text-danger small"></span>
                 </div>
 
+                <div class="mb-3 @(Model.IsOtherTitle ? "" : "d-none")" id="otherTitleGroup">
+                    <label asp-for="OtherServiceTitle" class="form-label"></label>
+                    <input asp-for="OtherServiceTitle" class="form-control form-control-lg" placeholder="What job do you need done?" maxlength="150" />
+                    <span asp-validation-for="OtherServiceTitle" class="text-danger small"></span>
+                </div>
+
                 <div class="mb-3">
-                    <label asp-for="ServiceDescription" class="form-label"></label>
-                    <textarea asp-for="ServiceDescription" class="form-control" rows="4" placeholder="Optional details about what you need"></textarea>
+                    <label class="form-label" for="ServiceDescription" id="descriptionLabel">@(Model.IsOtherTitle ? "Service Description" : "Service Description (optional)")</label>
+                    <textarea asp-for="ServiceDescription" class="form-control" rows="4" placeholder="Describe what you need"></textarea>
                     <span asp-validation-for="ServiceDescription" class="text-danger small"></span>
                 </div>
 
                 <div class="form-check form-switch mb-4">
                     <input asp-for="IsUrgent" class="form-check-input" type="checkbox" role="switch" id="isUrgentSwitch" />
-                    <label asp-for="IsUrgent" class="form-check-label" for="isUrgentSwitch"></label>
+                    <label class="form-check-label" for="isUrgentSwitch">Mark as Urgent</label>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label d-block">On-site Contact</label>
+                    <div class="form-text mb-2">Who should the provider reach out to for this job?</div>
+                    <div class="form-check form-switch">
+                        <input asp-for="SameAsAccount" class="form-check-input" type="checkbox" role="switch" id="sameAsAccountSwitch" />
+                        <label class="form-check-label" for="sameAsAccountSwitch">Same as my account</label>
+                    </div>
+                    <div class="form-text" id="contactHint"
+                         data-same="Provider will contact you: @Model.AccountName, @Model.AccountMobile"
+                         data-diff="Enter a different contact below"></div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="ContactPerson" class="form-label"></label>
+                        <input asp-for="ContactPerson" id="contactPerson" class="form-control form-control-lg" placeholder="Enter contact person name"
+                               data-account="@Model.AccountName" maxlength="150" />
+                        <span asp-validation-for="ContactPerson" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="ContactNo" class="form-label"></label>
+                        <input asp-for="ContactNo" id="contactNo" class="form-control form-control-lg" placeholder="03XX-XXXXXXX"
+                               inputmode="numeric" maxlength="12" data-account="@Model.AccountMobile" />
+                        <span asp-validation-for="ContactNo" class="text-danger small"></span>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Remarks" class="form-label"></label>
+                    <textarea asp-for="Remarks" class="form-control" rows="2" placeholder="Any additional remarks" maxlength="500"></textarea>
+                    <span asp-validation-for="Remarks" class="text-danger small"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label d-block">Preferred Date &amp; Time (optional)</label>
+                    <div class="row">
+                        <div class="col-md-6 mb-2">
+                            <input asp-for="PreferredServiceDate" type="date" class="form-control form-control-lg"
+                                   min="@Model.MinDate" max="@Model.MaxDate" aria-label="Preferred Date" />
+                            <span asp-validation-for="PreferredServiceDate" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-6 mb-2">
+                            <input asp-for="PreferredServiceTime" type="time" class="form-control form-control-lg" aria-label="Preferred Time" />
+                            <span asp-validation-for="PreferredServiceTime" class="text-danger small"></span>
+                        </div>
+                    </div>
                 </div>
 
                 <button type="submit"
                         class="btn pub-auth-btn client-request-submit"
-                        @(Model.HasAddresses && Model.HasTitles ? null : "disabled")>
-                    <i class="fa-solid fa-paper-plane me-2" aria-hidden="true"></i>Submit request
+                        @(Model.HasAddresses ? null : "disabled")>
+                    <i class="fa-solid fa-paper-plane me-2" aria-hidden="true"></i>Submit Request
                 </button>
             </form>
         </div>
@@ -104,26 +152,73 @@
         (function () {
             var select = document.getElementById('serviceTitleSelect');
             var budget = document.getElementById('estimatedBudgetDisplay');
+            var otherGroup = document.getElementById('otherTitleGroup');
+            var descLabel = document.getElementById('descriptionLabel');
             if (!select || !budget) return;
 
             var map = {};
             try { map = @Html.Raw(Model.TitlesBudgetJson); } catch (e) { map = {}; }
 
             function formatBudget(entry) {
-                if (!entry) return 'Select a service title';
+                if (select.value === '') return 'Select a service title below to see the estimate';
+                if (!entry) return 'No estimate set for this service yet';
                 if (entry.estimateText) return entry.estimateText;
                 if (entry.basePrice != null && entry.basePrice !== '') {
-                    return 'Rs. ' + Number(entry.basePrice).toLocaleString('en-PK');
+                    return 'Rs ' + Math.round(Number(entry.basePrice)).toLocaleString('en-US');
                 }
-                return 'Not set';
+                return 'No estimate set for this service yet';
             }
 
             function sync() {
+                var other = select.value === '@ClientServiceRequestFormVm.OtherTitleValue';
                 budget.value = formatBudget(map[select.value]);
+                otherGroup.classList.toggle('d-none', !other);
+                descLabel.textContent = other ? 'Service Description' : 'Service Description (optional)';
             }
 
             select.addEventListener('change', sync);
             sync();
+        })();
+
+        (function () {
+            var same = document.getElementById('sameAsAccountSwitch');
+            var person = document.getElementById('contactPerson');
+            var number = document.getElementById('contactNo');
+            var hint = document.getElementById('contactHint');
+            var form = document.getElementById('clientRequestForm');
+            if (!same || !person || !number) return;
+
+            function formatMobile(raw) {
+                var digits = String(raw || '').replace(/\D/g, '');
+                if (digits.indexOf('92') === 0 && digits.length >= 12) digits = '0' + digits.slice(2);
+                digits = digits.slice(0, 11);
+                return digits.length <= 4 ? digits : digits.slice(0, 4) + '-' + digits.slice(4);
+            }
+
+            function sync(fill) {
+                var on = same.checked;
+                person.disabled = on;
+                number.disabled = on;
+                hint.textContent = on ? hint.getAttribute('data-same') : hint.getAttribute('data-diff');
+                if (fill) {
+                    person.value = on ? person.getAttribute('data-account') : '';
+                    number.value = on ? formatMobile(number.getAttribute('data-account')) : '';
+                }
+            }
+
+            number.addEventListener('input', function () { number.value = formatMobile(number.value); });
+            same.addEventListener('change', function () { sync(true); });
+            form.addEventListener('submit', function () {
+                // Disabled inputs are not posted; the server rebuilds the contact from the session.
+                number.value = String(number.value || '').replace(/\D/g, '').slice(0, 11);
+            });
+            if (same.checked) {
+                person.value = person.getAttribute('data-account');
+                number.value = formatMobile(number.getAttribute('data-account'));
+            } else {
+                number.value = formatMobile(number.value);
+            }
+            sync(false);
         })();
     </script>
 }

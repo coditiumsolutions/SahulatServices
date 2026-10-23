@@ -3,6 +3,7 @@ using HomeServicesPortal.Data;
 using HomeServicesPortal.Entities;
 using HomeServicesPortal.Helpers;
 using HomeServicesPortal.Models.ViewModels;
+using HomeServicesPortal.Services;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
@@ -18,12 +19,19 @@ namespace HomeServicesPortal.Controllers;
 /// </summary>
 public class PublicAccountController : Controller
 {
+    private static readonly string[] Genders = { "Male", "Female", "Other" };
+
     private readonly AppDbContext _db;
+    private readonly IConfigurationEntryService _configurations;
     private readonly ILogger<PublicAccountController> _logger;
 
-    public PublicAccountController(AppDbContext db, ILogger<PublicAccountController> logger)
+    public PublicAccountController(
+        AppDbContext db,
+        IConfigurationEntryService configurations,
+        ILogger<PublicAccountController> logger)
     {
         _db = db;
+        _configurations = configurations;
         _logger = logger;
     }
 
@@ -148,16 +156,40 @@ public class PublicAccountController : Controller
             ModelState.AddModelError(nameof(model.UserType), "Please select Client or Provider.");
         }
 
+        var gender = Genders.FirstOrDefault(g => g.Equals(model.Gender?.Trim(), StringComparison.OrdinalIgnoreCase));
+        if (gender == null && ModelState.GetFieldValidationState(nameof(model.Gender)) != Microsoft.AspNetCore.Mvc.ModelBinding.ModelValidationState.Invalid)
+        {
+            ModelState.AddModelError(nameof(model.Gender), "Please select a gender.");
+        }
+
+        var categoryIds = model.CategoryUids.Where(id => id > 0).Distinct().ToList();
         if (isProvider)
         {
             if (string.IsNullOrWhiteSpace(model.Cnic))
             {
-                ModelState.AddModelError(nameof(model.Cnic), "CNIC is required for providers.");
+                ModelState.AddModelError(nameof(model.Cnic), "Required");
             }
 
-            if (!model.CategoryUid.HasValue || model.CategoryUid.Value <= 0)
+            if (categoryIds.Count == 0)
             {
-                ModelState.AddModelError(nameof(model.CategoryUid), "Service category is required for providers.");
+                ModelState.AddModelError(nameof(model.CategoryUids), "Please select at least one category");
+            }
+            else if (categoryIds.Count > PublicSignupViewModel.MaxCategories)
+            {
+                ModelState.AddModelError(nameof(model.CategoryUids), $"You can select up to {PublicSignupViewModel.MaxCategories} categories.");
+            }
+            else if (categoryIds.Count == 1)
+            {
+                model.PrimaryCategoryUid = categoryIds[0];
+            }
+            else if (!model.PrimaryCategoryUid.HasValue || !categoryIds.Contains(model.PrimaryCategoryUid.Value))
+            {
+                ModelState.AddModelError(nameof(model.PrimaryCategoryUid), "Choose your primary category.");
+            }
+
+            if (string.IsNullOrWhiteSpace(model.Description))
+            {
+                ModelState.AddModelError(nameof(model.Description), "Required");
             }
         }
 
@@ -192,12 +224,22 @@ public class PublicAccountController : Controller
                 return View(model);
             }
 
-            var categoryOk = await _db.ServiceCategories.AsNoTracking()
-                .AnyAsync(c => c.Uid == model.CategoryUid!.Value && c.IsActive, cancellationToken);
-            if (!categoryOk)
+            var validCategories = await _db.ServiceCategories.AsNoTracking()
+                .CountAsync(c => categoryIds.Contains(c.Uid) && c.IsActive, cancellationToken);
+            if (validCategories != categoryIds.Count)
             {
-                ModelState.AddModelError(nameof(model.CategoryUid), "Selected category is invalid or inactive.");
+                ModelState.AddModelError(nameof(model.CategoryUids), "One or more selected categories are invalid or inactive.");
                 return View(model);
+            }
+
+            if (!string.IsNullOrWhiteSpace(model.City))
+            {
+                var cityOptions = await _configurations.GetValuesByKeyAsync("Cities", cancellationToken);
+                if (!cityOptions.Any(c => c.Equals(model.City.Trim(), StringComparison.OrdinalIgnoreCase)))
+                {
+                    ModelState.AddModelError(nameof(model.City), "Select a city from the list.");
+                    return View(model);
+                }
             }
         }
 
@@ -228,6 +270,7 @@ public class PublicAccountController : Controller
                     {
                         UserUid = user.Uid,
                         FullName = fullName,
+                        Gender = gender,
                         CreatedOn = DateTime.UtcNow
                     });
                 }
@@ -238,8 +281,12 @@ public class PublicAccountController : Controller
                         UserUid = user.Uid,
                         MobileNo = mobileNo,
                         FullName = fullName,
+                        Gender = gender,
                         Cnic = model.Cnic!.Trim(),
-                        CategoryUid = model.CategoryUid!.Value,
+                        CategoryUid = model.PrimaryCategoryUid!.Value,
+                        City = string.IsNullOrWhiteSpace(model.City) ? null : model.City.Trim(),
+                        ExperienceYears = model.ExperienceYears ?? 0,
+                        Description = model.Description!.Trim(),
                         IsVerified = false,
                         IsAvailable = true,
                         CreatedOn = DateTime.UtcNow
@@ -247,13 +294,16 @@ public class PublicAccountController : Controller
                     _db.Providers.Add(provider);
                     await _db.SaveChangesAsync(cancellationToken);
 
-                    _db.ProviderCategories.Add(new ProviderCategory
+                    foreach (var categoryId in categoryIds)
                     {
-                        ProviderUid = provider.Uid,
-                        CategoryUid = model.CategoryUid!.Value,
-                        PrimaryCategory = 1,
-                        CreatedOn = DateTime.UtcNow
-                    });
+                        _db.ProviderCategories.Add(new ProviderCategory
+                        {
+                            ProviderUid = provider.Uid,
+                            CategoryUid = categoryId,
+                            PrimaryCategory = categoryId == model.PrimaryCategoryUid ? 1 : 0,
+                            CreatedOn = DateTime.UtcNow
+                        });
+                    }
                 }
 
                 await _db.SaveChangesAsync(cancellationToken);
@@ -319,7 +369,7 @@ public class PublicAccountController : Controller
         var authProperties = new AuthenticationProperties
         {
             IsPersistent = rememberMe,
-            ExpiresUtc = DateTimeOffset.UtcNow.AddHours(rememberMe ? 24 * 14 : 8)
+            ExpiresUtc = DateTimeOffset.UtcNow.AddHours(rememberMe ? 24 * 30 : 8)
         };
 
         await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal, authProperties);
@@ -337,10 +387,19 @@ public class PublicAccountController : Controller
             {
                 Value = c.Uid.ToString(),
                 Text = c.CategoryName,
-                Selected = model.CategoryUid == c.Uid
+                Selected = model.CategoryUids.Contains(c.Uid)
             })
             .ToListAsync(cancellationToken);
 
+        var cities = (await _configurations.GetValuesByKeyAsync("Cities", cancellationToken))
+            .Select(c => new SelectListItem
+            {
+                Value = c,
+                Text = c,
+                Selected = string.Equals(model.City, c, StringComparison.OrdinalIgnoreCase)
+            })
+            .ToList();
+        model.Cities = cities;
         model.Categories = categories;
         return model;
     }
@@ -389,9 +448,9 @@ public class PublicAccountController : Controller
 
         if (userType.Equals(UserTypeConstants.Provider, StringComparison.OrdinalIgnoreCase))
         {
-            return Redirect("/provider-dashboard");
+            return Redirect("/provider/dashboard");
         }
 
-        return Redirect("/client-dashboard");
+        return Redirect("/client/dashboard");
     }
 }

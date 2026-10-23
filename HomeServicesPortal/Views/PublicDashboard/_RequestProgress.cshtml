@@ -1,0 +1,22 @@
+@model string?
+@{
+    // null progress means the request was cancelled: show a red label instead of the bar.
+    var steps = new[] { "Requested", "Assigned", "In Progress", "Completed" };
+    var current = Model == null ? -1 : Array.IndexOf(steps, Model);
+}
+@if (Model == null)
+{
+    <div class="client-req-cancelled-label"><i class="fa-solid fa-circle-xmark me-1" aria-hidden="true"></i>Cancelled</div>
+}
+else
+{
+    <ol class="client-req-progress" aria-label="Request progress">
+        @for (var i = 0; i < steps.Length; i++)
+        {
+            <li class="@(i < current ? "is-done" : i == current ? "is-current" : "")">
+                <span class="client-req-progress-dot" aria-hidden="true"></span>
+                <span class="client-req-progress-text">@steps[i]</span>
+            </li>
+        }
+    </ol>
+}

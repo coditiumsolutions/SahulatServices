@@ -1,0 +1,64 @@
+@using HomeServicesPortal.Models.ViewModels
+@model ClientProfileEditVm
+@{
+    Layout = "_PublicLayout";
+    ViewData["Title"] = "Edit Profile";
+    ViewData["Robots"] = "noindex, nofollow";
+}
+
+@section Head {
+    <link rel="stylesheet" href="~/css/public-dashboard.css" asp-append-version="true" />
+}
+
+<section class="pub-dash">
+    <div class="container">
+        <p class="mb-3">
+            <a href="/client/profile" class="client-back-link">
+                <i class="fa-solid fa-arrow-left me-1" aria-hidden="true"></i>Back to profile
+            </a>
+        </p>
+
+        <header class="pub-dash-hero">
+            <p class="pub-dash-eyebrow">Client · Profile</p>
+            <h1>Edit Profile</h1>
+        </header>
+
+        <div class="pub-dash-card client-request-form-card">
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+            <form method="post" asp-controller="ClientProfile" asp-action="EditProfile" novalidate class="client-request-form">
+                @Html.AntiForgeryToken()
+
+                <div class="mb-3">
+                    <label asp-for="FullName" class="form-label"></label>
+                    <input asp-for="FullName" class="form-control form-control-lg" placeholder="Enter your full name" autocomplete="name" />
+                    <span asp-validation-for="FullName" class="text-danger small"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label" for="mobileReadonly">Mobile Number</label>
+                    <input id="mobileReadonly" class="form-control form-control-lg" value="@Model.MobileNo" readonly tabindex="-1" />
+                    <div class="form-text">Your mobile number cannot be changed.</div>
+                </div>
+
+                <div class="mb-4">
+                    <label asp-for="Gender" class="form-label"></label>
+                    <div class="d-flex flex-wrap gap-2" role="radiogroup" aria-label="Gender">
+                        @foreach (var option in new[] { "Male", "Female", "Other" })
+                        {
+                            var id = "gender" + option;
+                            <input type="radio" class="btn-check" name="Gender" id="@id" value="@option"
+                                   checked="@string.Equals(Model.Gender, option, StringComparison.OrdinalIgnoreCase)" autocomplete="off" />
+                            <label class="btn btn-outline-primary" for="@id">@option</label>
+                        }
+                    </div>
+                    <span asp-validation-for="Gender" class="text-danger small"></span>
+                </div>
+
+                <button type="submit" class="btn pub-auth-btn client-request-submit">
+                    <i class="fa-solid fa-floppy-disk me-2" aria-hidden="true"></i>Save changes
+                </button>
+            </form>
+        </div>
+    </div>
+</section>

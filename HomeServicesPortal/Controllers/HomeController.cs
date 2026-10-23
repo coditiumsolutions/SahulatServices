@@ -41,16 +41,31 @@ public class HomeController : Controller
 
     public async Task<IActionResult> Index(CancellationToken cancellationToken)
     {
-        // Only staff belong in the admin portal; Client/Provider cookie sessions stay on the public site.
-        var userType = User?.FindFirst("UserType")?.Value;
-        if (User?.Identity?.IsAuthenticated == true
-            && userType != null
-            && userType.Equals("Staff", StringComparison.OrdinalIgnoreCase))
+        // Only staff belong in the admin portal; Client/Provider sessions go to their own dashboard.
+        if (RedirectSignedInUser() is { } redirect)
         {
-            return Redirect("/Admin");
+            return redirect;
         }
 
         return View(await GetHomeStatsAsync(cancellationToken));
+    }
+
+    /// <summary>
+    /// Signed-in users have no use for the marketing pages: staff go to the admin portal, Clients and
+    /// Providers to their dashboard. They log out to see the public site. Null when nobody is signed in.
+    /// </summary>
+    private IActionResult? RedirectSignedInUser()
+    {
+        if (User?.Identity?.IsAuthenticated != true)
+        {
+            return null;
+        }
+
+        var userType = User.FindFirst("UserType")?.Value;
+        if (string.Equals(userType, "Staff", StringComparison.OrdinalIgnoreCase)) return Redirect("/Admin");
+        if (string.Equals(userType, "Client", StringComparison.OrdinalIgnoreCase)) return Redirect("/client/dashboard");
+        if (string.Equals(userType, "Provider", StringComparison.OrdinalIgnoreCase)) return Redirect("/provider/dashboard");
+        return null;
     }
 
     /// <summary>Cached for 10 minutes; null when the DB is unreachable so the page still renders without numbers.</summary>
@@ -94,6 +109,11 @@ public class HomeController : Controller
 
     private async Task<IActionResult> ServicePillarPage(string slug, CancellationToken cancellationToken)
     {
+        if (RedirectSignedInUser() is { } redirect)
+        {
+            return redirect;
+        }
+
         var model = await _pillars.GetAsync(slug, cancellationToken);
         return model == null ? NotFound() : View("ServicePillar", model);
     }
@@ -101,6 +121,11 @@ public class HomeController : Controller
     [Route("/about")]
     public IActionResult About()
     {
+        if (RedirectSignedInUser() is { } redirect)
+        {
+            return redirect;
+        }
+
         return View();
     }
 

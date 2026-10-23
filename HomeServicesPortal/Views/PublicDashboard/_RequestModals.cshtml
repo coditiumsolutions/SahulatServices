@@ -1,0 +1,88 @@
+@* Cancel-with-reason and passcode dialogs shared by the request list and detail pages. *@
+<div class="modal fade" id="cancelRequestModal" tabindex="-1" aria-labelledby="cancelRequestTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <form method="post" class="modal-content" id="cancelRequestForm">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="ReturnTo" id="cancelReturnTo" value="" />
+            <div class="modal-header">
+                <h2 class="modal-title h5" id="cancelRequestTitle">Cancel Request</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p id="cancelRequestMessage" class="mb-3"></p>
+                <label class="form-label" for="cancelReason">Reason</label>
+                <select class="form-select mb-3" name="Reason" id="cancelReason" required>
+                    <option value="">Select a reason</option>
+                    <option>Found another provider</option>
+                    <option>Price too high</option>
+                    <option>No longer needed</option>
+                    <option>Change of schedule</option>
+                    <option>Other</option>
+                </select>
+                <div id="cancelOtherGroup" class="d-none">
+                    <label class="form-label" for="cancelOtherReason">Tell us more</label>
+                    <textarea class="form-control" name="OtherReason" id="cancelOtherReason" rows="3" maxlength="500" placeholder="Tell us more"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Back</button>
+                <button type="submit" class="btn btn-warning" id="cancelConfirm" disabled>Yes, Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="modal fade" id="passcodeModal" tabindex="-1" aria-labelledby="passcodeTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content text-center">
+            <div class="modal-body p-4">
+                <i class="fa-solid fa-key fa-2x mb-2 text-primary" aria-hidden="true"></i>
+                <h2 class="h5" id="passcodeTitle">Completion Passcode</h2>
+                <p class="text-muted small">Share this code with your provider once the job is finished so they can mark it complete.</p>
+                <div class="client-passcode" id="passcodeValue"></div>
+                <button type="button" class="btn btn-primary mt-3" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function () {
+        var modalEl = document.getElementById('cancelRequestModal');
+        var form = document.getElementById('cancelRequestForm');
+        var reason = document.getElementById('cancelReason');
+        var other = document.getElementById('cancelOtherReason');
+        var otherGroup = document.getElementById('cancelOtherGroup');
+        var confirmBtn = document.getElementById('cancelConfirm');
+
+        function validate() {
+            var isOther = reason.value === 'Other';
+            otherGroup.classList.toggle('d-none', !isOther);
+            confirmBtn.disabled = !reason.value || (isOther && !other.value.trim());
+        }
+        reason.addEventListener('change', validate);
+        other.addEventListener('input', validate);
+
+        document.querySelectorAll('[data-cancel-request]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                form.action = '/client/requests/' + btn.getAttribute('data-request-id') + '/cancel';
+                document.getElementById('cancelReturnTo').value = btn.getAttribute('data-return-to') || '';
+                document.getElementById('cancelRequestMessage').textContent =
+                    'Are you sure you want to cancel "' + btn.getAttribute('data-request-title') + '"?';
+                reason.value = '';
+                other.value = '';
+                validate();
+                bootstrap.Modal.getOrCreateInstance(modalEl).show();
+            });
+        });
+
+        document.querySelectorAll('[data-show-passcode]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var code = btn.getAttribute('data-passcode');
+                if (!code) { alert('Passcode not available yet.'); return; }
+                document.getElementById('passcodeValue').textContent = code;
+                bootstrap.Modal.getOrCreateInstance(document.getElementById('passcodeModal')).show();
+            });
+        });
+    })();
+</script>

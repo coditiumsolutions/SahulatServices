@@ -387,3 +387,115 @@
         grid-template-columns: 1fr;
     }
 }
+
+/* My Requests: tabs, progress bar, actions, passcode */
+.client-req-tabs .nav-link {
+    color: #003366;
+    font-weight: 600;
+}
+
+.client-req-tabs .nav-link.active {
+    background: #003366;
+    color: #fff;
+}
+
+.client-req-title-link {
+    color: inherit;
+    text-decoration: none;
+}
+
+.client-req-title-link:hover {
+    text-decoration: underline;
+}
+
+.client-req-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+
+.client-req-progress {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.25rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.client-req-progress li {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #9aa7b4;
+    text-align: center;
+}
+
+.client-req-progress li::before {
+    content: "";
+    position: absolute;
+    top: 6px;
+    left: -50%;
+    width: 100%;
+    height: 3px;
+    background: #dde3ea;
+}
+
+.client-req-progress li:first-child::before {
+    display: none;
+}
+
+.client-req-progress-dot {
+    position: relative;
+    z-index: 1;
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    background: #dde3ea;
+}
+
+.client-req-progress li.is-done,
+.client-req-progress li.is-current {
+    color: #003366;
+}
+
+.client-req-progress li.is-done::before,
+.client-req-progress li.is-current::before {
+    background: #0d6efd;
+}
+
+.client-req-progress li.is-done .client-req-progress-dot {
+    background: #0d6efd;
+}
+
+.client-req-progress li.is-current .client-req-progress-dot {
+    background: #fff;
+    border: 4px solid #0d6efd;
+}
+
+.client-req-cancelled-label {
+    color: #8B1A1A;
+    font-weight: 700;
+}
+
+.client-passcode {
+    font-size: 2.4rem;
+    font-weight: 800;
+    letter-spacing: 0.5rem;
+    color: #003366;
+}
+
+.client-search { max-width: 520px; }
+.client-search-results {
+    position: absolute;
+    z-index: 20;
+    left: 0;
+    right: 0;
+    margin-top: 0.25rem;
+    box-shadow: 0 8px 24px rgba(0, 51, 102, 0.15);
+}

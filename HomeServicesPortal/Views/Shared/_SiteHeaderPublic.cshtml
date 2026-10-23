@@ -9,14 +9,14 @@
         && userType.Equals("Provider", StringComparison.OrdinalIgnoreCase);
     var isPortalUser = isClient || isProvider;
     var displayName = User.Identity?.Name;
-    var homeHref = isProvider ? "/provider-dashboard" : isClient ? "/client-dashboard" : "/";
+    var homeHref = isProvider ? "/provider/dashboard" : isClient ? "/client/dashboard" : "/";
 
     string TabActive(string segment)
     {
         if (segment == "home")
         {
             return path is "/" or "/home" or "/home/index"
-                or "/client-dashboard" or "/provider-dashboard"
+                or "/client/dashboard" or "/provider/dashboard"
                 ? "active" : "";
         }
 
@@ -104,7 +104,7 @@
             {
                 <ul class="hs-tab-nav">
                     <li>
-                        <a class="hs-tab-link @TabActive("home")" href="/client-dashboard">Home</a>
+                        <a class="hs-tab-link @TabActive("home")" href="/client/dashboard">Home</a>
                     </li>
                     <li>
                         <a class="hs-tab-link @TabActive("services")" href="/client/services">Services</a>
@@ -121,7 +121,7 @@
             {
                 <ul class="hs-tab-nav">
                     <li>
-                        <a class="hs-tab-link @TabActive("home")" href="/provider-dashboard">Home</a>
+                        <a class="hs-tab-link @TabActive("home")" href="/provider/dashboard">Home</a>
                     </li>
                     <li>
                         <a class="hs-tab-link @TabActive("requests")" href="/provider/requests">Requests</a>
@@ -184,7 +184,7 @@
                         <div class="hs-quick-link">
                             <span><i class="fa-solid fa-user"></i>@(displayName ?? userType) (Client)</span>
                         </div>
-                        <a class="hs-quick-link" href="/client-dashboard" data-bs-dismiss="modal">
+                        <a class="hs-quick-link" href="/client/dashboard" data-bs-dismiss="modal">
                             <span><i class="fa-solid fa-house"></i>Home</span><i class="fa-solid fa-chevron-right"></i>
                         </a>
                         <a class="hs-quick-link" href="/client/services" data-bs-dismiss="modal">
@@ -208,7 +208,7 @@
                         <div class="hs-quick-link">
                             <span><i class="fa-solid fa-user"></i>@(displayName ?? userType) (Provider)</span>
                         </div>
-                        <a class="hs-quick-link" href="/provider-dashboard" data-bs-dismiss="modal">
+                        <a class="hs-quick-link" href="/provider/dashboard" data-bs-dismiss="modal">
                             <span><i class="fa-solid fa-house"></i>Home</span><i class="fa-solid fa-chevron-right"></i>
                         </a>
                         <a class="hs-quick-link" href="/provider/requests" data-bs-dismiss="modal">

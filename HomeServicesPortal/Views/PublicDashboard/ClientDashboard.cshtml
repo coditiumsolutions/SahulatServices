@@ -1,8 +1,14 @@
-@model HomeServicesPortal.Models.ViewModels.PublicDashboardVm
+@using System.Text.Json
+@using HomeServicesPortal.Models.ViewModels
+@model ClientDashboardVm
 @{
     Layout = "_PublicLayout";
     ViewData["Title"] = "Client Dashboard";
     ViewData["Robots"] = "noindex, nofollow";
+
+    var searchJson = JsonSerializer.Serialize(
+        Model.Categories.Select(c => new { id = c.Uid, name = c.CategoryName, serviceId = c.ServiceUid, service = c.ServiceName }),
+        new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
 }
 
 @section Head {
@@ -15,31 +21,110 @@
         <header class="pub-dash-hero">
             <p class="pub-dash-eyebrow">Client account</p>
             <h1>Welcome, @Model.FullName</h1>
-            <p class="pub-dash-lead">Manage your home service bookings from here. More tools are coming soon — for the full experience, use the Sahulat Ghar Tak mobile app.</p>
+            <p class="pub-dash-lead">Quality Services Delivered to Your Doorstep</p>
+
+            <div class="client-search position-relative mt-3">
+                <label class="visually-hidden" for="serviceSearch">Search services</label>
+                <input type="search" id="serviceSearch" class="form-control form-control-lg" placeholder="Search services..."
+                       autocomplete="off" aria-controls="serviceSearchResults" />
+                <ul class="list-group client-search-results d-none" id="serviceSearchResults" role="listbox"></ul>
+            </div>
         </header>
 
-        <div class="pub-dash-grid">
-            <article class="pub-dash-card">
-                <h2><i class="fa-solid fa-id-card me-2" aria-hidden="true"></i>Account</h2>
-                <dl class="pub-dash-dl">
-                    <div><dt>Name</dt><dd>@Model.FullName</dd></div>
-                    <div><dt>Mobile</dt><dd>@Model.MobileNo</dd></div>
-                    <div><dt>Type</dt><dd>Client</dd></div>
-                    @if (Model.LastLogin.HasValue)
-                    {
-                        <div><dt>Last login</dt><dd>@Model.LastLogin.Value.ToPktDisplay()</dd></div>
-                    }
-                </dl>
-            </article>
+        <h2 class="h5 mb-3">Services</h2>
+        @if (Model.Services.Count == 0)
+        {
+            <div class="pub-dash-card">
+                <h3 class="h6 mb-2">No services available</h3>
+                <p class="mb-0 text-muted">Active services will appear here once they are published.</p>
+            </div>
+        }
+        else
+        {
+            <div class="client-services-grid">
+                @foreach (var service in Model.Services)
+                {
+                    <a class="client-service-card client-service-card--link" href="/client/services/@service.Uid">
+                        <div class="client-service-icon" aria-hidden="true">
+                            <i class="@service.IconClass"></i>
+                        </div>
+                        <h3 class="client-service-title">@service.ServiceName</h3>
+                        <span class="client-service-cta">View categories <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></span>
+                    </a>
+                }
+            </div>
+        }
 
-            <article class="pub-dash-card">
-                <h2><i class="fa-solid fa-bolt me-2" aria-hidden="true"></i>Quick actions</h2>
-                <ul class="pub-dash-actions">
-                    <li><a href="/client/services"><i class="fa-solid fa-screwdriver-wrench"></i>Services</a></li>
-                    <li><a href="/client/requests"><i class="fa-solid fa-inbox"></i>Requests</a></li>
-                    <li><a href="/client/profile"><i class="fa-solid fa-id-badge"></i>Profile</a></li>
-                </ul>
-            </article>
+        <div class="d-flex flex-wrap gap-2 mt-4">
+            <a href="/client/requests" class="btn btn-outline-primary"><i class="fa-solid fa-inbox me-1" aria-hidden="true"></i>My requests</a>
+            <a href="/client/profile" class="btn btn-outline-primary"><i class="fa-solid fa-id-badge me-1" aria-hidden="true"></i>Profile</a>
         </div>
     </div>
 </section>
+
+@section Scripts {
+    <script>
+        (function () {
+            var input = document.getElementById('serviceSearch');
+            var list = document.getElementById('serviceSearchResults');
+            if (!input || !list) return;
+            var categories = @Html.Raw(searchJson);
+
+            // Same ranking as the app: exact, prefix, word start, then contains; best 6.
+            function rank(name, q) {
+                var n = name.toLowerCase();
+                if (n === q) return [0, 0];
+                if (n.indexOf(q) === 0) return [1, 0];
+                var words = n.split(/\s+/);
+                for (var i = 0; i < words.length; i++) {
+                    if (words[i].indexOf(q) === 0) return [2, n.indexOf(words[i])];
+                }
+                var pos = n.indexOf(q);
+                return pos >= 0 ? [3, pos] : null;
+            }
+
+            function render() {
+                var q = input.value.trim().toLowerCase();
+                list.innerHTML = '';
+                if (!q) { list.classList.add('d-none'); return; }
+
+                var hits = [];
+                categories.forEach(function (c) {
+                    var r = rank(c.name, q);
+                    if (r) hits.push({ c: c, r: r });
+                });
+                hits.sort(function (a, b) { return a.r[0] - b.r[0] || a.r[1] - b.r[1] || a.c.name.localeCompare(b.c.name); });
+                hits = hits.slice(0, 6);
+
+                if (!hits.length) {
+                    var empty = document.createElement('li');
+                    empty.className = 'list-group-item text-muted';
+                    empty.textContent = 'No services found';
+                    list.appendChild(empty);
+                }
+                hits.forEach(function (h) {
+                    var a = document.createElement('a');
+                    a.className = 'list-group-item list-group-item-action';
+                    a.href = '/client/services/' + h.c.serviceId + '/categories/' + h.c.id + '/request';
+                    a.setAttribute('role', 'option');
+                    var title = document.createElement('div');
+                    title.className = 'fw-semibold';
+                    title.textContent = h.c.name;
+                    var sub = document.createElement('div');
+                    sub.className = 'small text-muted';
+                    sub.textContent = h.c.service;
+                    a.appendChild(title);
+                    a.appendChild(sub);
+                    list.appendChild(a);
+                });
+                list.classList.remove('d-none');
+            }
+
+            input.addEventListener('input', render);
+            input.addEventListener('focus', render);
+            document.addEventListener('click', function (e) {
+                if (!e.target.closest('.client-search')) list.classList.add('d-none');
+            });
+        })();
+    </script>
+}

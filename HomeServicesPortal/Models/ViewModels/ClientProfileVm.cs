@@ -6,6 +6,7 @@ public class ClientProfileVm
 {
     public string FullName { get; set; } = string.Empty;
     public string MobileNo { get; set; } = string.Empty;
+    public string? Gender { get; set; }
     public DateTime? LastLogin { get; set; }
     public IReadOnlyList<ClientAddressListItemVm> Addresses { get; set; } = Array.Empty<ClientAddressListItemVm>();
 }
@@ -64,4 +65,19 @@ public class ClientPortalAddressDeleteVm
     public string FullAddress { get; set; } = string.Empty;
     public string Area { get; set; } = string.Empty;
     public string City { get; set; } = string.Empty;
+}
+
+public class ClientProfileEditVm
+{
+    [Required(ErrorMessage = "Required")]
+    [StringLength(150)]
+    [Display(Name = "Full Name")]
+    public string FullName { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "Please select a gender.")]
+    [Display(Name = "Gender")]
+    public string? Gender { get; set; }
+
+    /// <summary>Read-only: the mobile number cannot be changed.</summary>
+    public string MobileNo { get; set; } = string.Empty;
 }

@@ -29,15 +29,54 @@ public class PublicDashboardController : Controller
         _logger = logger;
     }
 
-    [HttpGet("/client-dashboard")]
+    [HttpGet("/client/dashboard")]
     [Authorize(Roles = UserTypeConstants.Client)]
-    public Task<IActionResult> ClientDashboard(CancellationToken cancellationToken) =>
-        DashboardAsync("Client", cancellationToken);
+    public async Task<IActionResult> ClientDashboard(CancellationToken cancellationToken)
+    {
+        var services = await _db.Services
+            .AsNoTracking()
+            .Where(s => s.IsActive)
+            .OrderBy(s => s.DisplayOrder)
+            .ThenBy(s => s.ServiceName)
+            .Select(s => new ClientServiceCardVm { Uid = s.Uid, ServiceName = s.ServiceName, Description = s.Description })
+            .ToListAsync(cancellationToken);
+        foreach (var card in services)
+        {
+            card.IconClass = ResolveServiceIcon(card.ServiceName);
+        }
 
-    [HttpGet("/provider-dashboard")]
+        var categories = await _db.ServiceCategories
+            .AsNoTracking()
+            .Where(c => c.IsActive && c.Service.IsActive)
+            .OrderBy(c => c.CategoryName)
+            .Select(c => new ClientSearchCategoryVm
+            {
+                Uid = c.Uid,
+                CategoryName = c.CategoryName,
+                ServiceUid = c.ServiceUid,
+                ServiceName = c.Service.ServiceName
+            })
+            .ToListAsync(cancellationToken);
+
+        return View("ClientDashboard", new ClientDashboardVm
+        {
+            FullName = User.Identity?.Name ?? "User",
+            Services = services,
+            Categories = categories
+        });
+    }
+
+    [HttpGet("/provider/dashboard")]
     [Authorize(Roles = UserTypeConstants.Provider)]
     public Task<IActionResult> ProviderDashboard(CancellationToken cancellationToken) =>
         DashboardAsync("Provider", cancellationToken);
+
+    // Old URLs, kept so existing bookmarks keep working.
+    [HttpGet("/client-dashboard")]
+    public IActionResult LegacyClientDashboard() => RedirectPermanent("/client/dashboard");
+
+    [HttpGet("/provider-dashboard")]
+    public IActionResult LegacyProviderDashboard() => RedirectPermanent("/provider/dashboard");
 
     [HttpGet("/client/services")]
     [Authorize(Roles = UserTypeConstants.Client)]
@@ -143,9 +182,67 @@ public class PublicDashboardController : Controller
             ModelState.AddModelError(nameof(model.ClientAddressUid), "Add a service address to your profile before submitting a request.");
         }
 
-        if (!form.HasTitles)
+        var isOther = model.IsOtherTitle;
+        if (model.ServiceTitleUid == 0)
         {
-            ModelState.AddModelError(nameof(model.ServiceTitleUid), "No service titles are available for this category yet.");
+            ModelState.AddModelError(nameof(model.ServiceTitleUid), "Required");
+        }
+
+        if (isOther)
+        {
+            if (string.IsNullOrWhiteSpace(model.OtherServiceTitle))
+            {
+                ModelState.AddModelError(nameof(model.OtherServiceTitle), "Required");
+            }
+
+            if (string.IsNullOrWhiteSpace(model.ServiceDescription))
+            {
+                ModelState.AddModelError(nameof(model.ServiceDescription), "Please describe the job so staff can assign a provider");
+            }
+        }
+
+        var accountName = User.Identity?.Name ?? string.Empty;
+        var accountMobile = await ResolveMobileNoAsync(cancellationToken);
+        string contactPerson;
+        string contactNo;
+        if (model.SameAsAccount)
+        {
+            contactPerson = accountName;
+            contactNo = accountMobile;
+        }
+        else
+        {
+            contactPerson = model.ContactPerson?.Trim() ?? string.Empty;
+            if (contactPerson.Length == 0)
+            {
+                ModelState.AddModelError(nameof(model.ContactPerson), "Required");
+            }
+
+            var (contactOk, normalized, _) = MobileNumberHelper.ValidateAndNormalize(model.ContactNo);
+            contactNo = normalized;
+            if (string.IsNullOrWhiteSpace(model.ContactNo))
+            {
+                ModelState.AddModelError(nameof(model.ContactNo), "Required");
+            }
+            else if (!contactOk)
+            {
+                ModelState.AddModelError(nameof(model.ContactNo), "Enter a valid 11-digit mobile number");
+            }
+        }
+
+        if (model.PreferredServiceDate is { } preferredDate)
+        {
+            var today = DateOnly.FromDateTime(PktTimeHelper.NowPkt);
+            if (preferredDate < today || preferredDate > today.AddDays(365))
+            {
+                ModelState.AddModelError(nameof(model.PreferredServiceDate), "Pick a date from today up to one year ahead.");
+            }
+        }
+
+        if (!string.IsNullOrWhiteSpace(model.PreferredServiceTime)
+            && !TimeOnly.TryParseExact(model.PreferredServiceTime.Trim(), "HH:mm", out _))
+        {
+            ModelState.AddModelError(nameof(model.PreferredServiceTime), "Enter a valid time.");
         }
 
         if (!ModelState.IsValid)
@@ -159,42 +256,51 @@ public class PublicDashboardController : Controller
             return Redirect("/login");
         }
 
-        var title = await _db.ServiceTitles
-            .AsNoTracking()
-            .Where(t => t.Uid == model.ServiceTitleUid && t.IsActive && t.CategoryUid == categoryUid)
-            .Select(t => new { t.Uid, t.Title })
-            .FirstOrDefaultAsync(cancellationToken);
-
-        if (title == null)
+        int? titleUid = null;
+        string titleText;
+        if (isOther)
         {
-            ModelState.AddModelError(nameof(model.ServiceTitleUid), "Invalid or inactive service title.");
-            return View(form);
+            titleText = model.OtherServiceTitle!.Trim();
         }
+        else
+        {
+            var title = await _db.ServiceTitles
+                .AsNoTracking()
+                .Where(t => t.Uid == model.ServiceTitleUid && t.IsActive && t.CategoryUid == categoryUid)
+                .Select(t => new { t.Uid, t.Title })
+                .FirstOrDefaultAsync(cancellationToken);
 
-        var mobileNo = User.FindFirstValue(ClaimTypes.MobilePhone)
-            ?? await _db.UsersLogins.AsNoTracking()
-                .Where(u => u.Uid == int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!))
-                .Select(u => u.MobileNo)
-                .FirstAsync(cancellationToken);
+            if (title == null)
+            {
+                ModelState.AddModelError(nameof(model.ServiceTitleUid), "Invalid or inactive service title.");
+                return View(form);
+            }
+
+            titleUid = title.Uid;
+            titleText = title.Title;
+        }
 
         var createDto = new CreateCustomerServiceRequestDto
         {
             ClientUid = clientUid.Value,
             CategoryUid = categoryUid,
             ClientAddressUid = model.ClientAddressUid,
-            ServiceTitle = title.Title,
-            ServiceTitleUid = title.Uid,
-            ServiceDescription = model.ServiceDescription,
+            ServiceTitle = titleText,
+            ServiceTitleUid = titleUid,
+            ServiceDescription = model.ServiceDescription?.Trim(),
+            PreferredServiceDate = model.PreferredServiceDate,
+            PreferredServiceTime = string.IsNullOrWhiteSpace(model.PreferredServiceTime) ? null : model.PreferredServiceTime.Trim(),
             IsUrgent = model.IsUrgent,
-            ContactPerson = User.Identity?.Name,
-            ContactNo = mobileNo
+            ContactPerson = contactPerson,
+            ContactNo = contactNo,
+            Remarks = string.IsNullOrWhiteSpace(model.Remarks) ? null : model.Remarks.Trim()
         };
 
         var (success, error, data) = await _requestService.CreateRequestAsync(createDto, cancellationToken);
         if (!success || data == null)
         {
             _logger.LogWarning("Client web request create failed: {Error}", error);
-            ModelState.AddModelError(string.Empty, error ?? "Could not create the service request.");
+            ModelState.AddModelError(string.Empty, error ?? "Failed to submit request");
             return View(form);
         }
 
@@ -204,7 +310,7 @@ public class PublicDashboardController : Controller
 
     [HttpGet("/client/requests")]
     [Authorize(Roles = UserTypeConstants.Client)]
-    public async Task<IActionResult> ClientRequests(CancellationToken cancellationToken)
+    public async Task<IActionResult> ClientRequests(string? tab, CancellationToken cancellationToken)
     {
         var clientUid = await ResolveClientUidAsync(cancellationToken);
         if (clientUid == null)
@@ -212,27 +318,124 @@ public class PublicDashboardController : Controller
             return Redirect("/login");
         }
 
-        var requests = await _requestService.GetRequestsAsync(clientUid.Value, cancellationToken);
-        var cards = requests.Select(r => new ClientRequestCardVm
+        var all = (await _requestService.GetRequestsAsync(clientUid.Value, cancellationToken))
+            .Select(ClientRequestCardVm.From)
+            .OrderByDescending(r => r.CreatedOn)
+            .ToList();
+
+        // Same split as the app: Completed = "Completed", Cancelled = no progress stage, Active = the rest.
+        static string TabOf(ClientRequestCardVm r) => r.ProgressStatus switch
         {
-            Uid = r.Uid,
-            ServiceTitle = r.ServiceTitle,
-            CategoryName = r.CategoryName,
-            AddressTitle = r.AddressTitle,
-            ServiceDescription = r.ServiceDescription,
-            EstimatedBudget = r.EstimatedBudget,
-            IsUrgent = r.IsUrgent,
-            Status = r.Status,
-            ProgressStatus = r.ProgressStatus,
-            CreatedOn = r.CreatedOn,
-            ProviderName = r.ProviderName
-        }).ToList();
+            null => ClientRequestsVm.TabCancelled,
+            "Completed" => ClientRequestsVm.TabCompleted,
+            _ => ClientRequestsVm.TabActive
+        };
+
+        var selected = tab?.ToLowerInvariant() switch
+        {
+            ClientRequestsVm.TabCompleted => ClientRequestsVm.TabCompleted,
+            ClientRequestsVm.TabCancelled => ClientRequestsVm.TabCancelled,
+            _ => ClientRequestsVm.TabActive
+        };
 
         return View(new ClientRequestsVm
         {
             FullName = User.Identity?.Name ?? "User",
-            Requests = cards
+            Tab = selected,
+            ActiveCount = all.Count(r => TabOf(r) == ClientRequestsVm.TabActive),
+            CompletedCount = all.Count(r => TabOf(r) == ClientRequestsVm.TabCompleted),
+            CancelledCount = all.Count(r => TabOf(r) == ClientRequestsVm.TabCancelled),
+            Requests = all.Where(r => TabOf(r) == selected).ToList()
         });
+    }
+
+    [HttpGet("/client/requests/{requestUid:int}")]
+    [Authorize(Roles = UserTypeConstants.Client)]
+    public async Task<IActionResult> ClientRequestDetail(int requestUid, CancellationToken cancellationToken)
+    {
+        var request = await GetOwnedRequestAsync(requestUid, cancellationToken);
+        if (request == null)
+        {
+            return NotFound();
+        }
+
+        return View(ClientRequestCardVm.From(request));
+    }
+
+    [HttpPost("/client/requests/{requestUid:int}/cancel")]
+    [Authorize(Roles = UserTypeConstants.Client)]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ClientRequestCancel(
+        int requestUid,
+        CancelRequestForm form,
+        CancellationToken cancellationToken)
+    {
+        var back = form.ReturnTo == "detail" ? $"/client/requests/{requestUid}" : "/client/requests";
+
+        var request = await GetOwnedRequestAsync(requestUid, cancellationToken);
+        if (request == null)
+        {
+            return NotFound();
+        }
+
+        var card = ClientRequestCardVm.From(request);
+        if (!card.CanCancel)
+        {
+            TempData["RequestError"] = "This request can no longer be cancelled.";
+            return Redirect(back);
+        }
+
+        var reason = string.Equals(form.Reason, "Other", StringComparison.OrdinalIgnoreCase)
+            ? form.OtherReason?.Trim()
+            : form.Reason?.Trim();
+        if (string.IsNullOrWhiteSpace(reason))
+        {
+            TempData["RequestError"] = "Cancel reason is required when cancelling a service request.";
+            return Redirect(back);
+        }
+
+        var update = new UpdateCustomerServiceRequestDto
+        {
+            RequestUid = request.Uid,
+            CategoryUid = request.CategoryUid,
+            ClientAddressUid = request.ClientAddressUid,
+            ServiceTitle = request.ServiceTitle,
+            ServiceDescription = request.ServiceDescription,
+            PreferredServiceDate = request.PreferredServiceDate,
+            PreferredServiceTime = request.PreferredServiceTime,
+            IsUrgent = request.IsUrgent,
+            ContactPerson = request.ContactPerson,
+            ContactNo = request.ContactNo,
+            Remarks = request.Remarks,
+            Status = "Cancelled",
+            CancelReason = reason.Length > 500 ? reason[..500] : reason
+        };
+
+        var (success, error, _) = await _requestService.UpdateRequestAsync(update, cancellationToken);
+        if (success)
+        {
+            TempData["RequestSuccess"] = "Request cancelled";
+        }
+        else
+        {
+            _logger.LogWarning("Client web request cancel failed for {RequestUid}: {Error}", requestUid, error);
+            TempData["RequestError"] = error ?? "Failed to cancel request";
+        }
+
+        return Redirect(back);
+    }
+
+    /// <summary>Loads a request only when it belongs to the signed-in client (the API itself does not check).</summary>
+    private async Task<CustomerServiceRequestApiDto?> GetOwnedRequestAsync(int requestUid, CancellationToken cancellationToken)
+    {
+        var clientUid = await ResolveClientUidAsync(cancellationToken);
+        if (clientUid == null)
+        {
+            return null;
+        }
+
+        var (success, _, data) = await _requestService.GetRequestByIdAsync(requestUid, cancellationToken);
+        return success && data != null && data.ClientUid == clientUid.Value ? data : null;
     }
 
     [HttpGet("/provider/requests")]
@@ -326,6 +529,11 @@ public class PublicDashboardController : Controller
             });
 
         var form = posted ?? new ClientServiceRequestFormVm();
+        var todayPkt = DateOnly.FromDateTime(PktTimeHelper.NowPkt);
+        form.MinDate = todayPkt.ToString("yyyy-MM-dd");
+        form.MaxDate = todayPkt.AddDays(365).ToString("yyyy-MM-dd");
+        form.AccountName = User.Identity?.Name ?? string.Empty;
+        form.AccountMobile = await ResolveMobileNoAsync(cancellationToken);
         form.ServiceUid = category.ServiceUid;
         form.ServiceName = category.ServiceName;
         form.CategoryUid = category.Uid;
@@ -355,6 +563,25 @@ public class PublicDashboardController : Controller
         }
 
         return "Select a service title";
+    }
+
+    private async Task<string> ResolveMobileNoAsync(CancellationToken cancellationToken)
+    {
+        var claim = User.FindFirstValue(ClaimTypes.MobilePhone);
+        if (!string.IsNullOrWhiteSpace(claim))
+        {
+            return claim;
+        }
+
+        if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
+        {
+            return string.Empty;
+        }
+
+        return await _db.UsersLogins.AsNoTracking()
+            .Where(u => u.Uid == userId)
+            .Select(u => u.MobileNo)
+            .FirstOrDefaultAsync(cancellationToken) ?? string.Empty;
     }
 
     private async Task<int?> ResolveClientUidAsync(CancellationToken cancellationToken)

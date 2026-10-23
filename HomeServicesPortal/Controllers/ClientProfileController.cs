@@ -1,10 +1,14 @@
 using System.Security.Claims;
 using HomeServicesPortal.Data;
+using HomeServicesPortal.DTOs;
 using HomeServicesPortal.Entities;
 using HomeServicesPortal.Helpers;
+using HomeServicesPortal.Interfaces;
 using HomeServicesPortal.Models.Api;
 using HomeServicesPortal.Models.ViewModels;
 using HomeServicesPortal.Services;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -16,16 +20,21 @@ namespace HomeServicesPortal.Controllers;
 public class ClientProfileController : Controller
 {
     private readonly AppDbContext _db;
+    private static readonly string[] Genders = { "Male", "Female", "Other" };
+
     private readonly IClientAddressService _addresses;
+    private readonly IAuthService _authService;
     private readonly ILogger<ClientProfileController> _logger;
 
     public ClientProfileController(
         AppDbContext db,
         IClientAddressService addresses,
+        IAuthService authService,
         ILogger<ClientProfileController> logger)
     {
         _db = db;
         _addresses = addresses;
+        _authService = authService;
         _logger = logger;
     }
 
@@ -40,6 +49,87 @@ public class ClientProfileController : Controller
 
         var profile = await BuildProfileVmAsync(clientUid.Value, cancellationToken);
         return View("ClientProfile", profile);
+    }
+
+    [HttpGet("/client/profile/edit")]
+    public async Task<IActionResult> EditProfile(CancellationToken cancellationToken)
+    {
+        var clientUid = await ResolveClientUidAsync(cancellationToken);
+        if (clientUid == null)
+        {
+            return Redirect("/login");
+        }
+
+        var client = await _db.Clients.AsNoTracking().FirstAsync(c => c.Uid == clientUid.Value, cancellationToken);
+        return View("ClientProfileEdit", new ClientProfileEditVm
+        {
+            FullName = client.FullName,
+            Gender = client.Gender,
+            MobileNo = User.FindFirstValue(ClaimTypes.MobilePhone) ?? string.Empty
+        });
+    }
+
+    [HttpPost("/client/profile/edit")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> EditProfile(ClientProfileEditVm model, CancellationToken cancellationToken)
+    {
+        model.MobileNo = User.FindFirstValue(ClaimTypes.MobilePhone) ?? string.Empty;
+
+        var gender = Genders.FirstOrDefault(g => g.Equals(model.Gender?.Trim(), StringComparison.OrdinalIgnoreCase));
+        if (gender == null && ModelState.GetFieldValidationState(nameof(model.Gender)) != Microsoft.AspNetCore.Mvc.ModelBinding.ModelValidationState.Invalid)
+        {
+            ModelState.AddModelError(nameof(model.Gender), "Please select a gender.");
+        }
+
+        if (!ModelState.IsValid)
+        {
+            return View("ClientProfileEdit", model);
+        }
+
+        var clientUid = await ResolveClientUidAsync(cancellationToken);
+        if (clientUid == null)
+        {
+            return Redirect("/login");
+        }
+
+        var client = await _db.Clients.FirstAsync(c => c.Uid == clientUid.Value, cancellationToken);
+        client.FullName = model.FullName.Trim();
+        client.Gender = gender;
+        await _db.SaveChangesAsync(cancellationToken);
+
+        await RefreshNameClaimAsync(client.FullName);
+
+        TempData["ProfileSuccess"] = "Profile updated successfully.";
+        return Redirect("/client/profile");
+    }
+
+    [HttpPost("/client/profile/delete-account")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeleteAccount(string? password, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(password))
+        {
+            TempData["ProfileError"] = "Password is required.";
+            return Redirect("/client/profile");
+        }
+
+        var request = new DeleteAccountRequest
+        {
+            MobileNo = User.FindFirstValue(ClaimTypes.MobilePhone) ?? string.Empty,
+            Password = password
+        };
+
+        var (success, error, _, _) = await _authService.DeleteAccountAsync(request, cancellationToken);
+        if (!success)
+        {
+            TempData["ProfileError"] = error ?? "Failed to delete account";
+            return Redirect("/client/profile");
+        }
+
+        await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+        _logger.LogInformation("Client deleted their account from the website.");
+        TempData["SignupSuccess"] = "Account deleted successfully.";
+        return Redirect("/login");
     }
 
     [HttpGet("/client/profile/addresses/create")]
@@ -202,6 +292,21 @@ public class ClientProfileController : Controller
         return Redirect("/client/profile");
     }
 
+    /// <summary>Re-issues the cookie with the new display name, keeping its other claims and lifetime.</summary>
+    private async Task RefreshNameClaimAsync(string fullName)
+    {
+        var result = await HttpContext.AuthenticateAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+        if (result.Principal == null)
+        {
+            return;
+        }
+
+        var claims = result.Principal.Claims.Where(c => c.Type != ClaimTypes.Name).ToList();
+        claims.Add(new Claim(ClaimTypes.Name, fullName));
+        var principal = new ClaimsPrincipal(new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme));
+        await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal, result.Properties);
+    }
+
     private async Task<ClientProfileVm> BuildProfileVmAsync(int clientUid, CancellationToken cancellationToken)
     {
         var addresses = await _db.ClientAddresses
@@ -230,8 +335,14 @@ public class ClientProfileController : Controller
                 .FirstOrDefaultAsync(cancellationToken);
         }
 
+        var gender = await _db.Clients.AsNoTracking()
+            .Where(c => c.Uid == clientUid)
+            .Select(c => c.Gender)
+            .FirstOrDefaultAsync(cancellationToken);
+
         return new ClientProfileVm
         {
+            Gender = gender,
             FullName = User.Identity?.Name ?? "User",
             MobileNo = User.FindFirstValue(ClaimTypes.MobilePhone) ?? string.Empty,
             LastLogin = lastLogin,
