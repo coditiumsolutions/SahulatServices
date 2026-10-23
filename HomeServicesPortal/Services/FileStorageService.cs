@@ -2,7 +2,6 @@ using HomeServicesPortal.Options;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
-using SixLabors.ImageSharp;
 
 namespace HomeServicesPortal.Services;
 
@@ -97,7 +96,7 @@ public class FileStorageService : IFileStorageService
             await using var stream = file.OpenReadStream();
             await _imageService.OptimizeAndSaveAsJpegAsync(stream, destinationPath, cancellationToken);
         }
-        catch (UnknownImageFormatException)
+        catch (InvalidDataException)
         {
             return (false, "File content is not a valid image.", null, StatusCodes.Status415UnsupportedMediaType);
         }
