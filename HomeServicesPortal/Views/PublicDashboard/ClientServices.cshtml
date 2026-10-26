@@ -3,6 +3,7 @@
     Layout = "_PublicLayout";
     ViewData["Title"] = "Services";
     ViewData["Robots"] = "noindex, nofollow";
+    var toneClasses = new[] { "client-service-card--indigo", "client-service-card--teal", "client-service-card--green", "client-service-card--amber", "client-service-card--pink", "client-service-card--blue" };
 }
 
 @section Head {
@@ -27,9 +28,10 @@
         else
         {
             <div class="client-services-grid">
-                @foreach (var service in Model.Services)
+                @for (var i = 0; i < Model.Services.Count; i++)
                 {
-                    <a class="client-service-card client-service-card--link" href="/client/services/@service.Uid">
+                    var service = Model.Services[i];
+                    <a class="client-service-card client-service-card--link @toneClasses[i % toneClasses.Length]" href="/client/services/@service.Uid">
                         <div class="client-service-icon" aria-hidden="true">
                             <i class="@service.IconClass"></i>
                         </div>

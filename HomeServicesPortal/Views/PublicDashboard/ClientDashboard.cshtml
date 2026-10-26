@@ -9,6 +9,8 @@
     var searchJson = JsonSerializer.Serialize(
         Model.Categories.Select(c => new { id = c.Uid, name = c.CategoryName, serviceId = c.ServiceUid, service = c.ServiceName }),
         new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+    var firstName = (Model.FullName ?? string.Empty).Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
+    var toneClasses = new[] { "client-service-card--indigo", "client-service-card--teal", "client-service-card--green", "client-service-card--amber", "client-service-card--pink", "client-service-card--blue" };
 }
 
 @section Head {
@@ -19,8 +21,18 @@
 <section class="pub-dash">
     <div class="container">
         <header class="pub-dash-hero">
-            <p class="pub-dash-eyebrow">Client account</p>
-            <h1>Welcome, @Model.FullName</h1>
+            <div class="provider-hero-bar">
+                <p class="pub-dash-eyebrow mb-0">Client account</p>
+                <div class="provider-hero-actions">
+                    <a href="/client/requests" class="btn btn-sm btn-outline-primary">
+                        <i class="fa-solid fa-inbox me-1" aria-hidden="true"></i>My requests
+                    </a>
+                    <a href="/client/profile" class="btn btn-sm btn-outline-secondary">
+                        <i class="fa-solid fa-id-badge me-1" aria-hidden="true"></i>Profile
+                    </a>
+                </div>
+            </div>
+            <h1 class="provider-welcome">@(string.IsNullOrEmpty(firstName) ? "Welcome!" : $"Welcome, {firstName}!")</h1>
             <p class="pub-dash-lead">Quality Services Delivered to Your Doorstep</p>
 
             <div class="client-search position-relative mt-3">
@@ -42,9 +54,10 @@
         else
         {
             <div class="client-services-grid">
-                @foreach (var service in Model.Services)
+                @for (var i = 0; i < Model.Services.Count; i++)
                 {
-                    <a class="client-service-card client-service-card--link" href="/client/services/@service.Uid">
+                    var service = Model.Services[i];
+                    <a class="client-service-card client-service-card--link @toneClasses[i % toneClasses.Length]" href="/client/services/@service.Uid">
                         <div class="client-service-icon" aria-hidden="true">
                             <i class="@service.IconClass"></i>
                         </div>
@@ -54,11 +67,6 @@
                 }
             </div>
         }
-
-        <div class="d-flex flex-wrap gap-2 mt-4">
-            <a href="/client/requests" class="btn btn-outline-primary"><i class="fa-solid fa-inbox me-1" aria-hidden="true"></i>My requests</a>
-            <a href="/client/profile" class="btn btn-outline-primary"><i class="fa-solid fa-id-badge me-1" aria-hidden="true"></i>Profile</a>
-        </div>
     </div>
 </section>
 

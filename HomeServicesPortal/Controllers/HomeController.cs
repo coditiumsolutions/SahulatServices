@@ -17,7 +17,6 @@ public class HomeController : Controller
     private readonly ILogger<HomeController> _logger;
     private readonly IAuthService _authService;
     private readonly AppDbContext _db;
-    private readonly IProviderZoneService _zones;
     private readonly IMemoryCache _cache;
     private readonly IServicePillarService _pillars;
 
@@ -27,14 +26,12 @@ public class HomeController : Controller
         ILogger<HomeController> logger,
         IAuthService authService,
         AppDbContext db,
-        IProviderZoneService zones,
         IMemoryCache cache,
         IServicePillarService pillars)
     {
         _logger = logger;
         _authService = authService;
         _db = db;
-        _zones = zones;
         _cache = cache;
         _pillars = pillars;
     }
@@ -80,9 +77,7 @@ public class HomeController : Controller
         {
             var stats = new HomeStatsViewModel
             {
-                VerifiedProviders = await _db.Providers.AsNoTracking().CountAsync(p => p.IsVerified, cancellationToken),
-                ActiveCategories = await _db.ServiceCategories.AsNoTracking().CountAsync(c => c.IsActive, cancellationToken),
-                ServiceZones = (await _zones.GetZoneOptionsAsync(cancellationToken)).Count
+                ActiveCategories = await _db.ServiceCategories.AsNoTracking().CountAsync(c => c.IsActive, cancellationToken)
             };
             _cache.Set(HomeStatsCacheKey, stats, TimeSpan.FromMinutes(10));
             return stats;

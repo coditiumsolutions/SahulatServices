@@ -23,26 +23,6 @@
                     <a href="#services" class="public-btn-light">Explore Services</a>
                     <a href="#how-it-works" class="public-btn-outline">How It Works</a>
                 </div>
-                @if (Model is { VerifiedProviders: > 0, ActiveCategories: > 0 })
-                {
-                    <div class="public-stats">
-                        <div class="public-stat-card">
-                            <strong>@Model.VerifiedProviders</strong>
-                            <span>Verified Providers</span>
-                        </div>
-                        <div class="public-stat-card">
-                            <strong>@Model.ActiveCategories</strong>
-                            <span>Service Categories</span>
-                        </div>
-                        @if (Model.ServiceZones > 0)
-                        {
-                            <div class="public-stat-card">
-                                <strong>@Model.ServiceZones</strong>
-                                <span>Service Zones</span>
-                            </div>
-                        }
-                    </div>
-                }
             </div>
             <div class="col-lg-5 d-none d-lg-block text-center">
                 <i class="fa-solid fa-house-chimney-user" style="font-size: 9rem; opacity: 0.25;"></i>

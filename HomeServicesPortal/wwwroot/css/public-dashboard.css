@@ -20,8 +20,38 @@
     margin-bottom: 0.5rem;
 }
 
+.pub-dash-hero--provider {
+    max-width: none;
+}
+
 .pub-dash-hero--provider .pub-dash-eyebrow {
     color: #003366;
+}
+
+.provider-hero-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.75rem 1rem;
+    margin-bottom: 0.35rem;
+}
+
+.provider-hero-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.provider-hero-actions form {
+    margin: 0;
+}
+
+.pub-dash-hero h1.provider-welcome {
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin-bottom: 0.3rem;
 }
 
 .pub-dash-hero h1 {
@@ -135,16 +165,24 @@
 }
 
 .client-service-card {
-    background: #fff;
+    --service: #003366;
+    background: linear-gradient(160deg, color-mix(in srgb, var(--service) 20%, #fff) 0%, color-mix(in srgb, var(--service) 7%, #fff) 70%);
     border-radius: 16px;
     padding: 1.5rem 1.35rem;
-    box-shadow: 0 12px 32px rgba(0, 34, 68, 0.08);
-    border: 1px solid rgba(0, 51, 102, 0.06);
+    box-shadow: 0 8px 20px color-mix(in srgb, var(--service) 16%, transparent);
+    border: 1px solid color-mix(in srgb, var(--service) 28%, #fff);
     height: 100%;
     transition: transform 0.15s ease, box-shadow 0.15s ease;
     display: flex;
     flex-direction: column;
 }
+
+.client-service-card--indigo { --service: #4f46e5; }
+.client-service-card--teal { --service: #14b8a6; }
+.client-service-card--green { --service: #16a34a; }
+.client-service-card--amber { --service: #f59e0b; }
+.client-service-card--pink { --service: #ec4899; }
+.client-service-card--blue { --service: #0284c7; }
 
 .client-service-card--link {
     text-decoration: none;
@@ -155,14 +193,14 @@
 .client-service-card--link:hover,
 .client-service-card--link:focus {
     transform: translateY(-3px);
-    box-shadow: 0 16px 36px rgba(0, 34, 68, 0.12);
+    box-shadow: 0 12px 24px color-mix(in srgb, var(--service) 28%, transparent);
     color: inherit;
     outline: none;
 }
 
 .client-service-card:hover {
     transform: translateY(-3px);
-    box-shadow: 0 16px 36px rgba(0, 34, 68, 0.12);
+    box-shadow: 0 12px 24px color-mix(in srgb, var(--service) 28%, transparent);
 }
 
 .client-service-cta {
@@ -347,13 +385,14 @@
     width: 52px;
     height: 52px;
     border-radius: 14px;
-    background: rgba(0, 51, 102, 0.08);
-    color: #003366;
+    background: var(--service, #003366);
+    color: #fff;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     font-size: 1.3rem;
     margin-bottom: 1rem;
+    box-shadow: 0 6px 14px color-mix(in srgb, var(--service) 40%, transparent);
 }
 
 .client-service-title {
@@ -533,21 +572,38 @@
 .provider-stat {
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
-    padding: 1.1rem 1.2rem;
-    border-radius: 14px;
-    background: #fff;
-    border: 1px solid rgba(0, 51, 102, 0.1);
-    border-left: 5px solid var(--stat, #0d6efd);
+    gap: 0.2rem;
+    padding: 1.15rem 1.15rem 1rem;
+    border-radius: 16px;
+    background: linear-gradient(160deg, color-mix(in srgb, var(--stat) 22%, #fff) 0%, color-mix(in srgb, var(--stat) 8%, #fff) 70%);
+    border: 1px solid color-mix(in srgb, var(--stat) 32%, #fff);
     color: inherit;
     text-decoration: none;
-    box-shadow: 0 2px 10px rgba(0, 51, 102, 0.06);
+    box-shadow: 0 8px 20px color-mix(in srgb, var(--stat) 16%, transparent);
 }
 
-a.provider-stat:hover { box-shadow: 0 6px 18px rgba(0, 51, 102, 0.14); color: inherit; }
-.provider-stat > i { color: var(--stat, #0d6efd); font-size: 1.3rem; }
+a.provider-stat:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 24px color-mix(in srgb, var(--stat) 28%, transparent);
+    color: inherit;
+}
+
+.provider-stat-icon {
+    width: 46px;
+    height: 46px;
+    margin-bottom: 0.55rem;
+    border-radius: 14px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--stat, #0d6efd);
+    color: #fff;
+    font-size: 1.15rem;
+    box-shadow: 0 6px 14px color-mix(in srgb, var(--stat) 40%, transparent);
+}
+
 .provider-stat-value { font-size: 1.7rem; font-weight: 800; color: #003366; line-height: 1.1; }
-.provider-stat-label { font-size: 0.85rem; color: #5b6b7b; }
+.provider-stat-label { font-size: 0.85rem; color: #3d4d5c; font-weight: 600; }
 .provider-stat--indigo { --stat: #4f46e5; }
 .provider-stat--teal { --stat: #14b8a6; }
 .provider-stat--green { --stat: #16a34a; }

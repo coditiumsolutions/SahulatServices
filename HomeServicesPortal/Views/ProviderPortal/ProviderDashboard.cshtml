@@ -25,8 +25,31 @@
         }
 
         <header class="pub-dash-hero pub-dash-hero--provider">
-            <p class="pub-dash-eyebrow">Provider account</p>
-            <h1>@(string.IsNullOrEmpty(firstName) ? "Welcome back!" : $"Welcome back, {firstName}!")</h1>
+            <div class="provider-hero-bar">
+                <p class="pub-dash-eyebrow mb-0">Provider account</p>
+                <div class="provider-hero-actions">
+                    @if (Model.IsOnline)
+                    {
+                        <form method="post" action="/provider/availability">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="isOnline" value="false" />
+                            <button type="submit" class="btn btn-sm btn-outline-primary">
+                                <i class="fa-solid fa-power-off me-1" aria-hidden="true"></i>Go offline
+                            </button>
+                        </form>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#availabilityModal">
+                            <i class="fa-regular fa-clock me-1" aria-hidden="true"></i>Change hours
+                        </button>
+                    }
+                    else
+                    {
+                        <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#availabilityModal">
+                            <i class="fa-solid fa-wifi me-1" aria-hidden="true"></i>Go online
+                        </button>
+                    }
+                </div>
+            </div>
+            <h1 class="provider-welcome">@(string.IsNullOrEmpty(firstName) ? "Welcome back!" : $"Welcome back, {firstName}!")</h1>
             <p class="pub-dash-lead">
                 @if (Model.IsOnline)
                 {
@@ -37,28 +60,6 @@
                     <text>You're offline right now.</text>
                 }
             </p>
-
-            <div class="d-flex flex-wrap gap-2 mt-3">
-                @if (Model.IsOnline)
-                {
-                    <form method="post" action="/provider/availability" class="d-inline">
-                        @Html.AntiForgeryToken()
-                        <input type="hidden" name="isOnline" value="false" />
-                        <button type="submit" class="btn btn-light">
-                            <i class="fa-solid fa-power-off me-1" aria-hidden="true"></i>Go offline
-                        </button>
-                    </form>
-                    <button type="button" class="btn btn-outline-light" data-bs-toggle="modal" data-bs-target="#availabilityModal">
-                        <i class="fa-regular fa-clock me-1" aria-hidden="true"></i>Change hours
-                    </button>
-                }
-                else
-                {
-                    <button type="button" class="btn btn-light" data-bs-toggle="modal" data-bs-target="#availabilityModal">
-                        <i class="fa-solid fa-wifi me-1" aria-hidden="true"></i>Go online
-                    </button>
-                }
-            </div>
         </header>
 
         <a class="provider-notif-card mb-4" href="/provider/notifications">
@@ -77,28 +78,28 @@
         <h2 class="h5 mb-3">Overview</h2>
         <div class="provider-stats">
             <a class="provider-stat provider-stat--indigo" href="/provider/requests">
-                <i class="fa-solid fa-inbox" aria-hidden="true"></i>
+                <span class="provider-stat-icon" aria-hidden="true"><i class="fa-solid fa-inbox"></i></span>
                 <span class="provider-stat-value">@Model.AvailableRequests</span>
                 <span class="provider-stat-label">Available Requests</span>
             </a>
             <a class="provider-stat provider-stat--teal" href="/provider/bookings">
-                <i class="fa-solid fa-briefcase" aria-hidden="true"></i>
+                <span class="provider-stat-icon" aria-hidden="true"><i class="fa-solid fa-briefcase"></i></span>
                 <span class="provider-stat-value">@Model.ActiveBookings</span>
                 <span class="provider-stat-label">Active Bookings</span>
             </a>
             <div class="provider-stat provider-stat--green">
-                <i class="fa-solid fa-circle-check" aria-hidden="true"></i>
+                <span class="provider-stat-icon" aria-hidden="true"><i class="fa-solid fa-circle-check"></i></span>
                 <span class="provider-stat-value">@Model.CompletedToday</span>
                 <span class="provider-stat-label">Completed Today</span>
             </div>
             <div class="provider-stat provider-stat--amber">
-                <i class="fa-solid fa-star" aria-hidden="true"></i>
+                <span class="provider-stat-icon" aria-hidden="true"><i class="fa-solid fa-star"></i></span>
                 <span class="provider-stat-value">@Model.AverageRating.ToString("0.0")</span>
                 <span class="provider-stat-label">Average Rating</span>
             </div>
             <a class="provider-stat provider-stat--pink" href="/provider/wallet">
-                <i class="fa-solid fa-wallet" aria-hidden="true"></i>
-                <span class="provider-stat-value">@(Model.WalletBalance.HasValue ? RequestDisplayHelper.Currency(Model.WalletBalance.Value) : "—")</span>
+                <span class="provider-stat-icon" aria-hidden="true"><i class="fa-solid fa-wallet"></i></span>
+                <span class="provider-stat-value">@(Model.WalletBalance is decimal balance ? RequestDisplayHelper.Currency(balance) ?? "Rs 0" : "—")</span>
                 <span class="provider-stat-label">Wallet Balance</span>
             </a>
         </div>
