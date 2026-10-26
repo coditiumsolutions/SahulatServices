@@ -293,3 +293,8 @@ section[id] {
         padding: 0.65rem 1rem;
     }
 }
+
+/* Notification bell */
+.hs-bell { position: relative; }
+.hs-bell-badge { position: absolute; top: -6px; right: -8px; min-width: 18px; padding: 0 5px; border-radius: 999px; background: #dc2626; color: #fff; font-size: 0.65rem; font-weight: 700; line-height: 18px; text-align: center; }
+.hs-tab-link-spacer .hs-tab-link { cursor: pointer; }

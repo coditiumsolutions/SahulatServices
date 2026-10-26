@@ -15,6 +15,7 @@ public class ProviderHomeVm
     public decimal AverageRating { get; set; }
     /// <summary>Null when the wallet could not be loaded.</summary>
     public decimal? WalletBalance { get; set; }
+    public int UnreadNotifications { get; set; }
 }
 
 /// <summary>My Documents / first-time document upload. One page serves both.</summary>

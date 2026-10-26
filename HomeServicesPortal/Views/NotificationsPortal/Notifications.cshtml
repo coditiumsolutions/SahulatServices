@@ -1,0 +1,82 @@
+@using HomeServicesPortal.Helpers
+@using HomeServicesPortal.Models.Api
+@model UserNotificationListDto
+@{
+    Layout = "_PublicLayout";
+    ViewData["Robots"] = "noindex, nofollow";
+    var role = (string)ViewData["Role"]!;
+    var home = role == UserTypeConstants.Provider ? "/provider" : "/client";
+    var pages = Math.Max(1, (int)Math.Ceiling(Model.TotalCount / (double)Math.Max(1, Model.PageSize)));
+}
+
+@section Head {
+    <link rel="stylesheet" href="~/css/public-dashboard.css" asp-append-version="true" />
+}
+
+<section class="pub-dash">
+    <div class="container">
+        <header class="pub-dash-hero @(role == UserTypeConstants.Provider ? "pub-dash-hero--provider" : "") d-flex flex-wrap align-items-end justify-content-between gap-2">
+            <div>
+                <p class="pub-dash-eyebrow">@role account</p>
+                <h1 class="mb-1">Notifications</h1>
+                <p class="pub-dash-lead mb-0">@(Model.UnreadCount > 0 ? $"{Model.UnreadCount} unread" : "You are all caught up")</p>
+            </div>
+            @if (Model.UnreadCount > 0)
+            {
+                <form method="post" action="@home/notifications/read-all">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-outline-light btn-sm"><i class="fa-solid fa-check-double me-1" aria-hidden="true"></i>Mark all read</button>
+                </form>
+            }
+        </header>
+
+        @if (Model.Items.Count == 0)
+        {
+            <div class="pub-dash-card text-center py-5">
+                <i class="fa-regular fa-bell fs-1 text-muted mb-3" aria-hidden="true"></i>
+                <h2 class="h5">No notifications yet</h2>
+                <p class="text-muted mb-0">Updates on your requests and bookings will show up here.</p>
+            </div>
+        }
+        else
+        {
+            <div class="notif-list">
+                @foreach (var n in Model.Items)
+                {
+                    var (icon, colour) = NotificationDisplayHelper.IconFor(n.Type);
+                    var target = NotificationDisplayHelper.TargetFor(n, role);
+                    <form method="post" action="@home/notifications/@n.Id/open" class="notif-item-form">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="next" value="@target" />
+                        <input type="hidden" name="page" value="@Model.Page" />
+                        <button type="submit" class="notif-item @(n.IsRead ? "" : "is-unread")" style="--notif-colour:@colour">
+                            <span class="notif-chip" aria-hidden="true"><i class="@icon"></i></span>
+                            <span class="notif-text">
+                                <span class="notif-title">@n.Title @if (!n.IsRead) { <span class="badge text-bg-primary ms-1">NEW</span> }</span>
+                                <span class="notif-body">@n.Body</span>
+                                <span class="notif-date">@n.CreatedAt.ToPktDateDisplay(), @n.CreatedAt.ToPktTimeDisplay()</span>
+                            </span>
+                        </button>
+                    </form>
+                }
+            </div>
+
+            @if (pages > 1)
+            {
+                <nav class="d-flex justify-content-between align-items-center mt-3" aria-label="Notification pages">
+                    @if (Model.Page > 1)
+                    {
+                        <a class="btn btn-outline-primary btn-sm" href="@home/notifications?page=@(Model.Page - 1)"><i class="fa-solid fa-chevron-left me-1" aria-hidden="true"></i>Newer</a>
+                    }
+                    else { <span></span> }
+                    <span class="small text-muted">Page @Model.Page of @pages</span>
+                    @if (Model.Page < pages)
+                    {
+                        <a class="btn btn-outline-primary btn-sm" href="@home/notifications?page=@(Model.Page + 1)">Older<i class="fa-solid fa-chevron-right ms-1" aria-hidden="true"></i></a>
+                    }
+                    else { <span></span> }
+                </nav>
+            }
+        }
+    </div>
+</section>

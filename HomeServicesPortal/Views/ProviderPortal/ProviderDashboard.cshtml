@@ -61,6 +61,19 @@
             </div>
         </header>
 
+        <a class="provider-notif-card mb-4" href="/provider/notifications">
+            <span class="provider-notif-icon" aria-hidden="true"><i class="fa-regular fa-bell"></i></span>
+            <span class="flex-grow-1">
+                <span class="fw-semibold d-block">Notifications</span>
+                <span class="small text-muted">@(Model.UnreadNotifications > 0 ? $"{Model.UnreadNotifications} unread" : "You are all caught up")</span>
+            </span>
+            @if (Model.UnreadNotifications > 0)
+            {
+                <span class="badge rounded-pill text-bg-danger">@(Model.UnreadNotifications > 99 ? "99+" : Model.UnreadNotifications.ToString())</span>
+            }
+            <i class="fa-solid fa-chevron-right text-muted" aria-hidden="true"></i>
+        </a>
+
         <h2 class="h5 mb-3">Overview</h2>
         <div class="provider-stats">
             <a class="provider-stat provider-stat--indigo" href="/provider/requests">

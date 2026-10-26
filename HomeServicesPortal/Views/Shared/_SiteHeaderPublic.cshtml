@@ -8,6 +8,12 @@
         && userType != null
         && userType.Equals("Provider", StringComparison.OrdinalIgnoreCase);
     var isPortalUser = isClient || isProvider;
+    // An account with both a client and a provider profile can switch between the two dashboards.
+    var isDualRole = isPortalUser
+        && int.TryParse(User.FindFirst("ClientId")?.Value, out var clientProfileId) && clientProfileId > 0
+        && int.TryParse(User.FindFirst("ProviderId")?.Value, out var providerProfileId) && providerProfileId > 0;
+    var notificationsHref = isProvider ? "/provider/notifications" : "/client/notifications";
+    var switchTo = isProvider ? "Client" : "Provider";
     var displayName = User.Identity?.Name;
     var homeHref = isProvider ? "/provider/dashboard" : isClient ? "/client/dashboard" : "/";
 
@@ -55,6 +61,12 @@
                     </li>
                     @if (isPortalUser)
                     {
+                        <li>
+                            <a class="hs-utility-link hs-bell" href="@notificationsHref" data-count-url="@notificationsHref/count" aria-label="Notifications">
+                                <i class="fa-regular fa-bell"></i>
+                                <span class="hs-bell-badge d-none js-bell-badge" aria-hidden="true"></span>
+                            </a>
+                        </li>
                         <li>
                             <span class="hs-utility-link">
                                 <i class="fa-solid fa-user"></i>
@@ -115,6 +127,18 @@
                     <li>
                         <a class="hs-tab-link @TabActive("profile")" href="/client/profile">Profile</a>
                     </li>
+                    @if (isDualRole)
+                    {
+                        <li class="hs-tab-link-spacer">
+                            <form method="post" action="/switch-role" class="d-inline">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="to" value="@switchTo" />
+                                <button type="submit" class="hs-tab-link border-0 bg-transparent">
+                                    <i class="fa-solid fa-repeat me-1"></i>Switch to @switchTo Dashboard
+                                </button>
+                            </form>
+                        </li>
+                    }
                 </ul>
             }
             else if (isProvider)
@@ -135,6 +159,18 @@
                     <li>
                         <a class="hs-tab-link @TabActive("profile")" href="/provider/profile">Profile</a>
                     </li>
+                    @if (isDualRole)
+                    {
+                        <li class="hs-tab-link-spacer">
+                            <form method="post" action="/switch-role" class="d-inline">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="to" value="@switchTo" />
+                                <button type="submit" class="hs-tab-link border-0 bg-transparent">
+                                    <i class="fa-solid fa-repeat me-1"></i>Switch to @switchTo Dashboard
+                                </button>
+                            </form>
+                        </li>
+                    }
                 </ul>
             }
             else
@@ -196,6 +232,19 @@
                         <a class="hs-quick-link" href="/client/profile" data-bs-dismiss="modal">
                             <span><i class="fa-solid fa-id-badge"></i>Profile</span><i class="fa-solid fa-chevron-right"></i>
                         </a>
+                        <a class="hs-quick-link" href="/client/notifications" data-bs-dismiss="modal">
+                            <span><i class="fa-regular fa-bell"></i>Notifications <span class="badge text-bg-danger d-none js-bell-badge"></span></span><i class="fa-solid fa-chevron-right"></i>
+                        </a>
+                        @if (isDualRole)
+                        {
+                            <form method="post" action="/switch-role">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="to" value="Provider" />
+                                <button type="submit" class="hs-quick-link border-0 bg-transparent w-100 text-start">
+                                    <span><i class="fa-solid fa-repeat"></i>Switch to Provider Dashboard</span><i class="fa-solid fa-chevron-right"></i>
+                                </button>
+                            </form>
+                        }
                         <form method="post" action="/logout">
                             @Html.AntiForgeryToken()
                             <button type="submit" class="hs-quick-link border-0 bg-transparent w-100 text-start">
@@ -223,6 +272,19 @@
                         <a class="hs-quick-link" href="/provider/profile" data-bs-dismiss="modal">
                             <span><i class="fa-solid fa-id-badge"></i>Profile</span><i class="fa-solid fa-chevron-right"></i>
                         </a>
+                        <a class="hs-quick-link" href="/provider/notifications" data-bs-dismiss="modal">
+                            <span><i class="fa-regular fa-bell"></i>Notifications <span class="badge text-bg-danger d-none js-bell-badge"></span></span><i class="fa-solid fa-chevron-right"></i>
+                        </a>
+                        @if (isDualRole)
+                        {
+                            <form method="post" action="/switch-role">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="to" value="Client" />
+                                <button type="submit" class="hs-quick-link border-0 bg-transparent w-100 text-start">
+                                    <span><i class="fa-solid fa-repeat"></i>Switch to Client Dashboard</span><i class="fa-solid fa-chevron-right"></i>
+                                </button>
+                            </form>
+                        }
                         <form method="post" action="/logout">
                             @Html.AntiForgeryToken()
                             <button type="submit" class="hs-quick-link border-0 bg-transparent w-100 text-start">
@@ -244,3 +306,8 @@
         </div>
     </div>
 </div>
+
+@if (isPortalUser)
+{
+    <script src="~/js/notification-bell.js" asp-append-version="true" defer></script>
+}

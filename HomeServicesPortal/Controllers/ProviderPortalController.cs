@@ -21,6 +21,7 @@ public class ProviderPortalController : Controller
     private readonly IProviderAvailabilityService _availability;
     private readonly IPaymentService _payments;
     private readonly IProviderDocumentsApiService _documents;
+    private readonly INotificationService _notifications;
     private readonly ILogger<ProviderPortalController> _logger;
 
     public ProviderPortalController(
@@ -28,12 +29,14 @@ public class ProviderPortalController : Controller
         IProviderAvailabilityService availability,
         IPaymentService payments,
         IProviderDocumentsApiService documents,
+        INotificationService notifications,
         ILogger<ProviderPortalController> logger)
     {
         _db = db;
         _availability = availability;
         _payments = payments;
         _documents = documents;
+        _notifications = notifications;
         _logger = logger;
     }
 
@@ -199,6 +202,18 @@ public class ProviderPortalController : Controller
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Could not load provider wallet balance for dashboard.");
+        }
+
+        if (int.TryParse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value, out var loginUid))
+        {
+            try
+            {
+                vm.UnreadNotifications = await _notifications.GetUnreadCountAsync(loginUid, UserTypeConstants.Provider, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Could not load the unread notification count for the provider dashboard.");
+            }
         }
 
         ViewData["Title"] = "Provider Dashboard";

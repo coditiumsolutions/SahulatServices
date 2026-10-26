@@ -340,6 +340,58 @@ public class PublicAccountController : Controller
         return Redirect("/login");
     }
 
+    /// <summary>
+    /// Dual-role accounts (a client profile and a provider profile on one login) switch dashboards here. The
+    /// target profile is checked in the database, not taken from the form; nothing is stored on the account.
+    /// </summary>
+    [HttpPost("/switch-role")]
+    [Authorize]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> SwitchRole(string? to, CancellationToken cancellationToken)
+    {
+        if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var userUid))
+        {
+            return Redirect("/login");
+        }
+
+        string role;
+        int profileId;
+        string fullName;
+        if (string.Equals(to, UserTypeConstants.Provider, StringComparison.OrdinalIgnoreCase))
+        {
+            var provider = await _db.Providers.AsNoTracking().FirstOrDefaultAsync(p => p.UserUid == userUid, cancellationToken);
+            (role, profileId, fullName) = (UserTypeConstants.Provider, provider?.Uid ?? 0, provider?.FullName ?? string.Empty);
+        }
+        else if (string.Equals(to, UserTypeConstants.Client, StringComparison.OrdinalIgnoreCase))
+        {
+            var client = await _db.Clients.AsNoTracking().FirstOrDefaultAsync(c => c.UserUid == userUid, cancellationToken);
+            (role, profileId, fullName) = (UserTypeConstants.Client, client?.Uid ?? 0, client?.FullName ?? string.Empty);
+        }
+        else
+        {
+            return RedirectToDashboardForCurrentUser();
+        }
+
+        if (profileId == 0)
+        {
+            return RedirectToDashboardForCurrentUser();
+        }
+
+        var current = await HttpContext.AuthenticateAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+        var keep = new[] { ClaimTypes.NameIdentifier, ClaimTypes.MobilePhone, "ClientId", "ProviderId" };
+        var claims = current.Principal!.Claims.Where(c => keep.Contains(c.Type)).ToList();
+        claims.Add(new Claim(ClaimTypes.Name, fullName));
+        claims.Add(new Claim("UserType", role));
+        claims.Add(new Claim("ProfileId", profileId.ToString()));
+        claims.Add(new Claim(ClaimTypes.Role, role));
+
+        var principal = new ClaimsPrincipal(new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme));
+        await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal, current.Properties);
+
+        _logger.LogInformation("User {UserUid} switched to the {Role} dashboard.", userUid, role);
+        return Redirect(role == UserTypeConstants.Provider ? "/provider/dashboard" : "/client/dashboard");
+    }
+
     [HttpPost("/logout")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Logout()
@@ -372,6 +424,10 @@ public class PublicAccountController : Controller
 
     private async Task SignInPublicUserAsync(UsersLogin user, string fullName, int profileId, bool rememberMe)
     {
+        // Both profile ids ride in the cookie so a dual-role account can switch dashboards (see SwitchRole).
+        var clientId = await _db.Clients.AsNoTracking().Where(c => c.UserUid == user.Uid).Select(c => c.Uid).FirstOrDefaultAsync();
+        var providerId = await _db.Providers.AsNoTracking().Where(p => p.UserUid == user.Uid).Select(p => p.Uid).FirstOrDefaultAsync();
+
         var claims = new List<Claim>
         {
             new(ClaimTypes.NameIdentifier, user.Uid.ToString()),
@@ -379,6 +435,8 @@ public class PublicAccountController : Controller
             new(ClaimTypes.MobilePhone, user.MobileNo),
             new("UserType", user.UserType),
             new("ProfileId", profileId.ToString()),
+            new("ClientId", clientId.ToString()),
+            new("ProviderId", providerId.ToString()),
             new(ClaimTypes.Role, user.UserType)
         };
 
