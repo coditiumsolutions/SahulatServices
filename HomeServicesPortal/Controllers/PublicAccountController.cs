@@ -162,6 +162,11 @@ public class PublicAccountController : Controller
             ModelState.AddModelError(nameof(model.Gender), "Please select a gender.");
         }
 
+        if (!model.AcceptTerms)
+        {
+            ModelState.AddModelError(nameof(model.AcceptTerms), "You must accept the Terms & Conditions to create an account.");
+        }
+
         var categoryIds = model.CategoryUids.Where(id => id > 0).Distinct().ToList();
         if (isProvider)
         {

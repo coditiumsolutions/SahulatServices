@@ -61,6 +61,10 @@ public class PublicSignupViewModel
     [Compare(nameof(Password), ErrorMessage = "Passwords do not match")]
     public string ConfirmPassword { get; set; } = string.Empty;
 
+    /// <summary>Must be ticked; the terms shown depend on <see cref="UserType"/>.</summary>
+    [Display(Name = "Accept Terms & Conditions")]
+    public bool AcceptTerms { get; set; }
+
     public IEnumerable<SelectListItem> Categories { get; set; } = Array.Empty<SelectListItem>();
 
     public IEnumerable<SelectListItem> Cities { get; set; } = Array.Empty<SelectListItem>();

@@ -144,6 +144,18 @@
                         </div>
                     </div>
 
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="AcceptTerms" id="acceptTerms" value="true"
+                                   checked="@Model.AcceptTerms" />
+                            <label class="form-check-label" for="acceptTerms">
+                                I agree to the
+                                <a href="#" id="termsLink" data-bs-toggle="modal" data-bs-target="#termsModal">Terms &amp; Conditions</a>
+                            </label>
+                        </div>
+                        <span asp-validation-for="AcceptTerms" class="text-danger small"></span>
+                    </div>
+
                     <button type="submit" class="btn pub-auth-btn w-100">
                         <i class="fa-solid fa-user-plus me-2" aria-hidden="true"></i>Create account
                     </button>
@@ -159,7 +171,22 @@
 </section>
 
 @section Scripts {
+    <partial name="_SignupTerms" />
     <script>
+        (function () {
+            var select = document.getElementById('userTypeSelect');
+            var client = document.getElementById('termsClient');
+            var provider = document.getElementById('termsProvider');
+            var modal = document.getElementById('termsModal');
+            if (!select || !modal) return;
+            // Show the terms for the chosen account type; default to the customer terms.
+            modal.addEventListener('show.bs.modal', function () {
+                var isProvider = select.value === 'Provider';
+                provider.classList.toggle('d-none', !isProvider);
+                client.classList.toggle('d-none', isProvider);
+            });
+        })();
+
         (function () {
             var select = document.getElementById('userTypeSelect');
             var groups = document.querySelectorAll('.provider-only');
