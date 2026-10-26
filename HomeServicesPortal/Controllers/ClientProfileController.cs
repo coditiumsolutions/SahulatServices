@@ -19,6 +19,9 @@ namespace HomeServicesPortal.Controllers;
 [Authorize(Roles = UserTypeConstants.Client)]
 public class ClientProfileController : Controller
 {
+    /// <summary>Account deletion from the website is switched off for now; flip to true to re-enable (and restore the profile page button).</summary>
+    private static readonly bool DeleteAccountEnabled = false;
+
     private readonly AppDbContext _db;
     private static readonly string[] Genders = { "Male", "Female", "Other" };
 
@@ -107,6 +110,11 @@ public class ClientProfileController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteAccount(string? password, CancellationToken cancellationToken)
     {
+        if (!DeleteAccountEnabled)
+        {
+            return NotFound();
+        }
+
         if (string.IsNullOrWhiteSpace(password))
         {
             TempData["ProfileError"] = "Password is required.";

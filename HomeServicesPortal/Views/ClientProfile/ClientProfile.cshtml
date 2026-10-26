@@ -102,16 +102,19 @@
                 </div>
             }
         </div>
-        <div class="pub-dash-card mt-4 border-danger-subtle">
+        @* Delete Account hidden for now (re-enable by removing this comment and the modal one below).
+<div class="pub-dash-card mt-4 border-danger-subtle">
             <h2 class="text-danger"><i class="fa-solid fa-triangle-exclamation me-2" aria-hidden="true"></i>Danger zone</h2>
             <p class="text-muted">Deleting your account is permanent. You cannot delete it while you have pending dues or open bookings.</p>
             <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteAccountModal">
                 Delete Account
             </button>
         </div>
+*@
     </div>
 </section>
 
+@*
 <div class="modal fade" id="deleteAccountModal" tabindex="-1" aria-labelledby="deleteAccountTitle" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <form method="post" action="/client/profile/delete-account" class="modal-content">
@@ -132,3 +135,4 @@
         </form>
     </div>
 </div>
+*@
