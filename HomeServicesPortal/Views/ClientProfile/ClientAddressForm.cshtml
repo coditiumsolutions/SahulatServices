@@ -7,7 +7,13 @@
 }
 
 @section Head {
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
     <link rel="stylesheet" href="~/css/public-dashboard.css" asp-append-version="true" />
+}
+
+@section Scripts {
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script src="~/js/address-map.js" asp-append-version="true"></script>
 }
 
 <section class="pub-dash">
@@ -56,6 +62,23 @@
                     </div>
                 </div>
 
+                <div class="mb-3">
+                    <label for="addressMapSearch" class="form-label">Pin on the map (optional)</label>
+                    <input id="addressMapSearch" type="search" class="form-control" autocomplete="off"
+                           placeholder="Search a place, e.g. Bahria Town Phase 4" />
+                    <ul id="addressMapResults" class="list-group list-unstyled mt-1 address-map-results"></ul>
+                    <div id="addressMap" class="address-map mt-2" role="application" aria-label="Map for placing the address pin"></div>
+                    <div class="d-flex flex-wrap gap-2 mt-2">
+                        <button type="button" id="addressMapLocate" class="btn btn-outline-primary btn-sm">
+                            <i class="fa-solid fa-crosshairs me-1" aria-hidden="true"></i>Use my location
+                        </button>
+                        <button type="button" id="addressMapClear" class="btn btn-outline-secondary btn-sm">
+                            <i class="fa-solid fa-xmark me-1" aria-hidden="true"></i>Remove pin
+                        </button>
+                    </div>
+                    <div id="addressMapStatus" class="form-text" aria-live="polite">Search, click the map, or drag the pin to where the provider should come.</div>
+                </div>
+
                 <div class="row">
                     <div class="col-md-6 mb-3">
                         <label asp-for="Latitude" class="form-label"></label>
@@ -68,7 +91,7 @@
                         <span asp-validation-for="Longitude" class="text-danger small"></span>
                     </div>
                 </div>
-                <p class="form-text mb-4">Latitude and longitude are optional — provide both or leave both blank.</p>
+                <p class="form-text mb-4">The pin sets latitude and longitude. They are optional — provide both or leave both blank.</p>
 
                 <button type="submit" class="btn client-request-submit">
                     <i class="fa-solid fa-floppy-disk me-2" aria-hidden="true"></i>Save address

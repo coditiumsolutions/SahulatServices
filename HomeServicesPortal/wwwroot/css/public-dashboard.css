@@ -408,6 +408,30 @@
     text-decoration: underline;
 }
 
+.address-map {
+    height: 320px;
+    border-radius: 0.5rem;
+    border: 1px solid #d9dee5;
+    z-index: 0;
+}
+
+.address-map-results {
+    max-height: 14rem;
+    overflow-y: auto;
+    padding: 0;
+}
+
+.client-req-bounced {
+    margin: 0 0 0.75rem;
+    padding: 0.6rem 0.85rem;
+    border-radius: 0.5rem;
+    background: #FFF3E0;
+    border: 1px solid #FFB74D;
+    color: #8A4B00;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
 .client-req-actions {
     display: flex;
     flex-wrap: wrap;
