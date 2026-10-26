@@ -199,6 +199,7 @@ public class ServiceProviderService : IServiceProviderService
     public async Task<ServiceProviderListVm> GetListAsync(
         string? search,
         string? verifyStatus,
+        int? categoryUid,
         string? sort,
         string? sortDir,
         int page,
@@ -219,6 +220,17 @@ public class ServiceProviderService : IServiceProviderService
                 p.MobileNo.Contains(term) ||
                 p.Cnic.Contains(term) ||
                 p.Category.CategoryName.Contains(term));
+        }
+
+        // Matches any of the provider's categories (primary or additional), not just the primary one.
+        if (categoryUid is > 0)
+        {
+            var categoryId = categoryUid.Value;
+            query = query.Where(p => p.ProviderCategories.Any(pc => pc.CategoryUid == categoryId));
+        }
+        else
+        {
+            categoryUid = null;
         }
 
         if (string.Equals(verifyStatus, "1", StringComparison.Ordinal)
@@ -285,6 +297,8 @@ public class ServiceProviderService : IServiceProviderService
             Items = items,
             Search = search,
             VerifyStatus = verifyStatus,
+            CategoryUid = categoryUid,
+            CategoryOptions = await GetCategoryOptionsAsync(cancellationToken),
             Sort = sort,
             SortDir = sortDir,
             Page = page,
