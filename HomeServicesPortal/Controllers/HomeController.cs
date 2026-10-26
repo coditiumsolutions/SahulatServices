@@ -135,6 +135,12 @@ public class HomeController : Controller
         return View();
     }
 
+    [Route("/terms-and-conditions")]
+    public IActionResult Terms()
+    {
+        return View();
+    }
+
     [HttpGet]
     [Route("/delete-account")]
     public IActionResult DeleteAccount()

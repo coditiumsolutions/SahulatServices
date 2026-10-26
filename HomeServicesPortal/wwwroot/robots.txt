@@ -10,6 +10,7 @@ User-agent: PerplexityBot
 User-agent: Perplexity-User
 Allow: /
 Allow: /privacy-policy
+Allow: /terms-and-conditions
 Allow: /delete-account
 Allow: /Home/DownloadApp
 
@@ -45,6 +46,7 @@ Disallow: /
 User-agent: *
 Allow: /
 Allow: /privacy-policy
+Allow: /terms-and-conditions
 Allow: /delete-account
 Allow: /Home/DownloadApp
 
