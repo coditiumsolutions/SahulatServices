@@ -1,0 +1,139 @@
+@using HomeServicesPortal.Models.ViewModels
+@model ProviderRequestsVm
+@{
+    Layout = "_PublicLayout";
+    ViewData["Robots"] = "noindex, nofollow";
+    var reasons = (string[])ViewData["RejectReasons"]!;
+    var success = TempData["ProviderSuccess"] as string;
+    var error = TempData["ProviderError"] as string;
+}
+
+@section Head {
+    <link rel="stylesheet" href="~/css/public-dashboard.css" asp-append-version="true" />
+}
+
+<section class="pub-dash">
+    <div class="container">
+        @if (!string.IsNullOrEmpty(success))
+        {
+            <div class="alert alert-success" role="status">@success</div>
+        }
+        @if (!string.IsNullOrEmpty(error))
+        {
+            <div class="alert alert-danger" role="alert">@error</div>
+        }
+
+        <header class="pub-dash-hero pub-dash-hero--provider d-flex flex-wrap align-items-end justify-content-between gap-2">
+            <div>
+                <p class="pub-dash-eyebrow">Provider account</p>
+                <h1 class="mb-0">Incoming Requests</h1>
+            </div>
+            <div class="small opacity-75">
+                <i class="fa-solid fa-rotate me-1" aria-hidden="true"></i>Updates automatically every 30 seconds
+                <span id="requestsUpdated"></span>
+                <button type="button" class="btn btn-sm btn-outline-light ms-2" id="requestsRefresh">Refresh now</button>
+            </div>
+        </header>
+
+        <div id="requestsList">
+            <partial name="_ProviderRequestsList" model="Model" />
+        </div>
+    </div>
+</section>
+
+<div class="modal fade" id="rejectModal" tabindex="-1" aria-labelledby="rejectModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <form method="post" class="modal-content" id="rejectForm">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="accept" value="false" />
+            <div class="modal-header">
+                <h2 class="modal-title h5" id="rejectModalTitle">Reject Booking</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to reject this booking for "<span id="rejectTitle"></span>"? This cannot be undone.</p>
+                <label class="form-label" for="rejectReason">Reason</label>
+                <select class="form-select mb-3" name="reason" id="rejectReason" required>
+                    <option value="">Select a reason</option>
+                    @foreach (var reason in reasons)
+                    {
+                        <option>@reason</option>
+                    }
+                </select>
+                <div id="rejectOtherGroup" class="d-none">
+                    <label class="form-label" for="rejectOtherReason">Tell us more</label>
+                    <textarea class="form-control" name="otherReason" id="rejectOtherReason" rows="3" maxlength="500" placeholder="Tell us more"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Keep</button>
+                <button type="submit" class="btn btn-danger" id="rejectConfirm" disabled>Yes, Reject</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        (function () {
+            var list = document.getElementById('requestsList');
+            var stamp = document.getElementById('requestsUpdated');
+            var modalEl = document.getElementById('rejectModal');
+            var form = document.getElementById('rejectForm');
+            var reason = document.getElementById('rejectReason');
+            var other = document.getElementById('rejectOtherReason');
+            var otherGroup = document.getElementById('rejectOtherGroup');
+            var confirmBtn = document.getElementById('rejectConfirm');
+            var modalOpen = false;
+            var busy = false;
+
+            // Reject dialog: the card's button tells the modal which booking it is for.
+            modalEl.addEventListener('show.bs.modal', function (e) {
+                var b = e.relatedTarget;
+                form.action = '/provider/requests/' + b.getAttribute('data-request-id') + '/respond';
+                document.getElementById('rejectTitle').textContent = b.getAttribute('data-request-title');
+                reason.value = '';
+                other.value = '';
+                sync();
+                modalOpen = true;
+            });
+            modalEl.addEventListener('hidden.bs.modal', function () { modalOpen = false; });
+            function sync() {
+                var isOther = reason.value === 'Other';
+                otherGroup.classList.toggle('d-none', !isOther);
+                confirmBtn.disabled = !reason.value || (isOther && !other.value.trim());
+            }
+            reason.addEventListener('change', sync);
+            other.addEventListener('input', sync);
+
+            // The web has no push, so quietly re-fetch the list. Skipped while the tab is hidden,
+            // the reject dialog is open, or an accept is being sent.
+            function refresh() {
+                if (busy || modalOpen || document.hidden) return;
+                busy = true;
+                fetch('/provider/requests/list', { credentials: 'same-origin', headers: { 'X-Requested-With': 'fetch' } })
+                    .then(function (r) {
+                        if (r.status === 401 || r.redirected) { window.location.reload(); return null; }
+                        return r.ok ? r.text() : null;
+                    })
+                    .then(function (html) {
+                        if (html === null) return;
+                        list.innerHTML = html;
+                        stamp.textContent = ' · last checked ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    })
+                    .catch(function () { /* try again next tick */ })
+                    .then(function () { busy = false; });
+            }
+            setInterval(refresh, 30000);
+            document.addEventListener('visibilitychange', function () { if (!document.hidden) refresh(); });
+            document.getElementById('requestsRefresh').addEventListener('click', refresh);
+
+            // Stop the polling from swapping the list under a pending accept.
+            list.addEventListener('submit', function (e) {
+                busy = true;
+                var btn = e.target.querySelector('button[type=submit]');
+                if (btn) btn.disabled = true;
+            });
+        })();
+    </script>
+}

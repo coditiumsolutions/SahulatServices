@@ -123,6 +123,39 @@ public class ProviderCategoriesVm
     public Dictionary<int, string> CategoryNames { get; set; } = new();
 }
 
+public class ProviderRequestsVm
+{
+    public List<ProviderRequestCardVm> Requests { get; set; } = new();
+}
+
+public class ProviderRequestCardVm
+{
+    public int Uid { get; set; }
+    public string ClientName { get; set; } = string.Empty;
+    public string Title { get; set; } = string.Empty;
+    public string? Detail { get; set; }
+    public string Address { get; set; } = string.Empty;
+    /// <summary>Null when the customer left the date and time blank.</summary>
+    public string? Scheduled { get; set; }
+    public string? Estimate { get; set; }
+    public string Requested { get; set; } = string.Empty;
+
+    public static ProviderRequestCardVm From(Models.Api.ServiceBookingApiDto b) => new()
+    {
+        Uid = b.Uid,
+        ClientName = string.IsNullOrWhiteSpace(b.ClientName) ? "Customer" : b.ClientName.Trim(),
+        Title = string.IsNullOrWhiteSpace(b.RequestTitle) ? "Service request" : b.RequestTitle.Trim(),
+        Detail = string.IsNullOrWhiteSpace(b.ServiceDetail) ? null : b.ServiceDetail.Trim(),
+        Address = string.Join(", ", new[] { b.ClientFullAddress, b.ClientArea, b.ClientCity }
+            .Where(p => !string.IsNullOrWhiteSpace(p)).Select(p => p!.Trim())),
+        Scheduled = b.PreferredServiceDate == null && string.IsNullOrWhiteSpace(b.PreferredServiceTime)
+            ? null
+            : Helpers.RequestDisplayHelper.ScheduleText(b.PreferredServiceDate, b.PreferredServiceTime),
+        Estimate = Helpers.RequestDisplayHelper.Currency(b.EstimatedAmount),
+        Requested = Helpers.PktTimeHelper.ToPktDisplay(b.CreatedOn)
+    };
+}
+
 public class ProviderPendingVm
 {
     public string FullName { get; set; } = string.Empty;

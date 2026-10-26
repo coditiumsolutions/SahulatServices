@@ -1,0 +1,67 @@
+@using HomeServicesPortal.Models.ViewModels
+@model ProviderRequestsVm
+
+<p class="text-muted mb-3" id="requestsCount" data-count="@Model.Requests.Count">
+    @(Model.Requests.Count == 0 ? "No requests right now" : $"{Model.Requests.Count} request(s) waiting")
+</p>
+
+@if (Model.Requests.Count == 0)
+{
+    <div class="pub-dash-card text-center py-5">
+        <i class="fa-solid fa-inbox fs-1 text-muted mb-3" aria-hidden="true"></i>
+        <h2 class="h5">No requests yet</h2>
+        <p class="text-muted mb-0">New job assignments from staff will show up here as soon as they come in.</p>
+    </div>
+}
+else
+{
+    <div class="provider-requests">
+        @foreach (var r in Model.Requests)
+        {
+            <article class="provider-request-card">
+                <div class="d-flex align-items-start gap-3">
+                    <div class="provider-request-avatar" aria-hidden="true">@r.ClientName.Substring(0, 1).ToUpperInvariant()</div>
+                    <div class="flex-grow-1">
+                        <div class="d-flex flex-wrap justify-content-between gap-2">
+                            <div>
+                                <h2 class="h6 mb-0">@r.ClientName</h2>
+                                <div class="text-muted small">@r.Title</div>
+                            </div>
+                            <span class="badge text-bg-secondary align-self-start"><i class="fa-solid fa-hourglass-half me-1" aria-hidden="true"></i>Pending</span>
+                        </div>
+                        @if (!string.IsNullOrEmpty(r.Detail))
+                        {
+                            <p class="mt-2 mb-2 provider-request-detail">@r.Detail</p>
+                        }
+                        <ul class="provider-request-info">
+                            @if (!string.IsNullOrEmpty(r.Address))
+                            {
+                                <li><i class="fa-solid fa-location-dot" aria-hidden="true"></i>@r.Address</li>
+                            }
+                            @if (!string.IsNullOrEmpty(r.Scheduled))
+                            {
+                                <li><i class="fa-regular fa-calendar" aria-hidden="true"></i>@r.Scheduled</li>
+                            }
+                            @if (!string.IsNullOrEmpty(r.Estimate))
+                            {
+                                <li><i class="fa-solid fa-money-bill-wave" aria-hidden="true"></i>Est. @r.Estimate</li>
+                            }
+                        </ul>
+                        <div class="small text-muted mb-2">Requested @r.Requested</div>
+                        <div class="d-flex flex-wrap gap-2">
+                            <form method="post" action="/provider/requests/@r.Uid/respond" class="d-inline provider-accept-form">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="accept" value="true" />
+                                <button type="submit" class="btn btn-primary btn-sm"><i class="fa-solid fa-check me-1" aria-hidden="true"></i>Accept</button>
+                            </form>
+                            <button type="button" class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#rejectModal"
+                                    data-request-id="@r.Uid" data-request-title="@r.Title">
+                                <i class="fa-solid fa-xmark me-1" aria-hidden="true"></i>Reject
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </article>
+        }
+    </div>
+}

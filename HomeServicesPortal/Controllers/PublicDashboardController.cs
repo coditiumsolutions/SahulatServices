@@ -435,11 +435,6 @@ public class PublicDashboardController : Controller
         return success && data != null && data.ClientUid == clientUid.Value ? data : null;
     }
 
-    [HttpGet("/provider/requests")]
-    [Authorize(Roles = UserTypeConstants.Provider)]
-    [TypeFilter(typeof(HomeServicesPortal.Filters.RequireVerifiedProviderFilter))]
-    public IActionResult ProviderRequests() => PortalSection("Provider", "Requests", "Incoming job requests will appear here.");
-
     [HttpGet("/provider/bookings")]
     [Authorize(Roles = UserTypeConstants.Provider)]
     [TypeFilter(typeof(HomeServicesPortal.Filters.RequireVerifiedProviderFilter))]
