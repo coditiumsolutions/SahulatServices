@@ -1,0 +1,27 @@
+@using HomeServicesPortal.Helpers
+@model string
+@* Model = "client" or "provider": which profile page to come back to. *@
+<div class="pub-dash-card mb-4">
+    <h2><i class="fa-regular fa-clock me-2" aria-hidden="true"></i>Preferences</h2>
+    <form method="post" action="/preferences/time-format" id="timeFormatForm">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="returnTo" value="@Model" />
+        <input type="hidden" name="format" id="timeFormatValue" value="@(TimeFormatPreference.Use12Hour ? "24h" : "12h")" />
+        <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" role="switch" id="time24" checked="@(!TimeFormatPreference.Use12Hour)" />
+            <label class="form-check-label" for="time24">24-hour time</label>
+        </div>
+        <div class="form-text">Show times like 14:30 instead of 02:30 PM. This applies in this browser.</div>
+        <noscript><button type="submit" class="btn btn-outline-primary btn-sm mt-2">Save</button></noscript>
+    </form>
+</div>
+<script>
+    (function () {
+        var box = document.getElementById('time24');
+        if (!box) return;
+        box.addEventListener('change', function () {
+            document.getElementById('timeFormatValue').value = box.checked ? '24h' : '12h';
+            document.getElementById('timeFormatForm').submit();
+        });
+    })();
+</script>

@@ -13,9 +13,25 @@ public static class TimeFormatPreference
     public const string TwelveHour = "12h";
     public const string TwentyFourHour = "24h";
 
+    /// <summary>Cookie holding one visitor's own choice ("12h" or "24h"). It overrides the admin default for them only.</summary>
+    public const string UserCookieName = "sgt_time_format";
+
     private static volatile bool _use12Hour;
 
-    public static bool Use12Hour => _use12Hour;
+    // Set by UserTimeFormatMiddleware for the duration of one request; null = use the admin default.
+    private static readonly AsyncLocal<bool?> _userUse12Hour = new();
+
+    /// <summary>The signed-in visitor's own choice if they made one, otherwise the admin portal's default.</summary>
+    public static bool Use12Hour => _userUse12Hour.Value ?? _use12Hour;
+
+    /// <summary>Applies one request's per-visitor override (null clears it).</summary>
+    public static void SetForRequest(string? cookieValue) =>
+        _userUse12Hour.Value = cookieValue switch
+        {
+            TwelveHour => true,
+            TwentyFourHour => false,
+            _ => null
+        };
 
     public static void Set(string? configValue) => _use12Hour = configValue == TwelveHour;
 }

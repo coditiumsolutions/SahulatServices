@@ -51,6 +51,8 @@
             </article>
         </div>
 
+        @await Html.PartialAsync("_TimePreference", "client")
+
         <div class="pub-dash-card">
             <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
                 <h2 class="mb-0"><i class="fa-solid fa-location-dot me-2" aria-hidden="true"></i>Addresses <span class="text-muted fw-normal">(@Model.Addresses.Count)</span></h2>

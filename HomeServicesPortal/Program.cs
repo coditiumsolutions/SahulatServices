@@ -400,6 +400,7 @@ app.UseSwaggerUI(options =>
 });
 
 app.UseRouting();
+app.UseMiddleware<HomeServicesPortal.Middleware.UserTimeFormatMiddleware>();
 
 app.UseRateLimiter();
 
