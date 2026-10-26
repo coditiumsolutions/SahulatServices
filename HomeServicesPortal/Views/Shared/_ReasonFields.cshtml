@@ -1,0 +1,13 @@
+@using HomeServicesPortal.Helpers
+<label class="form-label">Reason</label>
+<select class="form-select mb-3" name="reason" required>
+    <option value="">Select a reason</option>
+    @foreach (var r in BookingDisplayHelper.ProviderReasons)
+    {
+        <option>@r</option>
+    }
+</select>
+<div class="reason-other d-none">
+    <label class="form-label">Tell us more</label>
+    <textarea class="form-control" name="otherReason" rows="3" maxlength="500" placeholder="Tell us more"></textarea>
+</div>

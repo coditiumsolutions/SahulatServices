@@ -156,6 +156,38 @@ public class ProviderRequestCardVm
     };
 }
 
+public class ProviderBookingsVm
+{
+    public const string TabActive = "active";
+    public const string TabCompleted = "completed";
+    public const string TabCancelled = "cancelled";
+
+    public string Tab { get; set; } = TabActive;
+    public int ActiveCount { get; set; }
+    public int CompletedCount { get; set; }
+    public int CancelledCount { get; set; }
+    public List<Models.Api.ServiceBookingApiDto> Items { get; set; } = new();
+}
+
+public class CompleteBookingForm
+{
+    public string? Passcode { get; set; }
+    public string? Amount { get; set; }
+    public string? PaymentMode { get; set; }
+    public string? Labour { get; set; }
+    public List<string> ItemName { get; set; } = new();
+    public List<string> ItemQty { get; set; } = new();
+    public List<string> ItemPrice { get; set; } = new();
+}
+
+public class ProviderBookingDetailVm
+{
+    public Models.Api.ServiceBookingApiDto Booking { get; set; } = null!;
+    public CompleteBookingForm Form { get; set; } = new();
+    /// <summary>Set when the completion form was rejected; the dialog re-opens with the typed values.</summary>
+    public string? CompleteError { get; set; }
+}
+
 public class ProviderPendingVm
 {
     public string FullName { get; set; } = string.Empty;

@@ -1,0 +1,149 @@
+@using HomeServicesPortal.Helpers
+@using HomeServicesPortal.Models.ViewModels
+@model ProviderBookingsVm
+@{
+    Layout = "_PublicLayout";
+    ViewData["Robots"] = "noindex, nofollow";
+    var success = TempData["ProviderSuccess"] as string;
+    var error = TempData["ProviderError"] as string;
+
+    var tabs = new[]
+    {
+        (Key: ProviderBookingsVm.TabActive, Label: "Active", Count: Model.ActiveCount),
+        (Key: ProviderBookingsVm.TabCompleted, Label: "Completed", Count: Model.CompletedCount),
+        (Key: ProviderBookingsVm.TabCancelled, Label: "Cancelled", Count: Model.CancelledCount)
+    };
+    var total = Model.ActiveCount + Model.CompletedCount + Model.CancelledCount;
+    var emptyTitle = Model.Tab switch
+    {
+        ProviderBookingsVm.TabCompleted => "No completed bookings",
+        ProviderBookingsVm.TabCancelled => "No cancelled bookings",
+        _ => "No active bookings"
+    };
+    var emptyText = Model.Tab switch
+    {
+        ProviderBookingsVm.TabCompleted => "Bookings you've completed will show up here.",
+        ProviderBookingsVm.TabCancelled => "Bookings you've cancelled will show up here.",
+        _ => "Bookings appear here once you accept a service request from a customer."
+    };
+}
+
+@section Head {
+    <link rel="stylesheet" href="~/css/public-dashboard.css" asp-append-version="true" />
+}
+
+<section class="pub-dash">
+    <div class="container">
+        @if (!string.IsNullOrEmpty(success))
+        {
+            <div class="alert alert-success" role="status">@success</div>
+        }
+        @if (!string.IsNullOrEmpty(error))
+        {
+            <div class="alert alert-danger" role="alert">@error</div>
+        }
+
+        <header class="pub-dash-hero pub-dash-hero--provider">
+            <p class="pub-dash-eyebrow">Provider account</p>
+            <h1>My Bookings</h1>
+            <p class="pub-dash-lead">@(total == 0 ? "No bookings yet" : $"{total} booking(s)")</p>
+        </header>
+
+        @if (total == 0)
+        {
+            <div class="pub-dash-card text-center py-5">
+                <i class="fa-solid fa-briefcase fs-1 text-muted mb-3" aria-hidden="true"></i>
+                <h2 class="h5">No bookings yet</h2>
+                <p class="text-muted mb-0">Bookings appear here once you accept a service request from a customer.</p>
+            </div>
+        }
+        else
+        {
+            <ul class="nav nav-pills client-req-tabs mb-3" role="tablist">
+                @foreach (var t in tabs)
+                {
+                    <li class="nav-item">
+                        <a class="nav-link @(Model.Tab == t.Key ? "active" : "")" href="/provider/bookings?tab=@t.Key">@t.Label (@t.Count)</a>
+                    </li>
+                }
+            </ul>
+
+            @if (Model.Items.Count == 0)
+            {
+                <div class="pub-dash-card text-center py-5">
+                    <h2 class="h5">@emptyTitle</h2>
+                    <p class="text-muted mb-0">@emptyText</p>
+                </div>
+            }
+            else
+            {
+                <div class="provider-requests">
+                    @foreach (var b in Model.Items)
+                    {
+                        var address = BookingDisplayHelper.Address(b);
+                        var scheduled = BookingDisplayHelper.Scheduled(b);
+                        <article class="provider-request-card provider-booking-card--@BookingDisplayHelper.Colour(b.Status)">
+                            <div class="d-flex flex-wrap justify-content-between gap-2">
+                                <div>
+                                    <h2 class="h6 mb-0"><a href="/provider/bookings/@b.Uid" class="stretched-link-none text-decoration-none">@(string.IsNullOrWhiteSpace(b.RequestTitle) ? "Service request" : b.RequestTitle)</a></h2>
+                                    <div class="text-muted small"><i class="fa-solid fa-user me-1" aria-hidden="true"></i>@(string.IsNullOrWhiteSpace(b.ClientName) ? "Customer" : b.ClientName)</div>
+                                </div>
+                                <span class="badge text-bg-@BookingDisplayHelper.Colour(b.Status) align-self-start">@b.Status</span>
+                            </div>
+                            @if (!string.IsNullOrWhiteSpace(b.ServiceDetail))
+                            {
+                                <p class="mt-2 mb-2 provider-request-detail">@b.ServiceDetail</p>
+                            }
+                            <ul class="provider-request-info">
+                                @if (address.Length > 0)
+                                {
+                                    <li><i class="fa-solid fa-location-dot" aria-hidden="true"></i>@address</li>
+                                }
+                                @if (scheduled != null)
+                                {
+                                    <li><i class="fa-regular fa-calendar" aria-hidden="true"></i>@scheduled</li>
+                                }
+                                <li><i class="fa-solid fa-money-bill-wave" aria-hidden="true"></i>Final @BookingDisplayHelper.Money(b.FinalAmount)</li>
+                            </ul>
+
+                            <div class="mb-3"><partial name="_BookingProgress" model="b.Status" /></div>
+
+                            <div class="d-flex flex-wrap gap-2">
+                                @if (!string.IsNullOrWhiteSpace(b.ClientMobileNo))
+                                {
+                                    <a class="btn btn-outline-primary btn-sm" href="tel:@b.ClientMobileNo"><i class="fa-solid fa-phone me-1" aria-hidden="true"></i>Call</a>
+                                    <a class="btn btn-outline-success btn-sm" href="@RequestDisplayHelper.WhatsAppUrl(b.ClientMobileNo)" target="_blank" rel="noopener"><i class="fa-brands fa-whatsapp me-1" aria-hidden="true"></i>WhatsApp</a>
+                                }
+                                <a class="btn btn-outline-secondary btn-sm" href="/provider/bookings/@b.Uid">Details</a>
+                                @if (b.Status == "Accepted")
+                                {
+                                    <form method="post" action="/provider/bookings/@b.Uid/start" class="d-inline provider-start-form">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="btn btn-sm text-white" style="background:#14b8a6"><i class="fa-solid fa-play me-1" aria-hidden="true"></i>Start Job</button>
+                                    </form>
+                                }
+                                else if (b.Status == "In Progress")
+                                {
+                                    <a class="btn btn-success btn-sm" href="/provider/bookings/@b.Uid?complete=1"><i class="fa-solid fa-flag-checkered me-1" aria-hidden="true"></i>Mark as Complete</a>
+                                }
+                            </div>
+                        </article>
+                    }
+                </div>
+            }
+        }
+    </div>
+</section>
+
+@section Scripts {
+    <script>
+        // A second tap on Start Job must not send a second request.
+        document.querySelectorAll('.provider-start-form').forEach(function (f) {
+            f.addEventListener('submit', function () {
+                var b = f.querySelector('button[type=submit]');
+                b.disabled = true;
+                b.textContent = 'Starting...';
+            });
+        });
+    </script>
+}

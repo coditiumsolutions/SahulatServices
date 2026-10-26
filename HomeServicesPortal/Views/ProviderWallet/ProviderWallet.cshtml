@@ -1,0 +1,96 @@
+@using HomeServicesPortal.Helpers
+@using HomeServicesPortal.Models.ViewModels
+@model ProviderWalletVm?
+@{
+    Layout = "_PublicLayout";
+    ViewData["Robots"] = "noindex, nofollow";
+    var owed = Model != null && Model.Balance >= 0;
+}
+
+@section Head {
+    <link rel="stylesheet" href="~/css/public-dashboard.css" asp-append-version="true" />
+}
+
+<section class="pub-dash">
+    <div class="container">
+        <header class="pub-dash-hero pub-dash-hero--provider">
+            <p class="pub-dash-eyebrow">Provider account</p>
+            <h1>Wallet</h1>
+            <p class="pub-dash-lead">Balance and payment history</p>
+        </header>
+
+        @if (Model == null)
+        {
+            <div class="pub-dash-card text-center py-5">
+                <i class="fa-solid fa-triangle-exclamation fs-1 text-muted mb-3" aria-hidden="true"></i>
+                <h2 class="h5">Couldn't load wallet</h2>
+                <p class="text-muted">Something went wrong while loading your wallet.</p>
+                <a class="btn btn-primary" href="/provider/wallet"><i class="fa-solid fa-rotate me-1" aria-hidden="true"></i>Retry</a>
+            </div>
+        }
+        else
+        {
+            <div class="pub-dash-card wallet-balance mb-4">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="wallet-balance-icon @(owed ? "is-credit" : "is-debit")" aria-hidden="true">
+                        <i class="fa-solid @(owed ? "fa-arrow-down" : "fa-arrow-up")"></i>
+                    </div>
+                    <div>
+                        <div class="@(owed ? "text-success" : "text-warning-emphasis") fw-semibold">@(owed ? "Company owes you" : "You owe the company")</div>
+                        <div class="wallet-balance-amount">@BookingDisplayHelper.Money(Math.Abs(Model.Balance))</div>
+                    </div>
+                </div>
+                <hr />
+                <div class="d-flex justify-content-between align-items-center">
+                    <span><i class="fa-solid fa-hourglass-half me-2 text-muted" aria-hidden="true"></i>Pending Payout</span>
+                    <strong>@BookingDisplayHelper.Money(Model.PendingPayoutTotal)</strong>
+                </div>
+            </div>
+
+            <h2 class="h5 mb-3">Transaction History</h2>
+            @if (Model.Transactions.Count == 0)
+            {
+                <div class="pub-dash-card text-center py-5">
+                    <i class="fa-solid fa-receipt fs-1 text-muted mb-3" aria-hidden="true"></i>
+                    <h3 class="h5">No transactions yet</h3>
+                    <p class="text-muted mb-0">Your earnings and payouts will show up here once you complete a job.</p>
+                </div>
+            }
+            else
+            {
+                <div class="pub-dash-card p-0">
+                    <div class="table-responsive">
+                        <table class="table align-middle mb-0 wallet-table">
+                            <thead>
+                                <tr><th></th><th>Reason</th><th>Date</th><th>Booking</th><th class="text-end">Amount</th><th class="text-end d-none d-md-table-cell">Balance</th></tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var t in Model.Transactions)
+                                {
+                                    var credit = t.SignedAmount >= 0;
+                                    <tr>
+                                        <td style="width:2.5rem"><span class="wallet-sign @(credit ? "is-credit" : "is-debit")" aria-hidden="true"><i class="fa-solid @(credit ? "fa-plus" : "fa-minus")"></i></span></td>
+                                        <td>@BookingDisplayHelper.WalletReasonLabel(t.Reason)</td>
+                                        <td class="text-nowrap">@t.CreatedOn.ToPktShortDateDisplay() &bull; @t.CreatedOn.ToPktTimeDisplay()</td>
+                                        <td>
+                                            @if (t.BookingUid.HasValue)
+                                            {
+                                                <a href="/provider/bookings/@t.BookingUid">#@t.BookingUid</a>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">-</span>
+                                            }
+                                        </td>
+                                        <td class="text-end fw-semibold @(credit ? "text-success" : "text-danger")">@(credit ? "+" : "-") @BookingDisplayHelper.Money(Math.Abs(t.SignedAmount))</td>
+                                        <td class="text-end text-muted d-none d-md-table-cell">@BookingDisplayHelper.Money(t.RunningBalance)</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            }
+        }
+    </div>
+</section>

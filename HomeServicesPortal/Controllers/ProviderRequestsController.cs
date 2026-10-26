@@ -16,14 +16,7 @@ public class ProviderRequestsController : Controller
 {
     private const string LostRaceError = "This job has already been assigned to another provider.";
 
-    private static readonly string[] RejectReasons =
-    {
-        "Outside my service area",
-        "Fully booked / no availability",
-        "Job scope unclear",
-        "Price too low",
-        "Other"
-    };
+    private static readonly string[] RejectReasons = BookingDisplayHelper.ProviderReasons;
 
     private readonly AppDbContext _db;
     private readonly IServiceBookingApiService _bookings;
@@ -75,8 +68,10 @@ public class ProviderRequestsController : Controller
         bool accept,
         string? reason,
         string? otherReason,
+        string? returnTo,
         CancellationToken cancellationToken)
     {
+        var back = returnTo == "detail" ? $"/provider/bookings/{id}" : "/provider/requests";
         var providerUid = await User.ResolveProviderUidAsync(_db, cancellationToken);
         if (providerUid == null)
         {
@@ -90,7 +85,7 @@ public class ProviderRequestsController : Controller
             if (chosen == null)
             {
                 TempData["ProviderError"] = "Reject reason is required when rejecting a booking.";
-                return Redirect("/provider/requests");
+                return Redirect(back);
             }
 
             var more = otherReason?.Trim();
@@ -99,7 +94,7 @@ public class ProviderRequestsController : Controller
                 if (string.IsNullOrEmpty(more))
                 {
                     TempData["ProviderError"] = "Please tell us more.";
-                    return Redirect("/provider/requests");
+                    return Redirect(back);
                 }
 
                 chosen = more.Length > 500 ? more[..500] : more;
@@ -112,17 +107,20 @@ public class ProviderRequestsController : Controller
         if (success)
         {
             TempData["ProviderSuccess"] = accept ? "Booking accepted" : "Booking rejected";
+            // Accepting from the detail page stays there; rejecting leaves it (the booking is gone from the provider's lists).
+            back = accept ? back : "/provider/requests";
         }
         else if (string.Equals(error, LostRaceError, StringComparison.Ordinal))
         {
             TempData["ProviderError"] = "Sorry, this job was just taken by another provider";
+            back = "/provider/requests";
         }
         else
         {
             TempData["ProviderError"] = error ?? (accept ? "Failed to accept booking" : "Failed to reject booking");
         }
 
-        return Redirect("/provider/requests");
+        return Redirect(back);
     }
 
     private async Task<ProviderRequestsVm?> BuildAsync(CancellationToken cancellationToken)

@@ -1,0 +1,21 @@
+@using HomeServicesPortal.Helpers
+@model string?
+@{
+    var step = BookingDisplayHelper.Step(Model);
+}
+@if (step < 0)
+{
+    <div class="client-req-cancelled-label"><i class="fa-solid fa-circle-xmark me-1" aria-hidden="true"></i>@(string.IsNullOrWhiteSpace(Model) ? "Cancelled" : Model + " Booking")</div>
+}
+else
+{
+    <ol class="client-req-progress" aria-label="Booking progress">
+        @for (var i = 0; i < BookingDisplayHelper.ProgressSteps.Length; i++)
+        {
+            <li class="@(i < step ? "is-done" : i == step ? "is-current" : "")">
+                <span class="client-req-progress-dot" aria-hidden="true"></span>
+                <span class="client-req-progress-text">@BookingDisplayHelper.ProgressSteps[i]</span>
+            </li>
+        }
+    </ol>
+}

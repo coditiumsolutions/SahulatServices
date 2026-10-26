@@ -435,15 +435,6 @@ public class PublicDashboardController : Controller
         return success && data != null && data.ClientUid == clientUid.Value ? data : null;
     }
 
-    [HttpGet("/provider/bookings")]
-    [Authorize(Roles = UserTypeConstants.Provider)]
-    [TypeFilter(typeof(HomeServicesPortal.Filters.RequireVerifiedProviderFilter))]
-    public IActionResult ProviderBookings() => PortalSection("Provider", "Bookings", "Your accepted and active jobs will appear here.");
-
-    [HttpGet("/provider/wallet")]
-    [Authorize(Roles = UserTypeConstants.Provider)]
-    [TypeFilter(typeof(HomeServicesPortal.Filters.RequireVerifiedProviderFilter))]
-    public IActionResult ProviderWallet() => PortalSection("Provider", "Wallet", "Your earnings and payouts will appear here.");
 
     private async Task<ClientServiceRequestFormVm?> BuildRequestFormAsync(
         int serviceUid,
@@ -595,21 +586,6 @@ public class PublicDashboardController : Controller
             .Where(c => c.UserUid == userId)
             .Select(c => (int?)c.Uid)
             .FirstOrDefaultAsync(cancellationToken);
-    }
-
-    private IActionResult PortalSection(string role, string title, string blurb)
-    {
-        ViewData["PortalRole"] = role;
-        ViewData["SectionTitle"] = title;
-        ViewData["SectionBlurb"] = blurb;
-        ViewData["Title"] = title;
-        return View("PortalSection", new PublicDashboardVm
-        {
-            FullName = User.Identity?.Name ?? "User",
-            UserType = role,
-            MobileNo = User.FindFirstValue(ClaimTypes.MobilePhone) ?? string.Empty,
-            ProfileId = int.TryParse(User.FindFirstValue("ProfileId"), out var pid) ? pid : 0
-        });
     }
 
     private static string ResolveServiceIcon(string serviceName)

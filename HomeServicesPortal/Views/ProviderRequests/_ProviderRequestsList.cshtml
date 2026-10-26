@@ -49,6 +49,7 @@ else
                         </ul>
                         <div class="small text-muted mb-2">Requested @r.Requested</div>
                         <div class="d-flex flex-wrap gap-2">
+                            <a href="/provider/bookings/@r.Uid" class="btn btn-outline-secondary btn-sm">Details</a>
                             <form method="post" action="/provider/requests/@r.Uid/respond" class="d-inline provider-accept-form">
                                 @Html.AntiForgeryToken()
                                 <input type="hidden" name="accept" value="true" />

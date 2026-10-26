@@ -1,0 +1,305 @@
+@using HomeServicesPortal.Helpers
+@using HomeServicesPortal.Models.ViewModels
+@model ProviderBookingDetailVm
+@{
+    Layout = "_PublicLayout";
+    ViewData["Robots"] = "noindex, nofollow";
+    var b = Model.Booking;
+    var success = TempData["ProviderSuccess"] as string;
+    var error = TempData["ProviderError"] as string;
+    var address = BookingDisplayHelper.Address(b);
+    var scheduled = BookingDisplayHelper.Scheduled(b);
+    var mapUrl = BookingDisplayHelper.EmbedMapUrl(b);
+    var directions = BookingDisplayHelper.DirectionsUrl(b);
+    var openComplete = Model.CompleteError != null || (Context.Request.Query["complete"] == "1" && b.Status == "In Progress");
+    var amountValue = Model.Form.Amount ?? Math.Round(b.FinalAmount, MidpointRounding.AwayFromZero).ToString("0", System.Globalization.CultureInfo.InvariantCulture);
+    var rows = Math.Max(Model.Form.ItemName.Count, 0);
+    string Row(string? v) => v ?? string.Empty;
+}
+
+@section Head {
+    <link rel="stylesheet" href="~/css/public-dashboard.css" asp-append-version="true" />
+}
+
+<section class="pub-dash">
+    <div class="container">
+        <p class="mb-3"><a href="/provider/bookings" class="client-back-link"><i class="fa-solid fa-arrow-left me-1" aria-hidden="true"></i>Back to bookings</a></p>
+
+        @if (!string.IsNullOrEmpty(success))
+        {
+            <div class="alert alert-success" role="status">@success</div>
+        }
+        @if (!string.IsNullOrEmpty(error))
+        {
+            <div class="alert alert-danger" role="alert">@error</div>
+        }
+
+        <header class="pub-dash-hero pub-dash-hero--provider">
+            <p class="pub-dash-eyebrow">Booking #@b.Uid</p>
+            <h1>@(string.IsNullOrWhiteSpace(b.RequestTitle) ? "Service request" : b.RequestTitle)</h1>
+            <span class="badge text-bg-@BookingDisplayHelper.Colour(b.Status) fs-6">@b.Status</span>
+        </header>
+
+        <div class="pub-dash-card mb-4"><partial name="_BookingProgress" model="b.Status" /></div>
+
+        <div class="row g-4 mb-4">
+            <div class="col-lg-6">
+                <article class="pub-dash-card h-100">
+                    <h2><i class="fa-solid fa-user me-2" aria-hidden="true"></i>Client</h2>
+                    <dl class="pub-dash-dl">
+                        <div><dt>Name</dt><dd>@(string.IsNullOrWhiteSpace(b.ClientName) ? "-" : b.ClientName)</dd></div>
+                        @if (!string.IsNullOrWhiteSpace(b.ClientMobileNo))
+                        {
+                            <div>
+                                <dt>Contact Number</dt>
+                                <dd>
+                                    @RequestDisplayHelper.MobileDisplay(b.ClientMobileNo)
+                                    <span class="ms-2">
+                                        <a class="btn btn-outline-primary btn-sm" href="tel:@b.ClientMobileNo"><i class="fa-solid fa-phone me-1" aria-hidden="true"></i>Call</a>
+                                        <a class="btn btn-outline-success btn-sm" href="@RequestDisplayHelper.WhatsAppUrl(b.ClientMobileNo)" target="_blank" rel="noopener"><i class="fa-brands fa-whatsapp me-1" aria-hidden="true"></i>WhatsApp</a>
+                                    </span>
+                                </dd>
+                            </div>
+                        }
+                        <div><dt>@(string.IsNullOrWhiteSpace(b.ClientAddressTitle) ? "Job Site" : b.ClientAddressTitle)</dt><dd>@(address.Length == 0 ? "-" : address)</dd></div>
+                        @if (scheduled != null)
+                        {
+                            <div><dt>Scheduled</dt><dd>@scheduled</dd></div>
+                        }
+                    </dl>
+                    @if (mapUrl != null)
+                    {
+                        <div class="ratio ratio-16x9 mb-2">
+                            <iframe src="@mapUrl" title="Client location" loading="lazy" referrerpolicy="no-referrer"></iframe>
+                        </div>
+                        <a class="btn btn-outline-primary btn-sm" href="@directions" target="_blank" rel="noopener"><i class="fa-solid fa-diamond-turn-right me-1" aria-hidden="true"></i>Directions in Google Maps</a>
+                    }
+                </article>
+            </div>
+
+            <div class="col-lg-6 d-flex flex-column gap-4">
+                <article class="pub-dash-card">
+                    <h2><i class="fa-solid fa-screwdriver-wrench me-2" aria-hidden="true"></i>Service Details</h2>
+                    <dl class="pub-dash-dl">
+                        <div><dt>Request</dt><dd>@(string.IsNullOrWhiteSpace(b.RequestTitle) ? "-" : b.RequestTitle)</dd></div>
+                        <div><dt>Details</dt><dd>@if (string.IsNullOrWhiteSpace(b.ServiceDetail)) { <span class="text-muted">No details provided</span> } else { @b.ServiceDetail }</dd></div>
+                    </dl>
+                </article>
+
+                <article class="pub-dash-card">
+                    <h2><i class="fa-solid fa-wallet me-2" aria-hidden="true"></i>Payment</h2>
+                    <dl class="pub-dash-dl">
+                        <div><dt>Final Amount</dt><dd>@BookingDisplayHelper.Money(b.FinalAmount)</dd></div>
+                        <div><dt>Customer Paid</dt><dd>@BookingDisplayHelper.Money(b.CustomerPaid)</dd></div>
+                        <div><dt>Payment Mode</dt><dd>@BookingDisplayHelper.PaymentModeLabel(b.PaymentMode)</dd></div>
+                        <div><dt>Your Earning</dt><dd>@BookingDisplayHelper.Money(b.ProviderEarning)</dd></div>
+                    </dl>
+                </article>
+
+                <article class="pub-dash-card">
+                    <h2><i class="fa-solid fa-circle-info me-2" aria-hidden="true"></i>Booking Info</h2>
+                    <dl class="pub-dash-dl">
+                        <div><dt>Booking ID</dt><dd>#@b.Uid</dd></div>
+                        <div><dt>Created On</dt><dd>@b.CreatedOn.ToPktDisplay()</dd></div>
+                        @if (b.AcceptedOn.HasValue)
+                        {
+                            <div><dt>Accepted On</dt><dd>@b.AcceptedOn.ToPktDisplay()</dd></div>
+                        }
+                        @if (b.CompletedOn.HasValue)
+                        {
+                            <div><dt>Completed On</dt><dd>@b.CompletedOn.ToPktDisplay()</dd></div>
+                        }
+                        @if (b.Status == "Cancelled" && !string.IsNullOrWhiteSpace(b.CancelReason))
+                        {
+                            <div><dt>Cancel Reason</dt><dd>@b.CancelReason</dd></div>
+                        }
+                    </dl>
+                </article>
+            </div>
+        </div>
+
+        <div class="d-flex flex-wrap gap-2 justify-content-end align-items-center">
+            @if (b.Status == "Pending")
+            {
+                <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#rejectModal">Reject</button>
+                <form method="post" action="/provider/requests/@b.Uid/respond" class="d-inline js-once">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="accept" value="true" />
+                    <input type="hidden" name="returnTo" value="detail" />
+                    <button type="submit" class="btn btn-primary">Accept</button>
+                </form>
+            }
+            else if (b.Status == "Accepted")
+            {
+                <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#cancelModal">Cancel Booking</button>
+                <form method="post" action="/provider/bookings/@b.Uid/start" class="d-inline js-once">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="returnTo" value="detail" />
+                    <button type="submit" class="btn text-white" style="background:#14b8a6"><i class="fa-solid fa-play me-1" aria-hidden="true"></i>Start Job</button>
+                </form>
+            }
+            else if (b.Status == "In Progress")
+            {
+                <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#cancelModal">Cancel Booking</button>
+                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#completeModal">Mark Completed</button>
+            }
+            else
+            {
+                <span class="fw-semibold text-@BookingDisplayHelper.Colour(b.Status)">Booking @b.Status</span>
+            }
+        </div>
+    </div>
+</section>
+
+@* Reject (Pending) *@
+<div class="modal fade" id="rejectModal" tabindex="-1" aria-labelledby="rejectModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <form method="post" action="/provider/requests/@b.Uid/respond" class="modal-content reason-form">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="accept" value="false" />
+            <input type="hidden" name="returnTo" value="detail" />
+            <div class="modal-header"><h2 class="modal-title h5" id="rejectModalTitle">Reject Booking</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+            <div class="modal-body">
+                <p>Are you sure you want to reject this booking for "@b.RequestTitle"? This cannot be undone.</p>
+                <partial name="_ReasonFields" />
+            </div>
+            <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Keep</button><button type="submit" class="btn btn-danger reason-confirm" disabled>Yes, Reject</button></div>
+        </form>
+    </div>
+</div>
+
+@* Cancel (Accepted / In Progress) *@
+<div class="modal fade" id="cancelModal" tabindex="-1" aria-labelledby="cancelModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <form method="post" action="/provider/bookings/@b.Uid/cancel" class="modal-content reason-form">
+            @Html.AntiForgeryToken()
+            <div class="modal-header"><h2 class="modal-title h5" id="cancelModalTitle">Cancel Booking</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+            <div class="modal-body">
+                <p>Are you sure you want to cancel this booking for "@b.RequestTitle"? This cannot be undone.</p>
+                <partial name="_ReasonFields" />
+            </div>
+            <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Keep</button><button type="submit" class="btn btn-danger reason-confirm" disabled>Yes, Cancel</button></div>
+        </form>
+    </div>
+</div>
+
+@* Complete (In Progress) *@
+<div class="modal fade" id="completeModal" tabindex="-1" aria-labelledby="completeModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <form method="post" action="/provider/bookings/@b.Uid/complete" class="modal-content" id="completeForm">
+            @Html.AntiForgeryToken()
+            <div class="modal-header">
+                <div>
+                    <h2 class="modal-title h5" id="completeModalTitle">Complete Job</h2>
+                    <div class="small text-muted">Verify with the customer to finish up</div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                @if (Model.CompleteError != null)
+                {
+                    <div class="alert alert-danger" role="alert">@Model.CompleteError</div>
+                }
+                <div class="mb-3">
+                    <label class="form-label" for="passcode">Passcode from customer</label>
+                    <input type="text" class="form-control form-control-lg" id="passcode" name="Passcode" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="••••" value="@Model.Form.Passcode" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label" for="amount">Amount collected (Rs) *</label>
+                    <input type="text" class="form-control" id="amount" name="Amount" inputmode="decimal" value="@amountValue" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label" for="paymentMode">Payment mode</label>
+                    <div class="form-text mb-1">Set by staff: @BookingDisplayHelper.PaymentModeLabel(b.PaymentMode)</div>
+                    <select class="form-select" id="paymentMode" name="PaymentMode">
+                        <option value="" selected="@string.IsNullOrEmpty(Model.Form.PaymentMode)">Keep existing</option>
+                        <option value="CashToProvider" selected="@(Model.Form.PaymentMode == "CashToProvider")">Cash to Provider</option>
+                        <option value="OnlineToCompany" selected="@(Model.Form.PaymentMode == "OnlineToCompany")">Online to Company</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label" for="labour">Labour charge (Rs, optional)</label>
+                    <input type="text" class="form-control" id="labour" name="Labour" inputmode="decimal" placeholder="Leave blank to use the full amount" value="@Model.Form.Labour" />
+                </div>
+                <div class="mb-1 d-flex justify-content-between align-items-center">
+                    <label class="form-label mb-0">Material items (optional)</label>
+                    <button type="button" class="btn btn-link btn-sm" id="addItem"><i class="fa-solid fa-plus me-1" aria-hidden="true"></i>Add item</button>
+                </div>
+                <div id="itemRows">
+                    @for (var i = 0; i < rows; i++)
+                    {
+                        <div class="row g-2 align-items-center mb-2 item-row">
+                            <div class="col-5"><input class="form-control form-control-sm" name="ItemName" placeholder="Item name" value="@Row(i < Model.Form.ItemName.Count ? Model.Form.ItemName[i] : null)" /></div>
+                            <div class="col-2"><input class="form-control form-control-sm" name="ItemQty" inputmode="numeric" placeholder="Qty" value="@Row(i < Model.Form.ItemQty.Count ? Model.Form.ItemQty[i] : null)" /></div>
+                            <div class="col-3"><input class="form-control form-control-sm" name="ItemPrice" inputmode="decimal" placeholder="Price" value="@Row(i < Model.Form.ItemPrice.Count ? Model.Form.ItemPrice[i] : null)" /></div>
+                            <div class="col-2 text-end"><button type="button" class="btn btn-sm text-danger remove-item" aria-label="Remove item"><i class="fa-solid fa-trash" aria-hidden="true"></i></button></div>
+                        </div>
+                    }
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" class="btn btn-primary" id="completeSubmit">Mark Completed</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        (function () {
+            // Reason dialogs (reject / cancel): the confirm button needs a reason, and "Other" needs text.
+            document.querySelectorAll('.reason-form').forEach(function (f) {
+                var reason = f.querySelector('[name=reason]');
+                var other = f.querySelector('[name=otherReason]');
+                var group = f.querySelector('.reason-other');
+                var btn = f.querySelector('.reason-confirm');
+                function sync() {
+                    var isOther = reason.value === 'Other';
+                    group.classList.toggle('d-none', !isOther);
+                    btn.disabled = !reason.value || (isOther && !other.value.trim());
+                }
+                reason.addEventListener('change', sync);
+                other.addEventListener('input', sync);
+                f.addEventListener('submit', function () { btn.disabled = true; });
+            });
+
+            // Single-tap actions must not be sent twice.
+            document.querySelectorAll('.js-once').forEach(function (f) {
+                f.addEventListener('submit', function () { f.querySelector('button[type=submit]').disabled = true; });
+            });
+
+            // Completing a job is not safe to retry: lock the button on submit.
+            var cf = document.getElementById('completeForm');
+            if (cf) {
+                var rowsEl = document.getElementById('itemRows');
+                function bindRemove(scope) {
+                    scope.querySelectorAll('.remove-item').forEach(function (b) {
+                        b.onclick = function () { b.closest('.item-row').remove(); };
+                    });
+                }
+                bindRemove(rowsEl);
+                document.getElementById('addItem').addEventListener('click', function () {
+                    var d = document.createElement('div');
+                    d.className = 'row g-2 align-items-center mb-2 item-row';
+                    d.innerHTML = '<div class="col-5"><input class="form-control form-control-sm" name="ItemName" placeholder="Item name"></div>' +
+                        '<div class="col-2"><input class="form-control form-control-sm" name="ItemQty" inputmode="numeric" placeholder="Qty" value="1"></div>' +
+                        '<div class="col-3"><input class="form-control form-control-sm" name="ItemPrice" inputmode="decimal" placeholder="Price"></div>' +
+                        '<div class="col-2 text-end"><button type="button" class="btn btn-sm text-danger remove-item" aria-label="Remove item"><i class="fa-solid fa-trash" aria-hidden="true"></i></button></div>';
+                    rowsEl.appendChild(d);
+                    bindRemove(d);
+                });
+                document.getElementById('passcode').addEventListener('input', function (e) { e.target.value = e.target.value.replace(/\D/g, '').slice(0, 4); });
+                cf.addEventListener('submit', function () {
+                    var s = document.getElementById('completeSubmit');
+                    s.disabled = true;
+                    s.textContent = 'Submitting...';
+                });
+                @if (openComplete)
+                {
+                    <text>new bootstrap.Modal(document.getElementById('completeModal')).show();</text>
+                }
+            }
+        })();
+    </script>
+}
