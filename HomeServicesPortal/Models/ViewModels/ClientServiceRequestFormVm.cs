@@ -19,11 +19,11 @@ public class ClientServiceRequestFormVm
     [Required(ErrorMessage = "Please select a service address.")]
     [Display(Name = "Service Address")]
     [Range(1, int.MaxValue, ErrorMessage = "Please select a service address.")]
-    public int ClientAddressUid { get; set; }
+    public int? ClientAddressUid { get; set; }
 
     /// <summary>Selected ServiceTitles.UID, or <see cref="OtherTitleValue"/> for "Other (not listed)". 0 = nothing chosen.</summary>
     [Display(Name = "Service Title")]
-    public int ServiceTitleUid { get; set; }
+    public int? ServiceTitleUid { get; set; }
 
     public const int OtherTitleValue = -1;
 

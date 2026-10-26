@@ -183,7 +183,7 @@ public class PublicDashboardController : Controller
         }
 
         var isOther = model.IsOtherTitle;
-        if (model.ServiceTitleUid == 0)
+        if (model.ServiceTitleUid is null or 0)
         {
             ModelState.AddModelError(nameof(model.ServiceTitleUid), "Required");
         }
@@ -284,7 +284,7 @@ public class PublicDashboardController : Controller
         {
             ClientUid = clientUid.Value,
             CategoryUid = categoryUid,
-            ClientAddressUid = model.ClientAddressUid,
+            ClientAddressUid = model.ClientAddressUid.GetValueOrDefault(),
             ServiceTitle = titleText,
             ServiceTitleUid = titleUid,
             ServiceDescription = model.ServiceDescription?.Trim(),
