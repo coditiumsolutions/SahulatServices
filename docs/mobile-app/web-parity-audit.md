@@ -1,6 +1,6 @@
 # Web parity audit: existing pages vs the app
 
-Compares the pages already on the website with [web-parity-spec.md](web-parity-spec.md), applying the choices in [web-parity-decisions.md](web-parity-decisions.md). Read-only review; nothing has been changed.
+Compares the pages already on the website with [web-parity-spec.md](web-parity-spec.md), applying the choices in [web-parity-decisions.md](web-parity-decisions.md). The gap tables below are the original review; the **Status** sections at the end say what has since been built.
 Severity: **High** = wrong behaviour or data, **Med** = missing app behaviour, **Low** = copy or polish.
 
 ## Login (`/login`)
@@ -74,26 +74,32 @@ Severity: **High** = wrong behaviour or data, **Med** = missing app behaviour, *
 | D7 | Address delete rule | `Cannot delete address because it is linked to service requests.` | Not checked; confirm the message and behaviour. | Low |
 | D8 | Footer and guest browsing | Guest can browse services and categories, with a login prompt at request time. | Services pages are under `/client/...` (login required). The public site has separate marketing pages. Decide whether guests should browse real categories before logging in. | Med |
 
-## Status after the client-side pass
+## Status (updated 26 Oct 2026)
 
-Done: request form (R1-R6), My Requests (M1-M5, M7-M9, M11), request detail, signup (S1, S4-S6), client dashboard (D1, D3), profile (Edit Profile with gender, Delete Account), remember-me length (L4), login unverified rule recorded as D21 (L1).
-Not done, on purpose:
-- S3 terms checkbox: waiting for the owner's Terms text.
+### Client side: done
+Request form (R1-R6, R8), My Requests and request detail (M1-M5, M7-M9, M11), signup (S1, S3-S6; terms checkbox added with the owner's text), client dashboard (D1, D3), profile (Edit Profile with gender, D5), remember-me length (L4), notification bell and inbox (D4), role switcher, per-browser 24-hour time switch (D5).
+Login with unverified accounts stays allowed (D21, L1) until OTP exists.
+
+### Provider side: done
+- Entry gate: unverified providers go to `/provider/pending` (L2); both profile ids and the active role are in the cookie (L3).
+- `/provider/dashboard`: overview stats, online/offline with explicit Save/Cancel hours (D8), notifications card.
+- `/provider/documents`: first upload and My Documents with browser crop; CNIC replacement asks for confirmation and sends the account back to review; police certificate locks once verified (D4, D10). New providers go straight to it after signup.
+- `/provider/requests`: accept and reject with reason, refreshes every 30 seconds (D16).
+- `/provider/bookings` and `/provider/bookings/{id}`: tabs, start, cancel with reason, passcode completion (amount, payment mode, labour, materials), embedded map and Directions link (D12).
+- `/provider/wallet`: balance, pending payout, transaction history.
+- `/provider/profile`, `/provider/profile/edit` (description and zones, D11) and `/provider/categories` (categories, primary, services).
+- Notifications inbox and bell for both roles (D2); switch-dashboard button in the second navbar (D6).
+
+### Not done, on purpose or still open
 - M6 "provider cancelled" notice: needs a stored last-seen status per request.
-- D4 notification bell: part of the notifications work (D2).
-- D5 24-hour time switch: the time format is a single site-wide setting today, not per user.
-- D6 address map pin, D8 guest browsing: not started.
-- L2 provider pending gate, L3 both ids in claims: belong to the provider side.
+- D6 address map pin and D8 guest browsing: not started.
+- Delete Account (D18) is built but switched off for now: the buttons are hidden and both endpoints return 404 (flag `DeleteAccountEnabled` in `ClientProfileController` and `ProviderProfileController`).
+- Rejected requests history: skipped (D9).
+- OTP, forgot password and reset password: deferred (D13); L1 (block unverified accounts at login) must be fixed once OTP exists.
+- Deep links `/app/requests/{id}`, `/app/bookings/{id}`, `/app/notifications` for logged-in users (D19): not mapped yet.
+- Provider availability toggle appears on the dashboard and profile only, not in the navbar of every provider page.
+- The 24-hour switch is stored in a browser cookie, not on the account.
+- Terms text is an interim draft (see `docs/legal/TERMS_&_CONDITONS.md`).
 
-## Provider pages
-
-All provider pages other than the dashboard placeholder (`/provider/requests`, `/provider/bookings`, `/provider/wallet`, `/provider/profile`) are placeholders. The full set in Part C of the spec is still to be built.
-
-## Suggested fix order for the existing pages
-
-1. My Requests: status label from `progressStatus`, tabs, progress bar, request detail page, cancel with reason, provider contact and passcode (M1 to M8).
-2. Request form: "Other" title, contact switch, date and time, remarks (R1 to R4, R6).
-3. Login: provider gate and unverified-account rule (L1, L2); claims for both ids (L3, D20).
-4. Signup: gender, terms (after owner text), provider fields (S1, S3, S5, S6).
-5. Dashboard: replace the placeholder with the services grid, search and bell (D1, D3, D4).
-6. Profile: Edit Profile, 24-hour time, Delete Account (D5).
+### Not browser-tested
+Server responses were checked end to end against the running site, but these need a look in a real browser: the crop dialog on the documents page, the 30-second Requests refresh, the 60-second bell badge, the booking-detail map, and the dialogs' button locking.

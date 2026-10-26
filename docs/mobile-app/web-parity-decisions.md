@@ -1,6 +1,6 @@
 # Web parity decisions
 
-Decisions made with the owner while reviewing [web-parity-spec.md](web-parity-spec.md). Nothing here is implemented yet.
+Decisions made with the owner while reviewing [web-parity-spec.md](web-parity-spec.md). Implementation status is in the table at the end.
 Question IDs (Q#) and risk IDs (R#) refer to the spec. Security and endpoint protection are out of scope here; a separate report covers them.
 
 ## Decided
@@ -22,7 +22,7 @@ Question IDs (Q#) and risk IDs (R#) refer to the spec. Security and endpoint pro
 | D13 | OTP | **Not on the website for now.** No OTP screens or calls in the client or provider pages (S5 OTP, S6 Forgot Password, S7 Reset Password, and the OTP step after login or signup). The OTP stays in the backend and the app, unchanged. Web signup keeps creating accounts as verified (`PublicAccountController` sets `IsVerified = true`, "Web signup has no OTP step"). It can be added later. | R2, S5-S7 |
 | D14 | Route names | **Web routes may differ from the app's.** Keep the current web routes (e.g. `/signup`, `/client/dashboard`, `/provider/dashboard`); new pages follow the existing `/client/...` and `/provider/...` pattern. The spec's proposed routes are suggestions only. | section 1 |
 | D15 | Session length | **Keep the 8-hour sliding cookie; "Remember me" extends it to about 30 days.** | R6, section 5 |
-| D16 | Provider live updates | **Undecided.** Polling the Requests tab (about every 30 s) vs manual refresh is to be decided later. The notification bell polls regardless (D2). | Part C |
+| D16 | Provider live updates | **Poll every 30 s.** The Requests list refreshes itself every 30 seconds while the page is open (paused when the tab is hidden or a dialog is open). The notification bell polls every 60 s (D2). | Part C |
 | D17 | Contact Us | **No separate page.** The footer already has Contact Us. S8 is covered. | S8 |
 | D18 | Delete account | **Add a "Delete account" option to each profile** that asks for the password, as in the app. The public `/delete-account` page stays as is. | S10, section 3.11 |
 | D19 | Shared deep links | **Map `/app/requests/{id}`, `/app/bookings/{id}` and `/app/notifications` to the matching web pages for logged-in users**, at the end of the build. Everyone else still goes to the download page. | R22 |
@@ -39,13 +39,39 @@ Question IDs (Q#) and risk IDs (R#) refer to the spec. Security and endpoint pro
 - New: role switcher in the navbar (D6).
 - C1 Home: no reviews section (D7).
 
-## Still open (not yet asked)
+## Implementation status
+
+| # | Status |
+|---|---|
+| D1 | Done: requests, bookings, start, cancel, passcode completion, wallet, profile, documents, categories. |
+| D2 | Done: inbox and bell, polled every 60 s. No web push. |
+| D3 | Done: no delete on web. |
+| D4 | Done: file picker, browser crop (Cropper.js), downscale, server limits. |
+| D5 | Done: signup then documents then Verification Pending then dashboard. |
+| D6 | Done: switch button in the second navbar for accounts that have both profiles. |
+| D7 | Done: reviews section not added. |
+| D8 | Done: explicit Save/Cancel in the availability dialog. |
+| D9 | Skipped, as decided. |
+| D10 | Done: police certificate locks once verified; CNIC replacement needs confirmation and resets verification. |
+| D11 | Done: description and zones (max 2) on provider profile edit. |
+| D12 | Provider booking detail done (embedded OpenStreetMap plus Directions link). Client address pin not started. |
+| D13 | Followed: no OTP screens or calls on the web. |
+| D14 | Followed: web routes differ from the app's. |
+| D15 | Done: 8 hours, or 30 days with Remember me. |
+| D16 | Done: 30 s polling on Requests. |
+| D17 | Followed: footer Contact link only. |
+| D18 | Built but switched off: buttons hidden, endpoints return 404 (flag `DeleteAccountEnabled`). |
+| D19 | Not started. |
+| D20 | Done: `ClientId` and `ProviderId` claims, plus the active role. |
+| D21 | Followed. Gap to fix once OTP exists. |
+
+## Still open
 
 - D21 follow-up: enforce `IsVerified` at web login when OTP is added.
-
 - Q2: server-to-server credential vs user token if the API gets JWT auth.
 - R2: when OTP is added to the web later, it must never render `data.otp` (backend should set `Otp:IncludeInResponse=false`).
-- R11: the full customer Terms & Conditions text is truncated in the app. The owner will provide it; not needed yet.
-- D16: provider Requests tab refresh (polling vs manual).
-- R22: map `/app/...` deep-link paths to the web pages for logged-in users instead of the download page.
-- Q11 / section 10: audit the existing web login, signup, request flow and My Requests against the app behaviours listed in the spec.
+- R11: the customer Terms & Conditions text in the app is still truncated; the website now has the owner's interim text (`/terms-and-conditions`), to be updated later.
+- R22 / D19: map `/app/...` deep-link paths to the web pages for logged-in users instead of the download page.
+- Client address map pin (D12) and guest browsing of services (audit D8).
+- "Provider cancelled" notice on My Requests (audit M6).
+- Time format: the per-user switch is a browser cookie; move it to the account if it should follow the user across devices.

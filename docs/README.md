@@ -17,7 +17,7 @@ always-current references for this project are **not** in this folder. They live
 | [design/](design/) | Design references and implementation plans |
 | [audits/](audits/) | Security and API audits, cleanup notes |
 | [testing/](testing/) | Test plans and manual test-session reports |
-| [legal/](legal/) | The privacy policy |
+| [legal/](legal/) | The privacy policy and the terms and conditions |
 
 ## seo/
 
@@ -38,6 +38,12 @@ always-current references for this project are **not** in this folder. They live
 - **[deep-linking.md](mobile-app/deep-linking.md)** (active) - Android App Links / iOS Universal Links: link map,
   the `.well-known` files served by this repo, the app-side setup, and the pending list.
 - **[notification-sounds.md](mobile-app/notification-sounds.md)** (current) - custom push sounds and channels.
+- **[web-parity-spec.md](mobile-app/web-parity-spec.md)** (current) - the Flutter app's screens and workflows, written
+  as the spec for the website's client/provider portal.
+- **[web-parity-decisions.md](mobile-app/web-parity-decisions.md)** (current) - decisions D1-D21 made while building
+  the portal, with an implementation status table.
+- **[web-parity-audit.md](mobile-app/web-parity-audit.md)** (current) - gap tables for the web pages against the app,
+  and what has been built since.
 - **[flutter-integration-plan.md](mobile-app/flutter-integration-plan.md)** (stale) - one-time integration task
   list from 2026-08-04; expected long since adopted.
 
@@ -73,6 +79,9 @@ always-current references for this project are **not** in this folder. They live
 
 - **[PRIVACY_POLICY.md](legal/PRIVACY_POLICY.md)** (current) - the privacy policy. The live copy is served from
   `Views/Home/Privacy.cshtml` at `/privacy-policy`; update both together.
+- **[TERMS_&_CONDITONS.md](legal/TERMS_&_CONDITONS.md)** (interim) - customer and provider terms. The live copy is the
+  two partials `Views/Shared/_TermsCustomer.cshtml` and `_TermsProvider.cshtml`, shown at `/terms-and-conditions` and
+  in the signup dialog; update the markdown and both partials together. The owner will revise the text later.
 
 ## Maintaining this index
 

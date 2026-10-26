@@ -8,6 +8,12 @@ Sahulat Ghar Tak ("Convenience to your doorstep") — ASP.NET Core 8 backend for
 
 - **REST APIs** (`/api/*`) consumed by mobile/web clients, documented via Swagger at `/swagger`.
 - **Admin/staff portal** — server-rendered MVC views (login at `/adminportal`) for managing providers, bookings, payments, categories, documents.
+- **Public website + client/provider portal** — server-rendered MVC pages at `/` (marketing), `/login`, `/signup`, `/client/*` and `/provider/*`, which mirror the mobile app (login, requests, bookings, wallet, documents, notifications). The plan, decisions and status live in `docs/mobile-app/web-parity-*.md`. Notes for working on it:
+  - Controllers are `PublicAccountController`, `PublicDashboardController`, `Client*Controller`, `Provider*Controller` and `NotificationsPortalController`. They call the same services as the REST API (never the HTTP API itself) and always take the client or provider id from the signed-in cookie, never from the form.
+  - Cookie claims: `NameIdentifier` (login id), `UserType`/`Role` (the active role), `ProfileId` (the active profile), `ClientId` and `ProviderId` (both, for the dashboard switch).
+  - Every `/provider/*` page except documents and pending sits behind `RequireVerifiedProviderFilter` (`Providers.IsVerified`).
+  - Time display goes through `PktTimeHelper` / `TimeFormatPreference`; a visitor's own 12h/24h cookie overrides the admin default, except in the admin portal and the API.
+  - Account deletion on the web is switched off (`DeleteAccountEnabled` flags); the public `/delete-account` page is unchanged.
 
 ## Commands
 
