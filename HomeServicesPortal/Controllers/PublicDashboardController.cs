@@ -319,6 +319,7 @@ public class PublicDashboardController : Controller
             .Select(ClientRequestCardVm.From)
             .OrderByDescending(r => r.CreatedOn)
             .ToList();
+        MarkBouncedBack(clientUid.Value, all);
 
         // Same split as the app: Completed = "Completed", Cancelled = no progress stage, Active = the rest.
         static string TabOf(ClientRequestCardVm r) => r.ProgressStatus switch
@@ -356,7 +357,31 @@ public class PublicDashboardController : Controller
             return NotFound();
         }
 
-        return View(ClientRequestCardVm.From(request));
+        var card = ClientRequestCardVm.From(request);
+        MarkBouncedBack(request.ClientUid, new[] { card });
+        return View(card);
+    }
+
+    /// <summary>Flags requests whose provider cancelled and remembers the stage shown (cookie, per client).</summary>
+    private void MarkBouncedBack(int clientUid, IReadOnlyCollection<ClientRequestCardVm> cards)
+    {
+        var name = RequestBounceTracker.CookieName(clientUid);
+        var (bounced, value) = RequestBounceTracker.Update(
+            Request.Cookies[name], cards.Select(c => (c.Uid, c.ProgressStatus)));
+
+        foreach (var card in cards)
+        {
+            card.BouncedBack = bounced.Contains(card.Uid);
+        }
+
+        Response.Cookies.Append(name, value, new CookieOptions
+        {
+            Expires = DateTimeOffset.UtcNow.AddDays(90),
+            HttpOnly = true,
+            IsEssential = true,
+            SameSite = SameSiteMode.Lax,
+            Secure = Request.IsHttps
+        });
     }
 
     [HttpPost("/client/requests/{requestUid:int}/cancel")]

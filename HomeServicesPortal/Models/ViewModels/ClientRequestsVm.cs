@@ -52,6 +52,9 @@ public class ClientRequestCardVm
         string.Equals(Status, "Initiated", StringComparison.OrdinalIgnoreCase)
         || string.Equals(Status, "Pending", StringComparison.OrdinalIgnoreCase);
 
+    /// <summary>The provider cancelled and the request went back to Requested (see <c>RequestBounceTracker</c>).</summary>
+    public bool BouncedBack { get; set; }
+
     public bool HasProvider => !string.IsNullOrWhiteSpace(ProviderName) || !string.IsNullOrWhiteSpace(ProviderMobileNo);
 
     public static ClientRequestCardVm From(CustomerServiceRequestApiDto r) => new()

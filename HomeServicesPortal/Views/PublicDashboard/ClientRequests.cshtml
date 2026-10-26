@@ -118,6 +118,13 @@
                             }
                         </p>
 
+                        @if (req.BouncedBack)
+                        {
+                            <p class="client-req-bounced" role="status">
+                                <i class="fa-solid fa-triangle-exclamation me-1" aria-hidden="true"></i>Your provider had to cancel — we're finding you a new one.
+                            </p>
+                        }
+
                         @if (!string.IsNullOrWhiteSpace(req.ServiceDescription))
                         {
                             <p class="client-service-desc">@req.ServiceDescription</p>

@@ -57,6 +57,13 @@
             </div>
         }
 
+        @if (Model.BouncedBack)
+        {
+            <p class="client-req-bounced mb-3" role="status">
+                <i class="fa-solid fa-triangle-exclamation me-1" aria-hidden="true"></i>Your provider had to cancel — we're finding you a new one.
+            </p>
+        }
+
         <div class="pub-dash-card mb-3">
             @await Html.PartialAsync("_RequestProgress", Model.ProgressStatus)
             @if (Model.ProgressStatus == null)
