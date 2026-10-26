@@ -54,7 +54,7 @@ Question IDs (Q#) and risk IDs (R#) refer to the spec. Security and endpoint pro
 | D9 | Skipped, as decided. |
 | D10 | Done: police certificate locks once verified; CNIC replacement needs confirmation and resets verification. |
 | D11 | Done: description and zones (max 2) on provider profile edit. |
-| D12 | Provider booking detail done (embedded OpenStreetMap plus Directions link). Client address pin not started. |
+| D12 | Provider booking detail done (embedded OpenStreetMap plus Directions link). Client address pin done (Leaflet map with search, click/drag pin, "use my location" and reverse geocoding on the address form; not yet browser-tested). |
 | D13 | Followed: no OTP screens or calls on the web. |
 | D14 | Followed: web routes differ from the app's. |
 | D15 | Done: 8 hours, or 30 days with Remember me. |
@@ -72,6 +72,6 @@ Question IDs (Q#) and risk IDs (R#) refer to the spec. Security and endpoint pro
 - R2: when OTP is added to the web later, it must never render `data.otp` (backend should set `Otp:IncludeInResponse=false`).
 - R11: the customer Terms & Conditions text in the app is still truncated; the website now has the owner's interim text (`/terms-and-conditions`), to be updated later.
 - R22 / D19: map `/app/...` deep-link paths to the web pages for logged-in users instead of the download page.
-- Client address map pin (D12) and guest browsing of services (audit D8).
-- "Provider cancelled" notice on My Requests (audit M6).
+- Guest browsing of services (audit D8).
+- "Provider cancelled" notice (audit M6) is done: the last-seen stage per request is kept in a per-browser cookie (`sgt_req_seen_<clientId>`, `RequestBounceTracker`), so it does not follow the client to another browser. Unlike the app, the notice stays until the request is assigned again instead of showing once.
 - Time format: the per-user switch is a browser cookie; move it to the account if it should follow the user across devices.

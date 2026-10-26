@@ -91,8 +91,8 @@ Login with unverified accounts stays allowed (D21, L1) until OTP exists.
 - Notifications inbox and bell for both roles (D2); switch-dashboard button in the second navbar (D6).
 
 ### Not done, on purpose or still open
-- M6 "provider cancelled" notice: needs a stored last-seen status per request.
-- D6 address map pin and D8 guest browsing: not started.
+- M6 "provider cancelled" notice: done (per-browser cookie of last-seen stage; see decisions).
+- D6 address map pin: done on the address form. D8 guest browsing: not started.
 - Delete Account (D18) is built but switched off for now: the buttons are hidden and both endpoints return 404 (flag `DeleteAccountEnabled` in `ClientProfileController` and `ProviderProfileController`).
 - Rejected requests history: skipped (D9).
 - OTP, forgot password and reset password: deferred (D13); L1 (block unverified accounts at login) must be fixed once OTP exists.
