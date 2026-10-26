@@ -1,0 +1,141 @@
+@using HomeServicesPortal.Models.ViewModels
+@model ProviderProfileEditVm
+@{
+    Layout = "_PublicLayout";
+    ViewData["Robots"] = "noindex, nofollow";
+}
+
+@section Head {
+    <link rel="stylesheet" href="~/css/public-dashboard.css" asp-append-version="true" />
+}
+
+<section class="pub-dash">
+    <div class="container">
+        <p class="mb-3">
+            <a href="/provider/profile" class="client-back-link"><i class="fa-solid fa-arrow-left me-1" aria-hidden="true"></i>Back to profile</a>
+        </p>
+
+        <header class="pub-dash-hero pub-dash-hero--provider">
+            <p class="pub-dash-eyebrow">Provider · Profile</p>
+            <h1>Edit Profile</h1>
+            <p class="pub-dash-lead">Update your personal details.</p>
+        </header>
+
+        <div class="pub-dash-card client-request-form-card">
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+            <form method="post" action="/provider/profile/edit" novalidate class="client-request-form">
+                @Html.AntiForgeryToken()
+
+                <div class="mb-3">
+                    <label asp-for="FullName" class="form-label"></label>
+                    <input asp-for="FullName" class="form-control form-control-lg" autocomplete="name" />
+                    <span asp-validation-for="FullName" class="text-danger small"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label" for="mobileReadonly">Mobile Number</label>
+                    <input id="mobileReadonly" class="form-control form-control-lg" value="@Model.MobileNo" readonly tabindex="-1" />
+                    <div class="form-text">Your mobile number cannot be changed.</div>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Gender" class="form-label"></label>
+                    <div class="d-flex flex-wrap gap-2" role="radiogroup" aria-label="Gender">
+                        @foreach (var option in new[] { "Male", "Female", "Other" })
+                        {
+                            var id = "gender" + option;
+                            <input type="radio" class="btn-check" name="Gender" id="@id" value="@option"
+                                   checked="@string.Equals(Model.Gender, option, StringComparison.OrdinalIgnoreCase)" autocomplete="off" />
+                            <label class="btn btn-outline-primary" for="@id">@option</label>
+                        }
+                    </div>
+                    <span asp-validation-for="Gender" class="text-danger small"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Cnic" class="form-label">CNIC</label>
+                    <input asp-for="Cnic" id="editCnic" class="form-control form-control-lg" placeholder="12345-1234567-1"
+                           inputmode="numeric" maxlength="15" autocomplete="off" />
+                    <span asp-validation-for="Cnic" class="text-danger small"></span>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="ExperienceYears" class="form-label"></label>
+                        <input asp-for="ExperienceYears" type="number" min="0" max="50" step="1" class="form-control form-control-lg" />
+                        <span asp-validation-for="ExperienceYears" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="City" class="form-label"></label>
+                        <select asp-for="City" class="form-select form-select-lg">
+                            <option value="">Select your city</option>
+                            @foreach (var c in Model.Cities)
+                            {
+                                <option value="@c" selected="@string.Equals(Model.City, c, StringComparison.OrdinalIgnoreCase)">@c</option>
+                            }
+                        </select>
+                        <span asp-validation-for="City" class="text-danger small"></span>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Description" class="form-label"></label>
+                    <textarea asp-for="Description" class="form-control" rows="4" maxlength="1000" placeholder="Briefly describe your services"></textarea>
+                    <span asp-validation-for="Description" class="text-danger small"></span>
+                </div>
+
+                @if (Model.ZoneOptions.Count > 0)
+                {
+                    <div class="mb-4">
+                        <label class="form-label">Service Zones</label>
+                        <div class="form-text mb-2">Select up to @ProviderProfileEditVm.MaxZones zones.</div>
+                        <div class="d-flex flex-wrap gap-3" id="zoneList">
+                            @foreach (var z in Model.ZoneOptions)
+                            {
+                                var zid = "zone" + Math.Abs(z.GetHashCode());
+                                <div class="form-check">
+                                    <input class="form-check-input zone-check" type="checkbox" name="Zones" id="@zid" value="@z"
+                                           checked="@Model.Zones.Contains(z, StringComparer.OrdinalIgnoreCase)" />
+                                    <label class="form-check-label" for="@zid">@z</label>
+                                </div>
+                            }
+                        </div>
+                        <span asp-validation-for="Zones" class="text-danger small"></span>
+                    </div>
+                }
+
+                <button type="submit" class="btn pub-auth-btn client-request-submit">
+                    <i class="fa-solid fa-floppy-disk me-2" aria-hidden="true"></i>Save Changes
+                </button>
+            </form>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <script>
+        (function () {
+            var cnic = document.getElementById('editCnic');
+            if (cnic) {
+                function fmt(raw) {
+                    var d = String(raw || '').replace(/\D/g, '').slice(0, 13);
+                    if (d.length <= 5) return d;
+                    if (d.length <= 12) return d.slice(0, 5) + '-' + d.slice(5);
+                    return d.slice(0, 5) + '-' + d.slice(5, 12) + '-' + d.slice(12);
+                }
+                cnic.addEventListener('input', function () { cnic.value = fmt(cnic.value); });
+                cnic.value = fmt(cnic.value);
+            }
+
+            var max = @ProviderProfileEditVm.MaxZones;
+            var boxes = Array.prototype.slice.call(document.querySelectorAll('.zone-check'));
+            function sync() {
+                var n = boxes.filter(function (b) { return b.checked; }).length;
+                boxes.forEach(function (b) { b.disabled = !b.checked && n >= max; });
+            }
+            boxes.forEach(function (b) { b.addEventListener('change', sync); });
+            sync();
+        })();
+    </script>
+}

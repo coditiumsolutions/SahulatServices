@@ -1,0 +1,154 @@
+@using HomeServicesPortal.Models.ViewModels
+@model ProviderDocumentsVm
+@{
+    Layout = "_PublicLayout";
+    var onboarding = Model.IsOnboarding;
+    ViewData["Title"] = onboarding ? "Verify Your Identity" : "My Documents";
+    ViewData["Robots"] = "noindex, nofollow";
+    var success = TempData["ProviderSuccess"] as string;
+    var error = TempData["ProviderError"] as string;
+
+    // name, title, existing url, required, ratio (0 = free crop), longest side, jpeg quality, file name, locked when verified, locked note
+    var slots = new[]
+    {
+        new { Name = "profilePhoto", Title = "Profile Photo", Placeholder = "Add profile photo", Url = Model.ProfilePhotoUrl, Required = true, Ratio = "1", MaxSide = 800, Quality = "0.8", File = "profile.jpg", Locked = false, Note = "" },
+        new { Name = "cnicFront", Title = "CNIC Front", Placeholder = "Add CNIC front image", Url = Model.CnicFrontUrl, Required = true, Ratio = "1.5852", MaxSide = 1600, Quality = "0.85", File = "cnic_front.jpg", Locked = false, Note = "" },
+        new { Name = "cnicBack", Title = "CNIC Back", Placeholder = "Add CNIC back image", Url = Model.CnicBackUrl, Required = true, Ratio = "1.5852", MaxSide = 1600, Quality = "0.85", File = "cnic_back.jpg", Locked = false, Note = "" },
+        new { Name = "policeVerification", Title = "Police Verification (optional)", Placeholder = "Add police verification certificate", Url = Model.PoliceUrl, Required = false, Ratio = "0", MaxSide = 1600, Quality = "0.85", File = "police_verification.jpg", Locked = Model.IsVerified, Note = "Your Police Verification document is locked after verification. Contact support if it needs to change." }
+    };
+}
+
+@section Head {
+    <link rel="stylesheet" href="~/css/public-dashboard.css" asp-append-version="true" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.css" />
+}
+
+<section class="pub-dash">
+    <div class="container">
+        <div class="pub-dash-card doc-card">
+            <header class="mb-3">
+                <h1 class="h3 mb-1">@(onboarding ? "Verify Your Identity" : "My Documents")</h1>
+                <p class="text-muted mb-0">
+                    @if (onboarding)
+                    {
+                        <text>Upload your profile photo and CNIC to complete registration.</text>
+                    }
+                    else
+                    {
+                        <text>@(Model.IsVerified ? "Verified" : "Pending verification")</text>
+                    }
+                </p>
+            </header>
+
+            @if (!string.IsNullOrEmpty(success))
+            {
+                <div class="alert alert-success" role="status">@success</div>
+            }
+            @if (!string.IsNullOrEmpty(error))
+            {
+                <div class="alert alert-danger" role="alert">@error</div>
+            }
+            <div class="alert alert-danger d-none" id="documentsClientError" role="alert"></div>
+
+            @if (!onboarding)
+            {
+                if (Model.IsVerified)
+                {
+                    <div class="alert alert-success"><i class="fa-solid fa-circle-check me-1" aria-hidden="true"></i>Your documents are verified.</div>
+                }
+                else
+                {
+                    <div class="alert alert-warning"><i class="fa-solid fa-hourglass-half me-1" aria-hidden="true"></i>Your documents are pending verification.</div>
+                }
+                @if (!string.IsNullOrEmpty(Model.Remarks))
+                {
+                    <p><strong>Remarks:</strong> @Model.Remarks</p>
+                }
+            }
+
+            <form id="documentsForm" method="post" action="/provider/documents" enctype="multipart/form-data"
+                  data-onboarding="@(onboarding ? "true" : "false")" data-verified="@(Model.IsVerified ? "true" : "false")" novalidate>
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="confirmCnicReset" id="confirmCnicReset" value="false" />
+
+                <div class="doc-grid">
+                    @foreach (var s in slots)
+                    {
+                        <div class="doc-slot" data-title="@s.Title.Replace(" (optional)", "")" data-ratio="@s.Ratio" data-maxside="@s.MaxSide"
+                             data-quality="@s.Quality" data-filename="@s.File" data-required="@(s.Required ? "true" : "false")"
+                             data-has-existing="@(string.IsNullOrEmpty(s.Url) ? "false" : "true")" data-existing-url="@s.Url">
+                            <div class="doc-slot-title">@s.Title</div>
+                            @if (s.Locked)
+                            {
+                                <div class="doc-slot-frame">
+                                    @if (!string.IsNullOrEmpty(s.Url)) { <img src="@s.Url" alt="@s.Title" /> }
+                                    <span class="doc-slot-lock"><i class="fa-solid fa-lock me-1" aria-hidden="true"></i>Verified &mdash; locked</span>
+                                </div>
+                                <div class="form-text">@s.Note</div>
+                            }
+                            else
+                            {
+                                <label class="doc-slot-frame" for="in_@s.Name">
+                                    <img class="doc-slot-preview @(string.IsNullOrEmpty(s.Url) ? "d-none" : "")" src="@s.Url" alt="@s.Title" />
+                                    <span class="doc-slot-empty @(string.IsNullOrEmpty(s.Url) ? "" : "d-none")">
+                                        <i class="fa-solid fa-camera" aria-hidden="true"></i>@s.Placeholder
+                                    </span>
+                                    @if (!string.IsNullOrEmpty(s.Url) && !onboarding)
+                                    {
+                                        <span class="doc-slot-strip">Tap to change</span>
+                                    }
+                                </label>
+                                <input type="file" class="visually-hidden" id="in_@s.Name" name="@s.Name" accept="image/jpeg,image/png" />
+                                <button type="button" class="btn btn-sm btn-link doc-slot-clear d-none">Remove</button>
+                                @if (s.Name is "cnicFront" or "cnicBack")
+                                {
+                                    @if (Model.IsVerified)
+                                    {
+                                        <div class="form-text text-warning-emphasis">Replacing your CNIC sends your account back for review.</div>
+                                    }
+                                }
+                            }
+                        </div>
+                    }
+                </div>
+
+                <div class="progress mt-3 d-none" id="documentsUploading" role="progressbar" aria-label="Uploading">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated" style="width: 100%">Uploading...</div>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-lg w-100 mt-3" id="documentsSubmit" disabled>
+                    <span class="doc-submit-label">@(onboarding ? "Upload & Continue" : "Save Changes")</span>
+                </button>
+                <p class="small text-muted text-center mt-2 mb-0" id="documentsHint"></p>
+            </form>
+
+            @if (!onboarding)
+            {
+                <p class="mt-3 mb-0"><a href="@(Model.IsVerified ? "/provider/dashboard" : "/provider/pending")">Back</a></p>
+            }
+        </div>
+    </div>
+</section>
+
+<div class="modal fade" id="cropModal" tabindex="-1" aria-labelledby="cropModalTitle" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title h5" id="cropModalTitle">Crop image</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="doc-crop-stage"><img id="cropImage" alt="Image to crop" /></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="cropUse">Use image</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.js"></script>
+    <script src="~/js/provider-documents.js" asp-append-version="true"></script>
+}

@@ -1,0 +1,54 @@
+@using HomeServicesPortal.Models.ViewModels
+@model ProviderPendingVm
+@{
+    Layout = "_PublicLayout";
+    ViewData["Robots"] = "noindex, nofollow";
+}
+
+@section Head {
+    <link rel="stylesheet" href="~/css/public-dashboard.css" asp-append-version="true" />
+    @* No push on the web, so re-check about once a minute. *@
+    <meta http-equiv="refresh" content="60" />
+}
+
+<section class="pub-dash">
+    <div class="container">
+        <div class="pub-dash-card provider-pending text-center">
+            <div class="provider-pending-icon" aria-hidden="true"><i class="fa-solid fa-hourglass-half"></i></div>
+            @if (TempData["ProviderSuccess"] is string flash)
+            {
+                <div class="alert alert-success" role="status">@flash</div>
+            }
+            <h1 class="h3">Pending Verification</h1>
+            <p class="text-muted mb-4">
+                Your provider account is under review. Our team is verifying your profile photo and CNIC. This usually
+                takes a short while. You'll be able to access the Provider Dashboard as soon as you're verified.
+            </p>
+
+            @if (!Model.HasDocuments)
+            {
+                <div class="alert alert-warning text-start" role="status">
+                    We haven't received your documents yet. Please upload your profile photo and CNIC images so we can verify you.
+                </div>
+            }
+
+            @if (!string.IsNullOrEmpty(Model.Remarks))
+            {
+                <div class="alert alert-danger text-start" role="alert">
+                    <strong><i class="fa-solid fa-circle-info me-1" aria-hidden="true"></i>Feedback from our team</strong>
+                    <div class="mt-1">@Model.Remarks</div>
+                </div>
+            }
+
+            <div class="d-flex flex-wrap gap-2 justify-content-center">
+                <a href="/provider/documents" class="btn btn-primary">
+                    <i class="fa-solid fa-file-arrow-up me-1" aria-hidden="true"></i>@(Model.HasDocuments ? "Update Documents" : "Upload Documents")
+                </a>
+                <a href="/provider/pending" class="btn btn-outline-primary">
+                    <i class="fa-solid fa-rotate me-1" aria-hidden="true"></i>Check Verification Status
+                </a>
+            </div>
+            <p class="small text-muted mt-3 mb-0">This page refreshes automatically every minute.</p>
+        </div>
+    </div>
+</section>

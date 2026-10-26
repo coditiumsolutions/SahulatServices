@@ -1,0 +1,130 @@
+@using HomeServicesPortal.Models.ViewModels
+@model ProviderCategoriesVm
+@{
+    Layout = "_PublicLayout";
+    ViewData["Title"] = "Categories & Services";
+    ViewData["Robots"] = "noindex, nofollow";
+    var error = TempData["ProfileError"] as string;
+    var titlesByCategory = Model.Titles.GroupBy(t => t.CategoryUid).ToDictionary(g => g.Key, g => g.ToList());
+}
+
+@section Head {
+    <link rel="stylesheet" href="~/css/public-dashboard.css" asp-append-version="true" />
+}
+
+<section class="pub-dash">
+    <div class="container">
+        <p class="mb-3">
+            <a href="/provider/profile" class="client-back-link"><i class="fa-solid fa-arrow-left me-1" aria-hidden="true"></i>Back to profile</a>
+        </p>
+
+        <header class="pub-dash-hero pub-dash-hero--provider">
+            <p class="pub-dash-eyebrow">Provider · Profile</p>
+            <h1>Categories &amp; Services</h1>
+            <p class="pub-dash-lead">Manage what you offer.</p>
+        </header>
+
+        @if (!string.IsNullOrEmpty(error))
+        {
+            <div class="alert alert-danger" role="alert">@error</div>
+        }
+
+        <form method="post" action="/provider/categories" id="categoriesForm" data-max="@ProviderCategoriesVm.MaxCategories">
+            @Html.AntiForgeryToken()
+
+            <div class="pub-dash-card mb-4">
+                <h2>My Categories</h2>
+                <p class="text-muted">Select 1 to @ProviderCategoriesVm.MaxCategories categories. <span id="categoryCount" class="fw-semibold"></span></p>
+
+                @foreach (var service in Model.Services)
+                {
+                    <fieldset class="mb-3">
+                        <legend class="h6">@service.Key</legend>
+                        @foreach (var c in service)
+                        {
+                            <div class="form-check d-flex align-items-center gap-3 flex-wrap">
+                                <div>
+                                    <input class="form-check-input cat-check" type="checkbox" name="categoryUids" id="cat@(c.Uid)" value="@c.Uid"
+                                           data-name="@c.Name" checked="@c.Selected" />
+                                    <label class="form-check-label" for="cat@(c.Uid)">@c.Name</label>
+                                </div>
+                                <div class="form-check form-check-inline primary-wrap d-none ms-auto" data-for="@c.Uid">
+                                    <input class="form-check-input" type="radio" name="primaryCategoryUid" id="primary@(c.Uid)" value="@c.Uid" checked="@c.Primary" />
+                                    <label class="form-check-label small" for="primary@(c.Uid)">Primary</label>
+                                </div>
+                            </div>
+                        }
+                    </fieldset>
+                }
+            </div>
+
+            <div class="pub-dash-card mb-4">
+                <h2>My Services</h2>
+                <p class="text-muted">Optional: helps customers find you for specific jobs. Services appear for the categories you select above.</p>
+
+                @foreach (var group in titlesByCategory)
+                {
+                    <fieldset class="title-group mb-3 d-none" data-category="@group.Key">
+                        <legend class="h6">@Model.CategoryNames.GetValueOrDefault(group.Key, "Category")</legend>
+                        @foreach (var t in group.Value)
+                        {
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input title-check" type="checkbox" name="serviceTitleUids" id="title@(t.Uid)" value="@t.Uid" checked="@t.Selected" />
+                                <label class="form-check-label" for="title@(t.Uid)">@t.Title</label>
+                            </div>
+                        }
+                    </fieldset>
+                }
+                <p class="text-muted mb-0 d-none" id="noTitles">No services available for the selected categories.</p>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-lg" id="categoriesSubmit">
+                <i class="fa-solid fa-floppy-disk me-2" aria-hidden="true"></i>Save Changes
+            </button>
+        </form>
+    </div>
+</section>
+
+@section Scripts {
+    <script>
+        (function () {
+            var form = document.getElementById('categoriesForm');
+            var max = parseInt(form.getAttribute('data-max'), 10);
+            var cats = Array.prototype.slice.call(form.querySelectorAll('.cat-check'));
+            var counter = document.getElementById('categoryCount');
+            var submit = document.getElementById('categoriesSubmit');
+
+            function sync() {
+                var chosen = cats.filter(function (c) { return c.checked; });
+                cats.forEach(function (c) { c.disabled = !c.checked && chosen.length >= max; });
+                counter.textContent = chosen.length ? '(' + chosen.length + ' of ' + max + ' selected)' : '';
+                submit.disabled = chosen.length === 0;
+
+                // The primary choice only matters with two or more categories.
+                var ids = chosen.map(function (c) { return c.value; });
+                var radios = Array.prototype.slice.call(form.querySelectorAll('.primary-wrap'));
+                radios.forEach(function (w) {
+                    var show = chosen.length >= 2 && ids.indexOf(w.getAttribute('data-for')) >= 0;
+                    w.classList.toggle('d-none', !show);
+                });
+                var current = form.querySelector('input[name=primaryCategoryUid]:checked');
+                if (chosen.length >= 2 && (!current || ids.indexOf(current.value) < 0)) {
+                    var first = form.querySelector('#primary' + ids[0]);
+                    if (first) first.checked = true;
+                }
+
+                var anyTitles = false;
+                form.querySelectorAll('.title-group').forEach(function (g) {
+                    var show = ids.indexOf(g.getAttribute('data-category')) >= 0;
+                    g.classList.toggle('d-none', !show);
+                    g.querySelectorAll('input').forEach(function (i) { i.disabled = !show; });
+                    if (show) anyTitles = true;
+                });
+                document.getElementById('noTitles').classList.toggle('d-none', anyTitles);
+            }
+
+            cats.forEach(function (c) { c.addEventListener('change', sync); });
+            sync();
+        })();
+    </script>
+}

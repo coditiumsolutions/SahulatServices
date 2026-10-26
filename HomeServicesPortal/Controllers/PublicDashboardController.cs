@@ -66,10 +66,7 @@ public class PublicDashboardController : Controller
         });
     }
 
-    [HttpGet("/provider/dashboard")]
-    [Authorize(Roles = UserTypeConstants.Provider)]
-    public Task<IActionResult> ProviderDashboard(CancellationToken cancellationToken) =>
-        DashboardAsync("Provider", cancellationToken);
+    // The provider dashboard itself lives in ProviderPortalController.
 
     // Old URLs, kept so existing bookmarks keep working.
     [HttpGet("/client-dashboard")]
@@ -440,20 +437,18 @@ public class PublicDashboardController : Controller
 
     [HttpGet("/provider/requests")]
     [Authorize(Roles = UserTypeConstants.Provider)]
+    [TypeFilter(typeof(HomeServicesPortal.Filters.RequireVerifiedProviderFilter))]
     public IActionResult ProviderRequests() => PortalSection("Provider", "Requests", "Incoming job requests will appear here.");
 
     [HttpGet("/provider/bookings")]
     [Authorize(Roles = UserTypeConstants.Provider)]
+    [TypeFilter(typeof(HomeServicesPortal.Filters.RequireVerifiedProviderFilter))]
     public IActionResult ProviderBookings() => PortalSection("Provider", "Bookings", "Your accepted and active jobs will appear here.");
 
     [HttpGet("/provider/wallet")]
     [Authorize(Roles = UserTypeConstants.Provider)]
+    [TypeFilter(typeof(HomeServicesPortal.Filters.RequireVerifiedProviderFilter))]
     public IActionResult ProviderWallet() => PortalSection("Provider", "Wallet", "Your earnings and payouts will appear here.");
-
-    [HttpGet("/provider/profile")]
-    [Authorize(Roles = UserTypeConstants.Provider)]
-    public Task<IActionResult> ProviderProfile(CancellationToken cancellationToken) =>
-        ProfileAsync("Provider", cancellationToken);
 
     private async Task<ClientServiceRequestFormVm?> BuildRequestFormAsync(
         int serviceUid,
@@ -607,31 +602,6 @@ public class PublicDashboardController : Controller
             .FirstOrDefaultAsync(cancellationToken);
     }
 
-    private async Task<IActionResult> DashboardAsync(string role, CancellationToken cancellationToken)
-    {
-        var vm = await BuildVmAsync(cancellationToken);
-        if (vm == null)
-        {
-            return Redirect("/login");
-        }
-
-        return View(role == "Provider" ? "ProviderDashboard" : "ClientDashboard", vm);
-    }
-
-    private async Task<IActionResult> ProfileAsync(string role, CancellationToken cancellationToken)
-    {
-        var vm = await BuildVmAsync(cancellationToken);
-        if (vm == null)
-        {
-            return Redirect("/login");
-        }
-
-        ViewData["PortalRole"] = role;
-        ViewData["SectionTitle"] = "Profile";
-        ViewData["SectionBlurb"] = "Your account details.";
-        return View("PortalSection", vm);
-    }
-
     private IActionResult PortalSection(string role, string title, string blurb)
     {
         ViewData["PortalRole"] = role;
@@ -661,29 +631,5 @@ public class PublicDashboardController : Controller
         if (name.Contains("legal") || name.Contains("propert")) return "fa-solid fa-scale-balanced";
         if (name.Contains("special")) return "fa-solid fa-star";
         return "fa-solid fa-screwdriver-wrench";
-    }
-
-    private async Task<PublicDashboardVm?> BuildVmAsync(CancellationToken cancellationToken)
-    {
-        if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
-        {
-            return null;
-        }
-
-        var user = await _db.UsersLogins.AsNoTracking()
-            .FirstOrDefaultAsync(u => u.Uid == userId, cancellationToken);
-        if (user == null)
-        {
-            return null;
-        }
-
-        return new PublicDashboardVm
-        {
-            FullName = User.Identity?.Name ?? "User",
-            MobileNo = user.MobileNo,
-            UserType = user.UserType,
-            ProfileId = int.TryParse(User.FindFirstValue("ProfileId"), out var pid) ? pid : 0,
-            LastLogin = user.LastLogin
-        };
     }
 }

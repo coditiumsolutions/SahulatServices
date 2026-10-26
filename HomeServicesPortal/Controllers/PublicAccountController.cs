@@ -249,6 +249,8 @@ public class PublicAccountController : Controller
         }
 
         var strategy = _db.Database.CreateExecutionStrategy();
+        UsersLogin? createdUser = null;
+        var createdProviderUid = 0;
         try
         {
             await strategy.ExecuteAsync(async () =>
@@ -267,6 +269,7 @@ public class PublicAccountController : Controller
 
                 _db.UsersLogins.Add(user);
                 await _db.SaveChangesAsync(cancellationToken);
+                createdUser = user;
 
                 var fullName = model.FullName.Trim();
                 if (isClient)
@@ -298,6 +301,7 @@ public class PublicAccountController : Controller
                     };
                     _db.Providers.Add(provider);
                     await _db.SaveChangesAsync(cancellationToken);
+                    createdProviderUid = provider.Uid;
 
                     foreach (var categoryId in categoryIds)
                     {
@@ -323,6 +327,15 @@ public class PublicAccountController : Controller
         }
 
         _logger.LogInformation("Public signup created {UserType} account for {MobileNo}.", userType, mobileNo);
+
+        // Like the app, a new provider goes straight on to uploading their documents.
+        if (isProvider && createdUser != null && createdProviderUid > 0)
+        {
+            await SignInPublicUserAsync(createdUser, model.FullName.Trim(), createdProviderUid, rememberMe: false);
+            TempData["ProviderSuccess"] = "Account created. Upload your documents so we can verify you.";
+            return Redirect("/provider/documents");
+        }
+
         TempData["SignupSuccess"] = "Account created successfully. Please log in.";
         return Redirect("/login");
     }
