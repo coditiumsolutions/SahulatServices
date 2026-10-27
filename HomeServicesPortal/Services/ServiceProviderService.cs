@@ -200,6 +200,7 @@ public class ServiceProviderService : IServiceProviderService
         string? search,
         string? verifyStatus,
         int? categoryUid,
+        string? zone,
         string? sort,
         string? sortDir,
         int page,
@@ -231,6 +232,17 @@ public class ServiceProviderService : IServiceProviderService
         else
         {
             categoryUid = null;
+        }
+
+        if (!string.IsNullOrWhiteSpace(zone))
+        {
+            zone = zone.Trim();
+            var zoneName = zone;
+            query = query.Where(p => _db.ProviderZones.Any(z => z.ProviderUid == p.Uid && z.ZoneName == zoneName));
+        }
+        else
+        {
+            zone = null;
         }
 
         if (string.Equals(verifyStatus, "1", StringComparison.Ordinal)
@@ -299,6 +311,8 @@ public class ServiceProviderService : IServiceProviderService
             VerifyStatus = verifyStatus,
             CategoryUid = categoryUid,
             CategoryOptions = await GetCategoryOptionsAsync(cancellationToken),
+            Zone = zone,
+            ZoneOptions = await _providerZones.GetZoneOptionsAsync(cancellationToken),
             Sort = sort,
             SortDir = sortDir,
             Page = page,

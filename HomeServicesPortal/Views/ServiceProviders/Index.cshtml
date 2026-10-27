@@ -24,38 +24,24 @@
 
 <div class="card hs-card">
     <div class="card-body">
-        <form method="get" asp-action="Index" class="row g-2 mb-3 align-items-end">
-            <div class="col-md-5 col-lg-4">
-                <label class="form-label small text-muted mb-1">Search</label>
+        <form method="get" asp-action="Index" class="d-flex flex-wrap gap-2 mb-3 align-items-end">
+            <div style="flex: 1 1 260px; max-width: 360px">
+                <label class="form-label small text-muted mb-1 text-wrap">Search</label>
                 <div class="input-group">
                     <span class="input-group-text"><i class="fa-solid fa-search"></i></span>
                     <input type="text" name="search" value="@Model.Search" class="form-control" placeholder="Search name, mobile, CNIC..." />
                 </div>
             </div>
-            <div class="col-md-4 col-lg-3">
-                <label class="form-label small text-muted mb-1" for="verifyStatus">Verify Status</label>
+            <div style="flex: 0 1 130px">
+                <label class="form-label small text-muted mb-1 text-wrap" for="verifyStatus">Verified</label>
                 <select name="verifyStatus" id="verifyStatus" class="form-select">
                     <option value="">All</option>
-                    @if (Model.VerifyStatus == "1")
-                    {
-                        <option value="1" selected>Verified</option>
-                    }
-                    else
-                    {
-                        <option value="1">Verified</option>
-                    }
-                    @if (Model.VerifyStatus == "0")
-                    {
-                        <option value="0" selected>Not Verified</option>
-                    }
-                    else
-                    {
-                        <option value="0">Not Verified</option>
-                    }
+                    <option value="1" selected="@(Model.VerifyStatus == "1")">Yes</option>
+                    <option value="0" selected="@(Model.VerifyStatus == "0")">No</option>
                 </select>
             </div>
-            <div class="col-md-4 col-lg-3">
-                <label class="form-label small text-muted mb-1" for="categoryUid">Category</label>
+            <div style="flex: 1 1 200px; max-width: 280px">
+                <label class="form-label small text-muted mb-1 text-wrap" for="categoryUid">Category</label>
                 <select name="categoryUid" id="categoryUid" class="form-select">
                     <option value="">All categories</option>
                     @foreach (var c in Model.CategoryOptions)
@@ -64,12 +50,22 @@
                     }
                 </select>
             </div>
-            <div class="col-auto">
+            <div style="flex: 1 1 200px; max-width: 280px">
+                <label class="form-label small text-muted mb-1 text-wrap" for="zone">Zone</label>
+                <select name="zone" id="zone" class="form-select">
+                    <option value="">All zones</option>
+                    @foreach (var z in Model.ZoneOptions)
+                    {
+                        <option value="@z" selected="@(string.Equals(z, Model.Zone, StringComparison.OrdinalIgnoreCase))">@z</option>
+                    }
+                </select>
+            </div>
+            <div>
                 <button type="submit" class="btn btn-outline-primary">Search</button>
             </div>
-            @if (!string.IsNullOrWhiteSpace(Model.Search) || !string.IsNullOrWhiteSpace(Model.VerifyStatus) || Model.CategoryUid.HasValue)
+            @if (!string.IsNullOrWhiteSpace(Model.Search) || !string.IsNullOrWhiteSpace(Model.VerifyStatus) || Model.CategoryUid.HasValue || !string.IsNullOrWhiteSpace(Model.Zone))
             {
-                <div class="col-auto">
+                <div>
                     <a asp-action="Index" class="btn btn-outline-secondary">Clear</a>
                 </div>
             }
@@ -82,20 +78,20 @@
                         <th></th>
                         <th>
                             <a class="text-decoration-none text-dark" asp-action="Index"
-                               asp-route-search="@Model.Search" asp-route-verifyStatus="@Model.VerifyStatus" asp-route-categoryUid="@Model.CategoryUid" asp-route-sort="name"
-                               asp-route-sortDir="@(Model.Sort == "name" && Model.SortDir == "asc" ? "desc" : "asc")">Name</a>
+                               asp-route-search="@Model.Search" asp-route-verifyStatus="@Model.VerifyStatus" asp-route-categoryUid="@Model.CategoryUid" asp-route-zone="@Model.Zone" asp-route-sort="name"
+                               asp-route-sortDir="@(Model.Sort == "name" && Model.SortDir == "asc" ? "desc" : "asc")">Name <i class="fa-solid @(Model.Sort == "name" ? (Model.SortDir == "asc" ? "fa-sort-up text-primary" : "fa-sort-down text-primary") : "fa-sort text-muted opacity-50") ms-1"></i></a>
                         </th>
                         <th>Mobile</th>
                         <th>
                             <a class="text-decoration-none text-dark" asp-action="Index"
-                               asp-route-search="@Model.Search" asp-route-verifyStatus="@Model.VerifyStatus" asp-route-categoryUid="@Model.CategoryUid" asp-route-sort="category"
-                               asp-route-sortDir="@(Model.Sort == "category" && Model.SortDir == "asc" ? "desc" : "asc")">Category</a>
+                               asp-route-search="@Model.Search" asp-route-verifyStatus="@Model.VerifyStatus" asp-route-categoryUid="@Model.CategoryUid" asp-route-zone="@Model.Zone" asp-route-sort="category"
+                               asp-route-sortDir="@(Model.Sort == "category" && Model.SortDir == "asc" ? "desc" : "asc")">Category <i class="fa-solid @(Model.Sort == "category" ? (Model.SortDir == "asc" ? "fa-sort-up text-primary" : "fa-sort-down text-primary") : "fa-sort text-muted opacity-50") ms-1"></i></a>
                         </th>
                         <th>Verified</th>
                         <th style="min-width: 9rem">
                             <a class="text-decoration-none text-dark" asp-action="Index"
-                               asp-route-search="@Model.Search" asp-route-verifyStatus="@Model.VerifyStatus" asp-route-categoryUid="@Model.CategoryUid" asp-route-sort="date"
-                               asp-route-sortDir="@(Model.Sort == "date" && Model.SortDir == "asc" ? "desc" : "asc")">Created On</a>
+                               asp-route-search="@Model.Search" asp-route-verifyStatus="@Model.VerifyStatus" asp-route-categoryUid="@Model.CategoryUid" asp-route-zone="@Model.Zone" asp-route-sort="date"
+                               asp-route-sortDir="@(Model.Sort == "date" && Model.SortDir == "asc" ? "desc" : "asc")">Created On <i class="fa-solid @(Model.Sort == "date" ? (Model.SortDir == "asc" ? "fa-sort-up text-primary" : "fa-sort-down text-primary") : "fa-sort text-muted opacity-50") ms-1"></i></a>
                         </th>
                         <th class="text-end">Actions</th>
                     </tr>
@@ -109,6 +105,8 @@
                     }
                     @foreach (var item in Model.Items)
                     {
+                        var waDigits = new string((item.MobileNo ?? "").Where(char.IsDigit).ToArray());
+                        if (waDigits.StartsWith("0")) { waDigits = "92" + waDigits.Substring(1); }
                         <tr>
                             <td style="width:48px">
                                 @if (!string.IsNullOrWhiteSpace(item.ProfilePicturePath))
@@ -138,6 +136,10 @@
                             <td class="text-nowrap">@(item.CreatedOn?.ToString("dd MMM yyyy") ?? "—")</td>
                             <td class="text-end">
                                 <div class="btn-group btn-group-sm">
+                                    @if (waDigits.Length >= 11)
+                                    {
+                                        <a href="https://wa.me/@waDigits" target="_blank" rel="noopener noreferrer" class="btn btn-outline-success" title="Chat on WhatsApp"><i class="fa-brands fa-whatsapp"></i></a>
+                                    }
                                     <a asp-action="Details" asp-route-id="@item.Uid" class="btn btn-outline-secondary" title="Details"><i class="fa-solid fa-eye"></i></a>
                                     <a asp-action="Edit" asp-route-id="@item.Uid" class="btn btn-outline-primary" title="Edit"><i class="fa-solid fa-pen"></i></a>
                                     <a asp-action="Delete" asp-route-id="@item.Uid" class="btn btn-outline-danger" title="Delete"><i class="fa-solid fa-trash"></i></a>
@@ -155,20 +157,20 @@
                 <ul class="pagination pagination-sm justify-content-center mb-0">
                     <li class="page-item @(Model.Page <= 1 ? "disabled" : "")">
                         <a class="page-link" asp-action="Index" asp-route-page="@(Model.Page - 1)"
-                           asp-route-search="@Model.Search" asp-route-verifyStatus="@Model.VerifyStatus" asp-route-categoryUid="@Model.CategoryUid"
+                           asp-route-search="@Model.Search" asp-route-verifyStatus="@Model.VerifyStatus" asp-route-categoryUid="@Model.CategoryUid" asp-route-zone="@Model.Zone"
                            asp-route-sort="@Model.Sort" asp-route-sortDir="@Model.SortDir">Previous</a>
                     </li>
                     @for (var p = 1; p <= Model.TotalPages; p++)
                     {
                         <li class="page-item @(p == Model.Page ? "active" : "")">
                             <a class="page-link" asp-action="Index" asp-route-page="@p"
-                               asp-route-search="@Model.Search" asp-route-verifyStatus="@Model.VerifyStatus" asp-route-categoryUid="@Model.CategoryUid"
+                               asp-route-search="@Model.Search" asp-route-verifyStatus="@Model.VerifyStatus" asp-route-categoryUid="@Model.CategoryUid" asp-route-zone="@Model.Zone"
                                asp-route-sort="@Model.Sort" asp-route-sortDir="@Model.SortDir">@p</a>
                         </li>
                     }
                     <li class="page-item @(Model.Page >= Model.TotalPages ? "disabled" : "")">
                         <a class="page-link" asp-action="Index" asp-route-page="@(Model.Page + 1)"
-                           asp-route-search="@Model.Search" asp-route-verifyStatus="@Model.VerifyStatus" asp-route-categoryUid="@Model.CategoryUid"
+                           asp-route-search="@Model.Search" asp-route-verifyStatus="@Model.VerifyStatus" asp-route-categoryUid="@Model.CategoryUid" asp-route-zone="@Model.Zone"
                            asp-route-sort="@Model.Sort" asp-route-sortDir="@Model.SortDir">Next</a>
                     </li>
                 </ul>

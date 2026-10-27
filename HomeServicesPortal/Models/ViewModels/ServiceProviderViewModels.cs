@@ -13,6 +13,9 @@ public class ServiceProviderListVm
     /// <summary>Filter: null = all categories; otherwise providers offering this category (primary or additional).</summary>
     public int? CategoryUid { get; set; }
     public List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem> CategoryOptions { get; set; } = new();
+    /// <summary>Filter: null = all zones; otherwise providers working in this zone (ProviderZones).</summary>
+    public string? Zone { get; set; }
+    public List<string> ZoneOptions { get; set; } = new();
     public string Sort { get; set; } = "id";
     public string SortDir { get; set; } = "desc";
     public int Page { get; set; } = 1;
