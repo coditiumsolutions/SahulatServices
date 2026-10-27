@@ -104,7 +104,21 @@
                     <div class="col-md-6">
                         <div class="row g-2">
                             <div class="col-sm-4 sp-label">Mobile No</div>
-                            <div class="col-sm-8 sp-value">@(Model.MobileNo ?? "—")</div>
+                            <div class="col-sm-8 sp-value">
+                                @(Model.MobileNo ?? "—")
+                                @{
+                                    // Local 03XXXXXXXXX -> international 923XXXXXXXXX for wa.me
+                                    var waDigits = new string((Model.MobileNo ?? "").Where(char.IsDigit).ToArray());
+                                    if (waDigits.StartsWith("0")) { waDigits = "92" + waDigits.Substring(1); }
+                                }
+                                @if (waDigits.Length >= 11)
+                                {
+                                    <a href="https://wa.me/@waDigits" target="_blank" rel="noopener noreferrer"
+                                       class="btn btn-sm btn-success ms-2 py-0" title="Chat on WhatsApp">
+                                        <i class="fa-brands fa-whatsapp me-1"></i>WhatsApp
+                                    </a>
+                                }
+                            </div>
                         </div>
                     </div>
                     <div class="col-md-6">
