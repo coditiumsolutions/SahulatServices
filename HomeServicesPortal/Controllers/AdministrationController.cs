@@ -26,6 +26,13 @@ public class AdministrationController : Controller
         return View("Users/Index", vm);
     }
 
+    [HttpGet("/Admin/Administration/ForgotPass")]
+    public async Task<IActionResult> ForgotPass(string? search, CancellationToken cancellationToken)
+    {
+        var vm = await _userService.GetForgotPassRequestsAsync(search, cancellationToken);
+        return View("ForgotPass", vm);
+    }
+
     [HttpGet("/Admin/Administration/Users/Create")]
     public async Task<IActionResult> CreateUser(CancellationToken cancellationToken)
     {

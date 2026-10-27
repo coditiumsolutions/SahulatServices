@@ -133,3 +133,23 @@ public class UserDeleteVm
     public string? FullName { get; set; }
     public string Role { get; set; } = string.Empty;
 }
+
+public class ForgotPassListVm
+{
+    public string? Search { get; set; }
+    public List<ForgotPassItemVm> Items { get; set; } = new();
+}
+
+public class ForgotPassItemVm
+{
+    public string MobileNo { get; set; } = string.Empty;
+    /// <summary>Client and/or Provider profile names on this login (a login can hold both).</summary>
+    public string Name { get; set; } = "—";
+    public string UserType { get; set; } = "—";
+    public string OtpCode { get; set; } = string.Empty;
+    public DateTime RequestedOn { get; set; }
+    public DateTime ExpiryTime { get; set; }
+    public int SentCount { get; set; }
+    /// <summary>Active, Used, Expired or Locked.</summary>
+    public string Status { get; set; } = string.Empty;
+}
