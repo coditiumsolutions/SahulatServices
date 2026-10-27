@@ -1,0 +1,109 @@
+@model HomeServicesPortal.Models.ViewModels.ForgotPassListVm
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Forgot Pass";
+}
+
+<style>
+    .fp-passcode {
+        display: inline-block;
+        background: #fff8e1;
+        border: 2px solid #ffc107;
+        border-radius: 10px;
+        padding: 4px 14px;
+        font-size: 1.4rem;
+        font-weight: 700;
+        letter-spacing: .2em;
+        padding-left: calc(14px + .2em);
+        color: #000;
+        font-family: monospace;
+        line-height: 1.3;
+    }
+</style>
+
+<div class="d-flex flex-wrap align-items-center justify-content-between mb-4 gap-2">
+    <div>
+        <h2 class="mb-1"><i class="fa-solid fa-key me-2 text-primary"></i>Forgot Pass</h2>
+        <p class="text-muted mb-0">Password-reset passcodes requested by clients and providers. Share the code with the user over WhatsApp. Codes are valid for 5 minutes.</p>
+    </div>
+</div>
+
+<div class="card hs-card">
+    <div class="card-body">
+        <form method="get" asp-action="ForgotPass" class="row g-2 mb-3">
+            <div class="col-md-6 col-lg-4">
+                <div class="input-group">
+                    <span class="input-group-text"><i class="fa-solid fa-search"></i></span>
+                    <input type="text" name="search" value="@Model.Search" class="form-control" placeholder="Search mobile or name..." />
+                    <button type="submit" class="btn btn-outline-primary">Search</button>
+                </div>
+            </div>
+            @if (!string.IsNullOrWhiteSpace(Model.Search))
+            {
+                <div class="col-auto"><a asp-action="ForgotPass" class="btn btn-outline-secondary">Clear</a></div>
+            }
+            <div class="col-auto ms-auto">
+                <a asp-action="ForgotPass" asp-route-search="@Model.Search" class="btn btn-outline-secondary"><i class="fa-solid fa-rotate me-1"></i>Refresh</a>
+            </div>
+        </form>
+
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Name</th>
+                        <th>Type</th>
+                        <th>Mobile</th>
+                        <th>Passcode</th>
+                        <th>Requested</th>
+                        <th>Expires</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.Items.Any())
+                    {
+                        <tr><td colspan="7" class="text-center text-muted py-4">No password-reset requests yet.</td></tr>
+                    }
+                    @foreach (var item in Model.Items)
+                    {
+                        // Local 03XXXXXXXXX -> international 923XXXXXXXXX for wa.me
+                        var waDigits = new string(item.MobileNo.Where(char.IsDigit).ToArray());
+                        if (waDigits.StartsWith("0")) { waDigits = "92" + waDigits.Substring(1); }
+                        var badge = item.Status switch { "Active" => "bg-success", "Used" => "bg-secondary", "Locked" => "bg-danger", _ => "bg-warning text-dark" };
+                        <tr>
+                            <td>@item.Name</td>
+                            <td>
+                                @if (item.UserType == "—")
+                                {
+                                    <span class="text-muted">—</span>
+                                }
+                                else
+                                {
+                                    @foreach (var role in item.UserType.Split(" + "))
+                                    {
+                                        <span class="badge @(role == "Client" ? "bg-primary" : "bg-info text-dark") me-1">@role</span>
+                                    }
+                                }
+                            </td>
+                            <td class="text-nowrap">
+                                @item.MobileNo
+                                @if (waDigits.Length >= 11)
+                                {
+                                    <a href="https://wa.me/@waDigits" target="_blank" rel="noopener noreferrer"
+                                       class="btn btn-sm btn-success ms-2 py-0" title="Chat on WhatsApp">
+                                        <i class="fa-brands fa-whatsapp me-1"></i>WhatsApp
+                                    </a>
+                                }
+                            </td>
+                            <td><span class="fp-passcode">@item.OtpCode</span></td>
+                            <td class="text-nowrap">@item.RequestedOn.ToPktDisplay()</td>
+                            <td class="text-nowrap" title="@item.ExpiryTime.ToPktDisplay()">@item.ExpiryTime.ToPktTimeDisplay()</td>
+                            <td><span class="badge @badge">@item.Status</span></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

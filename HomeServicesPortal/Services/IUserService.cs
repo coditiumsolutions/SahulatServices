@@ -6,6 +6,7 @@ namespace HomeServicesPortal.Services;
 public interface IUserService
 {
     Task<UserListVm> GetUsersAsync(string? search, CancellationToken cancellationToken = default);
+    Task<ForgotPassListVm> GetForgotPassRequestsAsync(string? search, CancellationToken cancellationToken = default);
     Task<UserDetailsVm?> GetUserDetailsAsync(int id, CancellationToken cancellationToken = default);
     Task<UserEditVm?> GetUserForEditAsync(int id, CancellationToken cancellationToken = default);
     Task<UserDeleteVm?> GetUserForDeleteAsync(int id, CancellationToken cancellationToken = default);

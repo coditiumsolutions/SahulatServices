@@ -18,6 +18,63 @@ public class UserService : IUserService
         _logger = logger;
     }
 
+    /// <summary>
+    /// Password-reset codes as stored by OtpService (UserOTP, one pending row per mobile that is reused
+    /// on resend). SMS delivery is a dummy, so staff read the code here and pass it on to the user.
+    /// </summary>
+    public async Task<ForgotPassListVm> GetForgotPassRequestsAsync(string? search, CancellationToken cancellationToken = default)
+    {
+        var term = search?.Trim();
+        var otps = _db.UserOTPs.AsNoTracking().Where(o => o.OTPType == OtpTypeConstants.PasswordReset);
+        if (!string.IsNullOrEmpty(term))
+        {
+            otps = otps.Where(o => o.MobileNo.Contains(term)
+                || _db.UsersLogins.Any(u => u.MobileNo == o.MobileNo
+                    && ((u.Client != null && u.Client.FullName.Contains(term))
+                        || (u.Provider != null && u.Provider.FullName.Contains(term)))));
+        }
+
+        var rows = await otps.OrderByDescending(o => o.CreatedOn).Take(200).ToListAsync(cancellationToken);
+        var mobiles = rows.Select(r => r.MobileNo).Distinct().ToList();
+        var logins = await _db.UsersLogins.AsNoTracking()
+            .Where(u => mobiles.Contains(u.MobileNo))
+            .Select(u => new
+            {
+                u.MobileNo,
+                ClientName = u.Client != null ? u.Client.FullName : null,
+                ProviderName = u.Provider != null ? u.Provider.FullName : null
+            })
+            .ToListAsync(cancellationToken);
+        var byMobile = logins.GroupBy(l => l.MobileNo).ToDictionary(g => g.Key, g => g.First());
+
+        var now = DateTime.UtcNow;
+        var vm = new ForgotPassListVm { Search = term };
+        foreach (var o in rows)
+        {
+            byMobile.TryGetValue(o.MobileNo, out var login);
+            var roles = new List<string>();
+            var names = new List<string>();
+            if (login?.ClientName != null) { roles.Add("Client"); names.Add(login.ClientName); }
+            if (login?.ProviderName != null) { roles.Add("Provider"); names.Add(login.ProviderName); }
+
+            vm.Items.Add(new ForgotPassItemVm
+            {
+                MobileNo = o.MobileNo,
+                Name = names.Count > 0 ? string.Join(" / ", names.Distinct()) : "—",
+                UserType = roles.Count > 0 ? string.Join(" + ", roles) : "—",
+                OtpCode = o.OTPCode,
+                RequestedOn = o.CreatedOn,
+                ExpiryTime = o.ExpiryTime,
+                SentCount = o.SentCount,
+                Status = o.IsVerified ? "Used"
+                    : o.AttemptCount >= OtpService.MaxVerifyAttempts ? "Locked"
+                    : o.ExpiryTime < now ? "Expired"
+                    : "Active"
+            });
+        }
+        return vm;
+    }
+
     public async Task<UserListVm> GetUsersAsync(string? search, CancellationToken cancellationToken = default)
     {
         var query = _db.UsersLogins
