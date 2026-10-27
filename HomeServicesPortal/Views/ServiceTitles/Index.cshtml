@@ -62,22 +62,14 @@
                                asp-route-search="@Model.Search" asp-route-categoryUid="@Model.CategoryUid" asp-route-sort="title"
                                asp-route-sortDir="@(Model.Sort == "title" && Model.SortDir == "asc" ? "desc" : "asc")">
                                 Title
-                                @if (Model.Sort == "title")
-                                {
-                                    <i class="fa-solid fa-sort-@(Model.SortDir == "asc" ? "up" : "down") ms-1"></i>
-                                }
-                            </a>
+                             <i class="fa-solid @(Model.Sort == "title" ? (Model.SortDir == "asc" ? "fa-sort-up text-primary" : "fa-sort-down text-primary") : "fa-sort text-muted opacity-50") ms-1"></i></a>
                         </th>
                         <th>
                             <a class="text-decoration-none text-dark" asp-action="Index"
                                asp-route-search="@Model.Search" asp-route-categoryUid="@Model.CategoryUid" asp-route-sort="category"
                                asp-route-sortDir="@(Model.Sort == "category" && Model.SortDir == "asc" ? "desc" : "asc")">
                                 Categories
-                                @if (Model.Sort == "category")
-                                {
-                                    <i class="fa-solid fa-sort-@(Model.SortDir == "asc" ? "up" : "down") ms-1"></i>
-                                }
-                            </a>
+                             <i class="fa-solid @(Model.Sort == "category" ? (Model.SortDir == "asc" ? "fa-sort-up text-primary" : "fa-sort-down text-primary") : "fa-sort text-muted opacity-50") ms-1"></i></a>
                         </th>
                         <th>Est. Budget</th>
                         <th>
@@ -85,22 +77,14 @@
                                asp-route-search="@Model.Search" asp-route-categoryUid="@Model.CategoryUid" asp-route-sort="order"
                                asp-route-sortDir="@(Model.Sort == "order" && Model.SortDir == "asc" ? "desc" : "asc")">
                                 Display Order
-                                @if (Model.Sort == "order")
-                                {
-                                    <i class="fa-solid fa-sort-@(Model.SortDir == "asc" ? "up" : "down") ms-1"></i>
-                                }
-                            </a>
+                             <i class="fa-solid @(Model.Sort == "order" ? (Model.SortDir == "asc" ? "fa-sort-up text-primary" : "fa-sort-down text-primary") : "fa-sort text-muted opacity-50") ms-1"></i></a>
                         </th>
                         <th>
                             <a class="text-decoration-none text-dark" asp-action="Index"
                                asp-route-search="@Model.Search" asp-route-categoryUid="@Model.CategoryUid" asp-route-sort="status"
                                asp-route-sortDir="@(Model.Sort == "status" && Model.SortDir == "asc" ? "desc" : "asc")">
                                 Status
-                                @if (Model.Sort == "status")
-                                {
-                                    <i class="fa-solid fa-sort-@(Model.SortDir == "asc" ? "up" : "down") ms-1"></i>
-                                }
-                            </a>
+                             <i class="fa-solid @(Model.Sort == "status" ? (Model.SortDir == "asc" ? "fa-sort-up text-primary" : "fa-sort-down text-primary") : "fa-sort text-muted opacity-50") ms-1"></i></a>
                         </th>
                         <th class="text-end">Actions</th>
                     </tr>

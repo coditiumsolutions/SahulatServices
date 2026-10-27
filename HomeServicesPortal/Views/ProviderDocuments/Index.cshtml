@@ -41,11 +41,11 @@
             <table class="table table-hover align-middle mb-0">
                 <thead class="table-light">
                     <tr>
-                        <th><a class="text-decoration-none text-dark" asp-action="Index" asp-route-search="@Model.Search" asp-route-sort="provider" asp-route-sortDir="@(Model.Sort == "provider" && Model.SortDir == "asc" ? "desc" : "asc")">Provider</a></th>
-                        <th><a class="text-decoration-none text-dark" asp-action="Index" asp-route-search="@Model.Search" asp-route-sort="mobile" asp-route-sortDir="@(Model.Sort == "mobile" && Model.SortDir == "asc" ? "desc" : "asc")">Mobile</a></th>
+                        <th><a class="text-decoration-none text-dark" asp-action="Index" asp-route-search="@Model.Search" asp-route-sort="provider" asp-route-sortDir="@(Model.Sort == "provider" && Model.SortDir == "asc" ? "desc" : "asc")">Provider <i class="fa-solid @(Model.Sort == "provider" ? (Model.SortDir == "asc" ? "fa-sort-up text-primary" : "fa-sort-down text-primary") : "fa-sort text-muted opacity-50") ms-1"></i></a></th>
+                        <th><a class="text-decoration-none text-dark" asp-action="Index" asp-route-search="@Model.Search" asp-route-sort="mobile" asp-route-sortDir="@(Model.Sort == "mobile" && Model.SortDir == "asc" ? "desc" : "asc")">Mobile <i class="fa-solid @(Model.Sort == "mobile" ? (Model.SortDir == "asc" ? "fa-sort-up text-primary" : "fa-sort-down text-primary") : "fa-sort text-muted opacity-50") ms-1"></i></a></th>
                         <th>Images</th>
-                        <th><a class="text-decoration-none text-dark" asp-action="Index" asp-route-search="@Model.Search" asp-route-sort="verified" asp-route-sortDir="@(Model.Sort == "verified" && Model.SortDir == "asc" ? "desc" : "asc")">Status</a></th>
-                        <th><a class="text-decoration-none text-dark" asp-action="Index" asp-route-search="@Model.Search" asp-route-sort="created" asp-route-sortDir="@(Model.Sort == "created" && Model.SortDir == "asc" ? "desc" : "asc")">Created</a></th>
+                        <th><a class="text-decoration-none text-dark" asp-action="Index" asp-route-search="@Model.Search" asp-route-sort="verified" asp-route-sortDir="@(Model.Sort == "verified" && Model.SortDir == "asc" ? "desc" : "asc")">Status <i class="fa-solid @(Model.Sort == "verified" ? (Model.SortDir == "asc" ? "fa-sort-up text-primary" : "fa-sort-down text-primary") : "fa-sort text-muted opacity-50") ms-1"></i></a></th>
+                        <th><a class="text-decoration-none text-dark" asp-action="Index" asp-route-search="@Model.Search" asp-route-sort="created" asp-route-sortDir="@(Model.Sort == "created" && Model.SortDir == "asc" ? "desc" : "asc")">Created <i class="fa-solid @(Model.Sort == "created" ? (Model.SortDir == "asc" ? "fa-sort-up text-primary" : "fa-sort-down text-primary") : "fa-sort text-muted opacity-50") ms-1"></i></a></th>
                         <th class="text-end">Actions</th>
                     </tr>
                 </thead>

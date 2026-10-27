@@ -40,12 +40,12 @@
             <table class="table table-hover align-middle mb-0">
                 <thead class="table-light">
                     <tr>
-                        <th><a class="text-decoration-none text-dark" asp-action="Index" asp-route-search="@Model.Search" asp-route-sort="request" asp-route-sortDir="@(Model.Sort == "request" && Model.SortDir == "asc" ? "desc" : "asc")">Service Request</a></th>
-                        <th><a class="text-decoration-none text-dark" asp-action="Index" asp-route-search="@Model.Search" asp-route-sort="provider" asp-route-sortDir="@(Model.Sort == "provider" && Model.SortDir == "asc" ? "desc" : "asc")">Provider</a></th>
-                        <th><a class="text-decoration-none text-dark" asp-action="Index" asp-route-search="@Model.Search" asp-route-sort="amount" asp-route-sortDir="@(Model.Sort == "amount" && Model.SortDir == "asc" ? "desc" : "asc")">Quote Amount</a></th>
+                        <th><a class="text-decoration-none text-dark" asp-action="Index" asp-route-search="@Model.Search" asp-route-sort="request" asp-route-sortDir="@(Model.Sort == "request" && Model.SortDir == "asc" ? "desc" : "asc")">Service Request <i class="fa-solid @(Model.Sort == "request" ? (Model.SortDir == "asc" ? "fa-sort-up text-primary" : "fa-sort-down text-primary") : "fa-sort text-muted opacity-50") ms-1"></i></a></th>
+                        <th><a class="text-decoration-none text-dark" asp-action="Index" asp-route-search="@Model.Search" asp-route-sort="provider" asp-route-sortDir="@(Model.Sort == "provider" && Model.SortDir == "asc" ? "desc" : "asc")">Provider <i class="fa-solid @(Model.Sort == "provider" ? (Model.SortDir == "asc" ? "fa-sort-up text-primary" : "fa-sort-down text-primary") : "fa-sort text-muted opacity-50") ms-1"></i></a></th>
+                        <th><a class="text-decoration-none text-dark" asp-action="Index" asp-route-search="@Model.Search" asp-route-sort="amount" asp-route-sortDir="@(Model.Sort == "amount" && Model.SortDir == "asc" ? "desc" : "asc")">Quote Amount <i class="fa-solid @(Model.Sort == "amount" ? (Model.SortDir == "asc" ? "fa-sort-up text-primary" : "fa-sort-down text-primary") : "fa-sort text-muted opacity-50") ms-1"></i></a></th>
                         <th>ETA (min)</th>
                         <th>Distance (KM)</th>
-                        <th><a class="text-decoration-none text-dark" asp-action="Index" asp-route-search="@Model.Search" asp-route-sort="date" asp-route-sortDir="@(Model.Sort == "date" && Model.SortDir == "asc" ? "desc" : "asc")">Quote Date</a></th>
+                        <th><a class="text-decoration-none text-dark" asp-action="Index" asp-route-search="@Model.Search" asp-route-sort="date" asp-route-sortDir="@(Model.Sort == "date" && Model.SortDir == "asc" ? "desc" : "asc")">Quote Date <i class="fa-solid @(Model.Sort == "date" ? (Model.SortDir == "asc" ? "fa-sort-up text-primary" : "fa-sort-down text-primary") : "fa-sort text-muted opacity-50") ms-1"></i></a></th>
                         <th class="text-end">Actions</th>
                     </tr>
                 </thead>
