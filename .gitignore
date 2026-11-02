@@ -38,3 +38,6 @@ Thumbs.db
 
 # Local Firebase service-account key
 HomeServicesPortal/secrets/
+
+# Local UI reference screenshots (not pushed)
+/docs/mobile-app/screenshots/
