@@ -17,6 +17,46 @@
     var displayName = User.Identity?.Name;
     var homeHref = isProvider ? "/provider/dashboard" : isClient ? "/client/dashboard" : "/";
 
+    // Phone shell (portal-mobile.css): an app bar with the page title and a bottom tab bar, like the Flutter app.
+    var cleanPath = path.TrimEnd('/');
+    var isTabPage = isPortalUser && cleanPath is "/client/dashboard" or "/client/services" or "/client/requests" or "/client/profile"
+        or "/client/notifications" or "/provider/dashboard" or "/provider/requests" or "/provider/bookings"
+        or "/provider/wallet" or "/provider/profile" or "/provider/notifications";
+    (string Title, string? Sub) appBarText = cleanPath switch
+    {
+        "/client/dashboard" => ("Sahulat Ghar Tak", "Quality Services Delivered to Your Doorstep"),
+        "/client/services" => ("Services", "Choose a service to get started"),
+        "/client/requests" => ("My Service Requests", "Track your requests here"),
+        "/client/profile" => ("Profile", null),
+        "/client/notifications" or "/provider/notifications" => ("Notifications", null),
+        "/provider/dashboard" => ("Welcome back!", null),
+        "/provider/requests" => ("Incoming Requests", "New job offers from staff"),
+        "/provider/bookings" => ("My Bookings", null),
+        "/provider/wallet" => ("Wallet", "Balance and payment history"),
+        "/provider/profile" => ("Provider Profile", null),
+        _ => (ViewData["Title"]?.ToString() ?? "Sahulat Ghar Tak", null)
+    };
+    var appBarTitle = ViewData["MobileTitle"] as string ?? appBarText.Title;
+    var appBarSub = ViewData["MobileSubtitle"] as string ?? appBarText.Sub;
+    var appBarSearch = ViewData["MobileSearch"] is true;
+    var showBottomNav = isPortalUser && !path.StartsWith("/provider/pending");
+    var bottomNav = isProvider
+        ? new[]
+        {
+            (Label: "Home", Icon: "home", Href: "/provider/dashboard", Active: cleanPath == "/provider/dashboard"),
+            (Label: "Requests", Icon: "inbox", Href: "/provider/requests", Active: path.StartsWith("/provider/requests")),
+            (Label: "Bookings", Icon: "work", Href: "/provider/bookings", Active: path.StartsWith("/provider/bookings")),
+            (Label: "Wallet", Icon: "account_balance_wallet", Href: "/provider/wallet", Active: path.StartsWith("/provider/wallet")),
+            (Label: "Profile", Icon: "person", Href: "/provider/profile",
+                Active: path.StartsWith("/provider/profile") || path.StartsWith("/provider/documents") || path.StartsWith("/provider/categories"))
+        }
+        : new[]
+        {
+            (Label: "Home", Icon: "home", Href: "/client/dashboard", Active: cleanPath == "/client/dashboard" || path.StartsWith("/client/services")),
+            (Label: "Requests", Icon: "receipt_long", Href: "/client/requests", Active: path.StartsWith("/client/requests")),
+            (Label: "Profile", Icon: "person", Href: "/client/profile", Active: path.StartsWith("/client/profile"))
+        };
+
     string TabActive(string segment)
     {
         if (segment == "home")
@@ -37,7 +77,69 @@
     }
 }
 
-<header class="hs-topbar-primary">
+@if (isPortalUser)
+{
+    <header class="hs-appbar d-lg-none @(appBarSearch ? "hs-appbar--search" : "")">
+        <div class="hs-appbar-bg" aria-hidden="true"><span></span><span></span></div>
+        <div class="hs-appbar-row">
+            @if (isTabPage)
+            {
+                <a class="hs-appbar-logo" href="@homeHref" aria-label="Home"><img src="~/img/app-logo.png" alt="" width="46" height="46" /></a>
+            }
+            else
+            {
+                <button type="button" class="hs-appbar-btn" data-home="@homeHref" aria-label="Back"
+                        onclick="if (history.length > 1) { history.back(); } else { location.href = this.dataset.home; }">
+                    <span class="ms" aria-hidden="true">arrow_back</span>
+                </button>
+            }
+            <div class="hs-appbar-text">
+                <div class="hs-appbar-title">@appBarTitle</div>
+                @if (!string.IsNullOrWhiteSpace(appBarSub))
+                {
+                    <div class="hs-appbar-sub">@appBarSub</div>
+                }
+            </div>
+            @if (ViewData["MobileOnline"] is bool mobileOnline)
+            {
+                if (mobileOnline)
+                {
+                    <form method="post" action="/provider/availability" class="m-0">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="isOnline" value="false" />
+                        <button type="submit" class="hs-online-pill is-on" aria-label="Online. Tap to go offline">
+                            <i class="fa-solid fa-tower-broadcast" aria-hidden="true"></i><span>Online</span>
+                        </button>
+                    </form>
+                }
+                else
+                {
+                    <button type="button" class="hs-online-pill" data-bs-toggle="modal" data-bs-target="#availabilityModal" aria-label="Offline. Tap to go online">
+                        <i class="fa-solid fa-tower-broadcast" aria-hidden="true"></i><span>Offline</span>
+                    </button>
+                }
+            }
+            <a class="hs-appbar-btn hs-bell" href="@notificationsHref" data-count-url="@notificationsHref/count" aria-label="Notifications">
+                <span class="ms" aria-hidden="true">notifications</span>
+                <span class="hs-bell-badge d-none js-bell-badge" aria-hidden="true"></span>
+            </a>
+            <button type="button" class="hs-appbar-btn" data-bs-toggle="modal" data-bs-target="#hsPublicUtilityModal" aria-haspopup="dialog" aria-label="Open menu">
+                <span class="ms" aria-hidden="true">menu</span>
+            </button>
+        </div>
+        @if (appBarSearch)
+        {
+            <div class="hs-appbar-search">
+                <span class="ms" aria-hidden="true">search</span>
+                <input type="search" id="serviceSearchM" placeholder="Search services..." autocomplete="off"
+                       aria-label="Search services" aria-controls="serviceSearchResultsM" />
+                <ul class="list-group client-search-results d-none" id="serviceSearchResultsM" role="listbox"></ul>
+            </div>
+        }
+    </header>
+}
+
+<header class="hs-topbar-primary @(isPortalUser ? "hs-desktop-only" : "")">
     <div class="container-fluid px-3 px-lg-4">
         <div class="d-flex align-items-center justify-content-between py-2 gap-2">
             <a class="hs-brand" href="@homeHref">
@@ -102,7 +204,7 @@
     </div>
 </header>
 
-<nav class="hs-topbar-secondary">
+<nav class="hs-topbar-secondary @(isPortalUser ? "hs-desktop-only" : "")">
     <div class="container-fluid px-0 px-lg-3">
         <button class="hs-mobile-toggle d-lg-none w-100 text-start px-3 py-2 border-0"
                 type="button" data-bs-toggle="collapse" data-bs-target="#hsPublicTabNav"
@@ -220,19 +322,19 @@
                         <div class="hs-quick-link">
                             <span><i class="fa-solid fa-user"></i>@(displayName ?? userType) (Client)</span>
                         </div>
-                        <a class="hs-quick-link" href="/client/dashboard" data-bs-dismiss="modal">
+                        <a class="hs-quick-link" href="/client/dashboard">
                             <span><i class="fa-solid fa-house"></i>Home</span><i class="fa-solid fa-chevron-right"></i>
                         </a>
-                        <a class="hs-quick-link" href="/client/services" data-bs-dismiss="modal">
+                        <a class="hs-quick-link" href="/client/services">
                             <span><i class="fa-solid fa-screwdriver-wrench"></i>Services</span><i class="fa-solid fa-chevron-right"></i>
                         </a>
-                        <a class="hs-quick-link" href="/client/requests" data-bs-dismiss="modal">
+                        <a class="hs-quick-link" href="/client/requests">
                             <span><i class="fa-solid fa-inbox"></i>Requests</span><i class="fa-solid fa-chevron-right"></i>
                         </a>
-                        <a class="hs-quick-link" href="/client/profile" data-bs-dismiss="modal">
+                        <a class="hs-quick-link" href="/client/profile">
                             <span><i class="fa-solid fa-id-badge"></i>Profile</span><i class="fa-solid fa-chevron-right"></i>
                         </a>
-                        <a class="hs-quick-link" href="/client/notifications" data-bs-dismiss="modal">
+                        <a class="hs-quick-link" href="/client/notifications">
                             <span><i class="fa-regular fa-bell"></i>Notifications <span class="badge text-bg-danger d-none js-bell-badge"></span></span><i class="fa-solid fa-chevron-right"></i>
                         </a>
                         @if (isDualRole)
@@ -257,22 +359,22 @@
                         <div class="hs-quick-link">
                             <span><i class="fa-solid fa-user"></i>@(displayName ?? userType) (Provider)</span>
                         </div>
-                        <a class="hs-quick-link" href="/provider/dashboard" data-bs-dismiss="modal">
+                        <a class="hs-quick-link" href="/provider/dashboard">
                             <span><i class="fa-solid fa-house"></i>Home</span><i class="fa-solid fa-chevron-right"></i>
                         </a>
-                        <a class="hs-quick-link" href="/provider/requests" data-bs-dismiss="modal">
+                        <a class="hs-quick-link" href="/provider/requests">
                             <span><i class="fa-solid fa-inbox"></i>Requests</span><i class="fa-solid fa-chevron-right"></i>
                         </a>
-                        <a class="hs-quick-link" href="/provider/bookings" data-bs-dismiss="modal">
+                        <a class="hs-quick-link" href="/provider/bookings">
                             <span><i class="fa-solid fa-calendar-check"></i>Bookings</span><i class="fa-solid fa-chevron-right"></i>
                         </a>
-                        <a class="hs-quick-link" href="/provider/wallet" data-bs-dismiss="modal">
+                        <a class="hs-quick-link" href="/provider/wallet">
                             <span><i class="fa-solid fa-wallet"></i>Wallet</span><i class="fa-solid fa-chevron-right"></i>
                         </a>
-                        <a class="hs-quick-link" href="/provider/profile" data-bs-dismiss="modal">
+                        <a class="hs-quick-link" href="/provider/profile">
                             <span><i class="fa-solid fa-id-badge"></i>Profile</span><i class="fa-solid fa-chevron-right"></i>
                         </a>
-                        <a class="hs-quick-link" href="/provider/notifications" data-bs-dismiss="modal">
+                        <a class="hs-quick-link" href="/provider/notifications">
                             <span><i class="fa-regular fa-bell"></i>Notifications <span class="badge text-bg-danger d-none js-bell-badge"></span></span><i class="fa-solid fa-chevron-right"></i>
                         </a>
                         @if (isDualRole)
@@ -294,10 +396,10 @@
                     }
                     else
                     {
-                        <a class="hs-quick-link" href="/login" data-bs-dismiss="modal">
+                        <a class="hs-quick-link" href="/login">
                             <span><i class="fa-solid fa-right-to-bracket"></i>Login</span><i class="fa-solid fa-chevron-right"></i>
                         </a>
-                        <a class="hs-quick-link" href="/signup" data-bs-dismiss="modal">
+                        <a class="hs-quick-link" href="/signup">
                             <span><i class="fa-solid fa-user-plus"></i>Signup</span><i class="fa-solid fa-chevron-right"></i>
                         </a>
                     }
@@ -306,6 +408,19 @@
         </div>
     </div>
 </div>
+
+@if (showBottomNav)
+{
+    <nav class="hs-bottomnav d-lg-none hs-bottomnav--@bottomNav.Length" aria-label="Main">
+        @foreach (var item in bottomNav)
+        {
+            <a class="hs-bn-item @(item.Active ? "is-active" : "")" href="@item.Href" @(item.Active ? "aria-current=page" : null)>
+                <span class="hs-bn-pill"><span class="ms @(item.Active ? "fill" : "")" aria-hidden="true">@item.Icon</span></span>
+                <span class="hs-bn-label">@item.Label</span>
+            </a>
+        }
+    </nav>
+}
 
 @if (isPortalUser)
 {

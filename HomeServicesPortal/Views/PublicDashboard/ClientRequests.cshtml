@@ -98,7 +98,7 @@
                 @foreach (var req in Model.Requests)
                 {
                     var budget = RequestDisplayHelper.Currency(req.EstimatedBudget);
-                    <article class="client-service-card client-request-card">
+                    <article class="client-service-card client-request-card @StatusClass(req.StatusLabel).Replace("client-req-status", "client-rail")">
                         <div class="client-request-card-top">
                             <span class="client-req-status @StatusClass(req.StatusLabel)">@req.StatusLabel</span>
                             @if (req.IsUrgent)

@@ -314,28 +314,28 @@
 }
 
 .client-req-status--initiated {
-    background: rgba(0, 51, 102, 0.1);
-    color: #003366;
+    background: rgba(249, 115, 22, 0.12);
+    color: #C2570C;
 }
 
 .client-req-status--assigned {
-    background: rgba(13, 110, 253, 0.12);
-    color: #0d6efd;
+    background: rgba(103, 58, 183, 0.12);
+    color: #673AB7;
 }
 
 .client-req-status--active {
-    background: rgba(25, 135, 84, 0.12);
-    color: #198754;
+    background: rgba(33, 150, 243, 0.12);
+    color: #1976D2;
 }
 
 .client-req-status--done {
-    background: rgba(25, 135, 84, 0.18);
-    color: #0f5132;
+    background: rgba(22, 163, 74, 0.14);
+    color: #15803D;
 }
 
 .client-req-status--cancelled {
-    background: rgba(139, 26, 26, 0.1);
-    color: #8B1A1A;
+    background: rgba(220, 38, 38, 0.1);
+    color: #B91C1C;
 }
 
 .client-req-urgent {

@@ -7,6 +7,11 @@
     var firstName = (Model.FullName ?? string.Empty).Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
     var success = TempData["ProviderSuccess"] as string;
     var error = TempData["ProviderError"] as string;
+
+    // Phone app bar: welcome text and the Online/Offline pill (see _SiteHeaderPublic).
+    ViewData["MobileTitle"] = string.IsNullOrEmpty(firstName) ? "Welcome back!" : $"Welcome back, {firstName}!";
+    ViewData["MobileSubtitle"] = Model.IsOnline ? "You're online and visible to customers" : "You're offline right now";
+    ViewData["MobileOnline"] = Model.IsOnline;
 }
 
 @section Head {
@@ -30,7 +35,7 @@
                 <div class="provider-hero-actions">
                     @if (Model.IsOnline)
                     {
-                        <form method="post" action="/provider/availability">
+                        <form method="post" action="/provider/availability" class="d-none d-lg-block">
                             @Html.AntiForgeryToken()
                             <input type="hidden" name="isOnline" value="false" />
                             <button type="submit" class="btn btn-sm btn-outline-primary">
@@ -43,7 +48,7 @@
                     }
                     else
                     {
-                        <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#availabilityModal">
+                        <button type="button" class="btn btn-sm btn-primary d-none d-lg-inline-block" data-bs-toggle="modal" data-bs-target="#availabilityModal">
                             <i class="fa-solid fa-wifi me-1" aria-hidden="true"></i>Go online
                         </button>
                     }

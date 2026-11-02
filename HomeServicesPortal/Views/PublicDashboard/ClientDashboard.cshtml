@@ -10,7 +10,35 @@
         Model.Categories.Select(c => new { id = c.Uid, name = c.CategoryName, serviceId = c.ServiceUid, service = c.ServiceName }),
         new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
     var firstName = (Model.FullName ?? string.Empty).Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
+    // Phone: the search box lives in the app bar (see _SiteHeaderPublic).
+    ViewData["MobileSearch"] = true;
     var toneClasses = new[] { "client-service-card--indigo", "client-service-card--teal", "client-service-card--green", "client-service-card--amber", "client-service-card--pink", "client-service-card--blue" };
+
+    // Service colours as in the app; unknown services alternate teal / violet like the app does.
+    string ToneFor(string? serviceName, int index) => (serviceName ?? string.Empty).Trim().ToLowerInvariant() switch
+    {
+        "home maintenance" => "client-service-card--sky",
+        "specialized services" => "client-service-card--lilac",
+        "property & legal services" => "client-service-card--sun",
+        "sahulat ride" => "client-service-card--orange",
+        _ => index % 2 == 0 ? "client-service-card--mint" : "client-service-card--violet"
+    };
+
+    // Featured: up to 4 categories, those with a photo first (same keywords as the app's category_images.dart).
+    string? PhotoFor(string? categoryName)
+    {
+        var n = (categoryName ?? string.Empty).ToLowerInvariant();
+        if (n.Contains("electric")) return "/img/featured/electrician.jpg";
+        if (n.Contains("plumb")) return "/img/featured/plumbing.jpg";
+        if (n.Contains("carpenter") || n.Contains("carpainter")) return "/img/featured/carpenter.jpg";
+        if (n.Contains("paint")) return "/img/featured/painter.jpg";
+        return null;
+    }
+    var featuredColours = new[] { "#FF6B6B", "#4ECDC4", "#45B7D1", "#FFA07A" };
+    var featured = Model.Categories
+        .OrderByDescending(c => PhotoFor(c.CategoryName) != null)
+        .Take(4)
+        .ToList();
 }
 
 @section Head {
@@ -23,7 +51,7 @@
         <header class="pub-dash-hero">
             <div class="provider-hero-bar">
                 <p class="pub-dash-eyebrow mb-0">Client account</p>
-                <div class="provider-hero-actions">
+                <div class="provider-hero-actions d-none d-lg-flex">
                     <a href="/client/requests" class="btn btn-sm btn-outline-primary">
                         <i class="fa-solid fa-inbox me-1" aria-hidden="true"></i>My requests
                     </a>
@@ -57,7 +85,7 @@
                 @for (var i = 0; i < Model.Services.Count; i++)
                 {
                     var service = Model.Services[i];
-                    <a class="client-service-card client-service-card--link @toneClasses[i % toneClasses.Length]" href="/client/services/@service.Uid">
+                    <a class="client-service-card client-service-card--link @toneClasses[i % toneClasses.Length] @ToneFor(service.ServiceName, i)" href="/client/services/@service.Uid">
                         <div class="client-service-icon" aria-hidden="true">
                             <i class="@service.IconClass"></i>
                         </div>
@@ -67,16 +95,45 @@
                 }
             </div>
         }
+
+        @if (featured.Count > 0)
+        {
+            <div class="d-lg-none">
+                <hr class="hs-divider" />
+                <h2 class="h5 mb-3">Featured Services</h2>
+                <div class="hs-featured">
+                    @for (var f = 0; f < featured.Count; f++)
+                    {
+                        var cat = featured[f];
+                        var photo = PhotoFor(cat.CategoryName);
+                        <a class="hs-featured-card" href="/client/services/@cat.ServiceUid/categories/@cat.Uid/request"
+                           style="--feat: @featuredColours[f % featuredColours.Length];@(photo != null ? $" background-image: url('{photo}')" : "")">
+                            @if (photo == null)
+                            {
+                                <i class="fa-solid fa-screwdriver-wrench" aria-hidden="true"></i>
+                            }
+                            <span class="hs-featured-label">@cat.CategoryName</span>
+                        </a>
+                    }
+                </div>
+            </div>
+        }
     </div>
 </section>
 
 @section Scripts {
     <script>
         (function () {
-            var input = document.getElementById('serviceSearch');
-            var list = document.getElementById('serviceSearchResults');
-            if (!input || !list) return;
             var categories = @Html.Raw(searchJson);
+
+            // The page has two search boxes: the desktop one in the page header and the phone one in the app bar.
+            initSearch('serviceSearch', 'serviceSearchResults');
+            initSearch('serviceSearchM', 'serviceSearchResultsM');
+
+            function initSearch(inputId, listId) {
+            var input = document.getElementById(inputId);
+            var list = document.getElementById(listId);
+            if (!input || !list) return;
 
             // Same ranking as the app: exact, prefix, word start, then contains; best 6.
             function rank(name, q) {
@@ -131,8 +188,9 @@
             input.addEventListener('input', render);
             input.addEventListener('focus', render);
             document.addEventListener('click', function (e) {
-                if (!e.target.closest('.client-search')) list.classList.add('d-none');
+                if (!e.target.closest('.client-search, .hs-appbar-search')) list.classList.add('d-none');
             });
+            }
         })();
     </script>
 }

@@ -37,7 +37,7 @@
                     </div>
                     <div>
                         <div class="@(owed ? "text-success" : "text-warning-emphasis") fw-semibold">@(owed ? "Company owes you" : "You owe the company")</div>
-                        <div class="wallet-balance-amount">@BookingDisplayHelper.Money(Math.Abs(Model.Balance))</div>
+                        <div class="wallet-balance-amount @(owed ? "text-success" : "text-warning-emphasis")">@BookingDisplayHelper.Money(Math.Abs(Model.Balance))</div>
                     </div>
                 </div>
                 <hr />
