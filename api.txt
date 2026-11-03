@@ -49,9 +49,9 @@ Deployed:  https://sahulatghartak.com/api/auth/register-client
 
 Request Body:
 {
-  "mobileNo": "03335191392",
-  "password": "ghauri12",
-  "confirmPassword": "ghauri12",
+  "mobileNo": "03001234567",
+  "password": "ExamplePass12",
+  "confirmPassword": "ExamplePass12",
   "fullName": "Shahid",
   "gender": "Male"
 }
@@ -73,7 +73,7 @@ Success (201):
     "profileId": 1,
     "userType": "Client",
     "fullName": "Shahid",
-    "mobileNo": "03335191392",
+    "mobileNo": "03001234567",
     "categoryId": null,
     "categoryName": null
   }
@@ -100,8 +100,8 @@ Deployed:  https://sahulatghartak.com/api/auth/register-provider
 Request Body (categoryIds + primaryCategoryId are REQUIRED; the old single-category categoryId / categoryName
 body was removed 2026-10-08 — unknown fields are ignored, so a request that only has them gets 400):
 {
-  "mobileNo": "03335191392",
-  "password": "ghauri",
+  "mobileNo": "03001234567",
+  "password": "ExamplePass1",
   "fullName": "Shahid",
   "cnic": "37405-1234567-1",
   "gender": "Male",
@@ -138,7 +138,7 @@ Success (200):
     "providerUid": 4,
     "userType": "Provider",
     "fullName": "Shahid",
-    "mobileNo": "03335191392",
+    "mobileNo": "03001234567",
     "categoryId": 1,
     "categoryName": "Plumber",
     "categoryIds": [1, 3],
@@ -196,8 +196,8 @@ Deployed:  https://sahulatghartak.com/api/auth/register-staff
 Request Body:
 {
   "mobileNo": "03001234567",
-  "password": "staff123",
-  "confirmPassword": "staff123",
+  "password": "ExampleStaff1",
+  "confirmPassword": "ExampleStaff1",
   "fullName": "Admin User",
   "designation": "Manager",
   "department": "Operations",
@@ -234,8 +234,8 @@ Deployed:  https://sahulatghartak.com/api/auth/login
 
 Request Body:
 {
-  "mobileNo": "03335191392",
-  "password": "ghauri"
+  "mobileNo": "03001234567",
+  "password": "ExamplePass1"
 }
 
 Success (200):
@@ -247,7 +247,7 @@ Success (200):
     "profileId": 4,
     "userType": "Provider",
     "fullName": "Shahid",
-    "mobileNo": "03335191392",
+    "mobileNo": "03001234567",
     "clientId": 1,
     "providerId": 4
   }
@@ -293,8 +293,8 @@ Deployed:  https://sahulatghartak.com/api/auth/delete-account
 
 Request Body:
 {
-  "mobileNo": "03335191392",
-  "password": "ghauri12"
+  "mobileNo": "03001234567",
+  "password": "ExamplePass12"
 }
 
 Success (200):
@@ -302,7 +302,7 @@ Success (200):
   "success": true,
   "message": "Account deleted successfully.",
   "data": {
-    "mobileNo": "03335191392"
+    "mobileNo": "03001234567"
   }
 }
 
@@ -386,7 +386,7 @@ Deployed:  https://sahulatghartak.com/api/auth/reset-password
 
 Request Body:
 {
-  "mobileNo": "03335191392",
+  "mobileNo": "03001234567",
   "otp": "458963",
   "newPassword": "newSecurePass1",
   "confirmNewPassword": "newSecurePass1"
@@ -413,7 +413,7 @@ Success (200):
   "success": true,
   "message": "Password reset successfully.",
   "data": {
-    "mobileNo": "03335191392"
+    "mobileNo": "03001234567"
   }
 }
 
@@ -1044,7 +1044,7 @@ Success (200):
   "data": {
     "uid": 4,
     "userUid": 4,
-    "mobileNo": "03335191392",
+    "mobileNo": "03001234567",
     "fullName": "Shahid",
     "cnic": "1-1-1",
     "gender": "Male",
@@ -1106,7 +1106,7 @@ Success (200):
   "data": {
     "uid": 4,
     "userUid": 4,
-    "mobileNo": "03335191392",
+    "mobileNo": "03001234567",
     "fullName": "Shahid Ghauri",
     "cnic": "1-1-1",
     "gender": "Male",
@@ -1414,7 +1414,7 @@ Success (200):
   "data": {
     "uid": 1,
     "userUid": 1,
-    "mobileNo": "03335191392",
+    "mobileNo": "03001234567",
     "fullName": "Shahid Ghauri",
     "cnic": "1-1-1",
     "gender": "Male"
@@ -1458,7 +1458,7 @@ Success (200):
   "data": {
     "uid": 1,
     "userUid": 1,
-    "mobileNo": "03335191392",
+    "mobileNo": "03001234567",
     "fullName": "Shahid Ghauri",
     "cnic": "1-1-1",
     "gender": "Male"
@@ -1764,7 +1764,7 @@ Success (200):
       "preferredServiceTime": "10:00",
       "isUrgent": true,
       "contactPerson": "Shahid",
-      "contactNo": "03335191392",
+      "contactNo": "03001234567",
       "estimatedBudget": 2500.00,
       "status": "Initiated",
       "progressStatus": "Requested",
@@ -1792,7 +1792,7 @@ Success (200):
       "preferredServiceTime": "16:00",
       "isUrgent": false,
       "contactPerson": "Shahid",
-      "contactNo": "03335191392",
+      "contactNo": "03001234567",
       "estimatedBudget": 1500.00,
       "status": "Assigned",
       "progressStatus": "In Progress",
@@ -1861,7 +1861,7 @@ Success (200):
     "preferredServiceTime": "16:00",
     "isUrgent": false,
     "contactPerson": "Shahid",
-    "contactNo": "03335191392",
+    "contactNo": "03001234567",
     "estimatedBudget": 1500.00,
     "status": "Assigned",
     "progressStatus": "In Progress",
@@ -1902,7 +1902,7 @@ Request Body:
   "preferredServiceTime": "10:00",
   "isUrgent": true,
   "contactPerson": "Shahid",
-  "contactNo": "03335191392",
+  "contactNo": "03001234567",
   "remarks": "Please call before arrival"
 }
 
@@ -1941,7 +1941,7 @@ Success (201):
     "preferredServiceTime": "10:00",
     "isUrgent": true,
     "contactPerson": "Shahid",
-    "contactNo": "03335191392",
+    "contactNo": "03001234567",
     "estimatedBudget": 2500.00,
     "status": "Initiated",
     "remarks": "Please call before arrival",
@@ -1984,7 +1984,7 @@ Request Body:
   "preferredServiceTime": "14:00",
   "isUrgent": false,
   "contactPerson": "Shahid",
-  "contactNo": "03335191392",
+  "contactNo": "03001234567",
   "status": "Initiated",
   "remarks": "Technician assigned",
   "cancelReason": null
@@ -2016,7 +2016,7 @@ Example (customer cancelling):
   "serviceTitle": "AC Repair",
   "serviceDescription": "AC not cooling properly",
   "contactPerson": "Shahid",
-  "contactNo": "03335191392",
+  "contactNo": "03001234567",
   "status": "Cancelled",
   "cancelReason": "Found another technician"
 }
@@ -2039,7 +2039,7 @@ Success (200):
     "preferredServiceTime": "14:00",
     "isUrgent": false,
     "contactPerson": "Shahid",
-    "contactNo": "03335191392",
+    "contactNo": "03001234567",
     "estimatedBudget": 3000.00,
     "status": "Initiated",
     "progressStatus": "Requested",
@@ -2176,7 +2176,7 @@ Success (200):
       "acceptedOn": "2026-07-20T09:05:00",
       "completedOn": null,
       "createdOn": "2026-07-20T00:00:00",
-      "providerMobileNo": "03335191392",
+      "providerMobileNo": "03001234567",
       "providerProfilePhotoPath": "uploads/providers/4/profile.jpg",
       "providerCnic": "1-1-1",
       "clientMobileNo": "03001112222",
@@ -2245,7 +2245,7 @@ Success (200):
     "acceptedOn": "2026-07-20T09:05:00",
     "completedOn": null,
     "createdOn": "2026-07-20T00:00:00",
-    "providerMobileNo": "03335191392",
+    "providerMobileNo": "03001234567",
     "providerProfilePhotoPath": "uploads/providers/4/profile.jpg",
     "providerCnic": "1-1-1",
     "clientMobileNo": "03001112222",
@@ -2331,7 +2331,7 @@ Success (201):
     "acceptedOn": "2026-07-20T09:05:00",
     "completedOn": null,
     "createdOn": "2026-07-20T00:00:00",
-    "providerMobileNo": "03335191392",
+    "providerMobileNo": "03001234567",
     "providerProfilePhotoPath": "uploads/providers/4/profile.jpg",
     "providerCnic": "1-1-1",
     "clientMobileNo": "03001112222",
@@ -2451,7 +2451,7 @@ Success (200):
     "acceptedOn": "2026-07-20T09:05:00",
     "completedOn": null,
     "createdOn": "2026-07-20T00:00:00",
-    "providerMobileNo": "03335191392",
+    "providerMobileNo": "03001234567",
     "providerProfilePhotoPath": "uploads/providers/4/profile.jpg",
     "providerCnic": "1-1-1",
     "clientMobileNo": "03001112222",
@@ -2585,7 +2585,7 @@ Success (200 - accepted):
     "cancelReason": null,
     "acceptedOn": "2026-07-20T09:05:00",
     "completedOn": null,
-    "providerMobileNo": "03335191392",
+    "providerMobileNo": "03001234567",
     "providerProfilePhotoPath": "uploads/providers/4/profile.jpg",
     "providerCnic": "1-1-1",
     "clientMobileNo": "03001112222",

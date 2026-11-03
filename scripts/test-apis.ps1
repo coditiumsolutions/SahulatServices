@@ -238,12 +238,21 @@ if (-not $providerUid) {
     }
 }
 
-# --- Auth login (expects existing client; soft-fail if credentials unknown) ---
-$loginMobile = if ($clientMobile) { [string]$clientMobile } else { "03335191392" }
-$r = Invoke-Api -Method POST -Path "/api/auth/login" -Body @{ mobileNo = $loginMobile; password = "ghauri" } -ExpectStatus @(200, 401, 403)
-Assert-Test -Name "POST auth/login (known or invalid password)" -Result $r -ExpectStatus @(200, 401, 403) -ExtraCheck {
-    param($data, $raw)
-    return $null -ne $data.success
+# --- Auth login (optional). Supply SAHULAT_TEST_PASSWORD locally; never commit a password.
+# Mobile comes from the DB row above, or from SAHULAT_TEST_MOBILE when the DB lookup failed.
+$loginMobile = if ($clientMobile) { [string]$clientMobile } elseif ($env:SAHULAT_TEST_MOBILE) { $env:SAHULAT_TEST_MOBILE } else { "" }
+$loginPassword = $env:SAHULAT_TEST_PASSWORD
+if ($loginMobile -and $loginPassword) {
+    $loginBody = @{ mobileNo = $loginMobile }
+    $loginBody['password'] = $loginPassword
+    $r = Invoke-Api -Method POST -Path "/api/auth/login" -Body $loginBody -ExpectStatus @(200, 401, 403)
+    Assert-Test -Name "POST auth/login (known or invalid password)" -Result $r -ExpectStatus @(200, 401, 403) -ExtraCheck {
+        param($data, $raw)
+        return $null -ne $data.success
+    }
+} else {
+    $script:Skip++
+    Write-Host "[SKIP] POST auth/login --- set SAHULAT_TEST_PASSWORD (and SAHULAT_TEST_MOBILE if the DB lookup found no client)"
 }
 
 # --- Client addresses + service requests (require a client) ---
