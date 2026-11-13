@@ -1,6 +1,6 @@
 ================================================================================
 SahulatGharTak API Reference
-Version: 3.44 | Last Updated: 2026-10-21
+Version: 3.45 | Last Updated: 2026-11-13
 Database: SahulatAppDB
 Local Base URL:    https://localhost:7265/api/
 Deployed Base URL:  https://sahulatghartak.com/api/
@@ -25,6 +25,10 @@ MAINTENANCE RULES:
 3. Every endpoint must show both Local and Deployed base URLs
 4. Every endpoint must document: Request Body, Success response, and all Fail responses
 5. Bump Version and Last Updated above whenever this file changes
+
+RECENT CHANGES:
+- v3.45 (2026-11-13): every booking response now includes contactPerson / contactNo (the request's
+  on-site contact; additive, null while Pending). See Notes under GET /api/service-bookings.
 ================================================================================
 
 
@@ -2141,6 +2145,15 @@ Notes:
   ("yyyy-MM-dd"), preferredServiceTime is a free-text "HH:mm"-style string — neither is a UTC
   instant, both are passed through as stored with no timezone conversion. Same sourcing applies
   to every endpoint below that returns a booking object.
+- contactPerson/contactNo (added v3.45) are the request's ON-SITE contact, sourced from the linked
+  CustomerServiceRequests row (via requestUid) — the same ContactPerson/ContactNo the customer app
+  form and the admin portal "Onsite Contact" edit write. They are NOT the account holder's identity:
+  clientName/clientMobileNo are unchanged and still describe the account holder (for an admin-created
+  request that is the admin). Same visibility rule as clientMobileNo: populated only once status is
+  Accepted, In Progress, Completed, or Closed; null while Pending. Blank/empty stored values are
+  returned as null (no backfill from the account) — the app should fall back to
+  clientName/clientMobileNo itself. Read-only: bookings never accept these fields (PUT ignores them).
+  Same sourcing applies to every endpoint that returns a booking object.
 
 Success (200):
 {
@@ -2180,6 +2193,8 @@ Success (200):
       "providerProfilePhotoPath": "uploads/providers/4/profile.jpg",
       "providerCnic": "1-1-1",
       "clientMobileNo": "03001112222",
+      "contactPerson": "Bilal",
+      "contactNo": "03331234567",
       "clientAddressTitle": "Home",
       "clientFullAddress": "House 12, Street 5",
       "clientArea": "DHA Phase 2",
@@ -2249,6 +2264,8 @@ Success (200):
     "providerProfilePhotoPath": "uploads/providers/4/profile.jpg",
     "providerCnic": "1-1-1",
     "clientMobileNo": "03001112222",
+    "contactPerson": "Bilal",
+    "contactNo": "03331234567",
     "clientAddressTitle": "Home",
     "clientFullAddress": "House 12, Street 5",
     "clientArea": "DHA Phase 2",
@@ -2335,6 +2352,8 @@ Success (201):
     "providerProfilePhotoPath": "uploads/providers/4/profile.jpg",
     "providerCnic": "1-1-1",
     "clientMobileNo": "03001112222",
+    "contactPerson": "Bilal",
+    "contactNo": "03331234567",
     "clientAddressTitle": "Home",
     "clientFullAddress": "House 12, Street 5",
     "clientArea": "DHA Phase 2",
@@ -2455,6 +2474,8 @@ Success (200):
     "providerProfilePhotoPath": "uploads/providers/4/profile.jpg",
     "providerCnic": "1-1-1",
     "clientMobileNo": "03001112222",
+    "contactPerson": "Bilal",
+    "contactNo": "03331234567",
     "clientAddressTitle": "Home",
     "clientFullAddress": "House 12, Street 5",
     "clientArea": "DHA Phase 2",
@@ -2589,6 +2610,8 @@ Success (200 - accepted):
     "providerProfilePhotoPath": "uploads/providers/4/profile.jpg",
     "providerCnic": "1-1-1",
     "clientMobileNo": "03001112222",
+    "contactPerson": "Bilal",
+    "contactNo": "03331234567",
     "clientAddressTitle": "Home",
     "clientFullAddress": "House 12, Street 5",
     "clientArea": "DHA Phase 2",

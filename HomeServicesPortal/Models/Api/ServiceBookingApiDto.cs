@@ -78,6 +78,17 @@ public class ServiceBookingApiDto
 
     public string? ClientMobileNo { get; set; }
 
+    /// <summary>
+    /// On-site contact name from the linked CustomerServiceRequests row (not the account holder).
+    /// Same visibility rule as ClientMobileNo: null while Pending/Rejected/Cancelled. Added v3.45.
+    /// </summary>
+    public string? ContactPerson { get; set; }
+
+    /// <summary>
+    /// On-site contact number from the linked request. See ContactPerson. Added v3.45.
+    /// </summary>
+    public string? ContactNo { get; set; }
+
     public string? ClientAddressTitle { get; set; }
 
     public string? ClientFullAddress { get; set; }

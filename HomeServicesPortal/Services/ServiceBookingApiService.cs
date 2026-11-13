@@ -370,6 +370,12 @@ public class ServiceBookingApiService : IServiceBookingApiService
                 : null,
             ProviderCnic = ContactVisibleStatuses.Contains(b.Status) ? b.Provider.Cnic : null,
             ClientMobileNo = ContactVisibleStatuses.Contains(b.Status) ? b.Client.User.MobileNo : null,
+            // On-site contact comes from the request (not the account holder) and follows the same
+            // visibility rule as ClientMobileNo. Blank values are returned as null.
+            ContactPerson = ContactVisibleStatuses.Contains(b.Status) && b.Request.ContactPerson != null && b.Request.ContactPerson.Trim() != ""
+                ? b.Request.ContactPerson : null,
+            ContactNo = ContactVisibleStatuses.Contains(b.Status) && b.Request.ContactNo != null && b.Request.ContactNo.Trim() != ""
+                ? b.Request.ContactNo : null,
             // Address is intentionally NOT gated by ContactVisibleStatuses: a provider needs the
             // client's address to decide whether to accept a still-Pending booking at all.
             ClientAddressTitle = b.Request.ClientAddress.AddressTitle,
